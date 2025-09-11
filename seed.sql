@@ -1,14 +1,14 @@
 -- Datos de prueba para CTeI-Manager
 -- Contraseña por defecto para todos los usuarios: "password123"
--- Hash generado con bcrypt cost=10: $2b$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi
+-- Hash generado con SHA-256 + salt: 157a3a58005771efe8e503a58a1d81af460e09af3218bab6b23f25780ea78297
 
 -- Usuarios de prueba
 INSERT OR IGNORE INTO users (email, password_hash, full_name, role) VALUES 
-    ('admin@ctei.edu.co', '$2b$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'Dr. Ana María García', 'ADMIN'),
-    ('carlos.rodriguez@ctei.edu.co', '$2b$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'Dr. Carlos Rodríguez', 'INVESTIGATOR'),
-    ('maria.lopez@ctei.edu.co', '$2b$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'Dra. María López', 'INVESTIGATOR'),
-    ('juan.perez@ctei.edu.co', '$2b$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'Dr. Juan Pérez', 'INVESTIGATOR'),
-    ('comunidad@ctei.edu.co', '$2b$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'Usuario Comunidad', 'COMMUNITY');
+    ('admin@ctei.edu.co', '157a3a58005771efe8e503a58a1d81af460e09af3218bab6b23f25780ea78297', 'Dr. Ana María García', 'ADMIN'),
+    ('carlos.rodriguez@ctei.edu.co', '157a3a58005771efe8e503a58a1d81af460e09af3218bab6b23f25780ea78297', 'Dr. Carlos Rodríguez', 'INVESTIGATOR'),
+    ('maria.lopez@ctei.edu.co', '157a3a58005771efe8e503a58a1d81af460e09af3218bab6b23f25780ea78297', 'Dra. María López', 'INVESTIGATOR'),
+    ('juan.perez@ctei.edu.co', '157a3a58005771efe8e503a58a1d81af460e09af3218bab6b23f25780ea78297', 'Dr. Juan Pérez', 'INVESTIGATOR'),
+    ('comunidad@ctei.edu.co', '157a3a58005771efe8e503a58a1d81af460e09af3218bab6b23f25780ea78297', 'Usuario Comunidad', 'COMMUNITY');
 
 -- Proyectos de prueba
 INSERT OR IGNORE INTO projects (title, abstract, keywords, introduction, methodology, owner_id, is_public) VALUES 
