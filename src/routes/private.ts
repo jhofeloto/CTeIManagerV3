@@ -600,6 +600,56 @@ privateRoutes.get('/projects/:projectId/collaborators', async (c) => {
   }
 });
 
+// Remover colaborador de un proyecto
+privateRoutes.delete('/projects/:projectId/collaborators/:userId', requireRole('INVESTIGATOR', 'ADMIN'), async (c) => {
+  try {
+    const user = c.get('user')!;
+    const projectId = parseInt(c.req.param('projectId'));
+    const userId = parseInt(c.req.param('userId'));
+
+    // Verificar que el proyecto existe y el usuario tiene permisos
+    if (user.role !== 'ADMIN') {
+      const project = await c.env.DB.prepare(`
+        SELECT p.owner_id, pc.can_manage_team FROM projects p
+        LEFT JOIN project_collaborators pc ON p.id = pc.project_id AND pc.user_id = ?
+        WHERE p.id = ? AND (p.owner_id = ? OR (pc.user_id = ? AND pc.can_manage_team = 1))
+      `).bind(user.userId, projectId, user.userId, user.userId).first();
+
+      if (!project) {
+        return c.json<APIResponse>({ 
+          success: false, 
+          error: 'No tienes permiso para gestionar colaboradores en este proyecto' 
+        }, 403);
+      }
+    }
+
+    // Remover colaborador
+    const result = await c.env.DB.prepare(`
+      DELETE FROM project_collaborators 
+      WHERE project_id = ? AND user_id = ?
+    `).bind(projectId, userId).run();
+
+    if (!result.success) {
+      return c.json<APIResponse>({ 
+        success: false, 
+        error: 'Error al remover colaborador' 
+      }, 500);
+    }
+
+    return c.json<APIResponse>({
+      success: true,
+      message: 'Colaborador removido exitosamente'
+    });
+
+  } catch (error) {
+    console.error('Error removiendo colaborador:', error);
+    return c.json<APIResponse>({ 
+      success: false, 
+      error: 'Error interno del servidor' 
+    }, 500);
+  }
+});
+
 // Dashboard stats privadas
 privateRoutes.get('/dashboard/stats', async (c) => {
   try {
