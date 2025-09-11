@@ -1,7 +1,7 @@
 // Rutas privadas (requieren autenticación)
 import { Hono } from 'hono';
 import { authMiddleware, requireRole } from '../middleware/auth';
-import { Bindings, APIResponse, JWTPayload, CreateProjectRequest, UpdateProjectRequest, CreateProductRequest, UpdateProductRequest } from '../types/index';
+import { Bindings, APIResponse, JWTPayload, CreateProjectRequest, UpdateProjectRequest, CreateProductRequest, UpdateProductRequest, AddCollaboratorRequest } from '../types/index';
 
 const privateRoutes = new Hono<{ Bindings: Bindings; Variables: { user?: JWTPayload } }>();
 
@@ -58,6 +58,8 @@ privateRoutes.get('/projects', async (c) => {
         SELECT 
           p.id, p.title, p.abstract, p.keywords, p.introduction, 
           p.methodology, p.owner_id, p.is_public, p.created_at, p.updated_at,
+          p.status, p.start_date, p.end_date, p.institution, p.funding_source, 
+          p.budget, p.project_code,
           u.full_name as owner_name
         FROM projects p 
         JOIN users u ON p.owner_id = u.id 
@@ -70,6 +72,8 @@ privateRoutes.get('/projects', async (c) => {
         SELECT DISTINCT
           p.id, p.title, p.abstract, p.keywords, p.introduction, 
           p.methodology, p.owner_id, p.is_public, p.created_at, p.updated_at,
+          p.status, p.start_date, p.end_date, p.institution, p.funding_source, 
+          p.budget, p.project_code,
           u.full_name as owner_name
         FROM projects p 
         JOIN users u ON p.owner_id = u.id 
@@ -101,7 +105,10 @@ privateRoutes.post('/projects', requireRole('INVESTIGATOR', 'ADMIN'), async (c) 
   try {
     const user = c.get('user')!;
     const body: CreateProjectRequest = await c.req.json();
-    const { title, abstract, keywords, introduction, methodology } = body;
+    const { 
+      title, abstract, keywords, introduction, methodology,
+      start_date, end_date, institution, funding_source, budget, project_code, status = 'ACTIVE'
+    } = body;
 
     if (!title || !abstract) {
       return c.json<APIResponse>({ 
@@ -110,10 +117,25 @@ privateRoutes.post('/projects', requireRole('INVESTIGATOR', 'ADMIN'), async (c) 
       }, 400);
     }
 
+    // Validar fechas
+    if (start_date && end_date && new Date(end_date) <= new Date(start_date)) {
+      return c.json<APIResponse>({ 
+        success: false, 
+        error: 'La fecha de fin debe ser posterior a la fecha de inicio' 
+      }, 400);
+    }
+
     const result = await c.env.DB.prepare(`
-      INSERT INTO projects (title, abstract, keywords, introduction, methodology, owner_id) 
-      VALUES (?, ?, ?, ?, ?, ?)
-    `).bind(title, abstract, keywords || null, introduction || null, methodology || null, user.userId).run();
+      INSERT INTO projects (
+        title, abstract, keywords, introduction, methodology, owner_id,
+        status, start_date, end_date, institution, funding_source, budget, project_code
+      ) 
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `).bind(
+      title, abstract, keywords || null, introduction || null, methodology || null, user.userId,
+      status, start_date || null, end_date || null, institution || null, 
+      funding_source || null, budget || null, project_code || null
+    ).run();
 
     if (!result.success) {
       return c.json<APIResponse>({ 
@@ -180,6 +202,35 @@ privateRoutes.put('/projects/:id', requireRole('INVESTIGATOR', 'ADMIN'), async (
     if (body.methodology !== undefined) {
       updateFields.push('methodology = ?');
       params.push(body.methodology);
+    }
+    // Nuevos campos Fase 1
+    if (body.status !== undefined) {
+      updateFields.push('status = ?');
+      params.push(body.status);
+    }
+    if (body.start_date !== undefined) {
+      updateFields.push('start_date = ?');
+      params.push(body.start_date);
+    }
+    if (body.end_date !== undefined) {
+      updateFields.push('end_date = ?');
+      params.push(body.end_date);
+    }
+    if (body.institution !== undefined) {
+      updateFields.push('institution = ?');
+      params.push(body.institution);
+    }
+    if (body.funding_source !== undefined) {
+      updateFields.push('funding_source = ?');
+      params.push(body.funding_source);
+    }
+    if (body.budget !== undefined) {
+      updateFields.push('budget = ?');
+      params.push(body.budget);
+    }
+    if (body.project_code !== undefined) {
+      updateFields.push('project_code = ?');
+      params.push(body.project_code);
     }
 
     if (updateFields.length === 0) {
@@ -319,7 +370,10 @@ privateRoutes.post('/projects/:projectId/products', requireRole('INVESTIGATOR', 
     const user = c.get('user')!;
     const projectId = parseInt(c.req.param('projectId'));
     const body: CreateProductRequest = await c.req.json();
-    const { product_code, product_type, description } = body;
+    const { 
+      product_code, product_type, description, doi, url, publication_date, 
+      journal, impact_factor, metadata, file_url 
+    } = body;
 
     if (!product_code || !product_type || !description) {
       return c.json<APIResponse>({ 
@@ -328,26 +382,45 @@ privateRoutes.post('/projects/:projectId/products', requireRole('INVESTIGATOR', 
       }, 400);
     }
 
+    // Verificar que el tipo de producto existe
+    const categoryExists = await c.env.DB.prepare(
+      'SELECT code FROM product_categories WHERE code = ?'
+    ).bind(product_type).first();
+
+    if (!categoryExists) {
+      return c.json<APIResponse>({ 
+        success: false, 
+        error: 'Tipo de producto no válido' 
+      }, 400);
+    }
+
     // Verificar que el proyecto existe y el usuario tiene permisos
     if (user.role !== 'ADMIN') {
       const project = await c.env.DB.prepare(`
-        SELECT owner_id FROM projects p
-        LEFT JOIN project_collaborators pc ON p.id = pc.project_id
-        WHERE p.id = ? AND (p.owner_id = ? OR pc.user_id = ?)
-      `).bind(projectId, user.userId, user.userId).first();
+        SELECT p.owner_id, pc.can_add_products FROM projects p
+        LEFT JOIN project_collaborators pc ON p.id = pc.project_id AND pc.user_id = ?
+        WHERE p.id = ? AND (p.owner_id = ? OR (pc.user_id = ? AND pc.can_add_products = 1))
+      `).bind(user.userId, projectId, user.userId, user.userId).first();
 
       if (!project) {
         return c.json<APIResponse>({ 
           success: false, 
-          error: 'Proyecto no encontrado o sin permisos' 
+          error: 'Proyecto no encontrado o sin permisos para añadir productos' 
         }, 404);
       }
     }
 
     const result = await c.env.DB.prepare(`
-      INSERT INTO products (project_id, product_code, product_type, description) 
-      VALUES (?, ?, ?, ?)
-    `).bind(projectId, product_code, product_type, description).run();
+      INSERT INTO products (
+        project_id, product_code, product_type, description,
+        doi, url, publication_date, journal, impact_factor, metadata, file_url
+      ) 
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `).bind(
+      projectId, product_code, product_type, description,
+      doi || null, url || null, publication_date || null, journal || null,
+      impact_factor || null, metadata || null, file_url || null
+    ).run();
 
     if (!result.success) {
       return c.json<APIResponse>({ 
@@ -408,6 +481,118 @@ privateRoutes.get('/projects/:projectId/products', async (c) => {
 
   } catch (error) {
     console.error('Error obteniendo productos:', error);
+    return c.json<APIResponse>({ 
+      success: false, 
+      error: 'Error interno del servidor' 
+    }, 500);
+  }
+});
+
+// Añadir colaborador a proyecto
+privateRoutes.post('/projects/:projectId/collaborators', requireRole('INVESTIGATOR', 'ADMIN'), async (c) => {
+  try {
+    const user = c.get('user')!;
+    const projectId = parseInt(c.req.param('projectId'));
+    const body: AddCollaboratorRequest = await c.req.json();
+    const { user_id, collaboration_role, can_edit_project = false, can_add_products = true, can_manage_team = false, role_description } = body;
+
+    // Verificar que el proyecto existe y el usuario tiene permisos
+    if (user.role !== 'ADMIN') {
+      const project = await c.env.DB.prepare(
+        'SELECT owner_id FROM projects WHERE id = ?'
+      ).bind(projectId).first<{ owner_id: number }>();
+
+      if (!project || project.owner_id !== user.userId) {
+        return c.json<APIResponse>({ 
+          success: false, 
+          error: 'No tienes permiso para añadir colaboradores a este proyecto' 
+        }, 403);
+      }
+    }
+
+    // Verificar que el usuario a añadir existe
+    const collaboratorUser = await c.env.DB.prepare(
+      'SELECT id, role FROM users WHERE id = ?'
+    ).bind(user_id).first();
+
+    if (!collaboratorUser) {
+      return c.json<APIResponse>({ 
+        success: false, 
+        error: 'Usuario no encontrado' 
+      }, 404);
+    }
+
+    // Insertar colaborador
+    const result = await c.env.DB.prepare(`
+      INSERT INTO project_collaborators (
+        project_id, user_id, collaboration_role, can_edit_project, 
+        can_add_products, can_manage_team, role_description
+      ) 
+      VALUES (?, ?, ?, ?, ?, ?, ?)
+    `).bind(projectId, user_id, collaboration_role, can_edit_project ? 1 : 0, 
+            can_add_products ? 1 : 0, can_manage_team ? 1 : 0, role_description || null).run();
+
+    if (!result.success) {
+      return c.json<APIResponse>({ 
+        success: false, 
+        error: 'Error al añadir colaborador' 
+      }, 500);
+    }
+
+    return c.json<APIResponse>({
+      success: true,
+      message: 'Colaborador añadido exitosamente'
+    }, 201);
+
+  } catch (error) {
+    console.error('Error añadiendo colaborador:', error);
+    return c.json<APIResponse>({ 
+      success: false, 
+      error: 'Error interno del servidor' 
+    }, 500);
+  }
+});
+
+// Listar colaboradores de un proyecto
+privateRoutes.get('/projects/:projectId/collaborators', async (c) => {
+  try {
+    const user = c.get('user')!;
+    const projectId = parseInt(c.req.param('projectId'));
+
+    // Verificar acceso al proyecto
+    if (user.role !== 'ADMIN') {
+      const project = await c.env.DB.prepare(`
+        SELECT p.id FROM projects p
+        LEFT JOIN project_collaborators pc ON p.id = pc.project_id
+        WHERE p.id = ? AND (p.owner_id = ? OR pc.user_id = ? OR p.is_public = 1)
+      `).bind(projectId, user.userId, user.userId).first();
+
+      if (!project) {
+        return c.json<APIResponse>({ 
+          success: false, 
+          error: 'Proyecto no encontrado o sin permisos' 
+        }, 404);
+      }
+    }
+
+    const collaborators = await c.env.DB.prepare(`
+      SELECT 
+        pc.project_id, pc.user_id, pc.collaboration_role, pc.can_edit_project,
+        pc.can_add_products, pc.can_manage_team, pc.role_description, pc.added_at,
+        u.full_name, u.email, u.role as user_role
+      FROM project_collaborators pc
+      JOIN users u ON pc.user_id = u.id
+      WHERE pc.project_id = ?
+      ORDER BY pc.added_at DESC
+    `).bind(projectId).all();
+
+    return c.json<APIResponse<any>>({
+      success: true,
+      data: { collaborators: collaborators.results }
+    });
+
+  } catch (error) {
+    console.error('Error obteniendo colaboradores:', error);
     return c.json<APIResponse>({ 
       success: false, 
       error: 'Error interno del servidor' 

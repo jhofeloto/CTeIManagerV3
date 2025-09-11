@@ -16,6 +16,8 @@ publicRoutes.get('/projects', async (c) => {
       SELECT 
         p.id, p.title, p.abstract, p.keywords, p.introduction, 
         p.methodology, p.owner_id, p.is_public, p.created_at, p.updated_at,
+        p.status, p.start_date, p.end_date, p.institution, p.funding_source, 
+        p.budget, p.project_code,
         u.full_name as owner_name, u.email as owner_email
       FROM projects p 
       JOIN users u ON p.owner_id = u.id 
@@ -79,6 +81,8 @@ publicRoutes.get('/projects/:id', async (c) => {
       SELECT 
         p.id, p.title, p.abstract, p.keywords, p.introduction, 
         p.methodology, p.owner_id, p.is_public, p.created_at, p.updated_at,
+        p.status, p.start_date, p.end_date, p.institution, p.funding_source, 
+        p.budget, p.project_code,
         u.full_name as owner_name, u.email as owner_email
       FROM projects p 
       JOIN users u ON p.owner_id = u.id 
@@ -92,18 +96,25 @@ publicRoutes.get('/projects/:id', async (c) => {
       }, 404);
     }
 
-    // Obtener productos públicos del proyecto
+    // Obtener productos públicos del proyecto con información de categoría
     const products = await c.env.DB.prepare(`
-      SELECT id, project_id, product_code, product_type, description, 
-             is_public, created_at, updated_at
-      FROM products 
-      WHERE project_id = ? AND is_public = 1
-      ORDER BY created_at DESC
+      SELECT 
+        pr.id, pr.project_id, pr.product_code, pr.product_type, pr.description, 
+        pr.is_public, pr.created_at, pr.updated_at, pr.doi, pr.url, 
+        pr.publication_date, pr.journal, pr.impact_factor, pr.citation_count, 
+        pr.file_url,
+        pc.name as category_name, pc.category_group, pc.impact_weight
+      FROM products pr 
+      LEFT JOIN product_categories pc ON pr.product_type = pc.code
+      WHERE pr.project_id = ? AND pr.is_public = 1
+      ORDER BY pr.created_at DESC
     `).bind(projectId).all();
 
-    // Obtener colaboradores del proyecto
+    // Obtener colaboradores del proyecto con roles detallados
     const collaborators = await c.env.DB.prepare(`
-      SELECT u.id, u.full_name, u.email, u.role
+      SELECT 
+        u.id, u.full_name, u.email, u.role,
+        pc.collaboration_role, pc.role_description
       FROM project_collaborators pc
       JOIN users u ON pc.user_id = u.id
       WHERE pc.project_id = ?
@@ -141,9 +152,13 @@ publicRoutes.get('/products', async (c) => {
       SELECT 
         pr.id, pr.project_id, pr.product_code, pr.product_type, 
         pr.description, pr.is_public, pr.created_at, pr.updated_at,
-        p.title as project_title, p.abstract as project_abstract
+        pr.doi, pr.url, pr.publication_date, pr.journal, pr.impact_factor, 
+        pr.citation_count, pr.file_url,
+        p.title as project_title, p.abstract as project_abstract,
+        pc.name as category_name, pc.category_group, pc.impact_weight
       FROM products pr 
       JOIN projects p ON pr.project_id = p.id 
+      LEFT JOIN product_categories pc ON pr.product_type = pc.code
       WHERE pr.is_public = 1
     `;
     
@@ -205,6 +220,52 @@ publicRoutes.get('/products', async (c) => {
   }
 });
 
+// Obtener categorías de productos
+publicRoutes.get('/product-categories', async (c) => {
+  try {
+    const categories = await c.env.DB.prepare(`
+      SELECT code, name, description, category_group, impact_weight
+      FROM product_categories 
+      ORDER BY category_group, impact_weight DESC
+    `).all();
+
+    return c.json<APIResponse<{ categories: any[] }>>({
+      success: true,
+      data: { categories: categories.results }
+    });
+
+  } catch (error) {
+    console.error('Error obteniendo categorías:', error);
+    return c.json<APIResponse>({ 
+      success: false, 
+      error: 'Error interno del servidor' 
+    }, 500);
+  }
+});
+
+// Obtener instituciones
+publicRoutes.get('/institutions', async (c) => {
+  try {
+    const institutions = await c.env.DB.prepare(`
+      SELECT id, name, short_name, type, country, city, website
+      FROM institutions 
+      ORDER BY name
+    `).all();
+
+    return c.json<APIResponse<{ institutions: any[] }>>({
+      success: true,
+      data: { institutions: institutions.results }
+    });
+
+  } catch (error) {
+    console.error('Error obteniendo instituciones:', error);
+    return c.json<APIResponse>({ 
+      success: false, 
+      error: 'Error interno del servidor' 
+    }, 500);
+  }
+});
+
 // Obtener estadísticas públicas
 publicRoutes.get('/stats', async (c) => {
   try {
@@ -218,12 +279,26 @@ publicRoutes.get('/stats', async (c) => {
       'SELECT COUNT(*) as count FROM products WHERE is_public = 1'
     ).first<{ count: number }>();
 
-    // Productos por tipo
-    const productsByType = await c.env.DB.prepare(`
-      SELECT product_type, COUNT(*) as count 
-      FROM products 
+    // Productos por categoría con nombres descriptivos
+    const productsByCategory = await c.env.DB.prepare(`
+      SELECT 
+        pr.product_type, 
+        pc.name as category_name, 
+        pc.category_group,
+        COUNT(*) as count 
+      FROM products pr
+      LEFT JOIN product_categories pc ON pr.product_type = pc.code
+      WHERE pr.is_public = 1 
+      GROUP BY pr.product_type, pc.name, pc.category_group
+      ORDER BY count DESC
+    `).all();
+
+    // Proyectos por estado
+    const projectsByStatus = await c.env.DB.prepare(`
+      SELECT status, COUNT(*) as count 
+      FROM projects 
       WHERE is_public = 1 
-      GROUP BY product_type
+      GROUP BY status
     `).all();
 
     // Investigadores activos (con proyectos públicos)
@@ -239,8 +314,14 @@ publicRoutes.get('/stats', async (c) => {
         totalProjects: projectsCount?.count || 0,
         totalProducts: productsCount?.count || 0,
         activeInvestigators: activeInvestigators?.count || 0,
-        productsByType: Object.fromEntries(
-          productsByType.results.map((item: any) => [item.product_type, item.count])
+        productsByCategory: productsByCategory.results.map((item: any) => ({
+          code: item.product_type,
+          name: item.category_name || item.product_type,
+          group: item.category_group,
+          count: item.count
+        })),
+        projectsByStatus: Object.fromEntries(
+          projectsByStatus.results.map((item: any) => [item.status, item.count])
         )
       }
     });
