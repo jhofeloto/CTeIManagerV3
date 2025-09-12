@@ -1,6 +1,6 @@
 /* ========================================
-   CTeI-Manager - Sistema de Diseño Consistente
-   Basado en variables CSS customizadas con soporte para modo oscuro
+   CTeI-Manager - Sistema de Diseño Arquitectónico con Tokens OKLCH
+   Filosofía: "Tokens, no valores" - Jerarquía visual clara
 ======================================== */
 
 /* Variables CSS del sistema de diseño */
@@ -59,7 +59,7 @@
   /* Border radius */
   --radius: 0.5rem;
   
-  /* Sombras */
+  /* Sistema de Sombras - Jerarquía Visual */
   --shadow-2xs: 0px 1px 3px 0px hsl(0 0% 0% / 0.09);
   --shadow-xs: 0px 1px 3px 0px hsl(0 0% 0% / 0.09);
   --shadow-sm: 0px 1px 3px 0px hsl(0 0% 0% / 0.17), 0px 1px 2px -1px hsl(0 0% 0% / 0.17);
@@ -69,8 +69,14 @@
   --shadow-xl: 0px 1px 3px 0px hsl(0 0% 0% / 0.17), 0px 8px 10px -1px hsl(0 0% 0% / 0.17);
   --shadow-2xl: 0px 1px 3px 0px hsl(0 0% 0% / 0.43);
   
-  /* Espaciado y tipografía */
+  /* Sistema de Espaciado y Tipografía */
+  --tracking-tighter: -0.025em;
+  --tracking-tight: -0.0125em;
   --tracking-normal: 0.025em;
+  --tracking-wide: 0.05em;
+  --tracking-wider: 0.075em;
+  --tracking-widest: 0.1em;
+  
   --spacing: 0.25rem;
 }
 
@@ -163,389 +169,439 @@
   --shadow-xl: var(--shadow-xl);
   --shadow-2xl: var(--shadow-2xl);
 
-  --tracking-tighter: calc(var(--tracking-normal) - 0.05em);
-  --tracking-tight: calc(var(--tracking-normal) - 0.025em);
+  --tracking-tighter: var(--tracking-tighter);
+  --tracking-tight: var(--tracking-tight);
   --tracking-normal: var(--tracking-normal);
-  --tracking-wide: calc(var(--tracking-normal) + 0.025em);
-  --tracking-wider: calc(var(--tracking-normal) + 0.05em);
-  --tracking-widest: calc(var(--tracking-normal) + 0.1em);
+  --tracking-wide: var(--tracking-wide);
+  --tracking-wider: var(--tracking-wider);
+  --tracking-widest: var(--tracking-widest);
 }
 
-/* Configuración global del body */
+/* ========================================
+   CONFIGURACIÓN GLOBAL DEL BODY
+======================================== */
+
 body {
   font-family: var(--font-sans);
   letter-spacing: var(--tracking-normal);
-  background-color: rgb(from var(--background) r g b);
-  color: rgb(from var(--foreground) r g b);
+  background-color: var(--background);
+  color: var(--foreground);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 /* ========================================
-   HERO SECTION - Diseño inmersivo
+   JERARQUÍA VISUAL - SISTEMA DE NIVELES
 ======================================== */
 
-/* Gradiente del hero más suave y profesional */
-.hero-gradient {
-  background: linear-gradient(135deg, 
-    rgb(from var(--sidebar) r g b) 0%,
-    rgb(from var(--accent) r g b / 0.8) 50%,
-    rgb(from var(--primary) r g b / 0.6) 100%
-  );
+/* NIVEL 0: Fondo Principal */
+.level-0 {
+  background-color: var(--background);
+  color: var(--foreground);
 }
 
-/* Patrón científico de fondo */
-.scientific-pattern {
-  background-image: 
-    radial-gradient(circle at 25px 25px, rgb(from var(--primary) r g b / 0.1) 2px, transparent 2px),
-    radial-gradient(circle at 75px 75px, rgb(from var(--chart-2) r g b / 0.1) 1px, transparent 1px);
-  background-size: 100px 100px;
-}
-
-/* Efecto glass morphism para elementos del hero */
-.glass-morphism {
-  background: rgb(from var(--card) r g b / 0.1);
-  backdrop-filter: blur(16px);
-  border: 1px solid rgb(from var(--border) r g b / 0.3);
-}
-
-/* ========================================
-   COMPONENTES UI CONSISTENTES
-======================================== */
-
-/* Cards principales */
-.ctei-card {
-  background-color: rgb(from var(--card) r g b);
-  color: rgb(from var(--card-foreground) r g b);
+/* NIVEL 1: Tarjetas Estáticas */
+.level-1 {
+  background-color: var(--card);
+  color: var(--card-foreground);
+  border: 1px solid var(--border);
   border-radius: var(--radius);
   box-shadow: var(--shadow-sm);
-  border: 1px solid rgb(from var(--border) r g b);
-  transition: all 0.2s ease-in-out;
+  transition: box-shadow 0.2s ease-in-out, transform 0.2s ease-in-out;
 }
 
-.ctei-card:hover {
+/* NIVEL 2: Elementos Interactivos */
+.level-2:hover {
   box-shadow: var(--shadow-md);
-  transform: translateY(-1px);
-}
-
-/* Botones primarios */
-.ctei-btn-primary {
-  background-color: rgb(from var(--primary) r g b);
-  color: rgb(from var(--primary-foreground) r g b);
-  border: none;
-  border-radius: var(--radius);
-  font-weight: 500;
-  transition: all 0.2s ease-in-out;
-  font-family: var(--font-sans);
-}
-
-.ctei-btn-primary:hover {
-  background-color: rgb(from var(--primary) r g b / 0.9);
-  box-shadow: var(--shadow-sm);
-}
-
-/* Botones secundarios */
-.ctei-btn-secondary {
-  background-color: rgb(from var(--secondary) r g b);
-  color: rgb(from var(--secondary-foreground) r g b);
-  border: 1px solid rgb(from var(--border) r g b);
-  border-radius: var(--radius);
-  font-weight: 500;
-  transition: all 0.2s ease-in-out;
-  font-family: var(--font-sans);
-}
-
-.ctei-btn-secondary:hover {
-  background-color: rgb(from var(--accent) r g b);
-  color: rgb(from var(--accent-foreground) r g b);
-}
-
-/* Inputs y formularios */
-.ctei-input {
-  background-color: rgb(from var(--input) r g b);
-  color: rgb(from var(--foreground) r g b);
-  border: 1px solid rgb(from var(--border) r g b);
-  border-radius: var(--radius);
-  padding: 0.75rem 1rem;
-  font-family: var(--font-sans);
-  transition: all 0.2s ease-in-out;
-}
-
-.ctei-input:focus {
-  outline: none;
-  border-color: rgb(from var(--ring) r g b);
-  box-shadow: 0 0 0 2px rgb(from var(--ring) r g b / 0.2);
-}
-
-/* Selectores */
-.ctei-select {
-  background-color: rgb(from var(--input) r g b);
-  color: rgb(from var(--foreground) r g b);
-  border: 1px solid rgb(from var(--border) r g b);
-  border-radius: var(--radius);
-  padding: 0.75rem 1rem;
-  font-family: var(--font-sans);
-  transition: all 0.2s ease-in-out;
-}
-
-/* ========================================
-   ESTADÍSTICAS Y MÉTRICAS
-======================================== */
-
-.stats-card {
-  background: linear-gradient(135deg, 
-    rgb(from var(--card) r g b), 
-    rgb(from var(--accent) r g b / 0.05)
-  );
-  border: 1px solid rgb(from var(--border) r g b);
-  border-radius: var(--radius);
-  transition: all 0.3s ease;
-  cursor: pointer;
-}
-
-.stats-card:hover {
-  border-color: rgb(from var(--primary) r g b);
-  box-shadow: var(--shadow-lg);
   transform: translateY(-2px);
 }
 
-.stats-card .stats-number {
-  color: rgb(from var(--primary) r g b);
-  font-family: var(--font-mono);
-  font-weight: 700;
+.level-2-active:hover {
+  box-shadow: var(--shadow-lg);
+  transform: translateY(-4px);
 }
 
-.stats-card .stats-label {
-  color: rgb(from var(--muted-foreground) r g b);
-  font-weight: 500;
-}
-
-.stats-card .stats-icon {
-  color: rgb(from var(--primary) r g b);
-  opacity: 0.8;
-}
-
-/* ========================================
-   NAVEGACIÓN Y HEADER
-======================================== */
-
-/* Navbar científico con glassmorphism */
-.ctei-navbar {
-  background: rgb(from var(--background) r g b / 0.8);
-  backdrop-filter: blur(12px);
-  border-bottom: 1px solid rgb(from var(--border) r g b / 0.5);
-  transition: all 0.3s ease;
-}
-
-.ctei-navbar-link {
-  color: rgb(from var(--muted-foreground) r g b);
-  transition: color 0.2s ease;
-  font-weight: 500;
-}
-
-.ctei-navbar-link:hover {
-  color: rgb(from var(--primary) r g b);
-}
-
-/* ========================================
-   FILTROS Y BÚSQUEDA
-======================================== */
-
-.ctei-filter-container {
-  background-color: rgb(from var(--card) r g b);
-  border: 1px solid rgb(from var(--border) r g b);
+/* NIVEL 3: Modales y Popovers */
+.level-3 {
+  background-color: var(--popover);
+  color: var(--popover-foreground);
+  border: 1px solid var(--border);
   border-radius: var(--radius);
+  box-shadow: var(--shadow-xl);
+}
+
+/* ========================================
+   COMPONENTES ARQUITECTÓNICOS
+======================================== */
+
+/* BOTÓN PRIMARIO - Usando tokens exclusivamente */
+.ctei-btn-primary {
+  background-color: var(--primary);
+  color: var(--primary-foreground);
+  border: none;
+  border-radius: var(--radius);
+  font-family: var(--font-sans);
+  font-weight: 600;
+  letter-spacing: var(--tracking-tight);
+  padding: 0.75rem 1.5rem;
+  transition: all 0.2s ease-in-out;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.ctei-btn-primary:hover {
+  box-shadow: var(--shadow-sm);
+  transform: translateY(-1px);
+  opacity: 0.9;
+}
+
+.ctei-btn-primary:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--ring);
+}
+
+.ctei-btn-primary:active {
+  transform: translateY(0);
+  box-shadow: var(--shadow-xs);
+}
+
+/* BOTÓN SECUNDARIO */
+.ctei-btn-secondary {
+  background-color: var(--secondary);
+  color: var(--secondary-foreground);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  font-family: var(--font-sans);
+  font-weight: 500;
+  letter-spacing: var(--tracking-tight);
+  padding: 0.75rem 1.5rem;
+  transition: all 0.2s ease-in-out;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.ctei-btn-secondary:hover {
+  background-color: var(--accent);
+  color: var(--accent-foreground);
+  box-shadow: var(--shadow-sm);
+  transform: translateY(-1px);
+}
+
+.ctei-btn-secondary:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--ring);
+}
+
+/* CARD DE PROYECTO - Arquitectura con tokens */
+.ctei-project-card {
+  background-color: var(--card);
+  color: var(--card-foreground);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-sm);
   padding: 1.5rem;
+  transition: box-shadow 0.2s ease-in-out, transform 0.2s ease-in-out;
 }
 
+.ctei-project-card:hover {
+  box-shadow: var(--shadow-md);
+  transform: translateY(-2px);
+}
+
+.ctei-project-card-title {
+  font-family: var(--font-sans);
+  font-weight: 600;
+  font-size: 1.125rem;
+  line-height: 1.4;
+  letter-spacing: var(--tracking-tight);
+  color: var(--card-foreground);
+  margin-bottom: 0.75rem;
+}
+
+.ctei-project-card-metadata {
+  color: var(--muted-foreground);
+  font-size: 0.875rem;
+  letter-spacing: var(--tracking-normal);
+}
+
+.ctei-project-card-link {
+  color: var(--primary);
+  text-decoration: none;
+  font-weight: 500;
+  transition: color 0.2s ease-in-out;
+}
+
+.ctei-project-card-link:hover {
+  opacity: 0.8;
+  text-decoration: underline;
+}
+
+/* INPUT ARQUITECTÓNICO - Barra de búsqueda */
 .ctei-search-input {
-  background-color: rgb(from var(--input) r g b);
-  border: 1px solid rgb(from var(--border) r g b);
-  color: rgb(from var(--foreground) r g b);
+  background-color: var(--input);
+  border: 1px solid var(--border);
   border-radius: var(--radius);
-  transition: all 0.2s ease;
+  color: var(--foreground);
+  font-family: var(--font-sans);
+  font-size: 1rem;
+  letter-spacing: var(--tracking-normal);
+  padding: 0.75rem 1rem;
+  width: 100%;
+  transition: border-color 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+}
+
+.ctei-search-input::placeholder {
+  color: var(--muted-foreground);
 }
 
 .ctei-search-input:focus {
-  border-color: rgb(from var(--primary) r g b);
-  box-shadow: 0 0 0 2px rgb(from var(--primary) r g b / 0.1);
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 2px var(--ring);
 }
 
-/* Botones de filtros rápidos */
-.ctei-filter-tag {
-  background-color: rgb(from var(--secondary) r g b);
-  color: rgb(from var(--secondary-foreground) r g b);
-  border: 1px solid rgb(from var(--border) r g b);
-  border-radius: calc(var(--radius) * 2);
-  padding: 0.5rem 1rem;
-  transition: all 0.2s ease;
-  font-size: 0.875rem;
-  font-weight: 500;
-}
-
-.ctei-filter-tag:hover,
-.ctei-filter-tag.active {
-  background-color: rgb(from var(--primary) r g b);
-  color: rgb(from var(--primary-foreground) r g b);
-  border-color: rgb(from var(--primary) r g b);
-}
-
-/* ========================================
-   PROYECTOS Y PRODUCTOS
-======================================== */
-
-.project-card,
-.product-card {
-  background-color: rgb(from var(--card) r g b);
-  border: 1px solid rgb(from var(--border) r g b);
-  border-radius: var(--radius);
-  box-shadow: var(--shadow-sm);
+/* NAVBAR ARQUITECTÓNICO */
+.ctei-navbar {
+  background-color: var(--background);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
   transition: all 0.3s ease;
-  overflow: hidden;
+  position: sticky;
+  top: 0;
+  z-index: 50;
 }
 
-.project-card:hover,
-.product-card:hover {
-  box-shadow: var(--shadow-lg);
-  transform: translateY(-1px);
-  border-color: rgb(from var(--primary) r g b / 0.5);
+.ctei-navbar-link {
+  color: var(--muted-foreground);
+  text-decoration: none;
+  font-weight: 500;
+  letter-spacing: var(--tracking-normal);
+  padding: 0.5rem 1rem;
+  border-radius: calc(var(--radius) * 0.75);
+  transition: color 0.2s ease-in-out, background-color 0.2s ease-in-out;
 }
 
-/* Badges de categorías y tipos */
+.ctei-navbar-link:hover {
+  color: var(--primary);
+  background-color: var(--accent);
+}
+
+/* BADGE ARQUITECTÓNICO */
 .ctei-badge {
   display: inline-flex;
   align-items: center;
   padding: 0.25rem 0.75rem;
-  border-radius: calc(var(--radius) * 1.5);
+  border-radius: calc(var(--radius) * 2);
   font-size: 0.75rem;
   font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: var(--tracking-wide);
+  font-family: var(--font-sans);
 }
 
 .ctei-badge-primary {
-  background-color: rgb(from var(--primary) r g b / 0.1);
-  color: rgb(from var(--primary) r g b);
-  border: 1px solid rgb(from var(--primary) r g b / 0.2);
+  background-color: var(--primary);
+  color: var(--primary-foreground);
 }
 
 .ctei-badge-secondary {
-  background-color: rgb(from var(--secondary) r g b);
-  color: rgb(from var(--secondary-foreground) r g b);
-  border: 1px solid rgb(from var(--border) r g b);
+  background-color: var(--secondary);
+  color: var(--secondary-foreground);
+  border: 1px solid var(--border);
+}
+
+.ctei-badge-accent {
+  background-color: var(--accent);
+  color: var(--accent-foreground);
+}
+
+/* ESTADÍSTICAS - Cards con jerarquía visual */
+.ctei-stats-card {
+  background-color: var(--card);
+  color: var(--card-foreground);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-sm);
+  padding: 1.5rem;
+  transition: box-shadow 0.3s ease, transform 0.3s ease, border-color 0.3s ease;
+  cursor: pointer;
+}
+
+.ctei-stats-card:hover {
+  border-color: var(--primary);
+  box-shadow: var(--shadow-lg);
+  transform: translateY(-4px);
+}
+
+.ctei-stats-number {
+  color: var(--primary);
+  font-family: var(--font-mono);
+  font-weight: 700;
+  font-size: 2rem;
+  line-height: 1;
+  letter-spacing: var(--tracking-tight);
+}
+
+.ctei-stats-label {
+  color: var(--muted-foreground);
+  font-weight: 500;
+  font-size: 0.875rem;
+  letter-spacing: var(--tracking-normal);
+  margin-top: 0.5rem;
+}
+
+.ctei-stats-icon {
+  color: var(--primary);
+  opacity: 0.8;
+  font-size: 1.5rem;
+}
+
+/* ========================================
+   MODO OSCURO - TOGGLE FUNCIONALIDAD
+======================================== */
+
+/* Toggle de modo oscuro */
+.ctei-theme-toggle {
+  background-color: var(--secondary);
+  color: var(--secondary-foreground);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0.5rem;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ctei-theme-toggle:hover {
+  background-color: var(--accent);
+  color: var(--accent-foreground);
+  box-shadow: var(--shadow-sm);
 }
 
 /* ========================================
    ANIMACIONES Y TRANSICIONES
 ======================================== */
 
-/* Animación suave para elementos interactivos */
-.interactive-element {
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+/* Entrada suave para elementos */
+.ctei-fade-in {
+  opacity: 0;
+  transform: translateY(20px);
+  animation: fadeIn 0.6s ease-out forwards;
 }
 
-.interactive-element:hover {
-  transform: translateY(-1px);
+@keyframes fadeIn {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
-/* Efecto de carga para estadísticas */
+/* Animación de contador para estadísticas */
+.ctei-count-up {
+  animation: countUp 0.8s ease-out;
+}
+
 @keyframes countUp {
-  from { opacity: 0; transform: translateY(20px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-.stats-animate {
-  animation: countUp 0.6s ease-out;
-}
-
-/* Animación de entrada para cards */
-@keyframes slideIn {
-  from { opacity: 0; transform: translateY(20px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-.slide-in {
-  animation: slideIn 0.4s ease-out;
+  from {
+    opacity: 0;
+    transform: scale(0.8) translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
 }
 
 /* ========================================
-   ESTADO RESPONSIVE Y ACCESIBILIDAD
+   RESPONSIVE Y ACCESIBILIDAD
 ======================================== */
 
-/* Estados de focus mejorados para accesibilidad */
+/* Estados de focus mejorados */
 .ctei-focusable:focus {
-  outline: 2px solid rgb(from var(--ring) r g b);
-  outline-offset: 2px;
+  outline: none;
+  box-shadow: 0 0 0 2px var(--ring);
 }
 
-/* Texto muted consistente */
-.ctei-text-muted {
-  color: rgb(from var(--muted-foreground) r g b);
-}
-
-/* Enlaces consistentes */
-.ctei-link {
-  color: rgb(from var(--primary) r g b);
-  text-decoration: none;
-  transition: color 0.2s ease;
-}
-
-.ctei-link:hover {
-  color: rgb(from var(--primary) r g b / 0.8);
-  text-decoration: underline;
+/* Reducir movimiento para usuarios con preferencias de accesibilidad */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }
 
 /* ========================================
-   MODALOS Y OVERLAYS
+   SCROLLBAR PERSONALIZADO
 ======================================== */
 
-.ctei-modal-backdrop {
-  background-color: rgb(0 0 0 / 0.6);
-  backdrop-filter: blur(4px);
-}
-
-.ctei-modal {
-  background-color: rgb(from var(--card) r g b);
-  border: 1px solid rgb(from var(--border) r g b);
-  border-radius: var(--radius);
-  box-shadow: var(--shadow-xl);
-}
-
-/* ========================================
-   UTILIDADES DE ESPACIADO
-======================================== */
-
-.ctei-spacing {
-  padding: var(--spacing);
-}
-
-.ctei-spacing-md {
-  padding: calc(var(--spacing) * 2);
-}
-
-.ctei-spacing-lg {
-  padding: calc(var(--spacing) * 4);
-}
-
-/* ========================================
-   PERSONALIZACIONES DE SCROLL
-======================================== */
-
-/* Scrollbar personalizado */
 ::-webkit-scrollbar {
   width: 8px;
 }
 
 ::-webkit-scrollbar-track {
-  background: rgb(from var(--muted) r g b);
-  border-radius: 4px;
+  background: var(--muted);
+  border-radius: calc(var(--radius) * 0.5);
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgb(from var(--muted-foreground) r g b / 0.5);
-  border-radius: 4px;
+  background: var(--muted-foreground);
+  border-radius: calc(var(--radius) * 0.5);
+  opacity: 0.5;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgb(from var(--primary) r g b / 0.7);
+  background: var(--primary);
+  opacity: 0.8;
+}
+
+/* ========================================
+   UTILIDADES DE COMPOSICIÓN
+======================================== */
+
+/* Contenedor principal con máximo ancho */
+.ctei-container {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding-left: 1rem;
+  padding-right: 1rem;
+}
+
+/* Espaciado vertical consistente */
+.ctei-section {
+  padding-top: 4rem;
+  padding-bottom: 4rem;
+}
+
+/* Grid responsive para cards */
+.ctei-grid {
+  display: grid;
+  gap: 1.5rem;
+}
+
+.ctei-grid-1 {
+  grid-template-columns: 1fr;
+}
+
+.ctei-grid-2 {
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+}
+
+.ctei-grid-3 {
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+}
+
+.ctei-grid-4 {
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
 }
 
 /* ========================================
@@ -557,8 +613,15 @@ body {
     display: none !important;
   }
   
-  .ctei-card {
+  .ctei-project-card,
+  .ctei-stats-card {
     box-shadow: none;
-    border: 1px solid #ccc;
+    border: 1px solid var(--border);
+    break-inside: avoid;
+  }
+  
+  body {
+    background: white !important;
+    color: black !important;
   }
 }

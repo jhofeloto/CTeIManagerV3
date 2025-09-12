@@ -252,7 +252,7 @@ async function loadProducts(page = 1, search = '', filters = {}) {
 
 function createProjectCard(project) {
     const card = document.createElement('div');
-    card.className = 'card p-6 fade-in';
+    card.className = 'ctei-project-card ctei-fade-in';
     
     // Tipos de productos como badges
     const keywordsBadges = project.keywords 
@@ -263,19 +263,19 @@ function createProjectCard(project) {
     
     card.innerHTML = `
         <div class="mb-4">
-            <h4 class="text-lg font-semibold text-foreground mb-2">${project.title}</h4>
-            <p class="text-muted-foreground text-sm mb-3">${truncateText(project.abstract)}</p>
+            <h4 class="ctei-project-card-title">${project.title}</h4>
+            <p class="ctei-project-card-metadata mb-3">${truncateText(project.abstract)}</p>
             <div class="flex flex-wrap gap-2 mb-3">
                 ${keywordsBadges}
             </div>
-            <div class="flex items-center justify-between text-sm text-muted-foreground">
+            <div class="flex items-center justify-between ctei-project-card-metadata">
                 <span><i class="fas fa-user mr-1"></i>${project.owner_name}</span>
                 <span><i class="fas fa-calendar mr-1"></i>${formatDate(project.created_at)}</span>
             </div>
         </div>
         <button 
             onclick="viewProjectDetails(${project.id})"
-            class="w-full bg-primary text-primary-foreground py-2 rounded-lg font-medium hover:opacity-90 transition-opacity"
+            class="ctei-btn-primary w-full"
         >
             Ver Detalles
         </button>
@@ -286,7 +286,7 @@ function createProjectCard(project) {
 
 function createProductCard(product) {
     const card = document.createElement('div');
-    card.className = 'card p-6 fade-in';
+    card.className = 'ctei-project-card ctei-fade-in';
     
     const typeColors = {
         'TOP': 'bg-chart-1 text-background',
@@ -313,7 +313,7 @@ function createProductCard(product) {
                 <p class="mt-1"><i class="fas fa-calendar mr-1"></i>${formatDate(product.created_at)}</p>
             </div>
         </div>
-        <button onclick="viewProductDetails(${product.id})" class="w-full bg-primary text-primary-foreground py-2 rounded-lg font-medium hover:opacity-90 transition-opacity">
+        <button onclick="viewProductDetails(${product.id})" class="ctei-btn-primary w-full">
             Ver Detalles
         </button>
     `;
@@ -748,6 +748,70 @@ function scrollToSection(sectionId) {
     }
 }
 
+// ===== MODO OSCURO - TOGGLE FUNCIONALIDAD =====
+
+// Inicializar modo oscuro desde localStorage
+function initializeTheme() {
+    const savedTheme = localStorage.getItem('ctei_theme');
+    const systemPreference = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    
+    // Aplicar tema guardado o preferencia del sistema
+    const isDark = savedTheme === 'dark' || (savedTheme === null && systemPreference);
+    
+    if (isDark) {
+        document.documentElement.classList.add('dark');
+        updateThemeIcon(true);
+    } else {
+        document.documentElement.classList.remove('dark');
+        updateThemeIcon(false);
+    }
+}
+
+// Alternar modo oscuro
+function toggleTheme() {
+    const isDark = document.documentElement.classList.contains('dark');
+    
+    if (isDark) {
+        document.documentElement.classList.remove('dark');
+        localStorage.setItem('ctei_theme', 'light');
+        updateThemeIcon(false);
+        showToast('Modo claro activado');
+    } else {
+        document.documentElement.classList.add('dark');
+        localStorage.setItem('ctei_theme', 'dark');
+        updateThemeIcon(true);
+        showToast('Modo oscuro activado');
+    }
+}
+
+// Actualizar icono del toggle
+function updateThemeIcon(isDark) {
+    const themeIcon = document.getElementById('theme-icon');
+    if (themeIcon) {
+        themeIcon.className = isDark ? 'fas fa-sun' : 'fas fa-moon';
+    }
+}
+
+// Animaciones mejoradas para las estadísticas
+function animateStatNumbers() {
+    const statNumbers = document.querySelectorAll('.ctei-count-up');
+    
+    statNumbers.forEach(element => {
+        const finalValue = parseInt(element.textContent) || 0;
+        let currentValue = 0;
+        const increment = Math.ceil(finalValue / 30); // 30 frames para la animación
+        
+        const timer = setInterval(() => {
+            currentValue += increment;
+            if (currentValue >= finalValue) {
+                currentValue = finalValue;
+                clearInterval(timer);
+            }
+            element.textContent = currentValue;
+        }, 50); // 50ms entre frames
+    });
+}
+
 // Event listener para búsqueda con Enter
 document.addEventListener('DOMContentLoaded', function() {
     console.log('🚀 DOM cargado, inicializando aplicación...');
@@ -784,6 +848,16 @@ document.addEventListener('DOMContentLoaded', function() {
         console.log('✅ Event listener configurado para formulario estático de login');
     }
     
+    // Inicializar modo oscuro
+    initializeTheme();
+    
+    // Configurar toggle de tema
+    const themeToggle = document.getElementById('theme-toggle');
+    if (themeToggle) {
+        themeToggle.addEventListener('click', toggleTheme);
+        console.log('✅ Theme toggle configurado');
+    }
+    
     // Cargar datos iniciales
     loadPublicStats();
     loadProjects();
@@ -791,6 +865,11 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Verificar si el usuario está autenticado
     checkAuthenticationStatus();
+    
+    // Animar estadísticas después de cargar
+    setTimeout(() => {
+        animateStatNumbers();
+    }, 500);
 });
 
 // Cerrar modales con Escape
@@ -978,59 +1057,60 @@ function showLoginModal() {
     };
     
     modal.innerHTML = `
-        <div class="bg-card rounded-lg shadow-xl max-w-md w-full">
+        <div class="level-3 max-w-md w-full">
             <div class="p-6">
                 <div class="flex justify-between items-center mb-4">
-                    <h3 class="text-lg font-semibold">Iniciar Sesión</h3>
-                    <button onclick="closeLoginModal()" class="text-muted-foreground hover:text-foreground">
+                    <h3 class="text-lg font-semibold" style="color: var(--popover-foreground); font-family: var(--font-sans);">Iniciar Sesión</h3>
+                    <button onclick="closeLoginModal()" style="color: var(--muted-foreground);" class="hover:opacity-80">
                         <i class="fas fa-times"></i>
                     </button>
                 </div>
                 <form id="loginForm">
                     <div class="mb-4">
-                        <label class="block text-sm font-medium mb-2">Email</label>
+                        <label class="block text-sm font-medium mb-2" style="color: var(--popover-foreground); font-family: var(--font-sans);">Email</label>
                         <input 
                             type="email" 
                             id="loginEmail" 
                             required
-                            class="w-full px-3 py-2 bg-input text-foreground border border-border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+                            class="ctei-search-input"
                             placeholder="tu@email.com"
                             autocomplete="email"
                         >
                     </div>
                     <div class="mb-6">
-                        <label class="block text-sm font-medium mb-2">Contraseña</label>
+                        <label class="block text-sm font-medium mb-2" style="color: var(--popover-foreground); font-family: var(--font-sans);">Contraseña</label>
                         <input 
                             type="password" 
                             id="loginPassword" 
                             required
-                            class="w-full px-3 py-2 bg-input text-foreground border border-border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+                            class="ctei-search-input"
                             placeholder="Tu contraseña"
                             autocomplete="current-password"
                         >
                     </div>
                     <button 
                         type="submit" 
-                        class="w-full bg-primary text-primary-foreground py-2 rounded-lg font-medium hover:opacity-90"
+                        class="ctei-btn-primary w-full"
                     >
-                        <i class="fas fa-sign-in-alt mr-1"></i>
+                        <i class="fas fa-sign-in-alt"></i>
                         Ingresar
                     </button>
                 </form>
                 <div class="mt-4 text-center">
                     <button 
                         onclick="closeLoginModal(); showRegisterModal();" 
-                        class="text-primary hover:underline text-sm"
+                        class="ctei-project-card-link text-sm"
                     >
                         ¿No tienes cuenta? Regístrate aquí
                     </button>
                 </div>
                 
                 <!-- Botón de debug para testing -->
-                <div class="mt-4 pt-4 border-t border-border">
+                <div class="mt-4 pt-4" style="border-top: 1px solid var(--border);">
                     <button 
                         onclick="testQuickLogin()" 
-                        class="w-full bg-orange-500 text-white py-1 px-2 rounded text-sm hover:bg-orange-600"
+                        class="ctei-btn-secondary w-full text-sm"
+                        style="background-color: var(--chart-4); color: var(--background);"
                         title="Login rápido para testing"
                     >
                         🧪 Test: María López

@@ -396,9 +396,9 @@ app.get('/', (c) => {
           }
         </script>
     </head>
-    <body class="bg-background text-foreground">
-        <!-- Navbar Flotante -->
-        <nav class="fixed top-0 left-0 right-0 z-50 ctei-navbar">
+    <body class="level-0">
+        <!-- Navbar Arquitectónico -->
+        <nav class="ctei-navbar">
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div class="flex justify-between h-16">
                     <div class="flex items-center">
@@ -408,34 +408,39 @@ app.get('/', (c) => {
                         </h1>
                     </div>
                     <div class="flex items-center space-x-4">
-                        <a href="#projects" class="ctei-navbar-link px-3 py-2 rounded-md text-sm font-medium transition-colors">Proyectos</a>
-                        <a href="#products" class="ctei-navbar-link px-3 py-2 rounded-md text-sm font-medium transition-colors">Productos</a>
-                        <a href="#stats" class="ctei-navbar-link px-3 py-2 rounded-md text-sm font-medium transition-colors">Analíticas</a>
+                        <a href="#projects" class="ctei-navbar-link">Proyectos</a>
+                        <a href="#products" class="ctei-navbar-link">Productos</a>
+                        <a href="#stats" class="ctei-navbar-link">Analíticas</a>
+                        
+                        <!-- Toggle de modo oscuro -->
+                        <button id="theme-toggle" class="ctei-theme-toggle ml-4" title="Cambiar tema">
+                            <i class="fas fa-moon" id="theme-icon"></i>
+                        </button>
                         
                         <!-- Botones para usuarios no autenticados -->
                         <div id="unauthenticatedButtons" class="flex items-center space-x-4">
-                            <button onclick="showLoginModal()" class="ctei-btn-primary px-4 py-2 rounded-lg">
-                                <i class="fas fa-sign-in-alt mr-1"></i>
+                            <button onclick="showLoginModal()" class="ctei-btn-primary">
+                                <i class="fas fa-sign-in-alt"></i>
                                 Ingresar
                             </button>
-                            <button onclick="testDirectLogin()" class="bg-chart-4 hover:bg-chart-4/90 text-white px-3 py-1 rounded text-sm font-medium transition-colors">
+                            <button onclick="testDirectLogin()" class="ctei-btn-secondary" style="background-color: var(--chart-4); color: var(--background);">
                                 🔧 Test
                             </button>
-                            <button onclick="showRegisterModal()" class="ctei-btn-secondary px-4 py-2 rounded-lg">
-                                <i class="fas fa-user-plus mr-1"></i>
+                            <button onclick="showRegisterModal()" class="ctei-btn-secondary">
+                                <i class="fas fa-user-plus"></i>
                                 Registro
                             </button>
                         </div>
                         
                         <!-- Botones para usuarios autenticados -->
                         <div id="authenticatedButtons" class="hidden items-center space-x-4">
-                            <span id="userInfo" class="text-sm text-muted-foreground"></span>
-                            <a href="/dashboard" class="bg-chart-3 hover:bg-chart-3/90 text-white px-4 py-2 rounded-lg font-medium transition-colors">
-                                <i class="fas fa-tachometer-alt mr-1"></i>
+                            <span id="userInfo" class="ctei-project-card-metadata"></span>
+                            <a href="/dashboard" class="ctei-btn-primary" style="background-color: var(--chart-3); color: var(--background);">
+                                <i class="fas fa-tachometer-alt"></i>
                                 Dashboard
                             </a>
-                            <button onclick="logout()" class="text-destructive hover:text-destructive/80 px-4 py-2 rounded-lg font-medium transition-colors">
-                                <i class="fas fa-sign-out-alt mr-1"></i>
+                            <button onclick="logout()" class="ctei-btn-secondary" style="color: var(--destructive); border-color: var(--destructive);">
+                                <i class="fas fa-sign-out-alt"></i>
                                 Salir
                             </button>
                         </div>
@@ -456,7 +461,7 @@ app.get('/', (c) => {
             <!-- Contenido principal del hero -->
             <div class="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
                 <!-- Badge superior -->
-                <div class="inline-flex items-center px-6 py-2 rounded-full bg-primary/10 border border-primary/20 text-primary text-sm font-medium mb-8">
+                <div class="ctei-badge ctei-badge-primary mb-8">
                     <i class="fas fa-atom mr-2"></i>
                     Impulsando una Nueva Era de Investigación CTeI
                 </div>
@@ -478,39 +483,36 @@ app.get('/', (c) => {
                     <span class="text-primary font-medium">Descubre, colabora y acelera</span> el conocimiento científico.
                 </p>
 
-                <!-- Barra de búsqueda estilizada -->
+                <!-- Barra de búsqueda arquitectónica -->
                 <div class="max-w-2xl mx-auto mb-16">
-                    <div class="relative">
-                        <div class="bg-card border border-border rounded-2xl p-2 shadow-lg">
-                            <div class="flex items-center">
-                                <div class="flex-1">
-                                    <input 
-                                        type="text" 
-                                        id="heroSearchInput"
-                                        placeholder="Explora proyectos, productos y descubrimientos..." 
-                                        class="w-full bg-transparent text-foreground placeholder-muted-foreground px-6 py-4 text-lg focus:outline-none"
-                                    >
-                                </div>
-                                <button 
-                                    onclick="performHeroSearch()"
-                                    class="bg-primary text-primary-foreground hover:bg-primary/90 px-8 py-4 rounded-xl flex items-center font-medium transition-colors"
-                                >
-                                    <i class="fas fa-search mr-2"></i>
-                                    Buscar
-                                </button>
-                            </div>
+                    <div class="level-1 p-2">
+                        <div class="flex items-center gap-2">
+                            <input 
+                                type="text" 
+                                id="heroSearchInput"
+                                placeholder="Explora proyectos, productos y descubrimientos..." 
+                                class="ctei-search-input flex-1 text-lg"
+                                style="border: none; box-shadow: none;"
+                            >
+                            <button 
+                                onclick="performHeroSearch()"
+                                class="ctei-btn-primary px-8 py-4 text-lg"
+                            >
+                                <i class="fas fa-search"></i>
+                                Buscar
+                            </button>
                         </div>
                     </div>
                     
                     <!-- Filtros rápidos -->
                     <div class="flex flex-wrap justify-center gap-2 mt-6">
-                        <button onclick="performQuickFilter('projects')" class="px-4 py-2 bg-secondary hover:bg-accent border border-border rounded-full text-sm text-secondary-foreground hover:text-accent-foreground transition-colors">
+                        <button onclick="performQuickFilter('projects')" class="ctei-badge ctei-badge-secondary">
                             <i class="fas fa-project-diagram mr-1"></i> Proyectos
                         </button>
-                        <button onclick="performQuickFilter('products')" class="px-4 py-2 bg-secondary hover:bg-accent border border-border rounded-full text-sm text-secondary-foreground hover:text-accent-foreground transition-colors">
+                        <button onclick="performQuickFilter('products')" class="ctei-badge ctei-badge-secondary">
                             <i class="fas fa-cubes mr-1"></i> Productos
                         </button>
-                        <button onclick="performQuickFilter('investigators')" class="px-4 py-2 bg-secondary hover:bg-accent border border-border rounded-full text-sm text-secondary-foreground hover:text-accent-foreground transition-colors">
+                        <button onclick="performQuickFilter('investigators')" class="ctei-badge ctei-badge-secondary">
                             <i class="fas fa-users mr-1"></i> Investigadores
                         </button>
                     </div>
@@ -533,11 +535,11 @@ app.get('/', (c) => {
         </section>
 
         <!-- Contenido principal -->
-        <main id="content-section" class="bg-background text-foreground">
-            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+        <main id="content-section" class="level-0">
+            <div class="ctei-container ctei-section">
 
             <!-- Búsqueda Avanzada -->
-            <div class="bg-card rounded-lg shadow-md p-6 mb-8">
+            <div class="level-1 level-2 p-6 mb-8">
                 <div class="space-y-4">
                     <!-- Barra de búsqueda principal -->
                     <div class="flex flex-col sm:flex-row gap-4">
@@ -546,23 +548,23 @@ app.get('/', (c) => {
                                 type="text" 
                                 id="searchInput"
                                 placeholder="Buscar proyectos y productos..." 
-                                class="w-full px-4 py-2 border border-border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+                                class="ctei-search-input"
                             >
                         </div>
                         <div class="flex gap-2">
                             <button 
                                 onclick="toggleAdvancedFilters()"
-                                class="bg-secondary text-secondary-foreground px-4 py-2 rounded-lg font-medium hover:opacity-90 transition-opacity"
+                                class="ctei-btn-secondary"
                                 id="filtersToggle"
                             >
-                                <i class="fas fa-filter mr-2"></i>
+                                <i class="fas fa-filter"></i>
                                 Filtros
                             </button>
                             <button 
                                 onclick="performSearch()"
-                                class="bg-primary text-primary-foreground px-6 py-2 rounded-lg font-medium hover:opacity-90 transition-opacity"
+                                class="ctei-btn-primary"
                             >
-                                <i class="fas fa-search mr-2"></i>
+                                <i class="fas fa-search"></i>
                                 Buscar
                             </button>
                         </div>
@@ -632,77 +634,77 @@ app.get('/', (c) => {
             </div>
 
             <!-- Estadísticas públicas -->
-            <div id="stats" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-                <div class="bg-card rounded-lg shadow-md p-6 stats-card interactive-element" onclick="scrollToSection('projects')">
+            <div id="stats" class="ctei-grid ctei-grid-4 mb-8">
+                <div class="ctei-stats-card" onclick="scrollToSection('projects')">
                     <div class="flex items-center">
-                        <div class="p-3 bg-primary/10 rounded-lg">
-                            <i class="fas fa-project-diagram text-primary text-xl"></i>
+                        <div class="p-3" style="background-color: var(--primary); opacity: 0.1; border-radius: var(--radius);">
+                            <i class="ctei-stats-icon fas fa-project-diagram"></i>
                         </div>
                         <div class="ml-4">
-                            <p class="text-2xl font-bold" id="totalProjects">0</p>
-                            <p class="text-muted-foreground">Proyectos Públicos</p>
+                            <p class="ctei-stats-number ctei-count-up" id="totalProjects">0</p>
+                            <p class="ctei-stats-label">Proyectos Públicos</p>
                         </div>
                     </div>
                 </div>
                 
-                <div class="bg-card rounded-lg shadow-md p-6 stats-card interactive-element" onclick="scrollToSection('products')">
+                <div class="ctei-stats-card" onclick="scrollToSection('products')">
                     <div class="flex items-center">
-                        <div class="p-3 bg-accent/10 rounded-lg">
-                            <i class="fas fa-cubes text-accent text-xl"></i>
+                        <div class="p-3" style="background-color: var(--chart-2); opacity: 0.1; border-radius: var(--radius);">
+                            <i class="ctei-stats-icon fas fa-cubes" style="color: var(--chart-2);"></i>
                         </div>
                         <div class="ml-4">
-                            <p class="text-2xl font-bold" id="totalProducts">0</p>
-                            <p class="text-muted-foreground">Productos de CTeI</p>
+                            <p class="ctei-stats-number ctei-count-up" id="totalProducts">0</p>
+                            <p class="ctei-stats-label">Productos de CTeI</p>
                         </div>
                     </div>
                 </div>
 
-                <div class="bg-card rounded-lg shadow-md p-6 stats-card interactive-element">
+                <div class="ctei-stats-card">
                     <div class="flex items-center">
-                        <div class="p-3 bg-chart-2/10 rounded-lg">
-                            <i class="fas fa-users text-chart-2 text-xl"></i>
+                        <div class="p-3" style="background-color: var(--chart-3); opacity: 0.1; border-radius: var(--radius);">
+                            <i class="ctei-stats-icon fas fa-users" style="color: var(--chart-3);"></i>
                         </div>
                         <div class="ml-4">
-                            <p class="text-2xl font-bold" id="activeInvestigators">0</p>
-                            <p class="text-muted-foreground">Investigadores Activos</p>
+                            <p class="ctei-stats-number ctei-count-up" id="activeInvestigators">0</p>
+                            <p class="ctei-stats-label">Investigadores Activos</p>
                         </div>
                     </div>
                 </div>
 
-                <div class="bg-card rounded-lg shadow-md p-6 stats-card interactive-element">
+                <div class="ctei-stats-card">
                     <div class="flex items-center">
-                        <div class="p-3 bg-chart-3/10 rounded-lg">
-                            <i class="fas fa-chart-line text-chart-3 text-xl"></i>
+                        <div class="p-3" style="background-color: var(--chart-4); opacity: 0.1; border-radius: var(--radius);">
+                            <i class="ctei-stats-icon fas fa-chart-line" style="color: var(--chart-4);"></i>
                         </div>
                         <div class="ml-4">
-                            <p class="text-2xl font-bold">24/7</p>
-                            <p class="text-muted-foreground">Acceso Disponible</p>
+                            <p class="ctei-stats-number">24/7</p>
+                            <p class="ctei-stats-label">Acceso Disponible</p>
                         </div>
                     </div>
                 </div>
             </div>
 
             <!-- Proyectos destacados -->
-            <section id="projects" class="mb-8">
-                <h3 class="text-2xl font-bold mb-6">Proyectos Destacados</h3>
-                <div id="projectsContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <section id="projects" class="ctei-section">
+                <h3 class="text-2xl font-bold mb-6" style="font-family: var(--font-sans); letter-spacing: var(--tracking-tight); color: var(--foreground);">Proyectos Destacados</h3>
+                <div id="projectsContainer" class="ctei-grid ctei-grid-3">
                     <!-- Los proyectos se cargarán dinámicamente -->
                 </div>
-                <div class="text-center mt-6">
-                    <button onclick="loadMoreProjects()" class="bg-secondary text-secondary-foreground px-6 py-2 rounded-lg font-medium hover:opacity-90">
+                <div class="text-center mt-8">
+                    <button onclick="loadMoreProjects()" class="ctei-btn-secondary">
                         Ver Más Proyectos
                     </button>
                 </div>
             </section>
 
             <!-- Productos recientes -->
-            <section id="products" class="mb-8">
-                <h3 class="text-2xl font-bold mb-6">Productos de CTeI Recientes</h3>
-                <div id="productsContainer" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <section id="products" class="ctei-section">
+                <h3 class="text-2xl font-bold mb-6" style="font-family: var(--font-sans); letter-spacing: var(--tracking-tight); color: var(--foreground);">Productos de CTeI Recientes</h3>
+                <div id="productsContainer" class="ctei-grid ctei-grid-2">
                     <!-- Los productos se cargarán dinámicamente -->
                 </div>
-                <div class="text-center mt-6">
-                    <button onclick="loadMoreProducts()" class="bg-secondary text-secondary-foreground px-6 py-2 rounded-lg font-medium hover:opacity-90">
+                <div class="text-center mt-8">
+                    <button onclick="loadMoreProducts()" class="ctei-btn-secondary">
                         Ver Más Productos
                     </button>
                 </div>
@@ -710,16 +712,16 @@ app.get('/', (c) => {
         </main>
 
         <!-- Footer -->
-        <footer class="bg-card border-t border-border py-8 mt-16">
-            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center text-muted-foreground">
-                <p>&copy; 2024 CTeI-Manager. Plataforma de Ciencia, Tecnología e Innovación.</p>
+        <footer class="level-1 mt-16">
+            <div class="ctei-container py-8 text-center">
+                <p class="ctei-project-card-metadata">&copy; 2024 CTeI-Manager. Plataforma de Ciencia, Tecnología e Innovación.</p>
             </div>
         </footer>
 
         <!-- Modales -->
         <div id="loginModal" class="fixed inset-0 bg-background/80 backdrop-blur-sm hidden z-50">
             <div class="flex items-center justify-center min-h-screen p-4">
-                <div class="bg-card rounded-lg shadow-xl max-w-md w-full">
+                <div class="level-3 max-w-md w-full">
                     <div class="p-6">
                         <div class="flex justify-between items-center mb-4">
                             <h3 class="text-lg font-semibold">Iniciar Sesión</h3>
@@ -729,15 +731,15 @@ app.get('/', (c) => {
                         </div>
                         <form id="staticLoginForm">
                             <div class="mb-4">
-                                <label class="block text-sm font-medium mb-2">Email</label>
-                                <input type="email" id="loginEmail" class="w-full px-3 py-2 bg-input text-foreground border border-border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent" required autocomplete="email">
+                                <label class="block text-sm font-medium mb-2" style="color: var(--popover-foreground); font-family: var(--font-sans);">Email</label>
+                                <input type="email" id="loginEmail" class="ctei-search-input" required autocomplete="email">
                             </div>
                             <div class="mb-6">
-                                <label class="block text-sm font-medium mb-2">Contraseña</label>
-                                <input type="password" id="loginPassword" class="w-full px-3 py-2 bg-input text-foreground border border-border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent" required autocomplete="current-password">
+                                <label class="block text-sm font-medium mb-2" style="color: var(--popover-foreground); font-family: var(--font-sans);">Contraseña</label>
+                                <input type="password" id="loginPassword" class="ctei-search-input" required autocomplete="current-password">
                             </div>
-                            <button type="submit" class="w-full bg-primary text-primary-foreground py-2 rounded-lg font-medium hover:opacity-90">
-                                <i class="fas fa-sign-in-alt mr-1"></i>
+                            <button type="submit" class="ctei-btn-primary w-full">
+                                <i class="fas fa-sign-in-alt"></i>
                                 Ingresar
                             </button>
                         </form>
@@ -748,7 +750,7 @@ app.get('/', (c) => {
 
         <div id="registerModal" class="fixed inset-0 bg-background/80 backdrop-blur-sm hidden z-50">
             <div class="flex items-center justify-center min-h-screen p-4">
-                <div class="bg-card rounded-lg shadow-xl max-w-md w-full">
+                <div class="level-3 max-w-md w-full">
                     <div class="p-6">
                         <div class="flex justify-between items-center mb-4">
                             <h3 class="text-lg font-semibold">Registro</h3>
@@ -758,25 +760,25 @@ app.get('/', (c) => {
                         </div>
                         <form onsubmit="handleRegister(event)">
                             <div class="mb-4">
-                                <label class="block text-sm font-medium mb-2">Nombre Completo</label>
-                                <input type="text" id="registerName" class="w-full px-3 py-2 bg-input text-foreground border border-border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent" required>
+                                <label class="block text-sm font-medium mb-2" style="color: var(--popover-foreground); font-family: var(--font-sans);">Nombre Completo</label>
+                                <input type="text" id="registerName" class="ctei-search-input" required>
                             </div>
                             <div class="mb-4">
-                                <label class="block text-sm font-medium mb-2">Email</label>
-                                <input type="email" id="registerEmail" class="w-full px-3 py-2 bg-input text-foreground border border-border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent" required>
+                                <label class="block text-sm font-medium mb-2" style="color: var(--popover-foreground); font-family: var(--font-sans);">Email</label>
+                                <input type="email" id="registerEmail" class="ctei-search-input" required>
                             </div>
                             <div class="mb-4">
-                                <label class="block text-sm font-medium mb-2">Contraseña</label>
-                                <input type="password" id="registerPassword" class="w-full px-3 py-2 bg-input text-foreground border border-border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent" required>
+                                <label class="block text-sm font-medium mb-2" style="color: var(--popover-foreground); font-family: var(--font-sans);">Contraseña</label>
+                                <input type="password" id="registerPassword" class="ctei-search-input" required>
                             </div>
                             <div class="mb-6">
-                                <label class="block text-sm font-medium mb-2">Rol</label>
-                                <select id="registerRole" class="w-full px-3 py-2 bg-input text-foreground border border-border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent">
+                                <label class="block text-sm font-medium mb-2" style="color: var(--popover-foreground); font-family: var(--font-sans);">Rol</label>
+                                <select id="registerRole" class="ctei-search-input">
                                     <option value="COMMUNITY">Comunidad</option>
                                     <option value="INVESTIGATOR">Investigador</option>
                                 </select>
                             </div>
-                            <button type="submit" class="w-full bg-primary text-primary-foreground py-2 rounded-lg font-medium hover:opacity-90">
+                            <button type="submit" class="ctei-btn-primary w-full">
                                 Registrarse
                             </button>
                         </form>
