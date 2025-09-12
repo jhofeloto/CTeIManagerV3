@@ -419,7 +419,7 @@ publicRoutes.get('/site-config', async (c) => {
       data: {
         logo_url: config.logo_url || null,
         logo_filename: config.logo_filename || null,
-        site_name: config.site_name || 'CTeI-Manager'
+        site_name: config.site_name || 'CODECTI CHOCÓ'
       }
     });
 

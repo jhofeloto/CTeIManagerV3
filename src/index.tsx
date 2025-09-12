@@ -798,13 +798,13 @@ app.get('/', (c) => {
         async function loadSiteConfig() {
             try {
                 const response = await axios.get('/api/public/site-config');
+                const logoContainer = document.getElementById('site-logo');
+                const siteName = response.data.data?.site_name || 'CODECTI CHOCÓ';
                 
                 if (response.data.success && response.data.data.logo_url) {
-                    const logoContainer = document.getElementById('site-logo');
+                    // Usar logo personalizado desde admin
                     const logoUrl = response.data.data.logo_url;
-                    const siteName = response.data.data.site_name || 'CTeI-Manager';
                     
-                    // Reemplazar el contenido del logo con la imagen
                     logoContainer.innerHTML = \`
                         <img 
                             src="\${logoUrl}" 
@@ -817,10 +817,32 @@ app.get('/', (c) => {
                     
                     console.log('✅ Logo personalizado cargado:', logoUrl);
                 } else {
-                    console.log('ℹ️ Usando logo por defecto');
+                    // Usar logo por defecto de CODECTI CHOCÓ
+                    logoContainer.innerHTML = \`
+                        <img 
+                            src="/static/codecti-logo.png" 
+                            alt="\${siteName} Logo" 
+                            class="h-8 w-auto mr-3"
+                            style="max-height: 32px; object-fit: contain;"
+                        >
+                        <span class="text-xl font-bold text-foreground">\${siteName}</span>
+                    \`;
+                    
+                    console.log('✅ Logo por defecto de CODECTI CHOCÓ cargado');
                 }
             } catch (error) {
-                console.warn('⚠️ Error cargando configuración del sitio, usando logo por defecto:', error);
+                // Fallback si hay error de red
+                const logoContainer = document.getElementById('site-logo');
+                logoContainer.innerHTML = \`
+                    <img 
+                        src="/static/codecti-logo.png" 
+                        alt="CODECTI CHOCÓ Logo" 
+                        class="h-8 w-auto mr-3"
+                        style="max-height: 32px; object-fit: contain;"
+                    >
+                    <span class="text-xl font-bold text-foreground">CODECTI CHOCÓ</span>
+                \`;
+                console.warn('⚠️ Error cargando configuración, usando logo fallback:', error);
             }
         }
 

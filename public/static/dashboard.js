@@ -4173,13 +4173,13 @@ function deleteProject(projectId) {
 async function loadDashboardSiteLogo() {
     try {
         const response = await axios.get(`${API_BASE}/public/site-config`);
+        const logoContainer = document.getElementById('dashboard-site-logo');
+        const siteName = response.data.data?.site_name || 'CODECTI CHOCÓ';
         
         if (response.data.success && response.data.data.logo_url) {
-            const logoContainer = document.getElementById('dashboard-site-logo');
+            // Usar logo personalizado desde admin
             const logoUrl = response.data.data.logo_url;
-            const siteName = response.data.data.site_name || 'CTeI-Manager';
             
-            // Reemplazar el contenido del logo con la imagen
             logoContainer.innerHTML = `
                 <img 
                     src="${logoUrl}" 
@@ -4192,9 +4192,31 @@ async function loadDashboardSiteLogo() {
             
             console.log('✅ Logo personalizado cargado en dashboard:', logoUrl);
         } else {
-            console.log('ℹ️ Usando logo por defecto en dashboard');
+            // Usar logo por defecto de CODECTI CHOCÓ
+            logoContainer.innerHTML = `
+                <img 
+                    src="/static/codecti-logo.png" 
+                    alt="${siteName} Logo" 
+                    class="h-8 w-auto mr-3 inline"
+                    style="max-height: 32px; object-fit: contain;"
+                >
+                <span>${siteName}</span>
+            `;
+            
+            console.log('✅ Logo por defecto de CODECTI CHOCÓ cargado en dashboard');
         }
     } catch (error) {
-        console.warn('⚠️ Error cargando configuración del sitio en dashboard, usando logo por defecto:', error);
+        // Fallback si hay error de red
+        const logoContainer = document.getElementById('dashboard-site-logo');
+        logoContainer.innerHTML = `
+            <img 
+                src="/static/codecti-logo.png" 
+                alt="CODECTI CHOCÓ Logo" 
+                class="h-8 w-auto mr-3 inline"
+                style="max-height: 32px; object-fit: contain;"
+            >
+            <span>CODECTI CHOCÓ</span>
+        `;
+        console.warn('⚠️ Error cargando configuración del dashboard, usando logo fallback:', error);
     }
 }

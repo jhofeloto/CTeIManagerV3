@@ -1520,4 +1520,52 @@ adminRoutes.put('/projects/:id/risk-level', async (c) => {
   }
 });
 
+// ===== ENDPOINT DE PRUEBA PARA VERIFICAR SERVICIOS =====
+
+// Verificar conectividad de KV y R2
+adminRoutes.get('/test-services', async (c) => {
+  try {
+    const results = {
+      kv: false,
+      r2: false,
+      details: {}
+    };
+
+    // Test KV
+    try {
+      await c.env.KV?.put('test-key', 'test-value', { expirationTtl: 60 });
+      const testValue = await c.env.KV?.get('test-key');
+      results.kv = testValue === 'test-value';
+      results.details.kv = 'Conectado correctamente';
+      await c.env.KV?.delete('test-key');
+    } catch (error) {
+      results.details.kv = `Error: ${error.message}`;
+    }
+
+    // Test R2
+    try {
+      await c.env.R2?.put('test-file.txt', 'test content');
+      const testFile = await c.env.R2?.get('test-file.txt');
+      results.r2 = testFile !== null;
+      results.details.r2 = 'Conectado correctamente';
+      await c.env.R2?.delete('test-file.txt');
+    } catch (error) {
+      results.details.r2 = `Error: ${error.message}`;
+    }
+
+    return c.json({
+      success: true,
+      data: results
+    });
+
+  } catch (error) {
+    console.error('Error testing services:', error);
+    return c.json({
+      success: false,
+      error: error.message,
+      data: null
+    }, 500);
+  }
+});
+
 export { adminRoutes };
