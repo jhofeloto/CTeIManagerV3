@@ -393,73 +393,65 @@ function renderMainDashboard() {
     const isAdmin = DashboardState.user.role === 'ADMIN';
     
     content.innerHTML = `
-        <div class="mb-6">
-            <h2 class="text-2xl font-bold mb-2">
-                ${isAdmin ? 'Panel de Administración' : 'Mi Dashboard'}
-            </h2>
-            <p class="text-muted-foreground">
-                ${isAdmin ? 'Vista general del sistema CTeI-Manager' : 'Resumen de tus proyectos y actividad'}
-            </p>
-        </div>
-
-        <!-- Estadísticas -->
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-            ${isAdmin ? `
-            <div class="card p-6">
-                <div class="flex items-center">
-                    <div class="p-3 bg-primary/10 rounded-lg">
-                        <i class="fas fa-users text-primary text-xl"></i>
+        <!-- Encabezado del Dashboard -->
+        <div class="ctei-content-card mb-6">
+            <div class="ctei-content-card-header">
+                <div>
+                    <div class="ctei-content-card-title">
+                        ${isAdmin ? 'Panel de Administración' : 'Mi Dashboard'}
                     </div>
-                    <div class="ml-4">
-                        <p class="text-2xl font-bold">${stats.users?.total_users || 0}</p>
-                        <p class="text-muted-foreground">Usuarios Total</p>
+                    <div class="ctei-content-card-subtitle">
+                        ${isAdmin ? 'Vista general del sistema CTeI-Manager' : 'Resumen de tus proyectos y actividad'}
                     </div>
                 </div>
+            </div>
+        </div>
+
+        <!-- Métricas KPI usando componentes arquitectónicos -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            ${isAdmin ? `
+            <div class="ctei-metric-card">
+                <div class="ctei-metric-icon primary">
+                    <i class="fas fa-users"></i>
+                </div>
+                <div class="ctei-metric-value">${stats.users?.total_users || 0}</div>
+                <div class="ctei-metric-label">Usuarios Total</div>
             </div>
             ` : ''}
             
-            <div class="card p-6">
-                <div class="flex items-center">
-                    <div class="p-3 bg-chart-2/10 rounded-lg">
-                        <i class="fas fa-project-diagram text-chart-2 text-xl"></i>
-                    </div>
-                    <div class="ml-4">
-                        <p class="text-2xl font-bold">${isAdmin ? (stats.projects?.total_projects || 0) : (stats.projects?.total || 0)}</p>
-                        <p class="text-muted-foreground">${isAdmin ? 'Proyectos Totales' : 'Mis Proyectos'}</p>
-                    </div>
+            <div class="ctei-metric-card">
+                <div class="ctei-metric-icon chart-2">
+                    <i class="fas fa-project-diagram"></i>
                 </div>
+                <div class="ctei-metric-value">${isAdmin ? (stats.projects?.total_projects || 0) : (stats.projects?.total || 0)}</div>
+                <div class="ctei-metric-label">${isAdmin ? 'Proyectos Totales' : 'Mis Proyectos'}</div>
             </div>
 
-            <div class="card p-6">
-                <div class="flex items-center">
-                    <div class="p-3 bg-chart-3/10 rounded-lg">
-                        <i class="fas fa-cubes text-chart-3 text-xl"></i>
-                    </div>
-                    <div class="ml-4">
-                        <p class="text-2xl font-bold">${isAdmin ? (stats.products?.total_products || 0) : (stats.products?.total || 0)}</p>
-                        <p class="text-muted-foreground">${isAdmin ? 'Productos Totales' : 'Mis Productos'}</p>
-                    </div>
+            <div class="ctei-metric-card">
+                <div class="ctei-metric-icon chart-3">
+                    <i class="fas fa-cubes"></i>
                 </div>
+                <div class="ctei-metric-value">${isAdmin ? (stats.products?.total_products || 0) : (stats.products?.total || 0)}</div>
+                <div class="ctei-metric-label">${isAdmin ? 'Productos Totales' : 'Mis Productos'}</div>
             </div>
 
-            <div class="card p-6">
-                <div class="flex items-center">
-                    <div class="p-3 bg-chart-4/10 rounded-lg">
-                        <i class="fas fa-eye text-chart-4 text-xl"></i>
-                    </div>
-                    <div class="ml-4">
-                        <p class="text-2xl font-bold">${isAdmin ? (stats.projects?.public_projects || 0) : (stats.projects?.public || 0)}</p>
-                        <p class="text-muted-foreground">Proyectos Públicos</p>
-                    </div>
+            <div class="ctei-metric-card">
+                <div class="ctei-metric-icon chart-4">
+                    <i class="fas fa-eye"></i>
                 </div>
+                <div class="ctei-metric-value">${isAdmin ? (stats.projects?.public_projects || 0) : (stats.projects?.public || 0)}</div>
+                <div class="ctei-metric-label">Proyectos Públicos</div>
             </div>
         </div>
 
-        <!-- Proyectos recientes -->
-        <div class="card p-6">
-            <h3 class="text-lg font-semibold mb-4">
-                ${isAdmin ? 'Actividad Reciente del Sistema' : 'Mis Proyectos Recientes'}
-            </h3>
+        <!-- Actividad Reciente usando componente arquitectónico -->
+        <div class="ctei-activity-list">
+            <div class="ctei-content-card-header">
+                <div class="ctei-content-card-title">
+                    <i class="fas fa-chart-line mr-2"></i>
+                    ${isAdmin ? 'Actividad Reciente del Sistema' : 'Mis Proyectos Recientes'}
+                </div>
+            </div>
             <div id="recentProjects">
                 ${renderRecentProjectsList()}
             </div>
@@ -471,30 +463,44 @@ function renderRecentProjectsList() {
     const projects = DashboardState.projects.slice(0, 5);
     
     if (projects.length === 0) {
-        return '<p class="text-muted-foreground">No hay proyectos para mostrar</p>';
+        return `
+            <div class="ctei-empty-state">
+                <div class="ctei-empty-state-icon">
+                    <i class="fas fa-project-diagram"></i>
+                </div>
+                <div class="ctei-empty-state-title">No hay proyectos para mostrar</div>
+                <div class="ctei-empty-state-description">
+                    Cuando tengas proyectos, aparecerán aquí los más recientes.
+                </div>
+            </div>
+        `;
     }
     
     return projects.map(project => `
-        <div class="flex items-center justify-between py-3 border-b border-border last:border-b-0">
-            <div class="flex-1">
-                <h4 class="font-medium">${project.title}</h4>
-                <p class="text-sm text-muted-foreground mt-1">${project.abstract.substring(0, 100)}...</p>
-                <div class="flex items-center mt-2 text-xs text-muted-foreground">
-                    <span class="mr-4">
-                        <i class="fas fa-calendar mr-1"></i>
-                        ${formatDate(project.created_at)}
-                    </span>
-                    <span class="px-2 py-1 rounded ${project.is_public ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground'}">
-                        ${project.is_public ? 'Público' : 'Privado'}
-                    </span>
-                </div>
+        <div class="ctei-activity-item">
+            <div class="ctei-activity-title">
+                ${project.title}
             </div>
-            <button 
-                onclick="viewProject(${project.id})"
-                class="ml-4 text-primary hover:text-primary/80"
-            >
-                <i class="fas fa-arrow-right"></i>
-            </button>
+            <div class="ctei-activity-description">
+                ${project.abstract.substring(0, 120)}${project.abstract.length > 120 ? '...' : ''}
+            </div>
+            <div class="ctei-activity-meta">
+                <span>
+                    <i class="fas fa-calendar mr-1"></i>
+                    ${formatDate(project.created_at)}
+                </span>
+                <span class="ctei-status-badge ${project.is_public ? 'public' : 'private'}">
+                    ${project.is_public ? 'Público' : 'Privado'}
+                </span>
+                <button 
+                    onclick="viewProject(${project.id})"
+                    class="ctei-btn ctei-btn-secondary ctei-btn-sm ctei-tooltip"
+                    data-tooltip="Ver detalles del proyecto"
+                >
+                    <i class="fas fa-arrow-right mr-1"></i>
+                    Ver
+                </button>
+            </div>
         </div>
     `).join('');
 }
@@ -526,52 +532,108 @@ function renderProjectsView() {
 function renderProjectsGrid() {
     if (DashboardState.projects.length === 0) {
         return `
-            <div class="col-span-full card p-8 text-center">
-                <i class="fas fa-project-diagram text-4xl text-muted-foreground mb-4"></i>
-                <p class="text-muted-foreground">No tienes proyectos aún</p>
-                <button 
-                    onclick="showNewProjectModal()"
-                    class="mt-4 bg-primary text-primary-foreground px-4 py-2 rounded-lg font-medium hover:opacity-90"
-                >
-                    Crear mi primer proyecto
-                </button>
+            <div class="col-span-full">
+                <div class="ctei-empty-state">
+                    <div class="ctei-empty-state-icon">
+                        <i class="fas fa-project-diagram"></i>
+                    </div>
+                    <div class="ctei-empty-state-title">No tienes proyectos aún</div>
+                    <div class="ctei-empty-state-description">
+                        Los proyectos te permiten organizar tu investigación, colaborar con otros investigadores
+                        y gestionar los productos científicos que generes.
+                    </div>
+                    <button 
+                        onclick="showNewProjectModal()"
+                        class="ctei-btn ctei-btn-primary ctei-btn-lg"
+                    >
+                        <i class="fas fa-plus mr-2"></i>
+                        Crear Mi Primer Proyecto
+                    </button>
+                </div>
             </div>
         `;
     }
     
     return DashboardState.projects.map(project => `
-        <div class="card p-6">
-            <div class="mb-4">
-                <div class="flex justify-between items-start mb-2">
-                    <h4 class="font-semibold">${project.title}</h4>
-                    <span class="px-2 py-1 text-xs rounded ${project.is_public ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground'}">
-                        ${project.is_public ? 'Público' : 'Privado'}
-                    </span>
-                </div>
-                <p class="text-sm text-muted-foreground mb-3">
-                    ${project.abstract.substring(0, 120)}${project.abstract.length > 120 ? '...' : ''}
-                </p>
-                <div class="text-xs text-muted-foreground mb-4">
-                    <i class="fas fa-calendar mr-1"></i>
-                    ${formatDate(project.created_at)}
+        <div class="ctei-content-card">
+            <div class="flex justify-between items-start mb-4">
+                <div class="flex-1">
+                    <div class="flex items-start justify-between mb-3">
+                        <h4 class="font-semibold text-lg text-foreground">${project.title}</h4>
+                        <span class="ctei-status-badge ${project.is_public ? 'public' : 'private'} ml-3">
+                            <i class="fas fa-${project.is_public ? 'eye' : 'eye-slash'} mr-1"></i>
+                            ${project.is_public ? 'Público' : 'Privado'}
+                        </span>
+                    </div>
+                    
+                    <p class="text-muted-foreground mb-4 leading-relaxed">
+                        ${project.abstract.substring(0, 160)}${project.abstract.length > 160 ? '...' : ''}
+                    </p>
+                    
+                    <div class="flex items-center text-sm text-muted-foreground mb-4">
+                        <i class="fas fa-calendar mr-2"></i>
+                        <span>Creado el ${formatDate(project.created_at)}</span>
+                        ${project.status ? `
+                            <span class="mx-3">•</span>
+                            <span class="ctei-status-badge ${project.status.toLowerCase()}">
+                                ${project.status}
+                            </span>
+                        ` : ''}
+                    </div>
                 </div>
             </div>
             
-            <div class="flex space-x-2">
+            <!-- Acciones simplificadas -->
+            <div class="flex justify-between items-center pt-4 border-t border-border">
+                <!-- Acción principal: Ver/Editar -->
                 <button 
                     onclick="editProject(${project.id})"
-                    class="flex-1 bg-secondary text-secondary-foreground py-2 px-3 rounded text-sm hover:opacity-90"
+                    class="ctei-btn ctei-btn-primary"
                 >
-                    <i class="fas fa-edit mr-1"></i>
-                    Editar
+                    <i class="fas fa-edit mr-2"></i>
+                    Editar Proyecto
                 </button>
-                <button 
-                    onclick="toggleProjectVisibility(${project.id}, ${!project.is_public})"
-                    class="flex-1 ${project.is_public ? 'bg-muted text-muted-foreground' : 'bg-primary text-primary-foreground'} py-2 px-3 rounded text-sm hover:opacity-90"
-                >
-                    <i class="fas fa-${project.is_public ? 'eye-slash' : 'eye'} mr-1"></i>
-                    ${project.is_public ? 'Ocultar' : 'Publicar'}
-                </button>
+                
+                <!-- Acciones secundarias en menú -->
+                <div class="ctei-actions-menu">
+                    <button 
+                        class="ctei-actions-trigger ctei-tooltip"
+                        data-tooltip="Más acciones"
+                        onclick="toggleProjectActionsMenu(${project.id})"
+                    >
+                        <i class="fas fa-ellipsis-h"></i>
+                    </button>
+                    <div id="project-actions-${project.id}" class="ctei-actions-dropdown hidden">
+                        <button 
+                            onclick="viewProject(${project.id}); closeAllActionsMenus()"
+                            class="ctei-actions-item"
+                        >
+                            <i class="fas fa-eye mr-2"></i>
+                            Ver Detalles
+                        </button>
+                        <button 
+                            onclick="toggleProjectVisibility(${project.id}, ${!project.is_public}); closeAllActionsMenus()"
+                            class="ctei-actions-item"
+                        >
+                            <i class="fas fa-${project.is_public ? 'eye-slash' : 'eye'} mr-2"></i>
+                            ${project.is_public ? 'Hacer Privado' : 'Hacer Público'}
+                        </button>
+                        <button 
+                            onclick="duplicateProject(${project.id}); closeAllActionsMenus()"
+                            class="ctei-actions-item"
+                        >
+                            <i class="fas fa-copy mr-2"></i>
+                            Duplicar Proyecto
+                        </button>
+                        <button 
+                            onclick="deleteProject(${project.id}); closeAllActionsMenus()"
+                            class="ctei-actions-item destructive"
+                        >
+                            <i class="fas fa-trash mr-2"></i>
+                            Eliminar
+                        </button>
+                    </div>
+                </div>
             </div>
         </div>
     `).join('');
@@ -732,13 +794,18 @@ function renderMyProductsList(products) {
     
     if (!products || products.length === 0) {
         container.innerHTML = `
-            <div class="text-center py-12 text-muted-foreground">
-                <i class="fas fa-cubes text-4xl mb-4"></i>
-                <h3 class="text-lg font-medium mb-2">No tienes productos aún</h3>
-                <p class="mb-4">Comienza creando tu primer producto de investigación</p>
+            <div class="ctei-empty-state">
+                <div class="ctei-empty-state-icon">
+                    <i class="fas fa-cubes"></i>
+                </div>
+                <div class="ctei-empty-state-title">No tienes productos aún</div>
+                <div class="ctei-empty-state-description">
+                    Comienza creando tu primer producto de investigación. Los productos pueden incluir
+                    publicaciones, patentes, software, datasets y más.
+                </div>
                 <button 
                     onclick="showCreateProductModal()"
-                    class="bg-primary text-primary-foreground px-6 py-2 rounded-lg hover:opacity-90"
+                    class="ctei-btn ctei-btn-primary ctei-btn-lg"
                 >
                     <i class="fas fa-plus mr-2"></i>
                     Crear Primer Producto
@@ -749,17 +816,17 @@ function renderMyProductsList(products) {
     }
     
     container.innerHTML = products.map(product => `
-        <div id="product-card-${product.id}" class="bg-card border border-border rounded-lg p-6 hover:shadow-md transition-shadow">
-            <div class="flex justify-between items-start mb-4">
+        <div id="product-card-${product.id}" class="ctei-content-card">
+            <div class="flex justify-between items-start">
                 <div class="flex-1">
-                    <div class="flex items-center gap-3 mb-2">
+                    <div class="flex items-center gap-3 mb-3">
                         <h3 class="text-lg font-semibold text-foreground">${product.product_code}</h3>
-                        <span class="px-2 py-1 text-xs rounded-full ${product.is_public ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}">
+                        <span class="ctei-status-badge ${product.is_public ? 'public' : 'private'}">
                             <i class="fas fa-${product.is_public ? 'eye' : 'eye-slash'} mr-1"></i>
                             ${product.is_public ? 'Público' : 'Privado'}
                         </span>
                         ${product.category_name ? `
-                            <span class="px-2 py-1 text-xs bg-blue-100 text-blue-800 rounded-full">
+                            <span class="ctei-status-badge active">
                                 ${product.category_name}
                             </span>
                         ` : ''}
@@ -767,57 +834,75 @@ function renderMyProductsList(products) {
                     
                     <p class="text-muted-foreground mb-3 line-clamp-2">${product.description}</p>
                     
-                    <div class="flex items-center text-sm text-muted-foreground mb-3">
-                        <i class="fas fa-project-diagram mr-2"></i>
-                        <span class="mr-4">${product.project_title}</span>
-                        <i class="fas fa-user mr-2"></i>
-                        <span class="mr-4">Creado por: ${product.creator_name || 'N/A'}</span>
-                        <i class="fas fa-calendar mr-2"></i>
-                        <span>${new Date(product.created_at).toLocaleDateString()}</span>
+                    <div class="flex items-center text-sm text-muted-foreground mb-3 flex-wrap gap-4">
+                        <span class="flex items-center">
+                            <i class="fas fa-project-diagram mr-1"></i>
+                            ${product.project_title}
+                        </span>
+                        <span class="flex items-center">
+                            <i class="fas fa-user mr-1"></i>
+                            ${product.creator_name || 'N/A'}
+                        </span>
+                        <span class="flex items-center">
+                            <i class="fas fa-calendar mr-1"></i>
+                            ${new Date(product.created_at).toLocaleDateString()}
+                        </span>
                     </div>
                     
                     ${product.doi || product.url || product.journal ? `
-                        <div class="flex items-center text-sm text-muted-foreground">
-                            ${product.doi ? `<span class="mr-4"><i class="fas fa-link mr-1"></i>DOI: ${product.doi}</span>` : ''}
-                            ${product.journal ? `<span class="mr-4"><i class="fas fa-book mr-1"></i>${product.journal}</span>` : ''}
-                            ${product.impact_factor ? `<span class="mr-4"><i class="fas fa-chart-line mr-1"></i>IF: ${product.impact_factor}</span>` : ''}
+                        <div class="flex items-center text-sm text-muted-foreground flex-wrap gap-4">
+                            ${product.doi ? `<span class="flex items-center"><i class="fas fa-link mr-1"></i>DOI: ${product.doi}</span>` : ''}
+                            ${product.journal ? `<span class="flex items-center"><i class="fas fa-book mr-1"></i>${product.journal}</span>` : ''}
+                            ${product.impact_factor ? `<span class="flex items-center"><i class="fas fa-chart-line mr-1"></i>IF: ${product.impact_factor}</span>` : ''}
                         </div>
                     ` : ''}
                 </div>
                 
+                <!-- Acciones simplificadas con menú de tres puntos -->
                 <div class="flex items-center space-x-2">
+                    <!-- Acción principal: Editar -->
                     <button 
                         onclick="editProduct(${product.project_id}, ${product.id})"
-                        class="bg-secondary text-secondary-foreground px-3 py-2 rounded text-sm hover:opacity-90"
-                        title="Editar producto"
+                        class="ctei-btn ctei-btn-primary ctei-btn-sm ctei-tooltip"
+                        data-tooltip="Editar producto"
                     >
-                        <i class="fas fa-edit"></i>
+                        <i class="fas fa-edit mr-1"></i>
+                        Editar
                     </button>
                     
-                    <button 
-                        id="visibility-btn-${product.id}"
-                        onclick="toggleProductVisibility(${product.project_id}, ${product.id}, ${product.is_public ? false : true})"
-                        class="${product.is_public ? 'bg-orange-500 text-white' : 'bg-green-500 text-white'} px-3 py-2 rounded text-sm hover:opacity-90"
-                        title="${product.is_public ? 'Ocultar producto' : 'Publicar producto'}"
-                    >
-                        <i class="fas fa-${product.is_public ? 'eye-slash' : 'eye'}"></i>
-                    </button>
-                    
-                    <button 
-                        onclick="manageProductAuthors(${product.project_id}, ${product.id})"
-                        class="bg-purple-500 text-white px-3 py-2 rounded text-sm hover:opacity-90"
-                        title="Gestionar autores"
-                    >
-                        <i class="fas fa-users"></i>
-                    </button>
-                    
-                    <button 
-                        onclick="deleteProduct(${product.project_id}, ${product.id})"
-                        class="bg-red-500 text-white px-3 py-2 rounded text-sm hover:opacity-90"
-                        title="Eliminar producto"
-                    >
-                        <i class="fas fa-trash"></i>
-                    </button>
+                    <!-- Menú de acciones secundarias -->
+                    <div class="ctei-actions-menu">
+                        <button 
+                            class="ctei-actions-trigger ctei-tooltip"
+                            data-tooltip="Más acciones"
+                            onclick="toggleProductActionsMenu(${product.id})"
+                        >
+                            <i class="fas fa-ellipsis-v"></i>
+                        </button>
+                        <div id="product-actions-${product.id}" class="ctei-actions-dropdown hidden">
+                            <button 
+                                onclick="toggleProductVisibility(${product.project_id}, ${product.id}, ${product.is_public ? false : true}); closeAllActionsMenus()"
+                                class="ctei-actions-item"
+                            >
+                                <i class="fas fa-${product.is_public ? 'eye-slash' : 'eye'} mr-2"></i>
+                                ${product.is_public ? 'Ocultar' : 'Publicar'}
+                            </button>
+                            <button 
+                                onclick="manageProductAuthors(${product.project_id}, ${product.id}); closeAllActionsMenus()"
+                                class="ctei-actions-item"
+                            >
+                                <i class="fas fa-users mr-2"></i>
+                                Gestionar Autores
+                            </button>
+                            <button 
+                                onclick="deleteProduct(${product.project_id}, ${product.id}); closeAllActionsMenus()"
+                                class="ctei-actions-item destructive"
+                            >
+                                <i class="fas fa-trash mr-2"></i>
+                                Eliminar
+                            </button>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -995,64 +1080,80 @@ function renderProfileView() {
     const user = DashboardState.user;
     
     content.innerHTML = `
-        <div class="mb-6">
-            <h2 class="text-2xl font-bold">Mi Perfil</h2>
+        <!-- Encabezado de la vista -->
+        <div class="ctei-content-card mb-6">
+            <div class="ctei-content-card-header">
+                <div>
+                    <div class="ctei-content-card-title">
+                        <i class="fas fa-user mr-2"></i>
+                        Mi Perfil
+                    </div>
+                    <div class="ctei-content-card-subtitle">
+                        Gestiona tu información personal y preferencias
+                    </div>
+                </div>
+            </div>
         </div>
 
+        <!-- Formulario de perfil -->
         <div class="max-w-2xl">
-            <div class="card p-6">
-                <div class="space-y-4">
-                    <div>
-                        <label class="block text-sm font-medium mb-2">Nombre Completo</label>
+            <div class="ctei-content-card">
+                <form onsubmit="updateProfile(event)" class="space-y-6">
+                    <div class="ctei-form-group">
+                        <label class="ctei-form-label">Nombre Completo</label>
                         <input 
                             type="text" 
                             id="profileName"
                             value="${user.full_name}" 
-                            class="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+                            class="ctei-form-input"
+                            required
                         >
                     </div>
                     
-                    <div>
-                        <label class="block text-sm font-medium mb-2">Email</label>
+                    <div class="ctei-form-group">
+                        <label class="ctei-form-label">Correo Electrónico</label>
                         <input 
                             type="email" 
                             value="${user.email}" 
                             disabled
-                            class="w-full px-3 py-2 border border-border rounded-lg bg-muted text-muted-foreground"
+                            class="ctei-form-input"
                         >
-                        <p class="text-xs text-muted-foreground mt-1">El email no se puede modificar</p>
+                        <p class="text-xs text-muted-foreground mt-1">
+                            <i class="fas fa-info-circle mr-1"></i>
+                            El email no se puede modificar
+                        </p>
                     </div>
                     
-                    <div>
-                        <label class="block text-sm font-medium mb-2">Rol</label>
-                        <input 
-                            type="text" 
-                            value="${user.role}" 
-                            disabled
-                            class="w-full px-3 py-2 border border-border rounded-lg bg-muted text-muted-foreground"
-                        >
+                    <div class="ctei-form-group">
+                        <label class="ctei-form-label">Rol en el Sistema</label>
+                        <div class="flex items-center space-x-3">
+                            <span class="ctei-status-badge ${user.role === 'ADMIN' ? 'destructive' : user.role === 'INVESTIGATOR' ? 'active' : 'private'}">
+                                <i class="fas fa-${user.role === 'ADMIN' ? 'crown' : user.role === 'INVESTIGATOR' ? 'microscope' : 'users'} mr-1"></i>
+                                ${user.role === 'ADMIN' ? 'Administrador' : user.role === 'INVESTIGATOR' ? 'Investigador' : 'Comunidad'}
+                            </span>
+                        </div>
                     </div>
                     
-                    <div>
-                        <label class="block text-sm font-medium mb-2">Miembro desde</label>
+                    <div class="ctei-form-group">
+                        <label class="ctei-form-label">Miembro desde</label>
                         <input 
                             type="text" 
                             value="${formatDate(user.created_at)}" 
                             disabled
-                            class="w-full px-3 py-2 border border-border rounded-lg bg-muted text-muted-foreground"
+                            class="ctei-form-input"
                         >
                     </div>
                     
-                    <div class="pt-4">
+                    <div class="flex justify-end pt-4 border-t border-border">
                         <button 
-                            onclick="updateProfile()"
-                            class="bg-primary text-primary-foreground px-4 py-2 rounded-lg font-medium hover:opacity-90"
+                            type="submit"
+                            class="ctei-btn ctei-btn-primary ctei-btn-lg"
                         >
                             <i class="fas fa-save mr-2"></i>
                             Guardar Cambios
                         </button>
                     </div>
-                </div>
+                </form>
             </div>
         </div>
     `;
@@ -1397,8 +1498,12 @@ async function updateProject(event, projectId) {
     }
 }
 
-async function updateProfile() {
+async function updateProfile(event) {
+    event.preventDefault();
+    
     const newName = document.getElementById('profileName').value;
+    const submitButton = event.target.querySelector('button[type="submit"]');
+    const originalText = submitButton.innerHTML;
     
     if (!newName.trim()) {
         showToast('El nombre no puede estar vacío', 'error');
@@ -1406,91 +1511,112 @@ async function updateProfile() {
     }
     
     try {
+        // Mostrar estado de carga
+        submitButton.disabled = true;
+        submitButton.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Guardando...';
+        
         // Por ahora solo mostrar mensaje, ya que no implementamos actualización de perfil en el backend
+        await new Promise(resolve => setTimeout(resolve, 1000)); // Simular delay
         showToast('Función de actualización de perfil pendiente de implementar');
+        
     } catch (error) {
         showToast('Error al actualizar perfil', 'error');
+    } finally {
+        // Restaurar botón
+        submitButton.disabled = false;
+        submitButton.innerHTML = originalText;
     }
 }
 
 function renderAdminUsersView() {
     document.getElementById('content').innerHTML = `
-        <div class="mb-6">
-            <div class="flex justify-between items-center">
+        <!-- Encabezado -->
+        <div class="ctei-content-card mb-6">
+            <div class="ctei-content-card-header">
                 <div>
-                    <h2 class="text-2xl font-bold">Gestión de Usuarios</h2>
-                    <p class="text-muted-foreground">Administrar usuarios del sistema CTeI-Manager (v2.0)</p>
+                    <div class="ctei-content-card-title">
+                        <i class="fas fa-users mr-2"></i>
+                        Gestión de Usuarios
+                    </div>
+                    <div class="ctei-content-card-subtitle">
+                        Administrar usuarios del sistema CTeI-Manager
+                    </div>
                 </div>
             </div>
         </div>
         
         <!-- Filtros y búsqueda -->
-        <div class="card mb-6">
-            <div class="p-6">
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <!-- Búsqueda -->
-                    <div>
-                        <label class="block text-sm font-medium mb-2">Buscar usuarios</label>
-                        <div class="relative">
-                            <input 
-                                type="text" 
-                                id="userSearch"
-                                placeholder="Nombre o email..."
-                                class="w-full pl-10 pr-4 py-2 border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-ring"
-                                onkeypress="if(event.key === 'Enter') loadAdminUsers()"
-                            >
-                            <i class="fas fa-search absolute left-3 top-3 text-muted-foreground"></i>
-                        </div>
-                    </div>
-                    
-                    <!-- Filtro por rol -->
-                    <div>
-                        <label class="block text-sm font-medium mb-2">Filtrar por rol</label>
-                        <select 
-                            id="roleFilter"
-                            class="w-full px-3 py-2 border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-ring"
-                            onchange="loadAdminUsers()"
+        <div class="ctei-content-card mb-6">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <!-- Búsqueda -->
+                <div class="ctei-form-group">
+                    <label class="ctei-form-label">
+                        <i class="fas fa-search mr-2"></i>
+                        Buscar usuarios
+                    </label>
+                    <div class="relative">
+                        <input 
+                            type="text" 
+                            id="userSearch"
+                            placeholder="Nombre o email..."
+                            class="ctei-form-input pl-10"
+                            onkeypress="if(event.key === 'Enter') loadAdminUsers()"
                         >
-                            <option value="">Todos los roles</option>
-                            <option value="ADMIN">Administradores</option>
-                            <option value="INVESTIGATOR">Investigadores</option>
-                            <option value="COMMUNITY">Comunidad</option>
-                        </select>
+                        <i class="fas fa-search absolute left-3 top-3 text-muted-foreground"></i>
                     </div>
-                    
-                    <!-- Botones de acción -->
-                    <div class="flex items-end space-x-2">
-                        <button 
-                            onclick="loadAdminUsers()"
-                            class="bg-primary text-primary-foreground px-4 py-2 rounded-lg hover:opacity-90 transition-opacity flex-1"
-                        >
-                            <i class="fas fa-search mr-2"></i>
-                            Buscar
-                        </button>
-                        <button 
-                            onclick="clearUserFilters()"
-                            class="bg-secondary text-secondary-foreground px-4 py-2 rounded-lg hover:opacity-90 transition-opacity"
-                        >
-                            <i class="fas fa-times mr-2"></i>
-                            Limpiar
-                        </button>
-                    </div>
+                </div>
+                
+                <!-- Filtro por rol -->
+                <div class="ctei-form-group">
+                    <label class="ctei-form-label">
+                        <i class="fas fa-filter mr-2"></i>
+                        Filtrar por rol
+                    </label>
+                    <select 
+                        id="roleFilter"
+                        class="ctei-form-select"
+                        onchange="loadAdminUsers()"
+                    >
+                        <option value="">Todos los roles</option>
+                        <option value="ADMIN">Administradores</option>
+                        <option value="INVESTIGATOR">Investigadores</option>
+                        <option value="COMMUNITY">Comunidad</option>
+                    </select>
+                </div>
+                
+                <!-- Botones de acción -->
+                <div class="flex items-end space-x-2">
+                    <button 
+                        onclick="loadAdminUsers()"
+                        class="ctei-btn ctei-btn-primary flex-1"
+                    >
+                        <i class="fas fa-search mr-2"></i>
+                        Buscar
+                    </button>
+                    <button 
+                        onclick="clearUserFilters()"
+                        class="ctei-btn ctei-btn-outline ctei-tooltip"
+                        data-tooltip="Limpiar filtros"
+                    >
+                        <i class="fas fa-times"></i>
+                    </button>
                 </div>
             </div>
         </div>
         
         <!-- Lista de usuarios -->
-        <div class="card">
-            <div class="p-6">
-                <div id="usersContainer">
-                    <div class="flex justify-center py-8">
-                        <div class="spinner"></div>
+        <div class="ctei-content-card">
+            <div id="usersContainer">
+                <div class="ctei-empty-state">
+                    <div class="ctei-empty-state-icon">
+                        <i class="fas fa-spinner fa-spin"></i>
                     </div>
+                    <div class="ctei-empty-state-title">Cargando usuarios...</div>
                 </div>
-                
-                <!-- Paginación -->
-                <div id="usersPagination" class="mt-6"></div>
             </div>
+            
+            <!-- Paginación -->
+            <div id="usersPagination" class="mt-6"></div>
         </div>
     `;
     
@@ -1590,76 +1716,90 @@ function renderUsersTable(users) {
     
     let html = `
         <div class="overflow-x-auto">
-            <table class="w-full">
-                <thead class="border-b border-border">
-                    <tr class="text-left">
-                        <th class="pb-3 font-medium">Usuario</th>
-                        <th class="pb-3 font-medium">Rol</th>
-                        <th class="pb-3 font-medium">Registro</th>
-                        <th class="pb-3 font-medium text-right">Acciones</th>
+            <table class="ctei-table">
+                <thead>
+                    <tr>
+                        <th>Usuario</th>
+                        <th>Rol</th>
+                        <th>Registro</th>
+                        <th style="text-align: right;">Acciones</th>
                     </tr>
                 </thead>
-                <tbody class="divide-y divide-border">
+                <tbody>
     `;
     
     users.forEach(user => {
         const roleConfig = {
-            'ADMIN': { color: 'bg-destructive text-destructive-foreground', icon: 'fas fa-crown', label: 'Administrador' },
-            'INVESTIGATOR': { color: 'bg-primary text-primary-foreground', icon: 'fas fa-microscope', label: 'Investigador' },
-            'COMMUNITY': { color: 'bg-secondary text-secondary-foreground', icon: 'fas fa-users', label: 'Comunidad' }
+            'ADMIN': { badge: 'destructive', icon: 'fas fa-crown', label: 'Administrador' },
+            'INVESTIGATOR': { badge: 'primary', icon: 'fas fa-microscope', label: 'Investigador' },
+            'COMMUNITY': { badge: 'secondary', icon: 'fas fa-users', label: 'Comunidad' }
         };
         
         const role = roleConfig[user.role] || roleConfig.COMMUNITY;
         const isCurrentUser = user.id === currentUser?.userId;
         
         html += `
-            <tr class="hover:bg-muted/50">
-                <td class="py-4">
+            <tr>
+                <td>
                     <div class="flex items-center space-x-3">
-                        <div class="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center">
-                            <i class="${role.icon} text-primary"></i>
+                        <div class="ctei-metric-icon primary" style="width: 2.5rem; height: 2.5rem; font-size: 1rem;">
+                            <i class="${role.icon}"></i>
                         </div>
                         <div>
-                            <div class="font-medium">${user.full_name}</div>
-                            <div class="text-sm text-muted-foreground">${user.email}</div>
-                            ${isCurrentUser ? '<span class="text-xs text-primary font-medium">(Tú)</span>' : ''}
+                            <div class="table-primary-text">${user.full_name}</div>
+                            <div class="table-secondary-text">${user.email}</div>
+                            ${isCurrentUser ? '<span class="table-metadata text-primary font-medium">(Tú)</span>' : ''}
                         </div>
                     </div>
                 </td>
-                <td class="py-4">
-                    <span class="px-2 py-1 rounded text-xs font-medium ${role.color}">
+                <td>
+                    <span class="ctei-status-badge ${role.badge}">
                         <i class="${role.icon} mr-1"></i>
                         ${role.label}
                     </span>
                 </td>
-                <td class="py-4 text-sm text-muted-foreground">
-                    ${formatDate(user.created_at)}
+                <td>
+                    <div class="table-metadata">
+                        ${formatDate(user.created_at)}
+                    </div>
                 </td>
-                <td class="py-4">
-                    <div class="flex justify-end space-x-2">
+                <td>
+                    <div class="flex justify-end items-center space-x-2">
                         <button 
                             onclick="editUser(${user.id})"
-                            class="bg-accent text-accent-foreground px-3 py-1 rounded text-sm hover:opacity-90"
-                            title="Editar usuario"
+                            class="ctei-btn ctei-btn-secondary ctei-btn-sm ctei-tooltip"
+                            data-tooltip="Editar usuario"
                         >
                             <i class="fas fa-edit"></i>
                         </button>
-                        <button 
-                            onclick="changeUserPassword(${user.id}, '${user.full_name}', '${user.email}')"
-                            class="bg-warning text-warning-foreground px-3 py-1 rounded text-sm hover:opacity-90"
-                            title="Cambiar contraseña"
-                        >
-                            <i class="fas fa-key"></i>
-                        </button>
-                        ${!isCurrentUser ? `
+                        
+                        <div class="ctei-actions-menu">
                             <button 
-                                onclick="deleteUser(${user.id}, '${user.full_name}', '${user.email}')"
-                                class="bg-destructive text-destructive-foreground px-3 py-1 rounded text-sm hover:opacity-90"
-                                title="Eliminar usuario"
+                                class="ctei-actions-trigger ctei-tooltip"
+                                data-tooltip="Más acciones"
+                                onclick="toggleUserActionsMenu(${user.id})"
                             >
-                                <i class="fas fa-trash"></i>
+                                <i class="fas fa-ellipsis-v"></i>
                             </button>
-                        ` : ''}
+                            <div id="user-actions-${user.id}" class="ctei-actions-dropdown hidden">
+                                <button 
+                                    onclick="changeUserPassword(${user.id}, '${user.full_name}', '${user.email}'); closeAllActionsMenus()"
+                                    class="ctei-actions-item"
+                                >
+                                    <i class="fas fa-key mr-2"></i>
+                                    Cambiar Contraseña
+                                </button>
+                                ${!isCurrentUser ? `
+                                    <button 
+                                        onclick="deleteUser(${user.id}, '${user.full_name}', '${user.email}'); closeAllActionsMenus()"
+                                        class="ctei-actions-item destructive"
+                                    >
+                                        <i class="fas fa-trash mr-2"></i>
+                                        Eliminar Usuario
+                                    </button>
+                                ` : ''}
+                            </div>
+                        </div>
                     </div>
                 </td>
             </tr>
@@ -3957,6 +4097,73 @@ async function removeCurrentLogo() {
     } finally {
         removeBtn.disabled = false;
         removeBtn.innerHTML = '<i class="fas fa-trash mr-2"></i>Eliminar Logo Actual';
+    }
+}
+
+// ========== UTILIDADES DE UI - MENÚ DE ACCIONES ==========
+
+// Función para toggle del menú de acciones de productos
+function toggleProductActionsMenu(productId) {
+    const menu = document.getElementById(`product-actions-${productId}`);
+    if (menu) {
+        // Cerrar otros menús abiertos
+        closeAllActionsMenus();
+        // Toggle el menú actual
+        menu.classList.toggle('hidden');
+    }
+}
+
+// Función para toggle del menú de acciones de usuarios
+function toggleUserActionsMenu(userId) {
+    const menu = document.getElementById(`user-actions-${userId}`);
+    if (menu) {
+        // Cerrar otros menús abiertos
+        closeAllActionsMenus();
+        // Toggle el menú actual
+        menu.classList.toggle('hidden');
+    }
+}
+
+// Función para toggle del menú de acciones de proyectos
+function toggleProjectActionsMenu(projectId) {
+    const menu = document.getElementById(`project-actions-${projectId}`);
+    if (menu) {
+        // Cerrar otros menús abiertos
+        closeAllActionsMenus();
+        // Toggle el menú actual
+        menu.classList.toggle('hidden');
+    }
+}
+
+// Función para cerrar todos los menús de acciones
+function closeAllActionsMenus() {
+    document.querySelectorAll('.ctei-actions-dropdown').forEach(menu => {
+        menu.classList.add('hidden');
+    });
+}
+
+// Cerrar menús al hacer click fuera
+document.addEventListener('click', function(event) {
+    if (!event.target.closest('.ctei-actions-menu')) {
+        closeAllActionsMenus();
+    }
+});
+
+// Funciones placeholder para acciones de proyectos
+function duplicateProject(projectId) {
+    showToast('Función de duplicar proyecto pendiente de implementar');
+}
+
+function deleteProject(projectId) {
+    const project = DashboardState.projects.find(p => p.id === projectId);
+    if (!project) {
+        showToast('Proyecto no encontrado', 'error');
+        return;
+    }
+    
+    const confirmDelete = confirm(`¿Estás seguro de que deseas eliminar el proyecto "${project.title}"?\n\nEsta acción no se puede deshacer.`);
+    if (confirmDelete) {
+        showToast('Función de eliminar proyecto pendiente de implementar');
     }
 }
 

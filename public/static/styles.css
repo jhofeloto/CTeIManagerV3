@@ -625,3 +625,483 @@ body {
     color: black !important;
   }
 }
+
+/* ========================================
+   COMPONENTES REUTILIZABLES - SOLO TOKENS
+======================================== */
+
+/* Sistema de Componentes - Solo Tokens, No Valores */
+
+/* ===== BOTONES SEMÁNTICOS ===== */
+.ctei-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius);
+  border: 1px solid transparent;
+  font-size: 0.875rem;
+  font-weight: 500;
+  padding: 0.5rem 1rem;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+  text-decoration: none;
+}
+
+.ctei-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Botón Primario - Para acciones principales */
+.ctei-btn-primary {
+  background-color: var(--primary);
+  color: var(--primary-foreground);
+  border-color: var(--primary);
+}
+
+.ctei-btn-primary:hover:not(:disabled) {
+  opacity: 0.9;
+}
+
+/* Botón Secundario - Para acciones secundarias */
+.ctei-btn-secondary {
+  background-color: transparent;
+  color: var(--foreground);
+  border-color: var(--border);
+}
+
+.ctei-btn-secondary:hover:not(:disabled) {
+  background-color: var(--accent);
+}
+
+/* Botón Destructivo - Solo para eliminar */
+.ctei-btn-destructive {
+  background-color: var(--destructive);
+  color: var(--destructive-foreground);
+  border-color: var(--destructive);
+}
+
+.ctei-btn-destructive:hover:not(:disabled) {
+  opacity: 0.9;
+}
+
+/* Botón Outline - Para acciones terciarias */
+.ctei-btn-outline {
+  background-color: transparent;
+  color: var(--foreground);
+  border-color: var(--border);
+}
+
+.ctei-btn-outline:hover:not(:disabled) {
+  background-color: var(--muted);
+}
+
+/* Tamaños de botones */
+.ctei-btn-sm {
+  font-size: 0.75rem;
+  padding: 0.375rem 0.75rem;
+}
+
+.ctei-btn-lg {
+  font-size: 1rem;
+  padding: 0.75rem 1.5rem;
+}
+
+/* ===== COMPONENTE DE TABLA REUTILIZABLE ===== */
+.ctei-table {
+  width: 100%;
+  border-collapse: collapse;
+  background-color: var(--card);
+  border-radius: var(--radius);
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+}
+
+.ctei-table th {
+  background-color: var(--muted);
+  padding: 1rem;
+  text-align: left;
+  font-weight: 600;
+  color: var(--foreground);
+  border-bottom: 1px solid var(--border);
+}
+
+.ctei-table td {
+  padding: 1rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.ctei-table tr:last-child td {
+  border-bottom: none;
+}
+
+.ctei-table tr:hover {
+  background-color: var(--accent);
+}
+
+/* Jerarquía dentro de las filas de tabla */
+.ctei-table .table-primary-text {
+  font-weight: 600;
+  color: var(--foreground);
+}
+
+.ctei-table .table-secondary-text {
+  font-size: 0.875rem;
+  color: var(--muted-foreground);
+  margin-top: 0.25rem;
+}
+
+.ctei-table .table-metadata {
+  font-size: 0.75rem;
+  color: var(--muted-foreground);
+}
+
+/* ===== PÍLDORAS DE ESTADO ===== */
+.ctei-status-badge {
+  padding: 0.25rem 0.75rem;
+  border-radius: var(--radius-xl);
+  font-size: 0.75rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.ctei-status-badge.active {
+  background-color: var(--chart-2);
+  color: var(--background);
+}
+
+.ctei-status-badge.public {
+  background-color: var(--chart-3);
+  color: var(--background);
+}
+
+.ctei-status-badge.private {
+  background-color: var(--muted);
+  color: var(--muted-foreground);
+}
+
+.ctei-status-badge.draft {
+  background-color: var(--chart-4);
+  color: var(--background);
+}
+
+.ctei-status-badge.completed {
+  background-color: var(--chart-1);
+  color: var(--background);
+}
+
+/* ===== MÉTRICAS (KPI CARDS) ===== */
+.ctei-metric-card {
+  background-color: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.5rem;
+  box-shadow: var(--shadow-sm);
+  text-align: center;
+  transition: all 0.2s ease-in-out;
+}
+
+.ctei-metric-card:hover {
+  box-shadow: var(--shadow-md);
+}
+
+.ctei-metric-value {
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--foreground);
+  line-height: 1;
+}
+
+.ctei-metric-label {
+  font-size: 0.875rem;
+  color: var(--muted-foreground);
+  margin-top: 0.5rem;
+}
+
+.ctei-metric-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 3rem;
+  height: 3rem;
+  border-radius: var(--radius-full);
+  margin-bottom: 1rem;
+  font-size: 1.25rem;
+}
+
+.ctei-metric-icon.primary {
+  background-color: var(--primary);
+  color: var(--primary-foreground);
+}
+
+.ctei-metric-icon.chart-1 {
+  background-color: var(--chart-1);
+  color: var(--background);
+}
+
+.ctei-metric-icon.chart-2 {
+  background-color: var(--chart-2);
+  color: var(--background);
+}
+
+.ctei-metric-icon.chart-3 {
+  background-color: var(--chart-3);
+  color: var(--background);
+}
+
+.ctei-metric-icon.chart-4 {
+  background-color: var(--chart-4);
+  color: var(--background);
+}
+
+/* ===== LISTA DE ACTIVIDAD ===== */
+.ctei-activity-list {
+  background-color: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.5rem;
+  box-shadow: var(--shadow-sm);
+}
+
+.ctei-activity-item {
+  padding: 1rem 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.ctei-activity-item:last-child {
+  border-bottom: none;
+}
+
+.ctei-activity-title {
+  font-weight: 600;
+  color: var(--foreground);
+  margin-bottom: 0.25rem;
+}
+
+.ctei-activity-description {
+  color: var(--muted-foreground);
+  margin-bottom: 0.5rem;
+  line-height: 1.4;
+}
+
+.ctei-activity-meta {
+  font-size: 0.75rem;
+  color: var(--muted-foreground);
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+/* ===== TARJETAS DE CONTENIDO ===== */
+.ctei-content-card {
+  background-color: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.5rem;
+  box-shadow: var(--shadow-sm);
+}
+
+.ctei-content-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.ctei-content-card-title {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--foreground);
+}
+
+.ctei-content-card-subtitle {
+  color: var(--muted-foreground);
+  margin-top: 0.25rem;
+}
+
+/* ===== FORMULARIOS ===== */
+.ctei-form-group {
+  margin-bottom: 1rem;
+}
+
+.ctei-form-label {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--foreground);
+  margin-bottom: 0.5rem;
+}
+
+.ctei-form-input, .ctei-form-select, .ctei-form-textarea {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background-color: var(--background);
+  color: var(--foreground);
+  font-size: 0.875rem;
+  transition: all 0.2s ease-in-out;
+}
+
+.ctei-form-input:focus, .ctei-form-select:focus, .ctei-form-textarea:focus {
+  outline: none;
+  border-color: var(--ring);
+  box-shadow: 0 0 0 2px var(--ring);
+}
+
+.ctei-form-input:disabled, .ctei-form-select:disabled, .ctei-form-textarea:disabled {
+  background-color: var(--muted);
+  color: var(--muted-foreground);
+  opacity: 0.6;
+}
+
+/* ===== MENÚ DE TRES PUNTOS (ACCIONES) ===== */
+.ctei-actions-menu {
+  position: relative;
+  display: inline-block;
+}
+
+.ctei-actions-trigger {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0.5rem;
+  border-radius: var(--radius);
+  color: var(--muted-foreground);
+  transition: all 0.2s ease-in-out;
+}
+
+.ctei-actions-trigger:hover {
+  background-color: var(--accent);
+  color: var(--foreground);
+}
+
+.ctei-actions-dropdown {
+  position: absolute;
+  right: 0;
+  top: 100%;
+  z-index: 50;
+  min-width: 12rem;
+  background-color: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-lg);
+  padding: 0.5rem;
+  margin-top: 0.25rem;
+}
+
+.ctei-actions-dropdown.hidden {
+  display: none;
+}
+
+.ctei-actions-item {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  padding: 0.5rem;
+  border: none;
+  background: none;
+  text-align: left;
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+  font-size: 0.875rem;
+  color: var(--foreground);
+  transition: all 0.2s ease-in-out;
+}
+
+.ctei-actions-item:hover {
+  background-color: var(--accent);
+}
+
+.ctei-actions-item.destructive {
+  color: var(--destructive);
+}
+
+.ctei-actions-item.destructive:hover {
+  background-color: var(--destructive);
+  color: var(--destructive-foreground);
+}
+
+/* ===== TOOLTIPS ===== */
+.ctei-tooltip {
+  position: relative;
+  display: inline-block;
+}
+
+.ctei-tooltip:hover::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: var(--popover);
+  color: var(--popover-foreground);
+  padding: 0.5rem;
+  border-radius: var(--radius);
+  font-size: 0.75rem;
+  white-space: nowrap;
+  z-index: 100;
+  margin-bottom: 0.25rem;
+  box-shadow: var(--shadow-md);
+}
+
+/* ===== ESTADOS VACÍOS ===== */
+.ctei-empty-state {
+  text-align: center;
+  padding: 3rem 2rem;
+  color: var(--muted-foreground);
+}
+
+.ctei-empty-state-icon {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+  opacity: 0.5;
+}
+
+.ctei-empty-state-title {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--foreground);
+  margin-bottom: 0.5rem;
+}
+
+.ctei-empty-state-description {
+  margin-bottom: 1.5rem;
+  line-height: 1.5;
+}
+
+/* ===== ACORDEONES ===== */
+.ctei-accordion-item {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  margin-bottom: 0.5rem;
+  overflow: hidden;
+}
+
+.ctei-accordion-header {
+  background-color: var(--card);
+  padding: 1rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  transition: all 0.2s ease-in-out;
+  font-weight: 500;
+}
+
+.ctei-accordion-header:hover {
+  background-color: var(--accent);
+}
+
+.ctei-accordion-content {
+  background-color: var(--background);
+  padding: 1rem;
+  border-top: 1px solid var(--border);
+}
+
+.ctei-accordion-content.hidden {
+  display: none;
+}
