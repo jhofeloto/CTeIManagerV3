@@ -418,7 +418,7 @@ app.get('/', (c) => {
                                 <i class="fas fa-sign-in-alt mr-1"></i>
                                 Ingresar
                             </button>
-                            <button onclick="testDirectLogin()" class="bg-orange-600 hover:bg-orange-700 text-white px-3 py-1 rounded text-sm font-medium transition-colors">
+                            <button onclick="testDirectLogin()" class="bg-chart-4 hover:bg-chart-4/90 text-white px-3 py-1 rounded text-sm font-medium transition-colors">
                                 🔧 Test
                             </button>
                             <button onclick="showRegisterModal()" class="ctei-btn-secondary px-4 py-2 rounded-lg">
@@ -429,12 +429,12 @@ app.get('/', (c) => {
                         
                         <!-- Botones para usuarios autenticados -->
                         <div id="authenticatedButtons" class="hidden items-center space-x-4">
-                            <span id="userInfo" class="text-sm text-gray-300"></span>
-                            <a href="/dashboard" class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg font-medium transition-colors">
+                            <span id="userInfo" class="text-sm text-muted-foreground"></span>
+                            <a href="/dashboard" class="bg-chart-3 hover:bg-chart-3/90 text-white px-4 py-2 rounded-lg font-medium transition-colors">
                                 <i class="fas fa-tachometer-alt mr-1"></i>
                                 Dashboard
                             </a>
-                            <button onclick="logout()" class="text-red-400 hover:text-red-300 px-4 py-2 rounded-lg font-medium transition-colors">
+                            <button onclick="logout()" class="text-destructive hover:text-destructive/80 px-4 py-2 rounded-lg font-medium transition-colors">
                                 <i class="fas fa-sign-out-alt mr-1"></i>
                                 Salir
                             </button>
@@ -717,7 +717,7 @@ app.get('/', (c) => {
         </footer>
 
         <!-- Modales -->
-        <div id="loginModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50">
+        <div id="loginModal" class="fixed inset-0 bg-background/80 backdrop-blur-sm hidden z-50">
             <div class="flex items-center justify-center min-h-screen p-4">
                 <div class="bg-card rounded-lg shadow-xl max-w-md w-full">
                     <div class="p-6">
@@ -730,11 +730,11 @@ app.get('/', (c) => {
                         <form id="staticLoginForm">
                             <div class="mb-4">
                                 <label class="block text-sm font-medium mb-2">Email</label>
-                                <input type="email" id="loginEmail" class="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent" required autocomplete="email">
+                                <input type="email" id="loginEmail" class="w-full px-3 py-2 bg-input text-foreground border border-border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent" required autocomplete="email">
                             </div>
                             <div class="mb-6">
                                 <label class="block text-sm font-medium mb-2">Contraseña</label>
-                                <input type="password" id="loginPassword" class="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent" required autocomplete="current-password">
+                                <input type="password" id="loginPassword" class="w-full px-3 py-2 bg-input text-foreground border border-border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent" required autocomplete="current-password">
                             </div>
                             <button type="submit" class="w-full bg-primary text-primary-foreground py-2 rounded-lg font-medium hover:opacity-90">
                                 <i class="fas fa-sign-in-alt mr-1"></i>
@@ -746,7 +746,7 @@ app.get('/', (c) => {
             </div>
         </div>
 
-        <div id="registerModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50">
+        <div id="registerModal" class="fixed inset-0 bg-background/80 backdrop-blur-sm hidden z-50">
             <div class="flex items-center justify-center min-h-screen p-4">
                 <div class="bg-card rounded-lg shadow-xl max-w-md w-full">
                     <div class="p-6">
@@ -759,19 +759,19 @@ app.get('/', (c) => {
                         <form onsubmit="handleRegister(event)">
                             <div class="mb-4">
                                 <label class="block text-sm font-medium mb-2">Nombre Completo</label>
-                                <input type="text" id="registerName" class="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent" required>
+                                <input type="text" id="registerName" class="w-full px-3 py-2 bg-input text-foreground border border-border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent" required>
                             </div>
                             <div class="mb-4">
                                 <label class="block text-sm font-medium mb-2">Email</label>
-                                <input type="email" id="registerEmail" class="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent" required>
+                                <input type="email" id="registerEmail" class="w-full px-3 py-2 bg-input text-foreground border border-border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent" required>
                             </div>
                             <div class="mb-4">
                                 <label class="block text-sm font-medium mb-2">Contraseña</label>
-                                <input type="password" id="registerPassword" class="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent" required>
+                                <input type="password" id="registerPassword" class="w-full px-3 py-2 bg-input text-foreground border border-border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent" required>
                             </div>
                             <div class="mb-6">
                                 <label class="block text-sm font-medium mb-2">Rol</label>
-                                <select id="registerRole" class="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent">
+                                <select id="registerRole" class="w-full px-3 py-2 bg-input text-foreground border border-border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent">
                                     <option value="COMMUNITY">Comunidad</option>
                                     <option value="INVESTIGATOR">Investigador</option>
                                 </select>

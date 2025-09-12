@@ -289,11 +289,11 @@ function createProductCard(product) {
     card.className = 'card p-6 fade-in';
     
     const typeColors = {
-        'TOP': 'bg-chart-1 text-white',
-        'A': 'bg-chart-2 text-white',
-        'B': 'bg-chart-3 text-white',
-        'ASC': 'bg-chart-4 text-white',
-        'DPC': 'bg-chart-5 text-white',
+        'TOP': 'bg-chart-1 text-background',
+        'A': 'bg-chart-2 text-background',
+        'B': 'bg-chart-3 text-background',
+        'ASC': 'bg-chart-4 text-background',
+        'DPC': 'bg-chart-5 text-background',
         'FRH_A': 'bg-primary text-primary-foreground',
         'FRH_B': 'bg-accent text-accent-foreground'
     };
@@ -347,7 +347,7 @@ async function viewProductDetails(productId) {
 
 function showProjectModal(project) {
     const modal = document.createElement('div');
-    modal.className = 'fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4';
+    modal.className = 'fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center p-4';
     modal.onclick = (e) => {
         if (e.target === modal) modal.remove();
     };
@@ -433,7 +433,7 @@ function showProjectModal(project) {
 
 function showProductModal(product) {
     const modal = document.createElement('div');
-    modal.className = 'fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4';
+    modal.className = 'fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center p-4';
     modal.onclick = (e) => {
         if (e.target === modal) modal.remove();
     };
@@ -452,11 +452,11 @@ function showProductModal(product) {
     `).join('') || '<p class="text-muted-foreground">No hay autores registrados</p>';
     
     const typeColors = {
-        'TOP': 'bg-chart-1 text-white',
-        'A': 'bg-chart-2 text-white',
-        'B': 'bg-chart-3 text-white',
-        'ASC': 'bg-chart-4 text-white',
-        'DPC': 'bg-chart-5 text-white',
+        'TOP': 'bg-chart-1 text-background',
+        'A': 'bg-chart-2 text-background',
+        'B': 'bg-chart-3 text-background',
+        'ASC': 'bg-chart-4 text-background',
+        'DPC': 'bg-chart-5 text-background',
         'FRH_A': 'bg-primary text-primary-foreground',
         'FRH_B': 'bg-accent text-accent-foreground'
     };
@@ -971,7 +971,7 @@ function showLoginModal() {
     }
     
     const modal = document.createElement('div');
-    modal.className = 'fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4';
+    modal.className = 'fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center p-4';
     modal.id = 'loginModal';
     modal.onclick = (e) => {
         if (e.target === modal) closeLoginModal();
@@ -993,7 +993,7 @@ function showLoginModal() {
                             type="email" 
                             id="loginEmail" 
                             required
-                            class="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+                            class="w-full px-3 py-2 bg-input text-foreground border border-border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
                             placeholder="tu@email.com"
                             autocomplete="email"
                         >
@@ -1004,7 +1004,7 @@ function showLoginModal() {
                             type="password" 
                             id="loginPassword" 
                             required
-                            class="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+                            class="w-full px-3 py-2 bg-input text-foreground border border-border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
                             placeholder="Tu contraseña"
                             autocomplete="current-password"
                         >
@@ -1071,7 +1071,7 @@ function closeLoginModal() {
 
 function showRegisterModal() {
     const modal = document.createElement('div');
-    modal.className = 'fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4';
+    modal.className = 'fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center p-4';
     modal.id = 'registerModal';
     modal.onclick = (e) => {
         if (e.target === modal) closeRegisterModal();
@@ -1093,7 +1093,7 @@ function showRegisterModal() {
                             type="text" 
                             id="registerName" 
                             required
-                            class="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+                            class="w-full px-3 py-2 bg-input text-foreground border border-border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
                             placeholder="Tu nombre completo"
                         >
                     </div>
@@ -1103,7 +1103,7 @@ function showRegisterModal() {
                             type="email" 
                             id="registerEmail" 
                             required
-                            class="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+                            class="w-full px-3 py-2 bg-input text-foreground border border-border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
                             placeholder="tu@email.com"
                         >
                     </div>
@@ -1113,7 +1113,7 @@ function showRegisterModal() {
                             type="password" 
                             id="registerPassword" 
                             required
-                            class="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+                            class="w-full px-3 py-2 bg-input text-foreground border border-border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
                             placeholder="Mínimo 6 caracteres"
                         >
                     </div>
