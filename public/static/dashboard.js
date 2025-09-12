@@ -1142,7 +1142,7 @@ function renderAdminUsersView() {
             <div class="flex justify-between items-center">
                 <div>
                     <h2 class="text-2xl font-bold">Gestión de Usuarios</h2>
-                    <p class="text-muted-foreground">Administrar usuarios del sistema CTeI-Manager</p>
+                    <p class="text-muted-foreground">Administrar usuarios del sistema CTeI-Manager (v2.0)</p>
                 </div>
             </div>
         </div>
@@ -1687,15 +1687,444 @@ async function confirmDeleteUser(userId) {
 }
 
 function renderAdminProjectsView() {
-    // Implementar vista de todos los proyectos para admin
     document.getElementById('content').innerHTML = `
         <div class="mb-6">
-            <h2 class="text-2xl font-bold">Todos los Proyectos</h2>
+            <div class="flex justify-between items-center">
+                <div>
+                    <h2 class="text-2xl font-bold">Todos los Proyectos</h2>
+                    <p class="text-muted-foreground">Administrar todos los proyectos del sistema CTeI-Manager</p>
+                </div>
+            </div>
         </div>
-        <div class="card p-6">
-            <p class="text-muted-foreground">Vista de administración de proyectos en desarrollo...</p>
+        
+        <!-- Filtros y búsqueda -->
+        <div class="card mb-6">
+            <div class="p-6">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <!-- Búsqueda -->
+                    <div>
+                        <label class="block text-sm font-medium mb-2">Buscar proyectos</label>
+                        <div class="relative">
+                            <input 
+                                type="text" 
+                                id="projectSearch"
+                                placeholder="Título, resumen o propietario..."
+                                class="w-full pl-10 pr-4 py-2 border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-ring"
+                                onkeypress="if(event.key === 'Enter') loadAdminProjects()"
+                            >
+                            <i class="fas fa-search absolute left-3 top-3 text-muted-foreground"></i>
+                        </div>
+                    </div>
+                    
+                    <!-- Filtro por visibilidad -->
+                    <div>
+                        <label class="block text-sm font-medium mb-2">Filtrar por visibilidad</label>
+                        <select 
+                            id="visibilityFilter"
+                            class="w-full px-3 py-2 border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-ring"
+                            onchange="loadAdminProjects()"
+                        >
+                            <option value="">Todos los proyectos</option>
+                            <option value="1">Públicos</option>
+                            <option value="0">Privados</option>
+                        </select>
+                    </div>
+                    
+                    <!-- Botones de acción -->
+                    <div class="flex items-end space-x-2">
+                        <button 
+                            onclick="loadAdminProjects()"
+                            class="bg-primary text-primary-foreground px-4 py-2 rounded-lg hover:opacity-90 transition-opacity flex-1"
+                        >
+                            <i class="fas fa-search mr-2"></i>
+                            Buscar
+                        </button>
+                        <button 
+                            onclick="clearProjectFilters()"
+                            class="bg-secondary text-secondary-foreground px-4 py-2 rounded-lg hover:opacity-90 transition-opacity"
+                        >
+                            <i class="fas fa-times mr-2"></i>
+                            Limpiar
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Lista de proyectos -->
+        <div class="card">
+            <div class="p-6">
+                <div id="projectsContainer">
+                    <div class="flex justify-center py-8">
+                        <div class="spinner"></div>
+                    </div>
+                </div>
+                
+                <!-- Paginación -->
+                <div id="projectsPagination" class="mt-6"></div>
+            </div>
         </div>
     `;
+    
+    // Inicializar estado de proyectos
+    DashboardState.projectsState = {
+        currentPage: 1,
+        limit: 10,
+        total: 0,
+        totalPages: 0,
+        search: '',
+        is_public: ''
+    };
+    
+    // Cargar proyectos
+    loadAdminProjects();
+}
+
+// ===== GESTIÓN DE PROYECTOS ADMIN =====
+
+async function loadAdminProjects(page = 1) {
+    const container = document.getElementById('projectsContainer');
+    const paginationContainer = document.getElementById('projectsPagination');
+    
+    // Actualizar estado
+    DashboardState.projectsState.currentPage = page;
+    DashboardState.projectsState.search = document.getElementById('projectSearch')?.value || '';
+    DashboardState.projectsState.is_public = document.getElementById('visibilityFilter')?.value || '';
+    
+    try {
+        // Construir parámetros de consulta
+        const params = new URLSearchParams({
+            page: page.toString(),
+            limit: DashboardState.projectsState.limit.toString()
+        });
+        
+        if (DashboardState.projectsState.search) {
+            params.set('search', DashboardState.projectsState.search);
+        }
+        
+        if (DashboardState.projectsState.is_public !== '') {
+            params.set('is_public', DashboardState.projectsState.is_public);
+        }
+        
+        const response = await axios.get(`${API_BASE}/admin/projects?${params.toString()}`);
+        
+        if (response.data.success) {
+            const { projects, pagination } = response.data.data;
+            
+            // Actualizar estado de paginación
+            DashboardState.projectsState.total = pagination.total;
+            DashboardState.projectsState.totalPages = pagination.totalPages;
+            
+            if (projects.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center py-8">
+                        <i class="fas fa-project-diagram text-4xl text-muted-foreground mb-4"></i>
+                        <p class="text-muted-foreground">No se encontraron proyectos</p>
+                    </div>
+                `;
+                paginationContainer.innerHTML = '';
+                return;
+            }
+            
+            // Renderizar proyectos
+            renderProjectsTable(projects);
+            
+            // Renderizar paginación
+            renderProjectsPagination(pagination);
+            
+        } else {
+            throw new Error(response.data.error || 'Error al cargar proyectos');
+        }
+        
+    } catch (error) {
+        console.error('Error cargando proyectos:', error);
+        container.innerHTML = `
+            <div class="text-center py-8">
+                <i class="fas fa-exclamation-triangle text-4xl text-destructive mb-4"></i>
+                <p class="text-destructive">Error al cargar proyectos</p>
+                <button 
+                    onclick="loadAdminProjects()" 
+                    class="mt-4 bg-primary text-primary-foreground px-4 py-2 rounded-lg hover:opacity-90"
+                >
+                    <i class="fas fa-retry mr-2"></i>
+                    Reintentar
+                </button>
+            </div>
+        `;
+        paginationContainer.innerHTML = '';
+        showToast('Error al cargar proyectos', 'error');
+    }
+}
+
+function renderProjectsTable(projects) {
+    const container = document.getElementById('projectsContainer');
+    
+    let html = `
+        <div class="overflow-x-auto">
+            <table class="w-full">
+                <thead class="border-b border-border">
+                    <tr class="text-left">
+                        <th class="pb-3 font-medium">Proyecto</th>
+                        <th class="pb-3 font-medium">Propietario</th>
+                        <th class="pb-3 font-medium">Estado</th>
+                        <th class="pb-3 font-medium">Fecha</th>
+                        <th class="pb-3 font-medium text-right">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-border">
+    `;
+    
+    projects.forEach(project => {
+        const isPublic = project.is_public === 1;
+        const statusConfig = {
+            'DRAFT': { color: 'bg-muted text-muted-foreground', icon: 'fas fa-edit', label: 'Borrador' },
+            'ACTIVE': { color: 'bg-primary text-primary-foreground', icon: 'fas fa-play', label: 'Activo' },
+            'REVIEW': { color: 'bg-accent text-accent-foreground', icon: 'fas fa-eye', label: 'En Revisión' },
+            'COMPLETED': { color: 'bg-chart-1 text-white', icon: 'fas fa-check', label: 'Completado' },
+            'SUSPENDED': { color: 'bg-destructive text-destructive-foreground', icon: 'fas fa-pause', label: 'Suspendido' }
+        };
+        
+        const status = statusConfig[project.status] || statusConfig.DRAFT;
+        
+        html += `
+            <tr class="hover:bg-muted/50">
+                <td class="py-4">
+                    <div class="flex items-start space-x-3">
+                        <div class="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center">
+                            <i class="fas fa-project-diagram text-primary"></i>
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <div class="font-medium text-sm line-clamp-1">${project.title}</div>
+                            <div class="text-xs text-muted-foreground mt-1 line-clamp-2">${project.abstract || 'Sin resumen disponible'}</div>
+                            ${project.project_code ? `<span class="text-xs bg-muted px-2 py-0.5 rounded mt-1 inline-block">${project.project_code}</span>` : ''}
+                        </div>
+                    </div>
+                </td>
+                <td class="py-4">
+                    <div class="text-sm">
+                        <div class="font-medium">${project.owner_name}</div>
+                        <div class="text-muted-foreground">${project.owner_email}</div>
+                    </div>
+                </td>
+                <td class="py-4">
+                    <div class="space-y-1">
+                        <span class="px-2 py-1 rounded text-xs font-medium ${status.color}">
+                            <i class="${status.icon} mr-1"></i>
+                            ${status.label}
+                        </span>
+                        <div class="flex items-center text-xs">
+                            ${isPublic ? 
+                                '<span class="text-green-600"><i class="fas fa-globe mr-1"></i>Público</span>' : 
+                                '<span class="text-muted-foreground"><i class="fas fa-lock mr-1"></i>Privado</span>'
+                            }
+                        </div>
+                    </div>
+                </td>
+                <td class="py-4 text-sm text-muted-foreground">
+                    ${formatDate(project.created_at)}
+                </td>
+                <td class="py-4">
+                    <div class="flex justify-end space-x-2">
+                        <button 
+                            onclick="toggleProjectVisibility(${project.id}, ${!isPublic})"
+                            class="px-3 py-1 rounded text-sm ${isPublic ? 'bg-muted text-muted-foreground' : 'bg-green-100 text-green-700'} hover:opacity-90"
+                            title="${isPublic ? 'Ocultar proyecto' : 'Publicar proyecto'}"
+                        >
+                            <i class="fas fa-${isPublic ? 'eye-slash' : 'eye'}"></i>
+                        </button>
+                        <button 
+                            onclick="deleteAdminProject(${project.id}, '${project.title}', '${project.owner_name}')"
+                            class="bg-destructive text-destructive-foreground px-3 py-1 rounded text-sm hover:opacity-90"
+                            title="Eliminar proyecto"
+                        >
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                </td>
+            </tr>
+        `;
+    });
+    
+    html += `
+                </tbody>
+            </table>
+        </div>
+    `;
+    
+    container.innerHTML = html;
+}
+
+function renderProjectsPagination(pagination) {
+    const container = document.getElementById('projectsPagination');
+    
+    if (pagination.totalPages <= 1) {
+        container.innerHTML = '';
+        return;
+    }
+    
+    let html = `
+        <div class="flex items-center justify-between">
+            <div class="text-sm text-muted-foreground">
+                Mostrando ${((pagination.page - 1) * pagination.limit) + 1} a ${Math.min(pagination.page * pagination.limit, pagination.total)} de ${pagination.total} proyectos
+            </div>
+            <div class="flex space-x-2">
+    `;
+    
+    // Botón anterior
+    if (pagination.page > 1) {
+        html += `
+            <button 
+                onclick="loadAdminProjects(${pagination.page - 1})"
+                class="px-3 py-2 text-sm bg-secondary text-secondary-foreground rounded hover:opacity-90"
+            >
+                <i class="fas fa-chevron-left mr-1"></i>
+                Anterior
+            </button>
+        `;
+    }
+    
+    // Números de página
+    const startPage = Math.max(1, pagination.page - 2);
+    const endPage = Math.min(pagination.totalPages, pagination.page + 2);
+    
+    for (let i = startPage; i <= endPage; i++) {
+        const isActive = i === pagination.page;
+        html += `
+            <button 
+                onclick="loadAdminProjects(${i})"
+                class="px-3 py-2 text-sm rounded ${isActive ? 'bg-primary text-primary-foreground' : 'bg-secondary text-secondary-foreground hover:opacity-90'}"
+            >
+                ${i}
+            </button>
+        `;
+    }
+    
+    // Botón siguiente
+    if (pagination.page < pagination.totalPages) {
+        html += `
+            <button 
+                onclick="loadAdminProjects(${pagination.page + 1})"
+                class="px-3 py-2 text-sm bg-secondary text-secondary-foreground rounded hover:opacity-90"
+            >
+                Siguiente
+                <i class="fas fa-chevron-right ml-1"></i>
+            </button>
+        `;
+    }
+    
+    html += `
+            </div>
+        </div>
+    `;
+    
+    container.innerHTML = html;
+}
+
+function clearProjectFilters() {
+    document.getElementById('projectSearch').value = '';
+    document.getElementById('visibilityFilter').value = '';
+    DashboardState.projectsState.search = '';
+    DashboardState.projectsState.is_public = '';
+    loadAdminProjects(1);
+}
+
+async function toggleProjectVisibility(projectId, makePublic) {
+    try {
+        const response = await axios.post(`${API_BASE}/admin/projects/${projectId}/publish`, {
+            is_public: makePublic
+        });
+        
+        if (response.data.success) {
+            showToast(response.data.message || `Proyecto ${makePublic ? 'publicado' : 'ocultado'} exitosamente`, 'success');
+            loadAdminProjects(DashboardState.projectsState.currentPage); // Recargar la página actual
+        } else {
+            throw new Error(response.data.error || 'Error al cambiar visibilidad del proyecto');
+        }
+        
+    } catch (error) {
+        console.error('Error cambiando visibilidad:', error);
+        showToast(error.response?.data?.error || 'Error al cambiar visibilidad del proyecto', 'error');
+    }
+}
+
+async function deleteAdminProject(projectId, projectTitle, ownerName) {
+    // Crear modal de confirmación
+    const modal = document.createElement('div');
+    modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4';
+    modal.innerHTML = `
+        <div class="bg-card rounded-lg shadow-xl max-w-md w-full">
+            <div class="p-6">
+                <div class="flex items-center mb-4">
+                    <div class="w-12 h-12 bg-destructive/10 rounded-full flex items-center justify-center mr-4">
+                        <i class="fas fa-exclamation-triangle text-destructive text-xl"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-lg font-semibold text-destructive">Eliminar Proyecto</h3>
+                        <p class="text-sm text-muted-foreground">Esta acción no se puede deshacer</p>
+                    </div>
+                </div>
+                
+                <div class="mb-6">
+                    <p class="text-sm mb-2">¿Estás seguro de que deseas eliminar este proyecto?</p>
+                    <div class="bg-muted p-3 rounded-md">
+                        <p class="font-medium">${projectTitle}</p>
+                        <p class="text-sm text-muted-foreground">Propietario: ${ownerName}</p>
+                    </div>
+                    <div class="mt-2 text-xs text-destructive">
+                        <i class="fas fa-warning mr-1"></i>
+                        Esto eliminará también todos los productos asociados al proyecto
+                    </div>
+                </div>
+                
+                <div class="flex space-x-3">
+                    <button 
+                        type="button"
+                        onclick="this.closest('.fixed').remove()"
+                        class="flex-1 bg-secondary text-secondary-foreground px-4 py-2 rounded-lg hover:opacity-90"
+                    >
+                        Cancelar
+                    </button>
+                    <button 
+                        type="button"
+                        onclick="confirmDeleteAdminProject(${projectId})"
+                        class="flex-1 bg-destructive text-destructive-foreground px-4 py-2 rounded-lg hover:opacity-90"
+                    >
+                        <i class="fas fa-trash mr-2"></i>
+                        Eliminar
+                    </button>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+}
+
+async function confirmDeleteAdminProject(projectId) {
+    const modal = document.querySelector('.fixed');
+    const deleteButton = modal.querySelector('button[onclick*="confirmDeleteAdminProject"]');
+    const originalText = deleteButton.innerHTML;
+    
+    try {
+        deleteButton.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Eliminando...';
+        deleteButton.disabled = true;
+        
+        const response = await axios.delete(`${API_BASE}/admin/projects/${projectId}`);
+        
+        if (response.data.success) {
+            showToast('Proyecto eliminado exitosamente', 'success');
+            loadAdminProjects(DashboardState.projectsState.currentPage); // Recargar la lista
+            modal.remove(); // Cerrar modal
+        } else {
+            throw new Error(response.data.error || 'Error al eliminar proyecto');
+        }
+        
+    } catch (error) {
+        console.error('Error eliminando proyecto:', error);
+        showToast(error.response?.data?.error || 'Error al eliminar proyecto', 'error');
+        deleteButton.innerHTML = originalText;
+        deleteButton.disabled = false;
+    }
 }
 
 function renderAdminCategoriesView() {
