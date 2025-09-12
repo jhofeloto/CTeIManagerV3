@@ -176,7 +176,7 @@ async function loadPublicStats() {
     }
 }
 
-async function loadProjects(page = 1, search = '') {
+async function loadProjects(page = 1, search = '', filters = {}) {
     const container = document.getElementById('projectsContainer');
     
     if (page === 1) {
@@ -184,9 +184,11 @@ async function loadProjects(page = 1, search = '') {
     }
     
     try {
-        const response = await axios.get(`${API_BASE}/public/projects`, {
-            params: { page, limit: 6, search }
-        });
+        const params = { page, limit: 6 };
+        if (search) params.search = search;
+        if (filters.year) params.year = filters.year;
+        
+        const response = await axios.get(`${API_BASE}/public/projects`, { params });
         
         if (response.data.success) {
             const { projects, pagination } = response.data.data;
@@ -218,7 +220,7 @@ async function loadProjects(page = 1, search = '') {
     }
 }
 
-async function loadProducts(page = 1, search = '') {
+async function loadProducts(page = 1, search = '', filters = {}) {
     const container = document.getElementById('productsContainer');
     
     if (page === 1) {
@@ -226,9 +228,12 @@ async function loadProducts(page = 1, search = '') {
     }
     
     try {
-        const response = await axios.get(`${API_BASE}/public/products`, {
-            params: { page, limit: 6, search }
-        });
+        const params = { page, limit: 6 };
+        if (search) params.search = search;
+        if (filters.year) params.year = filters.year;
+        if (filters.category) params.category = filters.category;
+        
+        const response = await axios.get(`${API_BASE}/public/products`, { params });
         
         if (response.data.success) {
             const { products, pagination } = response.data.data;
@@ -308,13 +313,14 @@ function createProductCard(product) {
         'FRH_B': 'bg-accent text-accent-foreground'
     };
     
+    // Crear etiqueta de tipo con tooltip
+    const typeLabel = createTechLabelWithTooltip(product.product_type, `px-2 py-1 text-xs font-semibold rounded ${typeColors[product.product_type] || 'bg-muted text-muted-foreground'}`);
+    
     card.innerHTML = `
         <div class="mb-4">
             <div class="flex items-center justify-between mb-2">
                 <span class="text-sm font-mono text-muted-foreground">${product.product_code}</span>
-                <span class="px-2 py-1 text-xs font-semibold rounded ${typeColors[product.product_type] || 'bg-muted text-muted-foreground'}">
-                    ${product.product_type}
-                </span>
+                ${typeLabel}
             </div>
             <p class="text-sm text-foreground mb-3">${truncateText(product.description, 120)}</p>
             <div class="text-sm text-muted-foreground">
@@ -322,8 +328,7 @@ function createProductCard(product) {
                 <p class="mt-1"><i class="fas fa-calendar mr-1"></i>${formatDate(product.created_at)}</p>
             </div>
         </div>
-        <button onclick="viewProductDetails(${product.id})" class="w-full bg-secondary text-secondary-foreground py-2 px-4 rounded-lg font-medium hover:opacity-90 transition-opacity">
-            <i class="fas fa-eye mr-2"></i>
+        <button onclick="viewProductDetails(${product.id})" class="w-full bg-primary text-primary-foreground py-2 rounded-lg font-medium hover:opacity-90 transition-opacity">
             Ver Detalles
         </button>
     `;
@@ -366,7 +371,7 @@ function showProjectModal(project) {
         <div class="border border-border rounded p-3 mb-2">
             <div class="flex justify-between items-start mb-1">
                 <span class="font-mono text-sm">${product.product_code}</span>
-                <span class="px-2 py-1 text-xs rounded bg-muted text-muted-foreground">${product.product_type}</span>
+                ${createTechLabelWithTooltip(product.product_type, 'px-2 py-1 text-xs rounded bg-muted text-muted-foreground')}
             </div>
             <p class="text-sm">${product.description}</p>
         </div>
@@ -478,9 +483,7 @@ function showProductModal(product) {
                     <div class="flex-1">
                         <div class="flex items-center gap-3 mb-2">
                             <span class="text-lg font-mono text-muted-foreground">${product.product_code}</span>
-                            <span class="px-3 py-1 text-sm font-semibold rounded ${typeColors[product.product_type] || 'bg-muted text-muted-foreground'}">
-                                ${product.category_name || product.product_type}
-                            </span>
+                            ${createTechLabelWithTooltip(product.product_type, `px-3 py-1 text-sm font-semibold rounded ${typeColors[product.product_type] || 'bg-muted text-muted-foreground'}`)}
                         </div>
                         <h2 class="text-2xl font-bold">Producto de CTeI</h2>
                     </div>
@@ -566,29 +569,125 @@ function formatRole(role) {
 }
 
 // Funciones de búsqueda
+// ===== BÚSQUEDA AVANZADA =====
+
+// Toggle para mostrar/ocultar filtros avanzados
+function toggleAdvancedFilters() {
+    const filtersContainer = document.getElementById('advancedFilters');
+    const toggleButton = document.getElementById('filtersToggle');
+    
+    if (filtersContainer && filtersContainer.classList.contains('hidden')) {
+        filtersContainer.classList.remove('hidden');
+        toggleButton.innerHTML = '<i class="fas fa-filter mr-2"></i>Ocultar Filtros';
+        // Cargar categorías cuando se muestran los filtros
+        loadProductCategoriesForFilter();
+    } else if (filtersContainer) {
+        filtersContainer.classList.add('hidden');
+        toggleButton.innerHTML = '<i class="fas fa-filter mr-2"></i>Filtros';
+    }
+}
+
+// Cargar categorías de productos para el filtro
+async function loadProductCategoriesForFilter() {
+    try {
+        const response = await axios.get(`${API_BASE}/public/product-categories`);
+        if (response.data.success) {
+            const categoryFilter = document.getElementById('categoryFilter');
+            if (!categoryFilter) return;
+            
+            const categories = response.data.data.categories;
+            
+            // Limpiar opciones existentes (excepto "Todas las categorías")
+            categoryFilter.innerHTML = '<option value="">Todas las categorías</option>';
+            
+            // Agrupar categorías por grupo
+            const groupedCategories = categories.reduce((acc, category) => {
+                if (!acc[category.category_group]) {
+                    acc[category.category_group] = [];
+                }
+                acc[category.category_group].push(category);
+                return acc;
+            }, {});
+            
+            // Agregar opciones agrupadas
+            Object.entries(groupedCategories).forEach(([group, groupCategories]) => {
+                const optgroup = document.createElement('optgroup');
+                optgroup.label = group;
+                
+                groupCategories.forEach(category => {
+                    const option = document.createElement('option');
+                    option.value = category.code;
+                    option.textContent = `${category.code} - ${category.name}`;
+                    optgroup.appendChild(option);
+                });
+                
+                categoryFilter.appendChild(optgroup);
+            });
+        }
+    } catch (error) {
+        console.error('Error cargando categorías para filtro:', error);
+    }
+}
+
+// Limpiar todos los filtros
+function clearAllFilters() {
+    document.getElementById('searchInput').value = '';
+    if (document.getElementById('yearFilter')) document.getElementById('yearFilter').value = '';
+    if (document.getElementById('typeFilter')) document.getElementById('typeFilter').value = '';
+    if (document.getElementById('categoryFilter')) document.getElementById('categoryFilter').value = '';
+    
+    // Realizar búsqueda vacía para mostrar todo
+    performSearch();
+}
+
 function performSearch() {
     const query = document.getElementById('searchInput').value.trim();
+    const yearFilter = document.getElementById('yearFilter')?.value || '';
+    const typeFilter = document.getElementById('typeFilter')?.value || '';
+    const categoryFilter = document.getElementById('categoryFilter')?.value || '';
+    
+    // Actualizar estado global
     AppState.searchQuery = query;
+    AppState.searchFilters = { year: yearFilter, type: typeFilter, category: categoryFilter };
     
     // Resetear páginas
     AppState.currentPage = 1;
     AppState.currentProductPage = 1;
     
-    // Cargar resultados
-    loadProjects(1, query);
-    loadProducts(1, query);
+    // Cargar resultados con filtros
+    if (typeFilter !== 'products') {
+        loadProjects(1, query, { year: yearFilter });
+    } else {
+        // Limpiar proyectos si solo se buscan productos
+        document.getElementById('projectsContainer').innerHTML = '<p class="text-center text-muted-foreground py-8">Búsqueda limitada a productos</p>';
+    }
     
-    if (query) {
-        showToast(`Buscando: "${query}"`);
+    if (typeFilter !== 'projects') {
+        loadProducts(1, query, { year: yearFilter, category: categoryFilter });
+    } else {
+        // Limpiar productos si solo se buscan proyectos
+        document.getElementById('productsContainer').innerHTML = '<p class="text-center text-muted-foreground py-8">Búsqueda limitada a proyectos</p>';
+    }
+    
+    // Mostrar mensaje de búsqueda
+    let searchMessage = '';
+    if (query) searchMessage += `"${query}"`;
+    if (yearFilter) searchMessage += ` en ${yearFilter}`;
+    if (categoryFilter) searchMessage += ` categoría ${categoryFilter}`;
+    
+    if (searchMessage) {
+        showToast(`Buscando: ${searchMessage}`);
     }
 }
 
 function loadMoreProjects() {
-    loadProjects(AppState.currentPage + 1, AppState.searchQuery);
+    const filters = AppState.searchFilters || {};
+    loadProjects(AppState.currentPage + 1, AppState.searchQuery, { year: filters.year });
 }
 
 function loadMoreProducts() {
-    loadProducts(AppState.currentProductPage + 1, AppState.searchQuery);
+    const filters = AppState.searchFilters || {};
+    loadProducts(AppState.currentProductPage + 1, AppState.searchQuery, { year: filters.year, category: filters.category });
 }
 
 // Event listener para búsqueda con Enter
@@ -618,6 +717,68 @@ document.addEventListener('keydown', function(e) {
         closeRegisterModal();
     }
 });
+
+// ===== TOOLTIPS PARA ETIQUETAS TÉCNICAS =====
+
+// Diccionario de etiquetas técnicas y sus descripciones
+const TECH_LABELS = {
+    // Artículos científicos
+    'ART_A1': 'Artículo en revista indexada en Q1 - Máxima calidad científica',
+    'ART_A2': 'Artículo en revista indexada en Q2 - Alta calidad científica',
+    'ART_B': 'Artículo en revista indexada nacional - Calidad regional',
+    'ART_C': 'Artículo en revista no indexada - Divulgación científica',
+    
+    // Eventos y conferencias
+    'CONFERENCE': 'Ponencia en conferencia internacional - Presentación académica',
+    'WORKSHOP': 'Taller o seminario especializado - Capacitación técnica',
+    'SYMPOSIUM': 'Simposio científico - Encuentro académico',
+    
+    // Productos tecnológicos
+    'SOFTWARE': 'Desarrollo de software - Producto tecnológico',
+    'PATENT': 'Patente registrada - Propiedad intelectual',
+    'PROTOTYPE': 'Prototipo funcional - Desarrollo tecnológico',
+    'DATASET': 'Base de datos científica - Recurso de investigación',
+    
+    // Formación de recursos humanos
+    'PHD': 'Formación doctoral - Doctorado',
+    'MSC': 'Formación de maestría - Postgrado',
+    'SPEC': 'Especialización técnica - Formación avanzada',
+    'INTERN': 'Programa de prácticas - Formación práctica',
+    
+    // Tipos de productos (Minciencias)
+    'TOP': 'Producto tipo Top - Máximo reconocimiento Minciencias',
+    'A': 'Producto tipo A - Alto reconocimiento Minciencias',
+    'B': 'Producto tipo B - Reconocimiento estándar Minciencias',
+    'ASC': 'Apropiación Social del Conocimiento',
+    'DPC': 'Desarrollo de Procesos y Capacidades',
+    'FRH_A': 'Formación Recursos Humanos tipo A',
+    'FRH_B': 'Formación Recursos Humanos tipo B'
+};
+
+// Función para crear tooltip con etiqueta técnica
+function createTechLabelWithTooltip(label, className = '') {
+    const description = TECH_LABELS[label] || 'Etiqueta técnica especializada';
+    
+    return `
+        <span class="tooltip-container ${className}">
+            <span class="tech-label">${label}</span>
+            <div class="tooltip">${description}</div>
+        </span>
+    `;
+}
+
+// Función para procesar etiquetas técnicas en texto
+function processTextWithTechLabels(text) {
+    if (!text) return text;
+    
+    // Buscar patrones de etiquetas técnicas en el texto
+    return Object.keys(TECH_LABELS).reduce((processedText, label) => {
+        const regex = new RegExp(`\\b${label}\\b`, 'gi');
+        return processedText.replace(regex, (match) => {
+            return createTechLabelWithTooltip(match.toUpperCase());
+        });
+    }, text);
+}
 
 // ===== GESTIÓN DE AUTENTICACIÓN =====
 

@@ -125,30 +125,104 @@ app.get('/', (c) => {
                 </p>
             </div>
 
-            <!-- Búsqueda -->
+            <!-- Búsqueda Avanzada -->
             <div class="bg-card rounded-lg shadow-md p-6 mb-8">
-                <div class="flex flex-col sm:flex-row gap-4">
-                    <div class="flex-1">
-                        <input 
-                            type="text" 
-                            id="searchInput"
-                            placeholder="Buscar proyectos y productos..." 
-                            class="w-full px-4 py-2 border border-border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
-                        >
+                <div class="space-y-4">
+                    <!-- Barra de búsqueda principal -->
+                    <div class="flex flex-col sm:flex-row gap-4">
+                        <div class="flex-1">
+                            <input 
+                                type="text" 
+                                id="searchInput"
+                                placeholder="Buscar proyectos y productos..." 
+                                class="w-full px-4 py-2 border border-border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+                            >
+                        </div>
+                        <div class="flex gap-2">
+                            <button 
+                                onclick="toggleAdvancedFilters()"
+                                class="bg-secondary text-secondary-foreground px-4 py-2 rounded-lg font-medium hover:opacity-90 transition-opacity"
+                                id="filtersToggle"
+                            >
+                                <i class="fas fa-filter mr-2"></i>
+                                Filtros
+                            </button>
+                            <button 
+                                onclick="performSearch()"
+                                class="bg-primary text-primary-foreground px-6 py-2 rounded-lg font-medium hover:opacity-90 transition-opacity"
+                            >
+                                <i class="fas fa-search mr-2"></i>
+                                Buscar
+                            </button>
+                        </div>
                     </div>
-                    <button 
-                        onclick="performSearch()"
-                        class="bg-primary text-primary-foreground px-6 py-2 rounded-lg font-medium hover:opacity-90"
-                    >
-                        <i class="fas fa-search mr-2"></i>
-                        Buscar
-                    </button>
+                    
+                    <!-- Filtros avanzados (inicialmente ocultos) -->
+                    <div id="advancedFilters" class="hidden border-t border-border pt-4">
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <!-- Filtro por año -->
+                            <div>
+                                <label class="block text-sm font-medium text-foreground mb-2">Año</label>
+                                <select 
+                                    id="yearFilter"
+                                    class="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+                                >
+                                    <option value="">Todos los años</option>
+                                    <option value="2024">2024</option>
+                                    <option value="2023">2023</option>
+                                    <option value="2022">2022</option>
+                                    <option value="2021">2021</option>
+                                </select>
+                            </div>
+                            
+                            <!-- Filtro por tipo de contenido -->
+                            <div>
+                                <label class="block text-sm font-medium text-foreground mb-2">Tipo</label>
+                                <select 
+                                    id="typeFilter"
+                                    class="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+                                >
+                                    <option value="">Proyectos y Productos</option>
+                                    <option value="projects">Solo Proyectos</option>
+                                    <option value="products">Solo Productos</option>
+                                </select>
+                            </div>
+                            
+                            <!-- Filtro por categoría de producto -->
+                            <div>
+                                <label class="block text-sm font-medium text-foreground mb-2">Categoría</label>
+                                <select 
+                                    id="categoryFilter"
+                                    class="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+                                >
+                                    <option value="">Todas las categorías</option>
+                                    <!-- Las categorías se cargarán dinámicamente -->
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <!-- Botones de acción para filtros -->
+                        <div class="flex justify-end gap-2 mt-4">
+                            <button 
+                                onclick="clearAllFilters()"
+                                class="bg-muted text-muted-foreground px-4 py-2 rounded-lg font-medium hover:opacity-90 transition-opacity"
+                            >
+                                Limpiar Filtros
+                            </button>
+                            <button 
+                                onclick="performSearch()"
+                                class="bg-primary text-primary-foreground px-4 py-2 rounded-lg font-medium hover:opacity-90 transition-opacity"
+                            >
+                                Aplicar Filtros
+                            </button>
+                        </div>
+                    </div>
                 </div>
             </div>
 
             <!-- Estadísticas públicas -->
             <div id="stats" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-                <div class="bg-card rounded-lg shadow-md p-6">
+                <div class="bg-card rounded-lg shadow-md p-6 stats-card interactive-element" onclick="scrollToSection('projects')">
                     <div class="flex items-center">
                         <div class="p-3 bg-primary/10 rounded-lg">
                             <i class="fas fa-project-diagram text-primary text-xl"></i>
@@ -160,7 +234,7 @@ app.get('/', (c) => {
                     </div>
                 </div>
                 
-                <div class="bg-card rounded-lg shadow-md p-6">
+                <div class="bg-card rounded-lg shadow-md p-6 stats-card interactive-element" onclick="scrollToSection('products')">
                     <div class="flex items-center">
                         <div class="p-3 bg-accent/10 rounded-lg">
                             <i class="fas fa-cubes text-accent text-xl"></i>
@@ -172,7 +246,7 @@ app.get('/', (c) => {
                     </div>
                 </div>
 
-                <div class="bg-card rounded-lg shadow-md p-6">
+                <div class="bg-card rounded-lg shadow-md p-6 stats-card interactive-element">
                     <div class="flex items-center">
                         <div class="p-3 bg-chart-2/10 rounded-lg">
                             <i class="fas fa-users text-chart-2 text-xl"></i>
@@ -184,7 +258,7 @@ app.get('/', (c) => {
                     </div>
                 </div>
 
-                <div class="bg-card rounded-lg shadow-md p-6">
+                <div class="bg-card rounded-lg shadow-md p-6 stats-card interactive-element">
                     <div class="flex items-center">
                         <div class="p-3 bg-chart-3/10 rounded-lg">
                             <i class="fas fa-chart-line text-chart-3 text-xl"></i>

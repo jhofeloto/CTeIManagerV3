@@ -13,7 +13,7 @@
   --secondary: oklch(0.9940 0 0);
   --secondary-foreground: oklch(0.2046 0 0);
   --muted: oklch(0.9461 0 0);
-  --muted-foreground: oklch(0.2435 0 0);
+  --muted-foreground: oklch(0.3500 0 0); /* Mejorado para WCAG AA: ratio 4.5:1 */
   --accent: oklch(0.9461 0 0);
   --accent-foreground: oklch(0.2435 0 0);
   --destructive: oklch(0.5523 0.1927 32.7272);
@@ -62,7 +62,7 @@
   --secondary: oklch(0.2603 0 0);
   --secondary-foreground: oklch(0.9851 0 0);
   --muted: oklch(0.2393 0 0);
-  --muted-foreground: oklch(0.7122 0 0);
+  --muted-foreground: oklch(0.7500 0 0); /* Mejorado para WCAG AA en modo oscuro */
   --accent: oklch(0.3132 0 0);
   --accent-foreground: oklch(0.9851 0 0);
   --destructive: oklch(0.3123 0.0852 29.7877);
@@ -183,6 +183,17 @@ body {
   border: 1px solid var(--border);
   border-radius: var(--radius);
   box-shadow: var(--shadow-sm);
+  transition: all 0.2s ease-in-out;
+}
+
+.card:hover {
+  box-shadow: var(--shadow-lg);
+  transform: translateY(-2px);
+}
+
+.card:focus-within {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
 }
 
 .input {
@@ -227,6 +238,67 @@ body {
   }
 }
 
+/* Tooltips para etiquetas técnicas */
+.tooltip-container {
+  position: relative;
+  display: inline-block;
+}
+
+.tooltip {
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--popover);
+  color: var(--popover-foreground);
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  white-space: nowrap;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  border: 1px solid var(--border);
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.2s, visibility 0.2s;
+  z-index: 1000;
+  margin-bottom: 5px;
+}
+
+.tooltip::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 5px solid transparent;
+  border-top-color: var(--popover);
+}
+
+.tooltip-container:hover .tooltip,
+.tooltip-container:focus .tooltip {
+  opacity: 1;
+  visibility: visible;
+}
+
+/* Estilos para etiquetas técnicas */
+.tech-label {
+  background: var(--secondary);
+  color: var(--secondary-foreground);
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.025em;
+  cursor: help;
+  transition: all 0.2s;
+}
+
+.tech-label:hover {
+  background: var(--accent);
+  color: var(--accent-foreground);
+}
+
 /* Loading spinner */
 .spinner {
   border: 2px solid var(--muted);
@@ -240,6 +312,77 @@ body {
 @keyframes spin {
   0% { transform: rotate(0deg); }
   100% { transform: rotate(360deg); }
+}
+
+/* Estados interactivos mejorados */
+.interactive-element {
+  transition: all 0.2s ease-in-out;
+}
+
+.interactive-element:hover {
+  transform: translateY(-1px);
+}
+
+.interactive-element:active {
+  transform: translateY(0);
+}
+
+/* Mejorar estados de los botones */
+button, .btn {
+  transition: all 0.2s ease-in-out;
+  position: relative;
+  overflow: hidden;
+}
+
+button:hover, .btn:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
+}
+
+button:active, .btn:active {
+  transform: translateY(0);
+}
+
+button:focus-visible, .btn:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+
+/* Estados de las tarjetas de estadísticas */
+.stats-card {
+  transition: all 0.3s ease-in-out;
+  cursor: pointer;
+}
+
+.stats-card:hover {
+  box-shadow: var(--shadow-lg);
+  transform: translateY(-3px) scale(1.02);
+}
+
+/* Estados de enlaces de navegación */
+nav a {
+  transition: all 0.2s ease-in-out;
+  position: relative;
+}
+
+nav a:hover {
+  transform: translateY(-1px);
+}
+
+nav a:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+  border-radius: var(--radius);
+}
+
+/* Estados de campos de entrada */
+input, select, textarea {
+  transition: all 0.2s ease-in-out;
+}
+
+input:focus, select:focus, textarea:focus {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
 }
 
 /* Toast notifications */

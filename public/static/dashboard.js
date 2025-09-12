@@ -6,6 +6,7 @@ const DashboardState = {
     token: localStorage.getItem('ctei_token') || null,
     currentView: 'dashboard',
     projects: [],
+    adminProjects: [], // Proyectos para vista de administrador
     users: [], // Solo para admins
     selectedProject: null,
     charts: {}
@@ -1102,6 +1103,25 @@ async function toggleProjectVisibility(projectId, isPublic) {
             } else if (DashboardState.currentView === 'dashboard') {
                 renderMainDashboard();
             }
+            
+            // Forzar actualización visual inmediata del botón
+            const button = document.querySelector(`[onclick*="toggleProjectVisibility(${projectId}"]`);
+            if (button) {
+                const icon = button.querySelector('i');
+                if (isPublic) {
+                    // Proyecto ahora es público - botón para ocultar
+                    button.className = 'flex-1 bg-muted text-muted-foreground py-2 px-3 rounded text-sm hover:opacity-90';
+                    icon.className = 'fas fa-eye-slash mr-1';
+                    button.innerHTML = '<i class="fas fa-eye-slash mr-1"></i>Ocultar';
+                    button.setAttribute('onclick', `toggleProjectVisibility(${projectId}, false)`);
+                } else {
+                    // Proyecto ahora es privado - botón para publicar
+                    button.className = 'flex-1 bg-primary text-primary-foreground py-2 px-3 rounded text-sm hover:opacity-90';
+                    icon.className = 'fas fa-eye mr-1';
+                    button.innerHTML = '<i class="fas fa-eye mr-1"></i>Publicar';
+                    button.setAttribute('onclick', `toggleProjectVisibility(${projectId}, true)`);
+                }
+            }
         }
     } catch (error) {
         const message = error.response?.data?.error || 'Error al actualizar el proyecto';
@@ -1116,8 +1136,164 @@ function viewProject(projectId) {
 }
 
 function editProject(projectId) {
-    // Implementar edición del proyecto
-    console.log('Editar proyecto:', projectId);
+    // Buscar el proyecto en el estado
+    const project = DashboardState.projects.find(p => p.id === projectId);
+    if (!project) {
+        showToast('Proyecto no encontrado', 'error');
+        return;
+    }
+    
+    showEditProjectModal(project);
+}
+
+// Modal de edición de proyecto
+function showEditProjectModal(project) {
+    const modal = document.createElement('div');
+    modal.className = 'fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4';
+    modal.onclick = (e) => {
+        if (e.target === modal) modal.remove();
+    };
+    
+    modal.innerHTML = `
+        <div class="bg-card rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div class="p-6">
+                <div class="flex justify-between items-center mb-6">
+                    <h3 class="text-xl font-semibold">Editar Proyecto</h3>
+                    <button onclick="this.closest('.fixed').remove()" class="text-muted-foreground hover:text-foreground">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                
+                <form onsubmit="updateProject(event, ${project.id})">
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium mb-2">Título *</label>
+                            <input 
+                                type="text" 
+                                id="editProjectTitle"
+                                value="${project.title || ''}"
+                                class="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent" 
+                                required
+                            >
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium mb-2">Resumen *</label>
+                            <textarea 
+                                id="editProjectAbstract"
+                                rows="4"
+                                class="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+                                required
+                            >${project.abstract || ''}</textarea>
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium mb-2">Palabras Clave</label>
+                            <input 
+                                type="text" 
+                                id="editProjectKeywords"
+                                value="${project.keywords || ''}"
+                                placeholder="Separadas por comas"
+                                class="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+                            >
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium mb-2">Introducción</label>
+                            <textarea 
+                                id="editProjectIntroduction"
+                                rows="3"
+                                class="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+                            >${project.introduction || ''}</textarea>
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium mb-2">Metodología</label>
+                            <textarea 
+                                id="editProjectMethodology"
+                                rows="3"
+                                class="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+                            >${project.methodology || ''}</textarea>
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium mb-2">Estado</label>
+                            <select 
+                                id="editProjectStatus"
+                                class="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+                            >
+                                <option value="DRAFT" ${project.status === 'DRAFT' ? 'selected' : ''}>Borrador</option>
+                                <option value="ACTIVE" ${project.status === 'ACTIVE' ? 'selected' : ''}>Activo</option>
+                                <option value="REVIEW" ${project.status === 'REVIEW' ? 'selected' : ''}>En Revisión</option>
+                                <option value="COMPLETED" ${project.status === 'COMPLETED' ? 'selected' : ''}>Completado</option>
+                                <option value="SUSPENDED" ${project.status === 'SUSPENDED' ? 'selected' : ''}>Suspendido</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="flex justify-end space-x-3 mt-6">
+                        <button 
+                            type="button"
+                            onclick="this.closest('.fixed').remove()"
+                            class="bg-muted text-muted-foreground px-4 py-2 rounded-lg hover:opacity-90"
+                        >
+                            Cancelar
+                        </button>
+                        <button 
+                            type="submit"
+                            class="bg-primary text-primary-foreground px-4 py-2 rounded-lg hover:opacity-90"
+                        >
+                            <i class="fas fa-save mr-1"></i>
+                            Actualizar Proyecto
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+}
+
+// Función para actualizar proyecto
+async function updateProject(event, projectId) {
+    event.preventDefault();
+    
+    const projectData = {
+        title: document.getElementById('editProjectTitle').value,
+        abstract: document.getElementById('editProjectAbstract').value,
+        keywords: document.getElementById('editProjectKeywords').value || null,
+        introduction: document.getElementById('editProjectIntroduction').value || null,
+        methodology: document.getElementById('editProjectMethodology').value || null,
+        status: document.getElementById('editProjectStatus').value
+    };
+    
+    try {
+        const response = await axios.put(`${API_BASE}/me/projects/${projectId}`, projectData);
+        
+        if (response.data.success) {
+            showToast('Proyecto actualizado exitosamente');
+            
+            // Cerrar modal
+            document.querySelector('.fixed').remove();
+            
+            // Actualizar estado local
+            const projectIndex = DashboardState.projects.findIndex(p => p.id === projectId);
+            if (projectIndex !== -1) {
+                DashboardState.projects[projectIndex] = { ...DashboardState.projects[projectIndex], ...projectData };
+            }
+            
+            // Re-renderizar vista actual
+            if (DashboardState.currentView === 'projects') {
+                renderProjectsView();
+            } else if (DashboardState.currentView === 'dashboard') {
+                renderMainDashboard();
+            }
+        }
+    } catch (error) {
+        const message = error.response?.data?.error || 'Error al actualizar el proyecto';
+        showToast(message, 'error');
+    }
 }
 
 async function updateProfile() {
@@ -1811,9 +1987,10 @@ async function loadAdminProjects(page = 1) {
         if (response.data.success) {
             const { projects, pagination } = response.data.data;
             
-            // Actualizar estado de paginación
+            // Actualizar estado de paginación y proyectos
             DashboardState.projectsState.total = pagination.total;
             DashboardState.projectsState.totalPages = pagination.totalPages;
+            DashboardState.adminProjects = projects; // Guardar proyectos para acceso en edición
             
             if (projects.length === 0) {
                 container.innerHTML = `
@@ -1926,7 +2103,14 @@ function renderProjectsTable(projects) {
                 <td class="py-4">
                     <div class="flex justify-end space-x-2">
                         <button 
-                            onclick="toggleProjectVisibility(${project.id}, ${!isPublic})"
+                            onclick="editAdminProject(${project.id})"
+                            class="bg-secondary text-secondary-foreground px-3 py-1 rounded text-sm hover:opacity-90"
+                            title="Editar proyecto"
+                        >
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button 
+                            onclick="toggleAdminProjectVisibility(${project.id}, ${!isPublic})"
                             class="px-3 py-1 rounded text-sm ${isPublic ? 'bg-muted text-muted-foreground' : 'bg-green-100 text-green-700'} hover:opacity-90"
                             title="${isPublic ? 'Ocultar proyecto' : 'Publicar proyecto'}"
                         >
@@ -2028,7 +2212,7 @@ function clearProjectFilters() {
     loadAdminProjects(1);
 }
 
-async function toggleProjectVisibility(projectId, makePublic) {
+async function toggleAdminProjectVisibility(projectId, makePublic) {
     try {
         const response = await axios.post(`${API_BASE}/admin/projects/${projectId}/publish`, {
             is_public: makePublic
@@ -2036,6 +2220,26 @@ async function toggleProjectVisibility(projectId, makePublic) {
         
         if (response.data.success) {
             showToast(response.data.message || `Proyecto ${makePublic ? 'publicado' : 'ocultado'} exitosamente`, 'success');
+            
+            // Actualización visual inmediata del botón en vista admin
+            const button = document.querySelector(`[onclick*="toggleAdminProjectVisibility(${projectId}"]`);
+            if (button) {
+                const icon = button.querySelector('i');
+                if (makePublic) {
+                    // Proyecto ahora es público - botón para ocultar
+                    button.className = 'px-3 py-1 rounded text-sm bg-muted text-muted-foreground hover:opacity-90';
+                    icon.className = 'fas fa-eye-slash';
+                    button.setAttribute('onclick', `toggleAdminProjectVisibility(${projectId}, false)`);
+                    button.title = 'Ocultar proyecto';
+                } else {
+                    // Proyecto ahora es privado - botón para publicar
+                    button.className = 'px-3 py-1 rounded text-sm bg-green-100 text-green-700 hover:opacity-90';
+                    icon.className = 'fas fa-eye';
+                    button.setAttribute('onclick', `toggleAdminProjectVisibility(${projectId}, true)`);
+                    button.title = 'Publicar proyecto';
+                }
+            }
+            
             loadAdminProjects(DashboardState.projectsState.currentPage); // Recargar la página actual
         } else {
             throw new Error(response.data.error || 'Error al cambiar visibilidad del proyecto');
@@ -2044,6 +2248,229 @@ async function toggleProjectVisibility(projectId, makePublic) {
     } catch (error) {
         console.error('Error cambiando visibilidad:', error);
         showToast(error.response?.data?.error || 'Error al cambiar visibilidad del proyecto', 'error');
+    }
+}
+
+// Funciones de edición para administradores
+function editAdminProject(projectId) {
+    console.log('editAdminProject llamada con ID:', projectId);
+    console.log('DashboardState.adminProjects:', DashboardState.adminProjects);
+    
+    // Buscar el proyecto en los datos cargados
+    const projects = DashboardState.adminProjects || [];
+    console.log('Proyectos disponibles:', projects.length);
+    
+    const project = projects.find(p => p.id === projectId);
+    console.log('Proyecto encontrado:', project);
+    
+    if (!project) {
+        console.warn('Proyecto no encontrado con ID:', projectId);
+        showToast('Proyecto no encontrado. Verificando datos...', 'error');
+        
+        // Intentar recargar los proyectos si no están disponibles
+        if (!DashboardState.adminProjects || DashboardState.adminProjects.length === 0) {
+            console.log('Recargando proyectos de admin...');
+            loadAdminProjects().then(() => {
+                // Intentar de nuevo después de recargar
+                const reloadedProjects = DashboardState.adminProjects || [];
+                const reloadedProject = reloadedProjects.find(p => p.id === projectId);
+                if (reloadedProject) {
+                    showAdminEditProjectModal(reloadedProject);
+                } else {
+                    showToast('Proyecto no encontrado después de recargar', 'error');
+                }
+            });
+        }
+        return;
+    }
+    
+    console.log('Abriendo modal para proyecto:', project.title);
+    showAdminEditProjectModal(project);
+}
+
+function showAdminEditProjectModal(project) {
+    console.log('showAdminEditProjectModal llamada para:', project);
+    
+    const modal = document.createElement('div');
+    modal.className = 'fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4';
+    modal.onclick = (e) => {
+        if (e.target === modal) modal.remove();
+    };
+    
+    modal.innerHTML = `
+        <div class="bg-card rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div class="p-6">
+                <div class="flex justify-between items-center mb-6">
+                    <div>
+                        <h3 class="text-xl font-semibold">Editar Proyecto (Admin)</h3>
+                        <p class="text-sm text-muted-foreground">Propietario: ${project.owner_name}</p>
+                    </div>
+                    <button onclick="this.closest('.fixed').remove()" class="text-muted-foreground hover:text-foreground">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                
+                <form onsubmit="updateAdminProject(event, ${project.id})">
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium mb-2">Título *</label>
+                            <input 
+                                type="text" 
+                                id="editAdminProjectTitle"
+                                value="${(project.title || '').replace(/"/g, '&quot;')}"
+                                class="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent" 
+                                required
+                            >
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium mb-2">Resumen *</label>
+                            <textarea 
+                                id="editAdminProjectAbstract"
+                                rows="4"
+                                class="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+                                required
+                            >${project.abstract || ''}</textarea>
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium mb-2">Palabras Clave</label>
+                            <input 
+                                type="text" 
+                                id="editAdminProjectKeywords"
+                                value="${(project.keywords || '').replace(/"/g, '&quot;')}"
+                                placeholder="Separadas por comas"
+                                class="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+                            >
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium mb-2">Introducción</label>
+                            <textarea 
+                                id="editAdminProjectIntroduction"
+                                rows="3"
+                                class="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+                            >${project.introduction || ''}</textarea>
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium mb-2">Metodología</label>
+                            <textarea 
+                                id="editAdminProjectMethodology"
+                                rows="3"
+                                class="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+                            >${project.methodology || ''}</textarea>
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium mb-2">Estado</label>
+                            <select 
+                                id="editAdminProjectStatus"
+                                class="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+                            >
+                                <option value="DRAFT" ${project.status === 'DRAFT' ? 'selected' : ''}>Borrador</option>
+                                <option value="ACTIVE" ${project.status === 'ACTIVE' ? 'selected' : ''}>Activo</option>
+                                <option value="REVIEW" ${project.status === 'REVIEW' ? 'selected' : ''}>En Revisión</option>
+                                <option value="COMPLETED" ${project.status === 'COMPLETED' ? 'selected' : ''}>Completado</option>
+                                <option value="SUSPENDED" ${project.status === 'SUSPENDED' ? 'selected' : ''}>Suspendido</option>
+                            </select>
+                        </div>
+                        
+                        <div class="bg-muted/50 p-4 rounded-lg">
+                            <div class="flex items-center mb-2">
+                                <i class="fas fa-info-circle text-muted-foreground mr-2"></i>
+                                <span class="text-sm font-medium">Información del Propietario</span>
+                            </div>
+                            <div class="text-sm text-muted-foreground">
+                                <p><strong>Nombre:</strong> ${project.owner_name}</p>
+                                <p><strong>Email:</strong> ${project.owner_email || 'No disponible'}</p>
+                                <p><strong>ID de Usuario:</strong> ${project.owner_id}</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="flex justify-end space-x-3 mt-6">
+                        <button 
+                            type="button"
+                            onclick="this.closest('.fixed').remove()"
+                            class="bg-muted text-muted-foreground px-4 py-2 rounded-lg hover:opacity-90"
+                        >
+                            Cancelar
+                        </button>
+                        <button 
+                            type="submit"
+                            class="bg-primary text-primary-foreground px-4 py-2 rounded-lg hover:opacity-90"
+                        >
+                            <i class="fas fa-save mr-1"></i>
+                            Actualizar Proyecto
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+}
+
+async function updateAdminProject(event, projectId) {
+    event.preventDefault();
+    
+    const projectData = {
+        title: document.getElementById('editAdminProjectTitle').value,
+        abstract: document.getElementById('editAdminProjectAbstract').value,
+        keywords: document.getElementById('editAdminProjectKeywords').value || null,
+        introduction: document.getElementById('editAdminProjectIntroduction').value || null,
+        methodology: document.getElementById('editAdminProjectMethodology').value || null,
+        status: document.getElementById('editAdminProjectStatus').value
+    };
+    
+    try {
+        // Primero intentar con endpoint de admin (cuando esté disponible en backend)
+        let response;
+        try {
+            response = await axios.put(`${API_BASE}/admin/projects/${projectId}`, projectData);
+        } catch (adminError) {
+            if (adminError.response?.status === 404) {
+                // Si el endpoint de admin no existe, intentar con endpoint de usuario
+                // Esto funcionará solo si el admin es también propietario del proyecto
+                response = await axios.put(`${API_BASE}/me/projects/${projectId}`, projectData);
+            } else {
+                throw adminError;
+            }
+        }
+        
+        if (response.data.success) {
+            showToast('Proyecto actualizado exitosamente por administrador');
+            
+            // Cerrar modal
+            document.querySelector('.fixed').remove();
+            
+            // Actualizar estado local si existe
+            if (DashboardState.adminProjects) {
+                const projectIndex = DashboardState.adminProjects.findIndex(p => p.id === projectId);
+                if (projectIndex !== -1) {
+                    DashboardState.adminProjects[projectIndex] = { 
+                        ...DashboardState.adminProjects[projectIndex], 
+                        ...projectData 
+                    };
+                }
+            }
+            
+            // Recargar la vista de administrador
+            loadAdminProjects(DashboardState.projectsState?.currentPage || 1);
+        }
+    } catch (error) {
+        let message = 'Error al actualizar el proyecto';
+        
+        if (error.response?.status === 403) {
+            message = 'No tienes permisos para editar este proyecto. El endpoint de administrador aún no está implementado en el backend.';
+        } else if (error.response?.data?.error) {
+            message = error.response.data.error;
+        }
+        
+        showToast(message, 'error');
+        console.warn('Nota para desarrollo: Se necesita implementar PUT /api/admin/projects/:id en el backend para permitir edición de administrador de cualquier proyecto.');
     }
 }
 

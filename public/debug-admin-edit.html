@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug Admin Edit - CTeI Manager</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="/static/styles.css" rel="stylesheet">
+</head>
+<body class="bg-gray-100 p-8">
+    <div class="max-w-6xl mx-auto">
+        <div class="bg-white rounded-lg shadow p-6 mb-6">
+            <h1 class="text-2xl font-bold mb-4">
+                <i class="fas fa-bug mr-2 text-red-600"></i>
+                Diagnóstico: Botón Editar Admin Dashboard
+            </h1>
+            
+            <div class="bg-blue-50 border border-blue-200 rounded p-4 mb-6">
+                <h2 class="font-semibold text-blue-800 mb-2">Información de Diagnóstico</h2>
+                <p class="text-blue-700">Esta página simula la funcionalidad del botón editar en el dashboard de admin para diagnosticar problemas.</p>
+            </div>
+            
+            <!-- Botones de prueba -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                <button 
+                    onclick="testBasicClick()"
+                    class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
+                >
+                    <i class="fas fa-check mr-2"></i>
+                    Prueba Click Básico
+                </button>
+                
+                <button 
+                    onclick="testEditAdminProject(1)"
+                    class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+                >
+                    <i class="fas fa-edit mr-2"></i>
+                    Prueba EditAdminProject
+                </button>
+                
+                <button 
+                    onclick="loadAndTestProjects()"
+                    class="bg-purple-600 text-white px-4 py-2 rounded hover:bg-purple-700"
+                >
+                    <i class="fas fa-database mr-2"></i>
+                    Cargar y Probar Proyectos
+                </button>
+            </div>
+            
+            <!-- Log de eventos -->
+            <div class="bg-gray-50 border rounded p-4 mb-6">
+                <h3 class="font-semibold mb-2">Log de Eventos:</h3>
+                <div id="eventLog" class="text-sm font-mono bg-black text-green-400 p-3 rounded h-40 overflow-y-auto">
+                    <div>Sistema iniciado...</div>
+                </div>
+            </div>
+            
+            <!-- Simulación de tabla de proyectos -->
+            <div class="bg-white border rounded-lg">
+                <div class="p-4 border-b">
+                    <h3 class="font-semibold">Simulación: Tabla de Proyectos Admin</h3>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-4 py-3 text-left">Proyecto</th>
+                                <th class="px-4 py-3 text-left">Propietario</th>
+                                <th class="px-4 py-3 text-left">Estado</th>
+                                <th class="px-4 py-3 text-right">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="projectsTable">
+                            <!-- Se llenará dinámicamente -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/axios@1.6.0/dist/axios.min.js"></script>
+    
+    <script>
+        // Estado global simulado
+        const DashboardState = {
+            adminProjects: []
+        };
+        
+        const API_BASE = '/api';
+        
+        // Función para logging
+        function addToLog(message) {
+            const log = document.getElementById('eventLog');
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = document.createElement('div');
+            logEntry.innerHTML = `[${timestamp}] ${message}`;
+            log.appendChild(logEntry);
+            log.scrollTop = log.scrollHeight;
+            
+            // También log a console
+            console.log(`[DEBUG] ${message}`);
+        }
+        
+        // Test básico de click
+        function testBasicClick() {
+            addToLog('✅ Función testBasicClick() ejecutada correctamente');
+            alert('¡El click básico funciona!');
+        }
+        
+        // Test de editAdminProject sin datos
+        function testEditAdminProject(projectId) {
+            addToLog(`🔍 Llamando editAdminProject(${projectId})`);
+            
+            try {
+                // Simular la función original
+                console.log('editAdminProject llamada con ID:', projectId);
+                console.log('DashboardState.adminProjects:', DashboardState.adminProjects);
+                
+                const projects = DashboardState.adminProjects || [];
+                addToLog(`📊 Proyectos en DashboardState: ${projects.length}`);
+                
+                const project = projects.find(p => p.id === projectId);
+                
+                if (!project) {
+                    addToLog(`❌ Proyecto no encontrado con ID: ${projectId}`);
+                    addToLog('🔄 En el código real, esto dispararía la recarga de proyectos');
+                    
+                    // Simular toast
+                    showToast('Proyecto no encontrado. Verificando datos...', 'error');
+                    return;
+                }
+                
+                addToLog(`✅ Proyecto encontrado: ${project.title}`);
+                showAdminEditProjectModal(project);
+                
+            } catch (error) {
+                addToLog(`❌ Error en editAdminProject: ${error.message}`);
+                console.error('Error en editAdminProject:', error);
+            }
+        }
+        
+        // Cargar proyectos reales y probar
+        async function loadAndTestProjects() {
+            addToLog('🔄 Cargando proyectos reales desde API...');
+            
+            try {
+                const response = await axios.get(`${API_BASE}/admin/projects?page=1&limit=5`);
+                
+                if (response.data.success) {
+                    const { projects } = response.data.data;
+                    DashboardState.adminProjects = projects;
+                    
+                    addToLog(`✅ Proyectos cargados: ${projects.length}`);
+                    
+                    // Renderizar tabla con proyectos reales
+                    renderProjectsTable(projects);
+                    
+                    // Probar con el primer proyecto
+                    if (projects.length > 0) {
+                        addToLog(`🎯 Probando edición con proyecto ID: ${projects[0].id}`);
+                        setTimeout(() => testEditAdminProject(projects[0].id), 1000);
+                    } else {
+                        addToLog('⚠️ No hay proyectos disponibles para probar');
+                    }
+                } else {
+                    addToLog(`❌ Error en respuesta API: ${response.data.error}`);
+                }
+            } catch (error) {
+                addToLog(`❌ Error cargando proyectos: ${error.message}`);
+                console.error('Error:', error);
+                
+                // Simular con datos de prueba
+                addToLog('🎭 Usando datos de prueba...');
+                const testProjects = [
+                    {
+                        id: 1,
+                        title: 'Proyecto de Prueba 1',
+                        owner_name: 'Juan Pérez',
+                        owner_email: 'juan@test.com',
+                        status: 'ACTIVE',
+                        is_public: 1,
+                        created_at: '2024-01-01T00:00:00Z',
+                        abstract: 'Descripción del proyecto de prueba'
+                    },
+                    {
+                        id: 2,
+                        title: 'Proyecto de Prueba 2',
+                        owner_name: 'María González',
+                        owner_email: 'maria@test.com',
+                        status: 'DRAFT',
+                        is_public: 0,
+                        created_at: '2024-01-02T00:00:00Z',
+                        abstract: 'Otro proyecto de prueba'
+                    }
+                ];
+                
+                DashboardState.adminProjects = testProjects;
+                renderProjectsTable(testProjects);
+                addToLog('✅ Datos de prueba cargados');
+            }
+        }
+        
+        // Renderizar tabla (basado en el código original)
+        function renderProjectsTable(projects) {
+            const tableBody = document.getElementById('projectsTable');
+            
+            let html = '';
+            projects.forEach(project => {
+                const isPublic = project.is_public === 1;
+                const statusConfig = {
+                    'DRAFT': { color: 'bg-gray-100 text-gray-700', icon: 'fas fa-edit', label: 'Borrador' },
+                    'ACTIVE': { color: 'bg-blue-100 text-blue-700', icon: 'fas fa-play', label: 'Activo' },
+                    'REVIEW': { color: 'bg-yellow-100 text-yellow-700', icon: 'fas fa-eye', label: 'En Revisión' },
+                    'COMPLETED': { color: 'bg-green-100 text-green-700', icon: 'fas fa-check', label: 'Completado' },
+                    'SUSPENDED': { color: 'bg-red-100 text-red-700', icon: 'fas fa-pause', label: 'Suspendido' }
+                };
+                
+                const status = statusConfig[project.status] || statusConfig.DRAFT;
+                
+                html += `
+                    <tr class="border-b hover:bg-gray-50">
+                        <td class="px-4 py-3">
+                            <div>
+                                <div class="font-medium">${project.title}</div>
+                                <div class="text-sm text-gray-600">${project.abstract || 'Sin descripción'}</div>
+                            </div>
+                        </td>
+                        <td class="px-4 py-3">
+                            <div class="text-sm">
+                                <div class="font-medium">${project.owner_name}</div>
+                                <div class="text-gray-600">${project.owner_email}</div>
+                            </div>
+                        </td>
+                        <td class="px-4 py-3">
+                            <span class="px-2 py-1 rounded text-xs ${status.color}">
+                                <i class="${status.icon} mr-1"></i>
+                                ${status.label}
+                            </span>
+                            <div class="text-xs mt-1">
+                                ${isPublic ? 
+                                    '<span class="text-green-600"><i class="fas fa-globe mr-1"></i>Público</span>' : 
+                                    '<span class="text-gray-600"><i class="fas fa-lock mr-1"></i>Privado</span>'
+                                }
+                            </div>
+                        </td>
+                        <td class="px-4 py-3">
+                            <div class="flex justify-end space-x-2">
+                                <button 
+                                    onclick="debugEditClick(${project.id})"
+                                    class="bg-blue-600 text-white px-3 py-1 rounded text-sm hover:bg-blue-700"
+                                    title="Editar proyecto (Debug)"
+                                >
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button 
+                                    onclick="editAdminProject(${project.id})"
+                                    class="bg-green-600 text-white px-3 py-1 rounded text-sm hover:bg-green-700"
+                                    title="Editar proyecto (Original)"
+                                >
+                                    <i class="fas fa-cog"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            });
+            
+            tableBody.innerHTML = html;
+            addToLog(`📋 Tabla renderizada con ${projects.length} proyectos`);
+        }
+        
+        // Debug específico para click
+        function debugEditClick(projectId) {
+            addToLog(`🐛 debugEditClick llamado con ID: ${projectId}`);
+            addToLog(`🔍 Verificando datos del proyecto...`);
+            
+            const project = DashboardState.adminProjects.find(p => p.id === projectId);
+            if (project) {
+                addToLog(`✅ Proyecto encontrado: ${project.title}`);
+                addToLog(`🎯 Abriendo modal de edición...`);
+                showAdminEditProjectModal(project);
+            } else {
+                addToLog(`❌ Proyecto no encontrado en DashboardState`);
+            }
+        }
+        
+        // Función showAdminEditProjectModal (simplificada)
+        function showAdminEditProjectModal(project) {
+            addToLog(`🎬 Modal de edición abierto para: ${project.title}`);
+            
+            const modalContent = `
+                <div style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 1000; display: flex; align-items: center; justify-content: center;" onclick="this.remove()">
+                    <div style="background: white; padding: 20px; border-radius: 8px; max-width: 500px; width: 90%;" onclick="event.stopPropagation()">
+                        <h2 style="margin-top: 0; color: #333;">Editar Proyecto</h2>
+                        <p><strong>ID:</strong> ${project.id}</p>
+                        <p><strong>Título:</strong> ${project.title}</p>
+                        <p><strong>Propietario:</strong> ${project.owner_name}</p>
+                        <p><strong>Email:</strong> ${project.owner_email}</p>
+                        <p><strong>Estado:</strong> ${project.status}</p>
+                        <p><strong>Público:</strong> ${project.is_public === 1 ? 'Sí' : 'No'}</p>
+                        <button onclick="this.closest('[onclick]').remove()" style="background: #007cba; color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; margin-top: 15px;">
+                            Cerrar Modal
+                        </button>
+                    </div>
+                </div>
+            `;
+            
+            document.body.insertAdjacentHTML('beforeend', modalContent);
+        }
+        
+        // Función showToast (simulada)
+        function showToast(message, type = 'info') {
+            addToLog(`📢 Toast ${type.toUpperCase()}: ${message}`);
+            
+            // Crear toast visual
+            const toast = document.createElement('div');
+            toast.className = `fixed top-4 right-4 p-4 rounded-lg text-white z-50 ${
+                type === 'error' ? 'bg-red-600' : 
+                type === 'success' ? 'bg-green-600' : 
+                'bg-blue-600'
+            }`;
+            toast.innerHTML = `
+                <div class="flex items-center">
+                    <i class="fas fa-${type === 'error' ? 'exclamation-triangle' : type === 'success' ? 'check' : 'info-circle'} mr-2"></i>
+                    ${message}
+                </div>
+            `;
+            
+            document.body.appendChild(toast);
+            setTimeout(() => toast.remove(), 3000);
+        }
+        
+        // Función para formatear fechas
+        function formatDate(dateStr) {
+            return new Date(dateStr).toLocaleDateString('es-ES');
+        }
+        
+        // Incluir funciones del dashboard original
+        // Copiar editAdminProject del archivo principal
+        function editAdminProject(projectId) {
+            addToLog(`🔄 editAdminProject (ORIGINAL) llamada con ID: ${projectId}`);
+            console.log('editAdminProject llamada con ID:', projectId);
+            console.log('DashboardState.adminProjects:', DashboardState.adminProjects);
+            
+            // Buscar el proyecto en los datos cargados
+            const projects = DashboardState.adminProjects || [];
+            addToLog(`📊 Proyectos disponibles: ${projects.length}`);
+            
+            const project = projects.find(p => p.id === projectId);
+            console.log('Proyecto encontrado:', project);
+            
+            if (!project) {
+                console.warn('Proyecto no encontrado con ID:', projectId);
+                addToLog(`❌ Proyecto no encontrado con ID: ${projectId}`);
+                showToast('Proyecto no encontrado. Verificando datos...', 'error');
+                
+                // Intentar recargar los proyectos si no están disponibles
+                if (!DashboardState.adminProjects || DashboardState.adminProjects.length === 0) {
+                    console.log('Recargando proyectos de admin...');
+                    addToLog('🔄 Recargando proyectos de admin...');
+                    loadAndTestProjects().then(() => {
+                        // Intentar de nuevo después de recargar
+                        const reloadedProjects = DashboardState.adminProjects || [];
+                        const reloadedProject = reloadedProjects.find(p => p.id === projectId);
+                        if (reloadedProject) {
+                            addToLog(`✅ Proyecto encontrado después de recargar: ${reloadedProject.title}`);
+                            showAdminEditProjectModal(reloadedProject);
+                        } else {
+                            addToLog('❌ Proyecto no encontrado después de recargar');
+                            showToast('Proyecto no encontrado después de recargar', 'error');
+                        }
+                    });
+                }
+                return;
+            }
+            
+            console.log('Abriendo modal para proyecto:', project.title);
+            addToLog(`✅ Abriendo modal para proyecto: ${project.title}`);
+            showAdminEditProjectModal(project);
+        }
+        
+        // Inicialización
+        document.addEventListener('DOMContentLoaded', function() {
+            addToLog('📱 Página de diagnóstico cargada');
+            addToLog('🎯 Listo para pruebas de funcionalidad');
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Admin Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="/static/styles.css" rel="stylesheet">
+</head>
+<body class="bg-background text-foreground p-8">
+    <h1 class="text-2xl font-bold mb-6">Test Admin Dashboard - Debug Info</h1>
+    
+    <div class="space-y-4">
+        <div class="bg-card rounded-lg p-4">
+            <h3 class="text-lg font-semibold mb-2">Información del Usuario</h3>
+            <div id="user-info">Cargando...</div>
+        </div>
+        
+        <div class="bg-card rounded-lg p-4">
+            <h3 class="text-lg font-semibold mb-2">Funciones Disponibles</h3>
+            <div id="functions-info">Verificando...</div>
+        </div>
+        
+        <div class="bg-card rounded-lg p-4">
+            <h3 class="text-lg font-semibold mb-2">Estado del Dashboard</h3>
+            <div id="dashboard-state">Cargando...</div>
+        </div>
+        
+        <div class="bg-card rounded-lg p-4">
+            <h3 class="text-lg font-semibold mb-2">Test Directo</h3>
+            <button onclick="testEditFunction()" class="bg-primary text-primary-foreground px-4 py-2 rounded-lg mr-2">
+                Test editAdminProject(1)
+            </button>
+            <button onclick="testLoadProjects()" class="bg-secondary text-secondary-foreground px-4 py-2 rounded-lg">
+                Test loadAdminProjects()
+            </button>
+        </div>
+    </div>
+
+    <!-- Toast container -->
+    <div id="toast-container" class="fixed bottom-4 right-4 space-y-2 z-50"></div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/axios@1.6.0/dist/axios.min.js"></script>
+    <script>
+        // Configurar token de admin
+        const ADMIN_TOKEN = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjksImVtYWlsIjoiYWRtaW5AdGVzdC5jb20iLCJyb2xlIjoiQURNSU4iLCJleHAiOjE3NTc3MzM2MzB9.b2FpH_ZrqIR1TfCCcsba8g_1GLAQQLhLSk8oyd8lYyQ';
+        const API_BASE = '/api';
+        
+        // Configurar axios
+        axios.defaults.headers.common['Authorization'] = `Bearer ${ADMIN_TOKEN}`;
+        
+        // Mock localStorage para el token
+        localStorage.setItem('ctei_token', ADMIN_TOKEN);
+        
+        // Función toast
+        function showToast(message, type = 'success') {
+            const toast = document.createElement('div');
+            toast.className = `mb-2 p-4 rounded-lg ${type === 'success' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`;
+            toast.innerHTML = `
+                <div class="flex items-center justify-between">
+                    <span>${message}</span>
+                    <button onclick="this.parentElement.parentElement.remove()" class="ml-4">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            `;
+            
+            const container = document.getElementById('toast-container');
+            container.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.remove();
+            }, 5000);
+        }
+        
+        // Cargar información inicial
+        async function loadUserInfo() {
+            try {
+                const response = await axios.get('/api/me');
+                const userInfo = document.getElementById('user-info');
+                if (response.data.success) {
+                    const user = response.data.data;
+                    userInfo.innerHTML = `
+                        <p><strong>ID:</strong> ${user.id}</p>
+                        <p><strong>Nombre:</strong> ${user.full_name}</p>
+                        <p><strong>Email:</strong> ${user.email}</p>
+                        <p><strong>Rol:</strong> ${user.role}</p>
+                        <p><strong>Es Admin:</strong> ${user.role === 'ADMIN' ? 'SÍ' : 'NO'}</p>
+                    `;
+                } else {
+                    userInfo.innerHTML = '<p class="text-red-600">Error al cargar usuario</p>';
+                }
+            } catch (error) {
+                document.getElementById('user-info').innerHTML = `<p class="text-red-600">Error: ${error.message}</p>`;
+            }
+        }
+        
+        // Verificar funciones
+        function checkFunctions() {
+            const functionsInfo = document.getElementById('functions-info');
+            const checks = [
+                { name: 'editAdminProject', exists: typeof editAdminProject === 'function' },
+                { name: 'showAdminEditProjectModal', exists: typeof showAdminEditProjectModal === 'function' },
+                { name: 'updateAdminProject', exists: typeof updateAdminProject === 'function' },
+                { name: 'loadAdminProjects', exists: typeof loadAdminProjects === 'function' },
+                { name: 'toggleAdminProjectVisibility', exists: typeof toggleAdminProjectVisibility === 'function' }
+            ];
+            
+            functionsInfo.innerHTML = checks.map(check => 
+                `<p>${check.name}: <span class="${check.exists ? 'text-green-600' : 'text-red-600'}">${check.exists ? 'EXISTE' : 'NO EXISTE'}</span></p>`
+            ).join('');
+        }
+        
+        // Verificar estado del dashboard
+        function checkDashboardState() {
+            const stateInfo = document.getElementById('dashboard-state');
+            stateInfo.innerHTML = `
+                <p><strong>DashboardState existe:</strong> ${typeof DashboardState !== 'undefined' ? 'SÍ' : 'NO'}</p>
+                <p><strong>adminProjects:</strong> ${DashboardState?.adminProjects ? 'CARGADOS (' + DashboardState.adminProjects.length + ')' : 'NO CARGADOS'}</p>
+                <p><strong>Token almacenado:</strong> ${localStorage.getItem('ctei_token') ? 'SÍ' : 'NO'}</p>
+                <p><strong>Axios headers:</strong> ${axios.defaults.headers.common['Authorization'] ? 'CONFIGURADO' : 'NO CONFIGURADO'}</p>
+            `;
+        }
+        
+        // Funciones de test
+        function testEditFunction() {
+            if (typeof editAdminProject === 'function') {
+                try {
+                    editAdminProject(1);
+                    showToast('Función editAdminProject(1) ejecutada', 'success');
+                } catch (error) {
+                    showToast('Error en editAdminProject: ' + error.message, 'error');
+                }
+            } else {
+                showToast('Función editAdminProject NO EXISTE', 'error');
+            }
+        }
+        
+        async function testLoadProjects() {
+            if (typeof loadAdminProjects === 'function') {
+                try {
+                    await loadAdminProjects(1);
+                    showToast('Función loadAdminProjects ejecutada', 'success');
+                    // Actualizar estado después de cargar
+                    setTimeout(checkDashboardState, 1000);
+                } catch (error) {
+                    showToast('Error en loadAdminProjects: ' + error.message, 'error');
+                }
+            } else {
+                showToast('Función loadAdminProjects NO EXISTE', 'error');
+            }
+        }
+        
+        // Cargar al inicio
+        window.onload = function() {
+            loadUserInfo();
+            setTimeout(checkFunctions, 500);
+            setTimeout(checkDashboardState, 1000);
+        };
+    </script>
+    
+    <!-- Cargar dashboard.js después de nuestro setup -->
+    <script src="/static/dashboard.js"></script>
+    
+    <script>
+        // Ejecutar verificaciones después de cargar dashboard.js
+        setTimeout(() => {
+            checkFunctions();
+            checkDashboardState();
+        }, 1500);
+    </script>
+</body>
+</html>

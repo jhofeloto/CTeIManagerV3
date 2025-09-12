@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Dashboard Functions</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="/static/styles.css" rel="stylesheet">
+</head>
+<body class="bg-background text-foreground p-8">
+    <h1 class="text-2xl font-bold mb-6">Test Dashboard Functions</h1>
+    
+    <!-- Mock proyecto para probar botones -->
+    <div class="bg-card rounded-lg shadow-md p-6 mb-4">
+        <h3 class="text-lg font-semibold mb-2">Proyecto Editado desde API</h3>
+        <p class="text-muted-foreground mb-4">Abstract modificado desde la API</p>
+        
+        <div class="flex space-x-2">
+            <button 
+                onclick="editProject(5)"
+                class="flex-1 bg-secondary text-secondary-foreground py-2 px-3 rounded text-sm hover:opacity-90"
+            >
+                <i class="fas fa-edit mr-1"></i>
+                Editar
+            </button>
+            <button 
+                onclick="toggleProjectVisibility(5, false)"
+                class="flex-1 bg-muted text-muted-foreground py-2 px-3 rounded text-sm hover:opacity-90"
+            >
+                <i class="fas fa-eye-slash mr-1"></i>
+                Ocultar
+            </button>
+        </div>
+    </div>
+
+    <!-- Toast container -->
+    <div id="toast-container"></div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/axios@1.6.0/dist/axios.min.js"></script>
+    <script>
+        // Mock DashboardState para pruebas
+        const DashboardState = {
+            projects: [
+                {
+                    id: 5,
+                    title: "Proyecto Editado desde API",
+                    abstract: "Abstract modificado desde la API",
+                    keywords: "prueba, dashboard, funcionalidad",
+                    introduction: null,
+                    methodology: null,
+                    status: "ACTIVE",
+                    is_public: 1
+                }
+            ],
+            currentView: 'dashboard',
+            token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjgsImVtYWlsIjoicHJ1ZWJhQHRlc3QuY29tIiwicm9sZSI6IklOVkVTVElHQVRPUiIsImV4cCI6MTc1NzczMjk4NX0.cJykxfnvPCeB1Kig_mdddbbnyC6_NRnunlQ-y8w5kFg'
+        };
+
+        // Configurar token en axios
+        const API_BASE = '/api';
+        axios.defaults.headers.common['Authorization'] = `Bearer ${DashboardState.token}`;
+
+        // Función toast mock
+        function showToast(message, type = 'success') {
+            const toast = document.createElement('div');
+            toast.className = `mb-4 p-4 rounded-lg ${type === 'success' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`;
+            toast.innerHTML = `
+                <div class="flex items-center justify-between">
+                    <span>${message}</span>
+                    <button onclick="this.parentElement.parentElement.remove()" class="ml-4">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            `;
+            
+            const container = document.getElementById('toast-container');
+            container.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.remove();
+            }, 5000);
+        }
+
+        // Mock render functions
+        function renderMainDashboard() {
+            console.log('renderMainDashboard called');
+        }
+
+        function renderProjectsView() {
+            console.log('renderProjectsView called');
+        }
+    </script>
+    <script src="/static/dashboard.js"></script>
+    
+    <script>
+        // Test inicial
+        console.log('Dashboard functions loaded');
+        console.log('editProject function:', typeof editProject);
+        console.log('toggleProjectVisibility function:', typeof toggleProjectVisibility);
+        console.log('showEditProjectModal function:', typeof showEditProjectModal);
+    </script>
+</body>
+</html>
