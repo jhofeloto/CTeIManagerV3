@@ -4177,46 +4177,43 @@ async function loadDashboardSiteLogo() {
         const siteName = response.data.data?.site_name || 'CODECTI CHOCÓ';
         
         if (response.data.success && response.data.data.logo_url) {
-            // Usar logo personalizado desde admin
+            // Usar logo personalizado desde admin - SOLO IMAGEN
             const logoUrl = response.data.data.logo_url;
             
             logoContainer.innerHTML = `
                 <img 
                     src="${logoUrl}" 
                     alt="${siteName} Logo" 
-                    class="h-8 w-auto mr-3 inline"
+                    class="h-8 w-auto inline"
                     style="max-height: 32px; object-fit: contain;"
                 >
-                <span>${siteName}</span>
             `;
             
-            console.log('✅ Logo personalizado cargado en dashboard:', logoUrl);
+            console.log('✅ Logo personalizado cargado en dashboard (solo imagen):', logoUrl);
         } else {
-            // Usar logo por defecto de CODECTI CHOCÓ
+            // Usar logo por defecto de CODECTI CHOCÓ - SOLO IMAGEN
             logoContainer.innerHTML = `
                 <img 
                     src="/static/codecti-logo.png" 
                     alt="${siteName} Logo" 
-                    class="h-8 w-auto mr-3 inline"
+                    class="h-8 w-auto inline"
                     style="max-height: 32px; object-fit: contain;"
                 >
-                <span>${siteName}</span>
             `;
             
-            console.log('✅ Logo por defecto de CODECTI CHOCÓ cargado en dashboard');
+            console.log('✅ Logo por defecto de CODECTI CHOCÓ cargado en dashboard (solo imagen)');
         }
     } catch (error) {
-        // Fallback si hay error de red
+        // Fallback si hay error de red - SOLO IMAGEN
         const logoContainer = document.getElementById('dashboard-site-logo');
         logoContainer.innerHTML = `
             <img 
                 src="/static/codecti-logo.png" 
                 alt="CODECTI CHOCÓ Logo" 
-                class="h-8 w-auto mr-3 inline"
+                class="h-8 w-auto inline"
                 style="max-height: 32px; object-fit: contain;"
             >
-            <span>CODECTI CHOCÓ</span>
         `;
-        console.warn('⚠️ Error cargando configuración del dashboard, usando logo fallback:', error);
+        console.warn('⚠️ Error cargando configuración del dashboard, usando logo fallback (solo imagen):', error);
     }
 }
