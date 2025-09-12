@@ -4,7 +4,7 @@
 // Cargar proyectos con información completa Fase 1
 async function loadMyProjects() {
     try {
-        const response = await axios.get(`${API_BASE}/me/projects`);
+        const response = await axios.get(`${API_BASE}/private/projects`);
         if (response.data.success) {
             DashboardState.projects = response.data.data.projects;
             
@@ -261,7 +261,7 @@ async function loadProjectProducts(projectId) {
     const previewContainer = document.getElementById(`products-preview-${projectId}`);
     
     try {
-        const response = await axios.get(`${API_BASE}/me/projects/${projectId}/products`);
+        const response = await axios.get(`${API_BASE}/private/projects/${projectId}/products`);
         
         if (response.data.success) {
             const products = response.data.data.products;
@@ -404,7 +404,7 @@ function filterProjects() {
 // Gestionar colaboradores de un proyecto
 async function manageProjectCollaborators(projectId) {
     try {
-        const response = await axios.get(`${API_BASE}/me/projects/${projectId}/collaborators`);
+        const response = await axios.get(`${API_BASE}/private/projects/${projectId}/collaborators`);
         
         if (response.data.success) {
             const collaborators = response.data.data.collaborators;
@@ -580,7 +580,7 @@ function showCollaboratorsModal(projectId, collaborators) {
         };
         
         try {
-            const response = await axios.post(`${API_BASE}/me/projects/${projectId}/collaborators`, collaboratorData);
+            const response = await axios.post(`${API_BASE}/private/projects/${projectId}/collaborators`, collaboratorData);
             
             if (response.data.success) {
                 showToast('Colaborador añadido exitosamente');
@@ -620,7 +620,7 @@ async function deleteProject(projectId) {
     }
     
     try {
-        const response = await axios.delete(`${API_BASE}/me/projects/${projectId}`);
+        const response = await axios.delete(`${API_BASE}/private/projects/${projectId}`);
         
         if (response.data.success) {
             showToast('Proyecto eliminado exitosamente');
@@ -655,7 +655,7 @@ function renderProjectsView() {
 // Actualizar función de toggle visibility para usar toasts
 async function toggleProjectVisibility(projectId, makePublic) {
     try {
-        const response = await axios.post(`${API_BASE}/me/projects/${projectId}/publish`, {
+        const response = await axios.post(`${API_BASE}/private/projects/${projectId}/publish`, {
             is_public: makePublic
         });
         
@@ -678,7 +678,7 @@ async function removeCollaborator(projectId, userId) {
     }
     
     try {
-        const response = await axios.delete(`${API_BASE}/me/projects/${projectId}/collaborators/${userId}`);
+        const response = await axios.delete(`${API_BASE}/private/projects/${projectId}/collaborators/${userId}`);
         
         if (response.data.success) {
             showToast('Colaborador removido exitosamente');

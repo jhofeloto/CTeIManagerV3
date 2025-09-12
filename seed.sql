@@ -1,14 +1,17 @@
 -- Datos de prueba para CTeI-Manager
--- Contraseña por defecto para todos los usuarios: "password123"
--- Hash generado con SHA-256 + salt: 157a3a58005771efe8e503a58a1d81af460e09af3218bab6b23f25780ea78297
+-- Contraseña por defecto para todos los usuarios: "test123"
+-- Hash generado con SHA-256 + salt: 20c89805b8a888877170f495c3f1092c837622385132f5faa1bd7f5cdea1036b
 
 -- Usuarios de prueba
 INSERT OR IGNORE INTO users (email, password_hash, full_name, role) VALUES 
-    ('admin@ctei.edu.co', '157a3a58005771efe8e503a58a1d81af460e09af3218bab6b23f25780ea78297', 'Dr. Ana María García', 'ADMIN'),
-    ('carlos.rodriguez@ctei.edu.co', '157a3a58005771efe8e503a58a1d81af460e09af3218bab6b23f25780ea78297', 'Dr. Carlos Rodríguez', 'INVESTIGATOR'),
-    ('maria.lopez@ctei.edu.co', '157a3a58005771efe8e503a58a1d81af460e09af3218bab6b23f25780ea78297', 'Dra. María López', 'INVESTIGATOR'),
-    ('juan.perez@ctei.edu.co', '157a3a58005771efe8e503a58a1d81af460e09af3218bab6b23f25780ea78297', 'Dr. Juan Pérez', 'INVESTIGATOR'),
-    ('comunidad@ctei.edu.co', '157a3a58005771efe8e503a58a1d81af460e09af3218bab6b23f25780ea78297', 'Usuario Comunidad', 'COMMUNITY');
+    ('admin@ctei.edu.co', '20c89805b8a888877170f495c3f1092c837622385132f5faa1bd7f5cdea1036b', 'Dr. Ana María García', 'ADMIN'),
+    ('carlos.rodriguez@ctei.edu.co', '20c89805b8a888877170f495c3f1092c837622385132f5faa1bd7f5cdea1036b', 'Dr. Carlos Rodríguez', 'INVESTIGATOR'),
+    ('maria.lopez@ctei.edu.co', '20c89805b8a888877170f495c3f1092c837622385132f5faa1bd7f5cdea1036b', 'Dra. María López', 'INVESTIGATOR'),
+    ('juan.perez@ctei.edu.co', '20c89805b8a888877170f495c3f1092c837622385132f5faa1bd7f5cdea1036b', 'Dr. Juan Pérez', 'INVESTIGATOR'),
+    ('comunidad@ctei.edu.co', '20c89805b8a888877170f495c3f1092c837622385132f5faa1bd7f5cdea1036b', 'Usuario Comunidad', 'COMMUNITY'),
+    ('investigador.test@choco.gov.co', '20c89805b8a888877170f495c3f1092c837622385132f5faa1bd7f5cdea1036b', 'Dr. Investigador Chocó', 'INVESTIGATOR'),
+    ('admin@choco.gov.co', '20c89805b8a888877170f495c3f1092c837622385132f5faa1bd7f5cdea1036b', 'Administrador CTeí Chocó', 'ADMIN'),
+    ('admin.test@choco.gov.co', '20c89805b8a888877170f495c3f1092c837622385132f5faa1bd7f5cdea1036b', 'Admin Test Chocó', 'ADMIN');
 
 -- Proyectos de prueba
 INSERT OR IGNORE INTO projects (title, abstract, keywords, introduction, methodology, owner_id, is_public) VALUES 

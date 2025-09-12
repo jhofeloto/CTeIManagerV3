@@ -377,9 +377,9 @@ async function showEnhancedProductModalWithAuthors(projectId, product = null) {
         try {
             let response;
             if (isEdit) {
-                response = await axios.put(`${API_BASE}/me/projects/${projectId}/products/${product.id}`, productData);
+                response = await axios.put(`${API_BASE}/private/projects/${projectId}/products/${product.id}`, productData);
             } else {
-                response = await axios.post(`${API_BASE}/me/projects/${projectId}/products`, productData);
+                response = await axios.post(`${API_BASE}/private/projects/${projectId}/products`, productData);
             }
             
             if (response.data.success) {
@@ -409,7 +409,7 @@ async function loadProductAuthors(projectId, productId) {
     `;
     
     try {
-        const response = await axios.get(`${API_BASE}/me/projects/${projectId}/products/${productId}/authors`);
+        const response = await axios.get(`${API_BASE}/private/projects/${projectId}/products/${productId}/authors`);
         
         if (response.data.success) {
             const authors = response.data.data.authors;
@@ -542,7 +542,7 @@ async function removeProductAuthor(projectId, productId, userId) {
     }
     
     try {
-        const response = await axios.delete(`${API_BASE}/me/projects/${projectId}/products/${productId}/authors/${userId}`);
+        const response = await axios.delete(`${API_BASE}/private/projects/${projectId}/products/${productId}/authors/${userId}`);
         
         if (response.data.success) {
             showToast('Autor removido exitosamente');
@@ -559,7 +559,7 @@ async function removeProductAuthor(projectId, productId, userId) {
 // Publicar/despublicar producto individual (desde gestión de autoría)
 async function toggleProductVisibilityFromAuthorship(projectId, productId, isPublic) {
     try {
-        const response = await axios.post(`${API_BASE}/me/projects/${projectId}/products/${productId}/publish`, {
+        const response = await axios.post(`${API_BASE}/private/projects/${projectId}/products/${productId}/publish`, {
             is_public: isPublic
         });
         

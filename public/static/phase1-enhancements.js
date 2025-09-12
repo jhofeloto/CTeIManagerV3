@@ -419,9 +419,9 @@ function showEnhancedProjectModal(project = null) {
         try {
             let response;
             if (isEdit) {
-                response = await axios.put(`${API_BASE}/me/projects/${project.id}`, projectData);
+                response = await axios.put(`${API_BASE}/private/projects/${project.id}`, projectData);
             } else {
-                response = await axios.post(`${API_BASE}/me/projects`, projectData);
+                response = await axios.post(`${API_BASE}/private/projects`, projectData);
             }
             
             if (response.data.success) {
@@ -657,9 +657,9 @@ function showEnhancedProductModal(projectId, product = null) {
         try {
             let response;
             if (isEdit) {
-                response = await axios.put(`${API_BASE}/me/projects/${projectId}/products/${product.id}`, productData);
+                response = await axios.put(`${API_BASE}/private/projects/${projectId}/products/${product.id}`, productData);
             } else {
-                response = await axios.post(`${API_BASE}/me/projects/${projectId}/products`, productData);
+                response = await axios.post(`${API_BASE}/private/projects/${projectId}/products`, productData);
             }
             
             if (response.data.success) {

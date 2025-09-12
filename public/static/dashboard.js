@@ -22,11 +22,16 @@ if (DashboardState.token) {
 
 // Verificar autenticación al cargar
 document.addEventListener('DOMContentLoaded', function() {
+    console.log('🚀 Dashboard inicializado');
+    console.log('🎫 Token encontrado:', DashboardState.token ? 'SÍ' : 'NO');
+    
     if (!DashboardState.token) {
+        console.log('❌ Sin token - redirigiendo a login');
         window.location.href = '/';
         return;
     }
     
+    console.log('✅ Token válido - iniciando dashboard');
     initDashboard();
 });
 
@@ -66,19 +71,28 @@ function logout() {
 
 // Inicialización del dashboard
 async function initDashboard() {
+    console.log('🎯 Ejecutando initDashboard()');
+    
     try {
         // Obtener perfil del usuario
-        const profileResponse = await axios.get(`${API_BASE}/me/profile`);
+        console.log('👤 Obteniendo perfil del usuario...');
+        const profileResponse = await axios.get(`${API_BASE}/private/profile`);
+        console.log('📋 Respuesta del perfil:', profileResponse.data);
         
         if (profileResponse.data.success) {
             DashboardState.user = profileResponse.data.data;
+            console.log('✅ Usuario cargado:', DashboardState.user.full_name);
+            
             renderDashboard();
+            console.log('🎨 Dashboard renderizado, cargando datos...');
+            
             await loadDashboardData();
+            console.log('📊 Datos del dashboard cargados');
         } else {
             throw new Error('No se pudo cargar el perfil');
         }
     } catch (error) {
-        console.error('Error inicializando dashboard:', error);
+        console.error('❌ Error inicializando dashboard:', error);
         showToast('Error de autenticación. Redirigiendo...', 'error');
         setTimeout(() => {
             logout();
@@ -109,9 +123,9 @@ function renderDashboard() {
                         <span class="text-sm text-muted-foreground">
                             ${DashboardState.user.full_name} (${DashboardState.user.role})
                         </span>
-                        <a href="/" class="text-foreground hover:text-primary px-3 py-2 rounded-md text-sm font-medium">
+                        <button onclick="goToPublicPortal()" class="text-foreground hover:text-primary px-3 py-2 rounded-md text-sm font-medium">
                             Portal Público
-                        </a>
+                        </button>
                         <button onclick="logout()" class="text-destructive hover:text-destructive-foreground px-3 py-2 rounded-md text-sm font-medium">
                             <i class="fas fa-sign-out-alt mr-1"></i>
                             Salir
@@ -155,6 +169,24 @@ function renderDashboard() {
                                 Mis Productos
                             </button>
                         </li>
+                        <li>
+                            <button 
+                                onclick="showView('timeline')" 
+                                class="nav-item w-full flex items-center px-3 py-2 text-left rounded-lg hover:bg-accent hover:text-accent-foreground transition-colors"
+                            >
+                                <i class="fas fa-clock mr-3"></i>
+                                Timeline
+                            </button>
+                        </li>
+                        <li>
+                            <button 
+                                onclick="showView('monitoring')" 
+                                class="nav-item w-full flex items-center px-3 py-2 text-left rounded-lg hover:bg-accent hover:text-accent-foreground transition-colors"
+                            >
+                                <i class="fas fa-chart-bar mr-3"></i>
+                                Monitoreo
+                            </button>
+                        </li>
                         ` : ''}
                         <li>
                             <button 
@@ -186,11 +218,38 @@ function renderDashboard() {
                         </li>
                         <li>
                             <button 
+                                onclick="showView('admin-products')" 
+                                class="nav-item w-full flex items-center px-3 py-2 text-left rounded-lg hover:bg-accent hover:text-accent-foreground transition-colors"
+                            >
+                                <i class="fas fa-box mr-3"></i>
+                                Gestión de Productos
+                            </button>
+                        </li>
+                        <li>
+                            <button 
                                 onclick="showView('admin-categories')" 
                                 class="nav-item w-full flex items-center px-3 py-2 text-left rounded-lg hover:bg-accent hover:text-accent-foreground transition-colors"
                             >
                                 <i class="fas fa-tags mr-3"></i>
                                 Categorías de Productos
+                            </button>
+                        </li>
+                        <li>
+                            <button 
+                                onclick="showView('admin-monitoring')" 
+                                class="nav-item w-full flex items-center px-3 py-2 text-left rounded-lg hover:bg-accent hover:text-accent-foreground transition-colors"
+                            >
+                                <i class="fas fa-analytics mr-3"></i>
+                                Monitoreo Estratégico
+                            </button>
+                        </li>
+                        <li>
+                            <button 
+                                onclick="showView('admin-action-lines')" 
+                                class="nav-item w-full flex items-center px-3 py-2 text-left rounded-lg hover:bg-accent hover:text-accent-foreground transition-colors"
+                            >
+                                <i class="fas fa-road mr-3"></i>
+                                Líneas de Acción
                             </button>
                         </li>
                         ` : ''}
@@ -214,21 +273,37 @@ function renderDashboard() {
 // Cargar datos del dashboard
 async function loadDashboardData() {
     try {
-        // Cargar estadísticas
-        const statsEndpoint = DashboardState.user.role === 'ADMIN' 
-            ? `${API_BASE}/admin/dashboard/stats`
-            : `${API_BASE}/me/dashboard/stats`;
+        // Cargar estadísticas (opcional - no bloquear si falla)
+        try {
+            const statsEndpoint = DashboardState.user.role === 'ADMIN' 
+                ? `${API_BASE}/admin/dashboard/stats`
+                : `${API_BASE}/private/dashboard/stats`;
+                
+            console.log('📈 Cargando estadísticas desde:', statsEndpoint);
+            const statsResponse = await axios.get(statsEndpoint);
             
-        const statsResponse = await axios.get(statsEndpoint);
-        
-        if (statsResponse.data.success) {
-            DashboardState.stats = statsResponse.data.data;
+            if (statsResponse.data.success) {
+                DashboardState.stats = statsResponse.data.data;
+                console.log('✅ Estadísticas cargadas');
+            } else {
+                console.warn('⚠️ Estadísticas no disponibles:', statsResponse.data.error);
+                DashboardState.stats = { projects: { total: 0 }, products: { total: 0 } };
+            }
+        } catch (statsError) {
+            console.warn('⚠️ Error cargando estadísticas (continuando sin ellas):', statsError);
+            DashboardState.stats = { projects: { total: 0 }, products: { total: 0 } };
         }
         
         // Cargar proyectos
-        const projectsResponse = await axios.get(`${API_BASE}/me/projects`);
+        console.log('🔍 Cargando proyectos desde:', `${API_BASE}/private/projects`);
+        const projectsResponse = await axios.get(`${API_BASE}/private/projects`);
+        console.log('📊 Respuesta de proyectos:', projectsResponse.data);
+        
         if (projectsResponse.data.success) {
             DashboardState.projects = projectsResponse.data.data.projects;
+            console.log('✅ Proyectos cargados en DashboardState:', DashboardState.projects.length);
+        } else {
+            console.error('❌ Error en respuesta de proyectos:', projectsResponse.data.error);
         }
         
     } catch (error) {
@@ -272,8 +347,23 @@ function showView(view) {
         case 'admin-projects':
             renderAdminProjectsView();
             break;
+        case 'admin-products':
+            renderAdminProductsView();
+            break;
         case 'admin-categories':
             renderAdminCategoriesView();
+            break;
+        case 'timeline':
+            if (typeof renderTimelineView === 'function') renderTimelineView();
+            break;
+        case 'monitoring':
+            if (typeof renderMonitoringView === 'function') renderMonitoringView();
+            break;
+        case 'admin-monitoring':
+            if (typeof renderAdminMonitoringView === 'function') renderAdminMonitoringView();
+            break;
+        case 'admin-action-lines':
+            if (typeof renderAdminActionLinesView === 'function') renderAdminActionLinesView();
             break;
         default:
             renderMainDashboard();
@@ -539,33 +629,23 @@ async function renderMyProductsView() {
 
 // Cargar todos los productos del usuario autenticado
 async function loadMyProducts() {
+    console.log('🔄 Cargando productos del usuario...');
+    
     try {
-        const [projectsResponse, categoriesResponse] = await Promise.all([
-            axios.get(`${API_BASE}/me/projects`),
+        // Usar el nuevo endpoint que obtiene todos los productos del usuario directamente
+        const [productsResponse, categoriesResponse] = await Promise.all([
+            axios.get(`${API_BASE}/private/products`),
             axios.get(`${API_BASE}/public/product-categories`)
         ]);
         
-        if (projectsResponse.data.success && categoriesResponse.data.success) {
-            // Extraer todos los productos de todos los proyectos
-            let allProducts = [];
-            const projects = projectsResponse.data.data.projects;
+        console.log('📊 Respuesta de productos:', productsResponse.data);
+        console.log('📊 Respuesta de categorías:', categoriesResponse.data);
+        
+        if (productsResponse.data.success && categoriesResponse.data.success) {
+            // Los productos ya vienen con la información del proyecto incluida
+            const allProducts = productsResponse.data.data.products;
             
-            // Cargar productos de cada proyecto
-            for (const project of projects) {
-                try {
-                    const productsResponse = await axios.get(`${API_BASE}/me/projects/${project.id}/products`);
-                    if (productsResponse.data.success) {
-                        const products = productsResponse.data.data.products.map(product => ({
-                            ...product,
-                            project_title: project.title,
-                            project_status: project.status
-                        }));
-                        allProducts = allProducts.concat(products);
-                    }
-                } catch (error) {
-                    console.error(`Error cargando productos del proyecto ${project.id}:`, error);
-                }
-            }
+            console.log('✅ Productos cargados:', allProducts.length);
             
             // Guardar productos en el estado
             DashboardState.myProducts = allProducts;
@@ -580,11 +660,17 @@ async function loadMyProducts() {
             throw new Error('Error en la respuesta de la API');
         }
     } catch (error) {
-        console.error('Error cargando mis productos:', error);
+        console.error('❌ Error cargando mis productos:', error);
         document.getElementById('myProductsList').innerHTML = `
             <div class="text-center py-8 text-red-500">
                 <i class="fas fa-exclamation-triangle text-2xl mb-2"></i>
-                <p>Error cargando productos</p>
+                <p>Error cargando productos: ${error.message}</p>
+                <button 
+                    onclick="loadMyProducts()" 
+                    class="mt-4 bg-primary text-primary-foreground px-4 py-2 rounded-lg hover:opacity-90"
+                >
+                    <i class="fas fa-retry mr-2"></i>Reintentar
+                </button>
             </div>
         `;
     }
@@ -762,7 +848,7 @@ function editProduct(projectId, productId) {
 
 async function toggleProductVisibility(projectId, productId, makePublic) {
     try {
-        const response = await axios.post(`${API_BASE}/me/projects/${projectId}/products/${productId}/publish`, {
+        const response = await axios.post(`${API_BASE}/private/projects/${projectId}/products/${productId}/publish`, {
             is_public: makePublic
         });
         
@@ -818,7 +904,7 @@ async function deleteProduct(projectId, productId) {
     if (!confirmDelete) return;
     
     try {
-        const response = await axios.delete(`${API_BASE}/me/projects/${projectId}/products/${productId}`);
+        const response = await axios.delete(`${API_BASE}/private/projects/${projectId}/products/${productId}`);
         
         if (response.data.success) {
             showToast('Producto eliminado exitosamente', 'success');
@@ -1062,7 +1148,7 @@ async function createProject(event) {
     };
     
     try {
-        const response = await axios.post(`${API_BASE}/me/projects`, projectData);
+        const response = await axios.post(`${API_BASE}/private/projects`, projectData);
         
         if (response.data.success) {
             showToast('Proyecto creado exitosamente');
@@ -1084,7 +1170,7 @@ async function createProject(event) {
 
 async function toggleProjectVisibility(projectId, isPublic) {
     try {
-        const response = await axios.post(`${API_BASE}/me/projects/${projectId}/publish`, {
+        const response = await axios.post(`${API_BASE}/private/projects/${projectId}/publish`, {
             is_public: isPublic
         });
         
@@ -1269,7 +1355,7 @@ async function updateProject(event, projectId) {
     };
     
     try {
-        const response = await axios.put(`${API_BASE}/me/projects/${projectId}`, projectData);
+        const response = await axios.put(`${API_BASE}/private/projects/${projectId}`, projectData);
         
         if (response.data.success) {
             showToast('Proyecto actualizado exitosamente');
@@ -1542,6 +1628,13 @@ function renderUsersTable(users) {
                             title="Editar usuario"
                         >
                             <i class="fas fa-edit"></i>
+                        </button>
+                        <button 
+                            onclick="changeUserPassword(${user.id}, '${user.full_name}', '${user.email}')"
+                            class="bg-warning text-warning-foreground px-3 py-1 rounded text-sm hover:opacity-90"
+                            title="Cambiar contraseña"
+                        >
+                            <i class="fas fa-key"></i>
                         </button>
                         ${!isCurrentUser ? `
                             <button 
@@ -1859,6 +1952,150 @@ async function confirmDeleteUser(userId) {
         showToast(error.response?.data?.error || 'Error al eliminar usuario', 'error');
         deleteButton.innerHTML = originalText;
         deleteButton.disabled = false;
+    }
+}
+
+// Cambiar contraseña de usuario (solo admin)
+async function changeUserPassword(userId, userName, userEmail) {
+    // Crear modal de cambio de contraseña
+    const modal = document.createElement('div');
+    modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4';
+    modal.innerHTML = `
+        <div class="bg-card rounded-lg shadow-xl max-w-md w-full">
+            <div class="p-6">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-lg font-semibold">Cambiar Contraseña</h3>
+                    <button onclick="this.closest('.fixed').remove()" class="text-muted-foreground hover:text-foreground">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                
+                <div class="mb-4">
+                    <p class="text-sm text-muted-foreground">
+                        Cambiando contraseña para: <strong>${userName}</strong> (${userEmail})
+                    </p>
+                </div>
+                
+                <form onsubmit="confirmChangePassword(event, ${userId})">
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium mb-2">Nueva Contraseña</label>
+                        <input 
+                            type="password" 
+                            id="newPassword"
+                            placeholder="Mínimo 6 caracteres"
+                            class="w-full px-3 py-2 border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-ring"
+                            required
+                            minlength="6"
+                        >
+                    </div>
+                    
+                    <div class="mb-6">
+                        <label class="block text-sm font-medium mb-2">Confirmar Nueva Contraseña</label>
+                        <input 
+                            type="password" 
+                            id="confirmPassword"
+                            placeholder="Repetir la contraseña"
+                            class="w-full px-3 py-2 border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-ring"
+                            required
+                            minlength="6"
+                        >
+                    </div>
+                    
+                    <div class="flex space-x-3">
+                        <button 
+                            type="submit"
+                            class="bg-primary text-primary-foreground px-4 py-2 rounded-lg hover:opacity-90 flex-1"
+                        >
+                            <i class="fas fa-key mr-2"></i>
+                            Cambiar Contraseña
+                        </button>
+                        <button 
+                            type="button"
+                            onclick="this.closest('.fixed').remove()"
+                            class="bg-secondary text-secondary-foreground px-4 py-2 rounded-lg hover:opacity-90"
+                        >
+                            Cancelar
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+}
+
+async function confirmChangePassword(event, userId) {
+    event.preventDefault();
+    
+    const form = event.target;
+    const newPasswordField = form.querySelector('#newPassword');
+    const confirmPasswordField = form.querySelector('#confirmPassword');
+    const submitButton = form.querySelector('button[type="submit"]');
+    const originalText = submitButton.innerHTML;
+    
+    // Limpiar espacios en blanco al inicio y final
+    const newPassword = newPasswordField.value.trim();
+    const confirmPassword = confirmPasswordField.value.trim();
+    
+    console.log('🔐 Cambio de contraseña:', {
+        userId: userId,
+        passwordLength: newPassword.length,
+        confirmLength: confirmPassword.length,
+        passwordMatch: newPassword === confirmPassword
+    });
+    
+    // Actualizar los campos con valores limpiados
+    newPasswordField.value = newPassword;
+    confirmPasswordField.value = confirmPassword;
+    
+    // Validar que las contraseñas coincidan
+    if (newPassword !== confirmPassword) {
+        showToast('Las contraseñas no coinciden', 'error');
+        return;
+    }
+    
+    // Validar longitud mínima
+    if (newPassword.length < 6) {
+        showToast('La contraseña debe tener al menos 6 caracteres', 'error');
+        return;
+    }
+    
+    // Validar que no esté vacía
+    if (!newPassword) {
+        showToast('La contraseña no puede estar vacía', 'error');
+        return;
+    }
+    
+    try {
+        submitButton.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Cambiando...';
+        submitButton.disabled = true;
+        
+        console.log('🌐 Enviando cambio de contraseña para usuario:', userId);
+        
+        const response = await axios.put(`${API_BASE}/admin/users/${userId}/password`, {
+            new_password: newPassword
+        });
+        
+        console.log('📦 Respuesta del cambio:', response.data);
+        
+        if (response.data.success) {
+            showToast('Contraseña cambiada exitosamente', 'success');
+            console.log('✅ Contraseña actualizada correctamente');
+            
+            // Mostrar información adicional de debug
+            showToast(`Debug: Nueva contraseña tiene ${newPassword.length} caracteres`, 'info');
+            
+            form.closest('.fixed').remove(); // Cerrar modal
+        } else {
+            throw new Error(response.data.error || 'Error al cambiar contraseña');
+        }
+        
+    } catch (error) {
+        console.error('❌ Error cambiando contraseña:', error);
+        showToast(error.response?.data?.error || 'Error al cambiar contraseña', 'error');
+        submitButton.innerHTML = originalText;
+        submitButton.disabled = false;
     }
 }
 
@@ -2434,7 +2671,7 @@ async function updateAdminProject(event, projectId) {
             if (adminError.response?.status === 404) {
                 // Si el endpoint de admin no existe, intentar con endpoint de usuario
                 // Esto funcionará solo si el admin es también propietario del proyecto
-                response = await axios.put(`${API_BASE}/me/projects/${projectId}`, projectData);
+                response = await axios.put(`${API_BASE}/private/projects/${projectId}`, projectData);
             } else {
                 throw adminError;
             }
@@ -2585,6 +2822,355 @@ function renderAdminCategoriesView() {
     
     // Cargar categorías
     loadAdminCategories();
+}
+
+// ===== GESTIÓN DE PRODUCTOS ADMIN =====
+
+function renderAdminProductsView() {
+    const content = document.getElementById('content');
+    
+    content.innerHTML = `
+        <div class="space-y-6">
+            <div class="flex justify-between items-center">
+                <h2 class="text-2xl font-bold text-foreground">Gestión de Productos</h2>
+                <div class="flex space-x-2">
+                    <button 
+                        onclick="loadAdminProducts()"
+                        class="bg-secondary text-secondary-foreground px-4 py-2 rounded-lg hover:opacity-90"
+                    >
+                        <i class="fas fa-refresh mr-2"></i>Actualizar
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Filtros -->
+            <div class="bg-card rounded-lg shadow-sm border p-4">
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium mb-2">Buscar</label>
+                        <input 
+                            type="text" 
+                            id="adminProductsSearch" 
+                            placeholder="Buscar productos..."
+                            class="w-full px-3 py-2 border border-border rounded-lg"
+                            onkeyup="if(event.key==='Enter') loadAdminProducts(1)"
+                        >
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-2">Proyecto</label>
+                        <select 
+                            id="adminProductsProject" 
+                            class="w-full px-3 py-2 border border-border rounded-lg"
+                            onchange="loadAdminProducts(1)"
+                        >
+                            <option value="">Todos los proyectos</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-2">Categoría</label>
+                        <select 
+                            id="adminProductsCategory" 
+                            class="w-full px-3 py-2 border border-border rounded-lg"
+                            onchange="loadAdminProducts(1)"
+                        >
+                            <option value="">Todas las categorías</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-2">Visibilidad</label>
+                        <select 
+                            id="adminProductsVisibility" 
+                            class="w-full px-3 py-2 border border-border rounded-lg"
+                            onchange="loadAdminProducts(1)"
+                        >
+                            <option value="">Todos</option>
+                            <option value="true">Públicos</option>
+                            <option value="false">Privados</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Lista de productos -->
+            <div id="adminProductsContainer">
+                <div class="text-center py-8">
+                    <i class="fas fa-spinner fa-spin text-4xl text-muted-foreground mb-4"></i>
+                    <p class="text-muted-foreground">Cargando productos...</p>
+                </div>
+            </div>
+            
+            <!-- Paginación -->
+            <div id="adminProductsPagination" class="flex justify-center"></div>
+        </div>
+    `;
+    
+    // Inicializar estado si no existe
+    if (!DashboardState.productsState) {
+        DashboardState.productsState = {
+            currentPage: 1,
+            search: '',
+            project_id: '',
+            category: '',
+            is_public: '',
+            total: 0,
+            totalPages: 1
+        };
+    }
+    
+    loadAdminProducts(1);
+    loadProjectsForFilter();
+    loadCategoriesForFilter();
+}
+
+async function loadAdminProducts(page = 1) {
+    const container = document.getElementById('adminProductsContainer');
+    
+    try {
+        // Actualizar estado
+        DashboardState.productsState.currentPage = page;
+        DashboardState.productsState.search = document.getElementById('adminProductsSearch')?.value || '';
+        DashboardState.productsState.project_id = document.getElementById('adminProductsProject')?.value || '';
+        DashboardState.productsState.category = document.getElementById('adminProductsCategory')?.value || '';
+        DashboardState.productsState.is_public = document.getElementById('adminProductsVisibility')?.value || '';
+        
+        const params = new URLSearchParams({
+            page: page.toString(),
+            limit: '10'
+        });
+        
+        if (DashboardState.productsState.search) {
+            params.set('search', DashboardState.productsState.search);
+        }
+        if (DashboardState.productsState.project_id) {
+            params.set('project_id', DashboardState.productsState.project_id);
+        }
+        if (DashboardState.productsState.category) {
+            params.set('category', DashboardState.productsState.category);
+        }
+        if (DashboardState.productsState.is_public) {
+            params.set('is_public', DashboardState.productsState.is_public);
+        }
+        
+        const response = await axios.get(`${API_BASE}/admin/products?${params.toString()}`);
+        
+        if (response.data.success) {
+            const { products, pagination } = response.data.data;
+            
+            // Actualizar estado de paginación
+            DashboardState.productsState.total = pagination.total;
+            DashboardState.productsState.totalPages = pagination.totalPages;
+            
+            if (products.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center py-8">
+                        <i class="fas fa-box-open text-4xl text-muted-foreground mb-4"></i>
+                        <p class="text-muted-foreground">No hay productos que coincidan con los filtros</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            // Renderizar productos
+            container.innerHTML = `
+                <div class="space-y-4">
+                    ${products.map(product => `
+                        <div class="bg-card rounded-lg shadow-sm border p-4">
+                            <div class="flex justify-between items-start">
+                                <div class="flex-1">
+                                    <div class="flex items-center gap-2 mb-2">
+                                        <h3 class="font-semibold text-lg">${product.product_code || 'Sin código'}</h3>
+                                        <span class="px-2 py-1 text-xs rounded-full ${product.is_public ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700'}">
+                                            ${product.is_public ? 'PÚBLICO' : 'PRIVADO'}
+                                        </span>
+                                        ${product.category_name ? `<span class="px-2 py-1 text-xs rounded-full bg-blue-100 text-blue-700">${product.category_name}</span>` : ''}
+                                    </div>
+                                    <p class="text-muted-foreground mb-2">${product.description}</p>
+                                    <div class="text-sm text-muted-foreground">
+                                        <p><strong>Proyecto:</strong> ${product.project_title}</p>
+                                        <p><strong>Propietario:</strong> ${product.owner_name} (${product.owner_email})</p>
+                                        ${product.doi ? `<p><strong>DOI:</strong> ${product.doi}</p>` : ''}
+                                        ${product.journal ? `<p><strong>Revista:</strong> ${product.journal}</p>` : ''}
+                                        ${product.impact_factor ? `<p><strong>Factor de Impacto:</strong> ${product.impact_factor}</p>` : ''}
+                                    </div>
+                                </div>
+                                <div class="flex flex-col space-y-2 ml-4">
+                                    <button 
+                                        onclick="toggleAdminProductVisibility(${product.id}, ${!product.is_public})"
+                                        class="px-3 py-1 rounded text-sm ${product.is_public ? 'bg-orange-100 text-orange-700' : 'bg-green-100 text-green-700'} hover:opacity-90"
+                                        title="${product.is_public ? 'Ocultar producto' : 'Publicar producto'}"
+                                    >
+                                        <i class="fas fa-${product.is_public ? 'eye-slash' : 'eye'} mr-1"></i>
+                                        ${product.is_public ? 'Ocultar' : 'Publicar'}
+                                    </button>
+                                    <button 
+                                        onclick="deleteAdminProduct(${product.id}, '${product.product_code || 'Sin código'}', '${product.project_title}')"
+                                        class="px-3 py-1 rounded text-sm bg-red-100 text-red-700 hover:bg-red-200"
+                                        title="Eliminar producto"
+                                    >
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+            
+            // Renderizar paginación
+            renderAdminProductsPagination();
+        }
+        
+    } catch (error) {
+        console.error('Error cargando productos de admin:', error);
+        container.innerHTML = `
+            <div class="text-center py-8">
+                <i class="fas fa-exclamation-triangle text-4xl text-red-500 mb-4"></i>
+                <p class="text-red-500">Error al cargar productos</p>
+                <button onclick="loadAdminProducts()" class="mt-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg">
+                    Reintentar
+                </button>
+            </div>
+        `;
+    }
+}
+
+function renderAdminProductsPagination() {
+    const container = document.getElementById('adminProductsPagination');
+    const { currentPage, totalPages } = DashboardState.productsState;
+    
+    if (totalPages <= 1) {
+        container.innerHTML = '';
+        return;
+    }
+    
+    let paginationHTML = '<div class="flex space-x-2">';
+    
+    // Botón anterior
+    if (currentPage > 1) {
+        paginationHTML += `
+            <button onclick="loadAdminProducts(${currentPage - 1})" 
+                class="px-3 py-2 border border-border rounded-lg hover:bg-accent">
+                Anterior
+            </button>
+        `;
+    }
+    
+    // Páginas
+    for (let i = Math.max(1, currentPage - 2); i <= Math.min(totalPages, currentPage + 2); i++) {
+        paginationHTML += `
+            <button onclick="loadAdminProducts(${i})" 
+                class="px-3 py-2 ${i === currentPage ? 'bg-primary text-primary-foreground' : 'border border-border hover:bg-accent'} rounded-lg">
+                ${i}
+            </button>
+        `;
+    }
+    
+    // Botón siguiente
+    if (currentPage < totalPages) {
+        paginationHTML += `
+            <button onclick="loadAdminProducts(${currentPage + 1})" 
+                class="px-3 py-2 border border-border rounded-lg hover:bg-accent">
+                Siguiente
+            </button>
+        `;
+    }
+    
+    paginationHTML += '</div>';
+    container.innerHTML = paginationHTML;
+}
+
+async function toggleAdminProductVisibility(productId, makePublic) {
+    try {
+        const response = await axios.put(`${API_BASE}/admin/products/${productId}/visibility`, {
+            is_public: makePublic
+        });
+        
+        if (response.data.success) {
+            showToast(response.data.message || `Producto ${makePublic ? 'publicado' : 'ocultado'} exitosamente`, 'success');
+            
+            // Actualización visual inmediata del botón
+            const button = document.querySelector(`[onclick*="toggleAdminProductVisibility(${productId}"]`);
+            if (button) {
+                const icon = button.querySelector('i');
+                if (makePublic) {
+                    // Producto ahora es público - botón para ocultar
+                    button.className = 'px-3 py-1 rounded text-sm bg-orange-100 text-orange-700 hover:opacity-90';
+                    icon.className = 'fas fa-eye-slash mr-1';
+                    button.innerHTML = '<i class="fas fa-eye-slash mr-1"></i>Ocultar';
+                    button.setAttribute('onclick', `toggleAdminProductVisibility(${productId}, false)`);
+                    button.title = 'Ocultar producto';
+                } else {
+                    // Producto ahora es privado - botón para publicar
+                    button.className = 'px-3 py-1 rounded text-sm bg-green-100 text-green-700 hover:opacity-90';
+                    icon.className = 'fas fa-eye mr-1';
+                    button.innerHTML = '<i class="fas fa-eye mr-1"></i>Publicar';
+                    button.setAttribute('onclick', `toggleAdminProductVisibility(${productId}, true)`);
+                    button.title = 'Publicar producto';
+                }
+            }
+            
+            // Recargar para actualizar el estado general
+            setTimeout(() => {
+                loadAdminProducts(DashboardState.productsState?.currentPage || 1);
+            }, 1000);
+        }
+    } catch (error) {
+        console.error('Error cambiando visibilidad del producto:', error);
+        showToast(error.response?.data?.error || 'Error al cambiar visibilidad del producto', 'error');
+    }
+}
+
+async function deleteAdminProduct(productId, productCode, projectTitle) {
+    if (!confirm(`¿Estás seguro de que quieres eliminar el producto "${productCode}" del proyecto "${projectTitle}"?\\n\\nEsta acción no se puede deshacer.`)) {
+        return;
+    }
+    
+    try {
+        const response = await axios.delete(`${API_BASE}/admin/products/${productId}`);
+        
+        if (response.data.success) {
+            showToast('Producto eliminado exitosamente', 'success');
+            loadAdminProducts(DashboardState.productsState?.currentPage || 1);
+        } else {
+            throw new Error(response.data.error || 'Error al eliminar producto');
+        }
+        
+    } catch (error) {
+        console.error('Error eliminando producto:', error);
+        showToast(error.response?.data?.error || 'Error al eliminar producto', 'error');
+    }
+}
+
+async function loadProjectsForFilter() {
+    try {
+        const response = await axios.get(`${API_BASE}/admin/projects?limit=1000`);
+        if (response.data.success) {
+            const select = document.getElementById('adminProductsProject');
+            if (select) {
+                const projects = response.data.data.projects;
+                select.innerHTML = '<option value="">Todos los proyectos</option>' +
+                    projects.map(p => `<option value="${p.id}">${p.title}</option>`).join('');
+            }
+        }
+    } catch (error) {
+        console.error('Error cargando proyectos para filtro:', error);
+    }
+}
+
+async function loadCategoriesForFilter() {
+    try {
+        const response = await axios.get(`${API_BASE}/admin/product-categories`);
+        if (response.data.success) {
+            const select = document.getElementById('adminProductsCategory');
+            if (select) {
+                const categories = response.data.data.categories;
+                select.innerHTML = '<option value="">Todas las categorías</option>' +
+                    categories.map(c => `<option value="${c.code}">${c.name}</option>`).join('');
+            }
+        }
+    } catch (error) {
+        console.error('Error cargando categorías para filtro:', error);
+    }
 }
 
 // ===== GESTIÓN DE CATEGORÍAS ADMIN =====
@@ -3008,5 +3594,21 @@ async function deleteCategory(categoryCode, categoryName) {
         console.error('Error eliminando categoría:', error);
         const errorMessage = error.response?.data?.error || error.message || 'Error desconocido';
         showToast(`Error: ${errorMessage}`, 'error');
+    }
+}
+
+// Función para navegar al portal público preservando la sesión
+function goToPublicPortal() {
+    console.log('🔄 Navegando al portal público preservando sesión...');
+    
+    // Verificar que el token esté guardado
+    const token = localStorage.getItem('ctei_token');
+    if (token) {
+        console.log('✅ Token encontrado, navegando al portal público');
+        // Agregar parámetro para indicar que viene del dashboard
+        location.href = '/?from=dashboard';
+    } else {
+        console.log('⚠️ No hay token, redirigiendo sin autenticación');
+        location.href = '/';
     }
 }

@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug Login - CTeI Manager</title>
+    <script src="https://cdn.jsdelivr.net/npm/axios@1.6.0/dist/axios.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 p-8">
+    <div class="max-w-md mx-auto bg-white p-6 rounded shadow">
+        <h1 class="text-2xl font-bold mb-4">🔍 Debug Login Frontend</h1>
+        
+        <!-- Test admin@test.com -->
+        <div class="mb-6 p-4 border rounded">
+            <h2 class="text-lg font-semibold mb-2">🔑 Admin Login Test</h2>
+            <button onclick="testAdminLogin()" class="w-full bg-blue-500 text-white py-2 rounded hover:bg-blue-600">
+                Test admin@test.com / admin123
+            </button>
+        </div>
+
+        <!-- Test investigador -->
+        <div class="mb-6 p-4 border rounded">
+            <h2 class="text-lg font-semibold mb-2">🔬 Investigador Login Test</h2>
+            <button onclick="testInvestigadorLogin()" class="w-full bg-green-500 text-white py-2 rounded hover:bg-green-600">
+                Test investigador.test@choco.gov.co / ChocoCTeI2024
+            </button>
+        </div>
+
+        <!-- Manual Login -->
+        <div class="mb-6 p-4 border rounded">
+            <h2 class="text-lg font-semibold mb-2">✋ Manual Login Test</h2>
+            <form id="manualForm">
+                <div class="mb-4">
+                    <label class="block text-sm font-bold mb-2">Email:</label>
+                    <input type="email" id="manualEmail" placeholder="usuario@example.com" 
+                           class="w-full px-3 py-2 border rounded focus:outline-none focus:border-blue-500">
+                </div>
+                
+                <div class="mb-4">
+                    <label class="block text-sm font-bold mb-2">Contraseña:</label>
+                    <input type="password" id="manualPassword" placeholder="Contraseña"
+                           class="w-full px-3 py-2 border rounded focus:outline-none focus:border-blue-500">
+                </div>
+                
+                <button type="submit" class="w-full bg-purple-500 text-white py-2 rounded hover:bg-purple-600">
+                    Test Manual Login
+                </button>
+            </form>
+        </div>
+        
+        <div id="result" class="mt-4 p-3 rounded hidden"></div>
+        <div id="logs" class="mt-4 p-3 bg-gray-100 rounded text-xs">
+            <h3 class="font-bold mb-2">📋 Logs:</h3>
+            <div id="logContent"></div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = window.location.origin + '/api';
+        const logDiv = document.getElementById('logContent');
+        
+        function log(message) {
+            const timestamp = new Date().toLocaleTimeString();
+            logDiv.innerHTML += '<div class="mb-1">' + timestamp + ': ' + message + '</div>';
+            console.log(message);
+        }
+
+        function showResult(success, message, data = null) {
+            const resultDiv = document.getElementById('result');
+            
+            if (success) {
+                resultDiv.className = 'mt-4 p-3 rounded bg-green-100 text-green-800';
+                resultDiv.innerHTML = `
+                    <h3 class="font-bold">✅ LOGIN EXITOSO</h3>
+                    <p>${message}</p>
+                    ${data ? `<pre class="text-xs mt-2 bg-green-50 p-2 rounded">${JSON.stringify(data, null, 2)}</pre>` : ''}
+                `;
+            } else {
+                resultDiv.className = 'mt-4 p-3 rounded bg-red-100 text-red-800';
+                resultDiv.innerHTML = `
+                    <h3 class="font-bold">❌ LOGIN FALLIDO</h3>
+                    <p>${message}</p>
+                `;
+            }
+            
+            resultDiv.classList.remove('hidden');
+        }
+
+        async function performLogin(email, password) {
+            log(`🚀 Iniciando login para: ${email}`);
+            log(`📍 API Endpoint: ${API_BASE}/auth/login`);
+            
+            try {
+                const response = await axios.post(`${API_BASE}/auth/login`, {
+                    email: email,
+                    password: password
+                });
+                
+                log(`📊 Status: ${response.status}`);
+                log(`📦 Response: ${JSON.stringify(response.data)}`);
+                
+                if (response.data.success) {
+                    const user = response.data.data.user;
+                    const token = response.data.data.token;
+                    
+                    showResult(true, `Usuario: ${user.full_name} (${user.role})`, {
+                        email: user.email,
+                        role: user.role,
+                        token: token.substring(0, 50) + '...'
+                    });
+                    
+                    // Guardar en localStorage para redirigir al dashboard
+                    localStorage.setItem('ctei_token', token);
+                    
+                    log(`✅ Token guardado en localStorage`);
+                    
+                    // Ofrecer redirección al dashboard
+                    setTimeout(() => {
+                        if (confirm('Login exitoso. ¿Ir al dashboard?')) {
+                            window.location.href = '/dashboard';
+                        }
+                    }, 2000);
+                    
+                } else {
+                    showResult(false, response.data.error || 'Error desconocido');
+                }
+                
+            } catch (error) {
+                log(`❌ Error: ${error.message}`);
+                log(`📄 Error details: ${JSON.stringify(error.response?.data || 'No response data')}`);
+                
+                showResult(false, error.response?.data?.error || error.message);
+            }
+        }
+
+        async function testAdminLogin() {
+            log('🔧 === TEST ADMIN LOGIN ===');
+            await performLogin('admin@test.com', 'admin123');
+        }
+
+        async function testInvestigadorLogin() {
+            log('🔬 === TEST INVESTIGADOR LOGIN ===');
+            await performLogin('investigador.test@choco.gov.co', 'ChocoCTeI2024');
+        }
+
+        // Manual form
+        document.getElementById('manualForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const email = document.getElementById('manualEmail').value;
+            const password = document.getElementById('manualPassword').value;
+            
+            if (!email || !password) {
+                showResult(false, 'Por favor ingresa email y contraseña');
+                return;
+            }
+            
+            log('✋ === MANUAL LOGIN TEST ===');
+            await performLogin(email, password);
+        });
+        
+        log('🚀 Debug page loaded');
+        log(`🌐 Current URL: ${window.location.href}`);
+        log(`📍 API Base: ${API_BASE}`);
+    </script>
+</body>
+</html>

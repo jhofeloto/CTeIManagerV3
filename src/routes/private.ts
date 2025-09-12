@@ -44,47 +44,81 @@ privateRoutes.get('/profile', async (c) => {
 
 // ===== RUTAS DE PROYECTOS =====
 
-// Obtener proyectos del usuario
+// Obtener proyectos del usuario (CON MONITOREO)
 privateRoutes.get('/projects', async (c) => {
   try {
     const user = c.get('user')!;
+    const actionLine = c.req.query('action_line');
+    const riskLevel = c.req.query('risk_level');
+    const status = c.req.query('status');
     
     let query: string;
-    let params: any[] = [user.userId];
+    let params: any[] = [];
+    let whereConditions: string[] = [];
 
     if (user.role === 'ADMIN') {
-      // Admins pueden ver todos los proyectos
+      // Admins pueden ver todos los proyectos - consulta simplificada
       query = `
         SELECT 
           p.id, p.title, p.abstract, p.keywords, p.introduction, 
           p.methodology, p.owner_id, p.is_public, p.created_at, p.updated_at,
           p.status, p.start_date, p.end_date, p.institution, p.funding_source, 
           p.budget, p.project_code,
-          u.full_name as owner_name
+          p.action_line_id, p.progress_percentage, p.risk_level,
+          p.next_milestone_date, p.next_milestone_description,
+          al.name as action_line_name, al.color_code as action_line_color,
+          u.full_name as owner_name, u.email as owner_email
         FROM projects p 
         JOIN users u ON p.owner_id = u.id 
-        ORDER BY p.created_at DESC
+        LEFT JOIN action_lines al ON p.action_line_id = al.id
       `;
-      params = [];
     } else {
-      // Investigadores ven sus proyectos + colaboraciones
+      // Investigadores ven solo sus proyectos (simplificado)
       query = `
-        SELECT DISTINCT
+        SELECT 
           p.id, p.title, p.abstract, p.keywords, p.introduction, 
           p.methodology, p.owner_id, p.is_public, p.created_at, p.updated_at,
           p.status, p.start_date, p.end_date, p.institution, p.funding_source, 
           p.budget, p.project_code,
-          u.full_name as owner_name
+          p.action_line_id, p.progress_percentage, p.risk_level,
+          p.next_milestone_date, p.next_milestone_description,
+          al.name as action_line_name, al.color_code as action_line_color,
+          u.full_name as owner_name, u.email as owner_email
         FROM projects p 
         JOIN users u ON p.owner_id = u.id 
-        LEFT JOIN project_collaborators pc ON p.id = pc.project_id
-        WHERE p.owner_id = ? OR pc.user_id = ?
-        ORDER BY p.created_at DESC
+        LEFT JOIN action_lines al ON p.action_line_id = al.id
       `;
-      params = [user.userId, user.userId];
+      whereConditions.push('p.owner_id = ?');
+      params.push(user.userId);
     }
 
+    // Aplicar filtros adicionales
+    if (actionLine) {
+      whereConditions.push('p.action_line_id = ?');
+      params.push(parseInt(actionLine));
+    }
+    if (riskLevel) {
+      whereConditions.push('p.risk_level = ?');
+      params.push(riskLevel);
+    }
+    if (status) {
+      whereConditions.push('p.status = ?');
+      params.push(status);
+    }
+
+    // Agregar WHERE si hay condiciones
+    if (whereConditions.length > 0) {
+      query += ` WHERE ${whereConditions.join(' AND ')}`;
+    }
+    
+    query += ' ORDER BY p.updated_at DESC';
+
+    console.log('🔍 Query ejecutada:', query);
+    console.log('🔍 Parámetros:', params);
+
     const projects = await c.env.DB.prepare(query).bind(...params).all();
+
+    console.log('🔍 Proyectos encontrados:', projects.results?.length || 0);
 
     return c.json<APIResponse<any>>({
       success: true,
@@ -92,7 +126,7 @@ privateRoutes.get('/projects', async (c) => {
     });
 
   } catch (error) {
-    console.error('Error obteniendo proyectos:', error);
+    console.error('❌ Error obteniendo proyectos:', error);
     return c.json<APIResponse>({ 
       success: false, 
       error: 'Error interno del servidor' 
@@ -231,6 +265,19 @@ privateRoutes.put('/projects/:id', requireRole('INVESTIGATOR', 'ADMIN'), async (
     if (body.project_code !== undefined) {
       updateFields.push('project_code = ?');
       params.push(body.project_code);
+    }
+    // Campos de monitoreo estratégico
+    if (body.action_line_id !== undefined) {
+      updateFields.push('action_line_id = ?');
+      params.push(body.action_line_id);
+    }
+    if (body.progress_percentage !== undefined) {
+      updateFields.push('progress_percentage = ?');
+      params.push(body.progress_percentage);
+    }
+    if (body.risk_level !== undefined) {
+      updateFields.push('risk_level = ?');
+      params.push(body.risk_level);
     }
 
     if (updateFields.length === 0) {
@@ -948,23 +995,52 @@ privateRoutes.post('/projects/:projectId/products/:productId/publish', requireRo
   }
 });
 
-// Dashboard stats privadas
+// Dashboard stats privadas (CON MONITOREO)
 privateRoutes.get('/dashboard/stats', async (c) => {
   try {
     const user = c.get('user')!;
     
     let projectsQuery: string;
     let productsQuery: string;
+    let milestonesQuery: string;
+    let alertsQuery: string;
     let params: any[] = [];
 
     if (user.role === 'ADMIN') {
       // Estadísticas globales para admins
-      projectsQuery = 'SELECT COUNT(*) as total, COUNT(CASE WHEN is_public = 1 THEN 1 END) as public FROM projects';
+      projectsQuery = `
+        SELECT 
+          COUNT(*) as total, 
+          COUNT(CASE WHEN is_public = 1 THEN 1 END) as public,
+          COUNT(CASE WHEN status = 'ACTIVE' THEN 1 END) as active,
+          COUNT(CASE WHEN risk_level = 'HIGH' OR risk_level = 'CRITICAL' THEN 1 END) as at_risk,
+          ROUND(AVG(COALESCE(progress_percentage, 0)), 2) as avg_progress
+        FROM projects
+      `;
       productsQuery = 'SELECT COUNT(*) as total, COUNT(CASE WHEN is_public = 1 THEN 1 END) as public FROM products';
+      milestonesQuery = `
+        SELECT 
+          COUNT(*) as total,
+          COUNT(CASE WHEN is_completed = 1 THEN 1 END) as completed,
+          COUNT(CASE WHEN due_date < date('now') AND is_completed = 0 THEN 1 END) as overdue
+        FROM project_milestones
+      `;
+      alertsQuery = `
+        SELECT 
+          COUNT(*) as total,
+          COUNT(CASE WHEN is_resolved = 0 THEN 1 END) as unresolved,
+          COUNT(CASE WHEN alert_type = 'MILESTONE_OVERDUE' AND is_resolved = 0 THEN 1 END) as overdue_milestones
+        FROM system_alerts
+      `;
     } else {
       // Estadísticas del usuario para investigadores
       projectsQuery = `
-        SELECT COUNT(*) as total, COUNT(CASE WHEN is_public = 1 THEN 1 END) as public 
+        SELECT 
+          COUNT(*) as total, 
+          COUNT(CASE WHEN p.is_public = 1 THEN 1 END) as public,
+          COUNT(CASE WHEN p.status = 'ACTIVE' THEN 1 END) as active,
+          COUNT(CASE WHEN p.risk_level = 'HIGH' OR p.risk_level = 'CRITICAL' THEN 1 END) as at_risk,
+          ROUND(AVG(COALESCE(p.progress_percentage, 0)), 2) as avg_progress
         FROM projects p
         LEFT JOIN project_collaborators pc ON p.id = pc.project_id
         WHERE p.owner_id = ? OR pc.user_id = ?
@@ -976,24 +1052,168 @@ privateRoutes.get('/dashboard/stats', async (c) => {
         LEFT JOIN project_collaborators pc ON p.id = pc.project_id
         WHERE p.owner_id = ? OR pc.user_id = ?
       `;
+      milestonesQuery = `
+        SELECT 
+          COUNT(*) as total,
+          COUNT(CASE WHEN pm.is_completed = 1 THEN 1 END) as completed,
+          COUNT(CASE WHEN pm.due_date < date('now') AND pm.is_completed = 0 THEN 1 END) as overdue
+        FROM project_milestones pm
+        JOIN projects p ON pm.project_id = p.id
+        LEFT JOIN project_collaborators pc ON p.id = pc.project_id
+        WHERE p.owner_id = ? OR pc.user_id = ?
+      `;
+      alertsQuery = `
+        SELECT 
+          COUNT(*) as total,
+          COUNT(CASE WHEN sa.is_resolved = 0 THEN 1 END) as unresolved
+        FROM system_alerts sa
+        JOIN projects p ON sa.project_id = p.id
+        LEFT JOIN project_collaborators pc ON p.id = pc.project_id
+        WHERE p.owner_id = ? OR pc.user_id = ?
+      `;
       params = [user.userId, user.userId];
     }
 
-    const [projectStats, productStats] = await Promise.all([
+    const [projectStats, productStats, milestoneStats, alertStats] = await Promise.all([
       c.env.DB.prepare(projectsQuery).bind(...params).first(),
-      c.env.DB.prepare(productsQuery).bind(...params).first()
+      c.env.DB.prepare(productsQuery).bind(...params).first(),
+      c.env.DB.prepare(milestonesQuery).bind(...params).first(),
+      c.env.DB.prepare(alertsQuery).bind(...params).first()
     ]);
 
     return c.json<APIResponse<any>>({
       success: true,
       data: {
         projects: projectStats,
-        products: productStats
+        products: productStats,
+        milestones: milestoneStats,
+        alerts: alertStats
       }
     });
 
   } catch (error) {
     console.error('Error obteniendo estadísticas:', error);
+    return c.json<APIResponse>({ 
+      success: false, 
+      error: 'Error interno del servidor' 
+    }, 500);
+  }
+});
+
+// Actualizar producto
+privateRoutes.put('/projects/:projectId/products/:productId', requireRole('INVESTIGATOR', 'ADMIN'), async (c) => {
+  try {
+    const user = c.get('user')!;
+    const projectId = parseInt(c.req.param('projectId'));
+    const productId = parseInt(c.req.param('productId'));
+    const body: UpdateProductRequest = await c.req.json();
+
+    // Verificar permisos sobre el producto
+    if (user.role !== 'ADMIN') {
+      const canEdit = await c.env.DB.prepare(`
+        SELECT pr.creator_id, p.owner_id FROM products pr
+        JOIN projects p ON pr.project_id = p.id
+        WHERE pr.id = ? AND pr.project_id = ?
+        AND (pr.creator_id = ? OR p.owner_id = ?)
+      `).bind(productId, projectId, user.userId, user.userId).first();
+
+      if (!canEdit) {
+        return c.json<APIResponse>({ 
+          success: false, 
+          error: 'Solo el creador del producto o el dueño del proyecto pueden editar productos' 
+        }, 403);
+      }
+    }
+
+    const updateFields: string[] = [];
+    const params: any[] = [];
+
+    if (body.product_code !== undefined) {
+      updateFields.push('product_code = ?');
+      params.push(body.product_code);
+    }
+    if (body.product_type !== undefined) {
+      // Verificar que el tipo de producto existe
+      const categoryExists = await c.env.DB.prepare(
+        'SELECT code FROM product_categories WHERE code = ?'
+      ).bind(body.product_type).first();
+
+      if (!categoryExists) {
+        return c.json<APIResponse>({ 
+          success: false, 
+          error: 'Tipo de producto no válido' 
+        }, 400);
+      }
+      updateFields.push('product_type = ?');
+      params.push(body.product_type);
+    }
+    if (body.description !== undefined) {
+      updateFields.push('description = ?');
+      params.push(body.description);
+    }
+    if (body.doi !== undefined) {
+      updateFields.push('doi = ?');
+      params.push(body.doi);
+    }
+    if (body.url !== undefined) {
+      updateFields.push('url = ?');
+      params.push(body.url);
+    }
+    if (body.publication_date !== undefined) {
+      updateFields.push('publication_date = ?');
+      params.push(body.publication_date);
+    }
+    if (body.journal !== undefined) {
+      updateFields.push('journal = ?');
+      params.push(body.journal);
+    }
+    if (body.impact_factor !== undefined) {
+      updateFields.push('impact_factor = ?');
+      params.push(body.impact_factor);
+    }
+    if (body.metadata !== undefined) {
+      updateFields.push('metadata = ?');
+      params.push(body.metadata);
+    }
+    if (body.file_url !== undefined) {
+      updateFields.push('file_url = ?');
+      params.push(body.file_url);
+    }
+
+    if (updateFields.length === 0) {
+      return c.json<APIResponse>({ 
+        success: false, 
+        error: 'No hay campos para actualizar' 
+      }, 400);
+    }
+
+    // Agregar editor y actualizar timestamp
+    updateFields.push('last_editor_id = ?', 'updated_at = datetime(\'now\')');
+    params.push(user.userId);
+
+    // Agregar WHERE clause parameters
+    params.push(productId, projectId);
+
+    const result = await c.env.DB.prepare(`
+      UPDATE products 
+      SET ${updateFields.join(', ')}
+      WHERE id = ? AND project_id = ?
+    `).bind(...params).run();
+
+    if (!result.success || result.meta.changes === 0) {
+      return c.json<APIResponse>({ 
+        success: false, 
+        error: 'Producto no encontrado o no se pudo actualizar' 
+      }, 404);
+    }
+
+    return c.json<APIResponse>({
+      success: true,
+      message: 'Producto actualizado exitosamente'
+    });
+
+  } catch (error) {
+    console.error('Error actualizando producto:', error);
     return c.json<APIResponse>({ 
       success: false, 
       error: 'Error interno del servidor' 
@@ -1044,6 +1264,588 @@ privateRoutes.delete('/projects/:projectId/products/:productId', requireRole('IN
 
   } catch (error) {
     console.error('Error eliminando producto:', error);
+    return c.json<APIResponse>({ 
+      success: false, 
+      error: 'Error interno del servidor' 
+    }, 500);
+  }
+});
+
+// Obtener todos los productos del usuario actual
+privateRoutes.get('/products', async (c) => {
+  try {
+    const user = c.get('user')!;
+    
+    console.log('🔍 Obteniendo productos para usuario ID:', user.userId);
+    
+    let query: string;
+    let params: any[] = [];
+    
+    if (user.role === 'ADMIN') {
+      // Los administradores pueden ver todos los productos
+      query = `
+        SELECT 
+          pr.id, pr.product_code, pr.product_type, pr.description, pr.doi, pr.url,
+          pr.publication_date, pr.journal, pr.impact_factor, pr.citation_count,
+          pr.is_public, pr.created_at, pr.updated_at,
+          p.title as project_title, p.id as project_id,
+          u.full_name as creator_name, u.email as creator_email,
+          pc.name as category_name, pc.category_group, pc.impact_weight
+        FROM products pr
+        JOIN projects p ON pr.project_id = p.id
+        JOIN users u ON pr.creator_id = u.id
+        LEFT JOIN product_categories pc ON pr.product_type = pc.code
+        ORDER BY pr.updated_at DESC
+      `;
+    } else {
+      // Los investigadores solo ven sus productos y proyectos donde son colaboradores
+      query = `
+        SELECT 
+          pr.id, pr.product_code, pr.product_type, pr.description, pr.doi, pr.url,
+          pr.publication_date, pr.journal, pr.impact_factor, pr.citation_count,
+          pr.is_public, pr.created_at, pr.updated_at,
+          p.title as project_title, p.id as project_id,
+          u.full_name as creator_name, u.email as creator_email,
+          pc.name as category_name, pc.category_group, pc.impact_weight
+        FROM products pr
+        JOIN projects p ON pr.project_id = p.id
+        JOIN users u ON pr.creator_id = u.id
+        LEFT JOIN product_categories pc ON pr.product_type = pc.code
+        LEFT JOIN project_collaborators pcol ON p.id = pcol.project_id AND pcol.user_id = ?
+        WHERE pr.creator_id = ? OR p.owner_id = ? OR pcol.user_id = ?
+        ORDER BY pr.updated_at DESC
+      `;
+      params = [user.userId, user.userId, user.userId, user.userId];
+    }
+    
+    console.log('🔍 Ejecutando query:', query);
+    console.log('🔍 Parámetros:', params);
+    
+    const products = await c.env.DB.prepare(query).bind(...params).all();
+    
+    console.log('🔍 Productos encontrados:', products.results.length);
+    
+    return c.json<APIResponse<any>>({
+      success: true,
+      data: { products: products.results }
+    });
+    
+  } catch (error) {
+    console.error('❌ Error obteniendo productos:', error);
+    return c.json<APIResponse>({ 
+      success: false, 
+      error: 'Error interno del servidor' 
+    }, 500);
+  }
+});
+
+// ===== RUTAS DE MONITOREO ESTRATÉGICO (NIVEL USUARIO) =====
+
+// Obtener líneas de acción disponibles
+privateRoutes.get('/action-lines', async (c) => {
+  try {
+    const actionLines = await c.env.DB.prepare(`
+      SELECT 
+        id, code, name, description, department, priority, 
+        status, color_code, created_at
+      FROM action_lines 
+      WHERE status = 'ACTIVE'
+      ORDER BY priority DESC, name ASC
+    `).all();
+
+    return c.json<APIResponse<any>>({
+      success: true,
+      data: { action_lines: actionLines.results }
+    });
+
+  } catch (error) {
+    console.error('Error obteniendo líneas de acción:', error);
+    return c.json<APIResponse>({ 
+      success: false, 
+      error: 'Error interno del servidor' 
+    }, 500);
+  }
+});
+
+// Obtener timeline personal del usuario
+privateRoutes.get('/timeline', async (c) => {
+  try {
+    const user = c.get('user')!;
+    const limit = parseInt(c.req.query('limit') || '50');
+    const offset = parseInt(c.req.query('offset') || '0');
+
+    let timelineQuery: string;
+    let params: any[] = [];
+
+    if (user.role === 'ADMIN') {
+      // Timeline global para admins
+      timelineQuery = `
+        SELECT 
+          'project' as event_type,
+          p.id as entity_id,
+          p.title as event_title,
+          'Proyecto ' || CASE 
+            WHEN p.created_at = p.updated_at THEN 'creado'
+            ELSE 'actualizado'
+          END as event_description,
+          p.updated_at as event_date,
+          u.full_name as user_name,
+          al.name as action_line_name,
+          al.color_code as action_line_color
+        FROM projects p
+        JOIN users u ON p.owner_id = u.id
+        LEFT JOIN action_lines al ON p.action_line_id = al.id
+        
+        UNION ALL
+        
+        SELECT 
+          'milestone' as event_type,
+          pm.id as entity_id,
+          pm.milestone_title as event_title,
+          CASE 
+            WHEN pm.is_completed = 1 THEN 'Milestone completado'
+            WHEN pm.due_date < date('now') THEN 'Milestone vencido'
+            ELSE 'Milestone programado'
+          END as event_description,
+          COALESCE(pm.completion_date, pm.due_date) as event_date,
+          u.full_name as user_name,
+          al.name as action_line_name,
+          al.color_code as action_line_color
+        FROM project_milestones pm
+        JOIN projects p ON pm.project_id = p.id
+        JOIN users u ON p.owner_id = u.id
+        LEFT JOIN action_lines al ON p.action_line_id = al.id
+        
+        ORDER BY event_date DESC
+        LIMIT ? OFFSET ?
+      `;
+      params = [limit, offset];
+    } else {
+      // Timeline personal para investigadores
+      timelineQuery = `
+        SELECT 
+          'project' as event_type,
+          p.id as entity_id,
+          p.title as event_title,
+          'Proyecto ' || CASE 
+            WHEN p.created_at = p.updated_at THEN 'creado'
+            ELSE 'actualizado'
+          END as event_description,
+          p.updated_at as event_date,
+          u.full_name as user_name,
+          al.name as action_line_name,
+          al.color_code as action_line_color
+        FROM projects p
+        JOIN users u ON p.owner_id = u.id
+        LEFT JOIN project_collaborators pc ON p.id = pc.project_id
+        LEFT JOIN action_lines al ON p.action_line_id = al.id
+        WHERE p.owner_id = ? OR pc.user_id = ?
+        
+        UNION ALL
+        
+        SELECT 
+          'milestone' as event_type,
+          pm.id as entity_id,
+          pm.milestone_title as event_title,
+          CASE 
+            WHEN pm.is_completed = 1 THEN 'Milestone completado'
+            WHEN pm.due_date < date('now') THEN 'Milestone vencido'
+            ELSE 'Milestone programado'
+          END as event_description,
+          COALESCE(pm.completion_date, pm.due_date) as event_date,
+          u.full_name as user_name,
+          al.name as action_line_name,
+          al.color_code as action_line_color
+        FROM project_milestones pm
+        JOIN projects p ON pm.project_id = p.id
+        JOIN users u ON p.owner_id = u.id
+        LEFT JOIN project_collaborators pc ON p.id = pc.project_id
+        LEFT JOIN action_lines al ON p.action_line_id = al.id
+        WHERE p.owner_id = ? OR pc.user_id = ?
+        
+        ORDER BY event_date DESC
+        LIMIT ? OFFSET ?
+      `;
+      params = [user.userId, user.userId, user.userId, user.userId, limit, offset];
+    }
+
+    const timeline = await c.env.DB.prepare(timelineQuery).bind(...params).all();
+
+    return c.json<APIResponse<any>>({
+      success: true,
+      data: { timeline: timeline.results }
+    });
+
+  } catch (error) {
+    console.error('Error obteniendo timeline:', error);
+    return c.json<APIResponse>({ 
+      success: false, 
+      error: 'Error interno del servidor' 
+    }, 500);
+  }
+});
+
+// Obtener milestones de un proyecto
+privateRoutes.get('/projects/:projectId/milestones', async (c) => {
+  try {
+    const user = c.get('user')!;
+    const projectId = parseInt(c.req.param('projectId'));
+
+    // Verificar acceso al proyecto
+    if (user.role !== 'ADMIN') {
+      const project = await c.env.DB.prepare(`
+        SELECT p.id FROM projects p
+        LEFT JOIN project_collaborators pc ON p.id = pc.project_id
+        WHERE p.id = ? AND (p.owner_id = ? OR pc.user_id = ?)
+      `).bind(projectId, user.userId, user.userId).first();
+
+      if (!project) {
+        return c.json<APIResponse>({ 
+          success: false, 
+          error: 'Proyecto no encontrado o sin permisos' 
+        }, 404);
+      }
+    }
+
+    const milestones = await c.env.DB.prepare(`
+      SELECT 
+        id, project_id, milestone_title, milestone_description,
+        due_date, is_completed, completion_date, milestone_order,
+        created_at, updated_at
+      FROM project_milestones 
+      WHERE project_id = ?
+      ORDER BY milestone_order ASC, due_date ASC
+    `).bind(projectId).all();
+
+    return c.json<APIResponse<any>>({
+      success: true,
+      data: { milestones: milestones.results }
+    });
+
+  } catch (error) {
+    console.error('Error obteniendo milestones:', error);
+    return c.json<APIResponse>({ 
+      success: false, 
+      error: 'Error interno del servidor' 
+    }, 500);
+  }
+});
+
+// Crear milestone para un proyecto
+privateRoutes.post('/projects/:projectId/milestones', requireRole('INVESTIGATOR', 'ADMIN'), async (c) => {
+  try {
+    const user = c.get('user')!;
+    const projectId = parseInt(c.req.param('projectId'));
+    const { 
+      milestone_title, 
+      milestone_description, 
+      due_date, 
+      milestone_order = 1 
+    } = await c.req.json();
+
+    if (!milestone_title || !due_date) {
+      return c.json<APIResponse>({ 
+        success: false, 
+        error: 'Título y fecha límite son requeridos' 
+      }, 400);
+    }
+
+    // Verificar permisos sobre el proyecto
+    if (user.role !== 'ADMIN') {
+      const project = await c.env.DB.prepare(`
+        SELECT p.owner_id, pc.can_edit_project FROM projects p
+        LEFT JOIN project_collaborators pc ON p.id = pc.project_id AND pc.user_id = ?
+        WHERE p.id = ? AND (p.owner_id = ? OR (pc.user_id = ? AND pc.can_edit_project = 1))
+      `).bind(user.userId, projectId, user.userId, user.userId).first();
+
+      if (!project) {
+        return c.json<APIResponse>({ 
+          success: false, 
+          error: 'No tienes permiso para añadir milestones a este proyecto' 
+        }, 403);
+      }
+    }
+
+    const result = await c.env.DB.prepare(`
+      INSERT INTO project_milestones (
+        project_id, milestone_title, milestone_description, 
+        due_date, milestone_order
+      ) 
+      VALUES (?, ?, ?, ?, ?)
+    `).bind(
+      projectId, milestone_title, milestone_description || null, 
+      due_date, milestone_order
+    ).run();
+
+    if (!result.success) {
+      return c.json<APIResponse>({ 
+        success: false, 
+        error: 'Error al crear milestone' 
+      }, 500);
+    }
+
+    // Actualizar próximo milestone en el proyecto
+    await c.env.DB.prepare(`
+      UPDATE projects 
+      SET 
+        next_milestone_date = (
+          SELECT MIN(due_date) 
+          FROM project_milestones 
+          WHERE project_id = ? AND is_completed = 0
+        ),
+        next_milestone_description = (
+          SELECT milestone_title 
+          FROM project_milestones 
+          WHERE project_id = ? AND is_completed = 0
+          ORDER BY due_date ASC, milestone_order ASC 
+          LIMIT 1
+        )
+      WHERE id = ?
+    `).bind(projectId, projectId, projectId).run();
+
+    return c.json<APIResponse<{ id: number }>>({
+      success: true,
+      data: { id: result.meta.last_row_id as number },
+      message: 'Milestone creado exitosamente'
+    }, 201);
+
+  } catch (error) {
+    console.error('Error creando milestone:', error);
+    return c.json<APIResponse>({ 
+      success: false, 
+      error: 'Error interno del servidor' 
+    }, 500);
+  }
+});
+
+// Completar/marcar milestone
+privateRoutes.put('/projects/:projectId/milestones/:milestoneId/complete', requireRole('INVESTIGATOR', 'ADMIN'), async (c) => {
+  try {
+    const user = c.get('user')!;
+    const projectId = parseInt(c.req.param('projectId'));
+    const milestoneId = parseInt(c.req.param('milestoneId'));
+    const { is_completed } = await c.req.json<{ is_completed: boolean }>();
+
+    // Verificar permisos sobre el proyecto
+    if (user.role !== 'ADMIN') {
+      const project = await c.env.DB.prepare(`
+        SELECT p.owner_id, pc.can_edit_project FROM projects p
+        LEFT JOIN project_collaborators pc ON p.id = pc.project_id AND pc.user_id = ?
+        WHERE p.id = ? AND (p.owner_id = ? OR (pc.user_id = ? AND pc.can_edit_project = 1))
+      `).bind(user.userId, projectId, user.userId, user.userId).first();
+
+      if (!project) {
+        return c.json<APIResponse>({ 
+          success: false, 
+          error: 'No tienes permiso para modificar milestones de este proyecto' 
+        }, 403);
+      }
+    }
+
+    // Actualizar milestone
+    const result = await c.env.DB.prepare(`
+      UPDATE project_milestones 
+      SET 
+        is_completed = ?, 
+        completion_date = CASE WHEN ? = 1 THEN datetime('now') ELSE NULL END,
+        updated_at = datetime('now')
+      WHERE id = ? AND project_id = ?
+    `).bind(is_completed ? 1 : 0, is_completed ? 1 : 0, milestoneId, projectId).run();
+
+    if (!result.success || result.meta.changes === 0) {
+      return c.json<APIResponse>({ 
+        success: false, 
+        error: 'Milestone no encontrado' 
+      }, 404);
+    }
+
+    // Recalcular progreso del proyecto
+    const progressResult = await c.env.DB.prepare(`
+      SELECT 
+        COUNT(*) as total_milestones,
+        COUNT(CASE WHEN is_completed = 1 THEN 1 END) as completed_milestones
+      FROM project_milestones 
+      WHERE project_id = ?
+    `).bind(projectId).first();
+
+    if (progressResult) {
+      const totalMilestones = progressResult.total_milestones as number;
+      const completedMilestones = progressResult.completed_milestones as number;
+      const progressPercentage = totalMilestones > 0 
+        ? Math.round((completedMilestones / totalMilestones) * 100) 
+        : 0;
+
+      // Actualizar progreso del proyecto
+      await c.env.DB.prepare(`
+        UPDATE projects 
+        SET 
+          progress_percentage = ?,
+          next_milestone_date = (
+            SELECT MIN(due_date) 
+            FROM project_milestones 
+            WHERE project_id = ? AND is_completed = 0
+          ),
+          next_milestone_description = (
+            SELECT milestone_title 
+            FROM project_milestones 
+            WHERE project_id = ? AND is_completed = 0
+            ORDER BY due_date ASC, milestone_order ASC 
+            LIMIT 1
+          )
+        WHERE id = ?
+      `).bind(progressPercentage, projectId, projectId, projectId).run();
+    }
+
+    return c.json<APIResponse>({
+      success: true,
+      message: `Milestone ${is_completed ? 'completado' : 'marcado como pendiente'} exitosamente`
+    });
+
+  } catch (error) {
+    console.error('Error actualizando milestone:', error);
+    return c.json<APIResponse>({ 
+      success: false, 
+      error: 'Error interno del servidor' 
+    }, 500);
+  }
+});
+
+// Actualizar proyecto con línea de acción y monitoreo
+privateRoutes.put('/projects/:id/monitoring', requireRole('INVESTIGATOR', 'ADMIN'), async (c) => {
+  try {
+    const user = c.get('user')!;
+    const projectId = parseInt(c.req.param('id'));
+    const { action_line_id, risk_level, progress_percentage } = await c.req.json();
+
+    // Verificar propiedad del proyecto (excepto admins)
+    if (user.role !== 'ADMIN') {
+      const project = await c.env.DB.prepare(
+        'SELECT owner_id FROM projects WHERE id = ?'
+      ).bind(projectId).first<{ owner_id: number }>();
+
+      if (!project || project.owner_id !== user.userId) {
+        return c.json<APIResponse>({ 
+          success: false, 
+          error: 'No tienes permiso para editar este proyecto' 
+        }, 403);
+      }
+    }
+
+    const updateFields: string[] = [];
+    const params: any[] = [];
+
+    if (action_line_id !== undefined) {
+      updateFields.push('action_line_id = ?');
+      params.push(action_line_id);
+    }
+    if (risk_level !== undefined) {
+      updateFields.push('risk_level = ?');
+      params.push(risk_level);
+    }
+    if (progress_percentage !== undefined) {
+      updateFields.push('progress_percentage = ?');
+      params.push(progress_percentage);
+    }
+
+    if (updateFields.length === 0) {
+      return c.json<APIResponse>({ 
+        success: false, 
+        error: 'No hay campos para actualizar' 
+      }, 400);
+    }
+
+    params.push(projectId);
+
+    const result = await c.env.DB.prepare(`
+      UPDATE projects 
+      SET ${updateFields.join(', ')}, updated_at = datetime('now')
+      WHERE id = ?
+    `).bind(...params).run();
+
+    if (!result.success) {
+      return c.json<APIResponse>({ 
+        success: false, 
+        error: 'Error al actualizar el monitoreo del proyecto' 
+      }, 500);
+    }
+
+    return c.json<APIResponse>({
+      success: true,
+      message: 'Monitoreo del proyecto actualizado exitosamente'
+    });
+
+  } catch (error) {
+    console.error('Error actualizando monitoreo del proyecto:', error);
+    return c.json<APIResponse>({ 
+      success: false, 
+      error: 'Error interno del servidor' 
+    }, 500);
+  }
+});
+
+// Obtener alertas personales del usuario
+privateRoutes.get('/alerts', async (c) => {
+  try {
+    const user = c.get('user')!;
+    const limit = parseInt(c.req.query('limit') || '20');
+    const only_unresolved = c.req.query('only_unresolved') === 'true';
+
+    let alertQuery: string;
+    let params: any[] = [];
+
+    if (user.role === 'ADMIN') {
+      // Todas las alertas para admins
+      alertQuery = `
+        SELECT 
+          sa.id, sa.alert_type, sa.message, sa.severity, sa.project_id,
+          sa.is_resolved, sa.resolved_at, sa.created_at,
+          p.title as project_title,
+          al.name as action_line_name
+        FROM system_alerts sa
+        LEFT JOIN projects p ON sa.project_id = p.id
+        LEFT JOIN action_lines al ON p.action_line_id = al.id
+      `;
+      
+      if (only_unresolved) {
+        alertQuery += ' WHERE sa.is_resolved = 0';
+      }
+      
+      alertQuery += ' ORDER BY sa.created_at DESC LIMIT ?';
+      params = [limit];
+    } else {
+      // Alertas de los proyectos del usuario
+      alertQuery = `
+        SELECT 
+          sa.id, sa.alert_type, sa.message, sa.severity, sa.project_id,
+          sa.is_resolved, sa.resolved_at, sa.created_at,
+          p.title as project_title,
+          al.name as action_line_name
+        FROM system_alerts sa
+        JOIN projects p ON sa.project_id = p.id
+        LEFT JOIN project_collaborators pc ON p.id = pc.project_id
+        LEFT JOIN action_lines al ON p.action_line_id = al.id
+        WHERE (p.owner_id = ? OR pc.user_id = ?)
+      `;
+      
+      params.push(user.userId, user.userId);
+      
+      if (only_unresolved) {
+        alertQuery += ' AND sa.is_resolved = 0';
+      }
+      
+      alertQuery += ' ORDER BY sa.created_at DESC LIMIT ?';
+      params.push(limit);
+    }
+
+    const alerts = await c.env.DB.prepare(alertQuery).bind(...params).all();
+
+    return c.json<APIResponse<any>>({
+      success: true,
+      data: { alerts: alerts.results }
+    });
+
+  } catch (error) {
+    console.error('Error obteniendo alertas:', error);
     return c.json<APIResponse>({ 
       success: false, 
       error: 'Error interno del servidor' 

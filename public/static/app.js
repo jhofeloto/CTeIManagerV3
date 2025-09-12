@@ -1,4 +1,7 @@
 // JavaScript principal para CTeI-Manager Portal Público
+// VERSION: 2024-09-12-FIXED-LOGIN-v2
+
+console.log('🔧 CTeI-Manager Frontend VERSION: 2024-09-12-FIXED-LOGIN-v2');
 
 // Estado global de la aplicación
 const AppState = {
@@ -18,24 +21,42 @@ if (AppState.token) {
     axios.defaults.headers.common['Authorization'] = `Bearer ${AppState.token}`;
 }
 
+
+
 // Funciones de utilidad
 function showToast(message, type = 'success') {
-    const toast = document.createElement('div');
-    toast.className = `toast toast-${type}`;
-    toast.innerHTML = `
-        <div class="flex items-center justify-between">
-            <span>${message}</span>
-            <button onclick="this.parentElement.parentElement.remove()" class="ml-4">
-                <i class="fas fa-times"></i>
-            </button>
-        </div>
-    `;
-    document.body.appendChild(toast);
-    
-    // Auto remove after 5 seconds
-    setTimeout(() => {
-        toast.remove();
-    }, 5000);
+    try {
+        const toast = document.createElement('div');
+        toast.className = `toast toast-${type}`;
+        toast.innerHTML = `
+            <div class="flex items-center justify-between">
+                <span>${message}</span>
+                <button onclick="this.parentElement.parentElement.remove()" class="ml-4">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+        `;
+        
+        if (document.body) {
+            document.body.appendChild(toast);
+            
+            // Auto remove after 5 seconds
+            setTimeout(() => {
+                try {
+                    if (toast && toast.parentElement) {
+                        toast.remove();
+                    }
+                } catch (e) {
+                    console.warn('Error removiendo toast:', e);
+                }
+            }, 5000);
+        } else {
+            console.warn('document.body no disponible para toast:', message);
+        }
+    } catch (error) {
+        console.warn('Error creando toast:', error);
+        console.log('Toast message:', message);
+    }
 }
 
 function showSpinner(element) {
@@ -81,43 +102,7 @@ function closeRegisterModal() {
     document.getElementById('registerRole').value = 'COMMUNITY';
 }
 
-async function handleLogin(event) {
-    event.preventDefault();
-    
-    const email = document.getElementById('loginEmail').value;
-    const password = document.getElementById('loginPassword').value;
-    
-    try {
-        const response = await axios.post(`${API_BASE}/auth/login`, {
-            email,
-            password
-        });
-        
-        if (response.data.success) {
-            const { token, user } = response.data.data;
-            
-            // Guardar token
-            localStorage.setItem('ctei_token', token);
-            AppState.token = token;
-            AppState.user = user;
-            AppState.isAuthenticated = true;
-            
-            // Configurar axios
-            axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-            
-            showToast('Inicio de sesión exitoso');
-            closeLoginModal();
-            
-            // Redireccionar al dashboard
-            setTimeout(() => {
-                window.location.href = '/dashboard';
-            }, 1000);
-        }
-    } catch (error) {
-        const message = error.response?.data?.error || 'Error al iniciar sesión';
-        showToast(message, 'error');
-    }
-}
+// Función handleLogin removida - usar solo handleLoginSubmit para consistencia
 
 async function handleRegister(event) {
     event.preventDefault();
@@ -692,6 +677,14 @@ function loadMoreProducts() {
 
 // Event listener para búsqueda con Enter
 document.addEventListener('DOMContentLoaded', function() {
+    console.log('🚀 DOM cargado, inicializando aplicación...');
+    console.log('🔍 Verificando dependencias:', {
+        axios: typeof axios,
+        API_BASE: API_BASE,
+        localStorage: typeof localStorage,
+        document: typeof document
+    });
+    
     const searchInput = document.getElementById('searchInput');
     if (searchInput) {
         searchInput.addEventListener('keypress', function(e) {
@@ -699,6 +692,13 @@ document.addEventListener('DOMContentLoaded', function() {
                 performSearch();
             }
         });
+    }
+    
+    // Configurar event listener para el formulario de login estático
+    const staticLoginForm = document.getElementById('staticLoginForm');
+    if (staticLoginForm) {
+        staticLoginForm.addEventListener('submit', handleLoginSubmit);
+        console.log('✅ Event listener configurado para formulario estático de login');
     }
     
     // Cargar datos iniciales
@@ -793,7 +793,7 @@ async function checkAuthenticationStatus() {
     
     try {
         // Verificar si el token es válido obteniendo el perfil del usuario
-        const response = await axios.get(`${API_BASE}/me/profile`, {
+        const response = await axios.get(`${API_BASE}/private/profile`, {
             headers: {
                 'Authorization': `Bearer ${token}`
             }
@@ -802,6 +802,14 @@ async function checkAuthenticationStatus() {
         if (response.data.success) {
             const user = response.data.data;
             showAuthenticatedButtons(user);
+            
+            // Mostrar mensaje de bienvenida si viene del dashboard
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.get('from') === 'dashboard') {
+                setTimeout(() => {
+                    showToast(`¡Bienvenido de vuelta, ${user.full_name}! Tu sesión sigue activa.`);
+                }, 500);
+            }
         } else {
             // Token inválido, limpiar y mostrar botones de login
             localStorage.removeItem('ctei_token');
@@ -830,18 +838,26 @@ function showUnauthenticatedButtons() {
 
 // Mostrar botones para usuarios autenticados
 function showAuthenticatedButtons(user) {
-    const unauthenticatedButtons = document.getElementById('unauthenticatedButtons');
-    const authenticatedButtons = document.getElementById('authenticatedButtons');
-    const userInfo = document.getElementById('userInfo');
+    try {
+        const unauthenticatedButtons = document.getElementById('unauthenticatedButtons');
+        const authenticatedButtons = document.getElementById('authenticatedButtons');
+        const userInfo = document.getElementById('userInfo');
     
-    if (unauthenticatedButtons && authenticatedButtons) {
-        unauthenticatedButtons.classList.add('hidden');
-        authenticatedButtons.classList.remove('hidden');
-        authenticatedButtons.classList.add('flex');
-    }
-    
-    if (userInfo && user) {
-        userInfo.textContent = `${user.full_name} (${user.role})`;
+        if (unauthenticatedButtons && authenticatedButtons) {
+            unauthenticatedButtons.classList.add('hidden');
+            authenticatedButtons.classList.remove('hidden');
+            authenticatedButtons.classList.add('flex');
+        }
+        
+        if (userInfo && user) {
+            userInfo.textContent = `${user.full_name} (${user.role})`;
+        }
+        
+        console.log('✅ showAuthenticatedButtons completed successfully');
+        
+    } catch (error) {
+        console.warn('⚠️ Error in showAuthenticatedButtons:', error);
+        // No fallar completamente si hay error en la UI
     }
 }
 
@@ -858,27 +874,19 @@ function logout() {
     showUnauthenticatedButtons();
 }
 
-// Actualizar las funciones de login existentes para manejar el estado
-function handleLogin(event) {
-    event.preventDefault();
-    
-    const email = document.getElementById('loginEmail').value;
-    const password = document.getElementById('loginPassword').value;
-    
-    // Simular login - aquí deberías conectar con tu API real
-    showToast('Login functionality needs to be implemented', 'error');
-}
+// Las funciones de login están implementadas correctamente más arriba
 
-function handleRegister(event) {
-    event.preventDefault();
-    
-    // Simular registro - aquí deberías conectar con tu API real
-    showToast('Register functionality needs to be implemented', 'error');
-}
+// La función de registro está implementada correctamente más abajo
 
 // ===== GESTIÓN DE MODALES =====
 
 function showLoginModal() {
+    // Remover modal existente si existe
+    const existingModal = document.getElementById('loginModal');
+    if (existingModal) {
+        existingModal.remove();
+    }
+    
     const modal = document.createElement('div');
     modal.className = 'fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4';
     modal.id = 'loginModal';
@@ -895,7 +903,7 @@ function showLoginModal() {
                         <i class="fas fa-times"></i>
                     </button>
                 </div>
-                <form onsubmit="handleLoginSubmit(event)">
+                <form id="loginForm">
                     <div class="mb-4">
                         <label class="block text-sm font-medium mb-2">Email</label>
                         <input 
@@ -904,6 +912,7 @@ function showLoginModal() {
                             required
                             class="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
                             placeholder="tu@email.com"
+                            autocomplete="email"
                         >
                     </div>
                     <div class="mb-6">
@@ -914,6 +923,7 @@ function showLoginModal() {
                             required
                             class="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
                             placeholder="Tu contraseña"
+                            autocomplete="current-password"
                         >
                     </div>
                     <button 
@@ -932,11 +942,28 @@ function showLoginModal() {
                         ¿No tienes cuenta? Regístrate aquí
                     </button>
                 </div>
+                
+                <!-- Botón de debug para testing -->
+                <div class="mt-4 pt-4 border-t border-border">
+                    <button 
+                        onclick="testQuickLogin()" 
+                        class="w-full bg-orange-500 text-white py-1 px-2 rounded text-sm hover:bg-orange-600"
+                        title="Login rápido para testing"
+                    >
+                        🧪 Test: María López
+                    </button>
+                </div>
             </div>
         </div>
     `;
     
     document.body.appendChild(modal);
+    
+    // Configurar event listener para el formulario (técnica del login limpio)
+    const loginForm = document.getElementById('loginForm');
+    if (loginForm) {
+        loginForm.addEventListener('submit', handleLoginSubmit);
+    }
     
     // Focus en el campo email
     setTimeout(() => {
@@ -946,9 +973,16 @@ function showLoginModal() {
 }
 
 function closeLoginModal() {
-    const modal = document.getElementById('loginModal');
-    if (modal) {
-        modal.remove();
+    try {
+        const modal = document.getElementById('loginModal');
+        if (modal) {
+            modal.remove();
+            console.log('✅ Login modal closed successfully');
+        } else {
+            console.log('ℹ️ Login modal not found (already closed?)');
+        }
+    } catch (error) {
+        console.warn('⚠️ Error closing login modal:', error);
     }
 }
 
@@ -1036,41 +1070,149 @@ function closeRegisterModal() {
     }
 }
 
-// Manejar envío de formulario de login
+
+
+// Manejar envío de formulario de login - VERSIÓN MEJORADA CON ANTI-INTERFERENCIA
 async function handleLoginSubmit(event) {
-    event.preventDefault();
-    
-    const email = document.getElementById('loginEmail').value;
-    const password = document.getElementById('loginPassword').value;
+    // Prevenir comportamientos por defecto y propagación de eventos (técnica del login limpio)
+    if (event) {
+        event.preventDefault();
+        event.stopPropagation();
+        event.stopImmediatePropagation();
+    }
     
     try {
+        // Verificar que los elementos existen
+        const emailElement = document.getElementById('loginEmail');
+        const passwordElement = document.getElementById('loginPassword');
+        
+        if (!emailElement || !passwordElement) {
+            showToast('Error: No se encontraron los campos de login', 'error');
+            return;
+        }
+        
+        // Limpiar y validar datos
+        const email = emailElement.value.trim();
+        const password = passwordElement.value;
+        
+        if (!email || !password) {
+            showToast('Por favor ingresa email y contraseña', 'error');
+            if (!email && emailElement) emailElement.focus();
+            else if (!password && passwordElement) passwordElement.focus();
+            return;
+        }
+        
+        // Verificar axios
+        if (typeof axios === 'undefined') {
+            showToast('Error: Sistema de comunicación no disponible', 'error');
+            return;
+        }
+        
+        // Enviar request
         const response = await axios.post(`${API_BASE}/auth/login`, {
             email: email,
             password: password
         });
         
-        if (response.data.success) {
+        if (response.data && response.data.success) {
             const { token, user } = response.data.data;
             
             // Guardar token
-            localStorage.setItem('ctei_token', token);
-            axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+            try {
+                localStorage.setItem('ctei_token', token);
+                axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+            } catch (storageError) {
+                console.warn('Error guardando token:', storageError);
+            }
             
-            // Actualizar interfaz
-            showAuthenticatedButtons(user);
-            closeLoginModal();
+            // Actualizar estado global
+            AppState.token = token;
+            AppState.user = user;
+            AppState.isAuthenticated = true;
             
+            // Cerrar modal
+            try {
+                closeLoginModal();
+            } catch (modalError) {
+                console.warn('Error cerrando modal:', modalError);
+            }
+            
+            // Mostrar mensaje de éxito
             showToast(`¡Bienvenido ${user.full_name}!`);
+            
+            // Redirigir inmediatamente para evitar interferencias (técnica del login limpio)
+            window.location.href = '/dashboard';
+            
         } else {
-            showToast(response.data.error || 'Error al iniciar sesión', 'error');
+            const errorMsg = (response.data && response.data.error) || 'Error desconocido';
+            showToast(errorMsg, 'error');
         }
         
     } catch (error) {
         console.error('Error en login:', error);
-        const message = error.response?.data?.error || 'Error de conexión';
-        showToast(message, 'error');
+        
+        let errorMessage = 'Error de conexión';
+        if (error.response && error.response.data && error.response.data.error) {
+            errorMessage = error.response.data.error;
+        } else if (error.message) {
+            errorMessage = error.message;
+        }
+        
+        showToast(errorMessage, 'error');
     }
 }
+
+// Función de debugging para login
+window.debugLogin = function() {
+    console.log('🔧 DEBUG LOGIN - Estado actual:');
+    
+    const emailElement = document.getElementById('loginEmail');
+    const passwordElement = document.getElementById('loginPassword');
+    
+    console.log('Elementos:', {
+        emailElement: !!emailElement,
+        passwordElement: !!passwordElement,
+        emailValue: emailElement?.value,
+        passwordValue: passwordElement?.value ? 'HAS_PASSWORD' : 'EMPTY',
+        emailLength: emailElement?.value?.length,
+        passwordLength: passwordElement?.value?.length
+    });
+    
+    if (emailElement && passwordElement) {
+        console.log('Valores exactos:');
+        console.log('Email:', JSON.stringify(emailElement.value));
+        console.log('Password:', passwordElement.value ? 'HAS_VALUE' : 'EMPTY');
+        
+        // Intentar login directo
+        handleLoginSubmit({
+            preventDefault: () => {},
+            stopPropagation: () => {},
+            stopImmediatePropagation: () => {}
+        });
+    }
+};
+
+// Función de prueba de login rápida
+window.testLogin = function(email = 'investigador.test@choco.gov.co', password = 'test123') {
+    console.log('🧪 TEST LOGIN con:', email);
+    
+    const emailEl = document.getElementById('loginEmail');
+    const passwordEl = document.getElementById('loginPassword');
+    
+    if (emailEl && passwordEl) {
+        emailEl.value = email;
+        passwordEl.value = password;
+        
+        console.log('Valores establecidos, ejecutando handleLoginSubmit...');
+        handleLoginSubmit({
+            preventDefault: () => {},
+            stopPropagation: () => {},
+            stopImmediatePropagation: () => {}
+        });
+    } else {
+        console.error('Elementos de login no encontrados');
+    }
+};
 
 // Manejar envío de formulario de registro
 async function handleRegisterSubmit(event) {
@@ -1099,5 +1241,64 @@ async function handleRegisterSubmit(event) {
         console.error('Error en registro:', error);
         const message = error.response?.data?.error || 'Error de conexión';
         showToast(message, 'error');
+    }
+}
+
+// Función de test directo para debugging
+async function testDirectLogin() {
+    console.log('🔧 === TEST DIRECT LOGIN ===');
+    console.log('Estado inicial:', {
+        axiosExists: typeof axios !== 'undefined',
+        API_BASE: API_BASE,
+        location: window.location.href
+    });
+    
+    try {
+        const response = await axios.post(`${API_BASE}/auth/login`, {
+            email: 'admin@ctei.edu.co',
+            password: 'test123'
+        });
+        
+        console.log('✅ Respuesta exitosa:', response.data);
+        
+        if (response.data.success) {
+            const { token, user } = response.data.data;
+            
+            // Guardar token
+            localStorage.setItem('ctei_token', token);
+            axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+            
+            alert(`¡Test Login Exitoso!\nUsuario: ${user.full_name}\nRol: ${user.role}\n\n¿Ir al dashboard?`);
+            
+            if (confirm('¿Redirigir al dashboard?')) {
+                window.location.href = '/dashboard';
+            }
+        } else {
+            alert('Test Login Falló: ' + response.data.error);
+        }
+        
+    } catch (error) {
+        console.error('❌ Error en test login:', error);
+        alert('Error en test: ' + (error.response?.data?.error || error.message));
+    }
+}
+
+// Función de test rápido para María López
+function testQuickLogin() {
+    const emailElement = document.getElementById('loginEmail');
+    const passwordElement = document.getElementById('loginPassword');
+    
+    if (emailElement && passwordElement) {
+        emailElement.value = 'maria.lopez@ctei.edu.co';
+        passwordElement.value = 'test123';
+        
+        // Ejecutar el login
+        handleLoginSubmit({
+            preventDefault: () => {},
+            stopPropagation: () => {},
+            stopImmediatePropagation: () => {}
+        });
+    } else {
+        showToast('Error: Campos de login no encontrados', 'error');
     }
 }

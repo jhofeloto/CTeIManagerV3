@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug Login - investigador.test@choco.gov.co</title>
+    <script src="https://cdn.jsdelivr.net/npm/axios@1.6.0/dist/axios.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 p-8">
+    <div class="max-w-md mx-auto bg-white p-6 rounded shadow">
+        <h1 class="text-2xl font-bold mb-4">Debug Login Test</h1>
+        
+        <form id="debugForm">
+            <div class="mb-4">
+                <label class="block text-sm font-bold mb-2">Email:</label>
+                <input type="email" id="email" value="investigador.test@choco.gov.co" 
+                       class="w-full px-3 py-2 border rounded focus:outline-none focus:border-blue-500">
+            </div>
+            
+            <div class="mb-4">
+                <label class="block text-sm font-bold mb-2">Contraseña:</label>
+                <input type="password" id="password" value="ChocoCTeI2024"
+                       class="w-full px-3 py-2 border rounded focus:outline-none focus:border-blue-500">
+            </div>
+            
+            <button type="submit" class="w-full bg-blue-500 text-white py-2 rounded hover:bg-blue-600">
+                Test Login
+            </button>
+        </form>
+        
+        <div id="result" class="mt-4 p-3 rounded hidden"></div>
+        <div id="logs" class="mt-4 p-3 bg-gray-100 rounded text-xs">
+            <h3 class="font-bold">Logs:</h3>
+            <div id="logContent"></div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = window.location.origin + '/api';
+        const logDiv = document.getElementById('logContent');
+        
+        function log(message) {
+            logDiv.innerHTML += '<div>' + new Date().toLocaleTimeString() + ': ' + message + '</div>';
+            console.log(message);
+        }
+        
+        document.getElementById('debugForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const resultDiv = document.getElementById('result');
+            
+            log(`Intentando login con email: ${email}`);
+            log(`Password length: ${password.length}`);
+            log(`API_BASE: ${API_BASE}`);
+            
+            try {
+                const response = await axios.post(`${API_BASE}/auth/login`, {
+                    email: email,
+                    password: password
+                });
+                
+                log('Response status: ' + response.status);
+                log('Response data: ' + JSON.stringify(response.data, null, 2));
+                
+                if (response.data.success) {
+                    resultDiv.className = 'mt-4 p-3 rounded bg-green-100 text-green-800';
+                    resultDiv.innerHTML = `
+                        <h3 class="font-bold">✅ LOGIN EXITOSO</h3>
+                        <p>Usuario: ${response.data.data.user.full_name}</p>
+                        <p>Email: ${response.data.data.user.email}</p>
+                        <p>Rol: ${response.data.data.user.role}</p>
+                        <p>Token: ${response.data.data.token.substring(0, 50)}...</p>
+                    `;
+                } else {
+                    resultDiv.className = 'mt-4 p-3 rounded bg-red-100 text-red-800';
+                    resultDiv.innerHTML = `
+                        <h3 class="font-bold">❌ LOGIN FALLIDO</h3>
+                        <p>${response.data.error}</p>
+                    `;
+                }
+                
+                resultDiv.classList.remove('hidden');
+                
+            } catch (error) {
+                log('Error: ' + error.message);
+                log('Error response: ' + JSON.stringify(error.response?.data || 'No response data'));
+                
+                resultDiv.className = 'mt-4 p-3 rounded bg-red-100 text-red-800';
+                resultDiv.innerHTML = `
+                    <h3 class="font-bold">❌ ERROR DE CONEXIÓN</h3>
+                    <p>${error.message}</p>
+                    <p>${error.response?.data?.error || 'Error desconocido'}</p>
+                `;
+                resultDiv.classList.remove('hidden');
+            }
+        });
+        
+        log('Debug page loaded');
+    </script>
+</body>
+</html>
