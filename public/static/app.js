@@ -675,6 +675,79 @@ function loadMoreProducts() {
     loadProducts(AppState.currentProductPage + 1, AppState.searchQuery, { year: filters.year, category: filters.category });
 }
 
+// Función de búsqueda desde el hero
+function performHeroSearch() {
+    const heroSearchInput = document.getElementById('heroSearchInput');
+    if (heroSearchInput) {
+        const query = heroSearchInput.value.trim();
+        
+        // Trasladar búsqueda al input principal
+        const mainSearchInput = document.getElementById('searchInput');
+        if (mainSearchInput) {
+            mainSearchInput.value = query;
+        }
+        
+        // Actualizar estado y realizar búsqueda
+        AppState.searchQuery = query;
+        AppState.searchFilters = {};
+        AppState.currentPage = 1;
+        AppState.currentProductPage = 1;
+        
+        // Scroll hacia la sección de contenido
+        document.getElementById('content-section').scrollIntoView({behavior: 'smooth'});
+        
+        // Realizar búsqueda después del scroll
+        setTimeout(() => {
+            loadProjects(1, query);
+            loadProducts(1, query);
+            
+            if (query) {
+                showToast(`Buscando: "${query}"`);
+            }
+        }, 300);
+    }
+}
+
+// Función para filtros rápidos desde el hero
+function performQuickFilter(type) {
+    // Actualizar filtro de tipo
+    const typeFilter = document.getElementById('typeFilter');
+    if (typeFilter) {
+        typeFilter.value = type;
+        
+        // Mostrar los filtros avanzados
+        const advancedFilters = document.getElementById('advancedFilters');
+        const toggleButton = document.getElementById('filtersToggle');
+        if (advancedFilters && advancedFilters.classList.contains('hidden')) {
+            advancedFilters.classList.remove('hidden');
+            toggleButton.innerHTML = '<i class="fas fa-filter mr-2"></i>Ocultar Filtros';
+        }
+    }
+    
+    // Scroll hacia la sección de contenido
+    document.getElementById('content-section').scrollIntoView({behavior: 'smooth'});
+    
+    // Realizar búsqueda con filtro después del scroll
+    setTimeout(() => {
+        performSearch();
+        
+        const typeNames = {
+            'projects': 'Solo Proyectos',
+            'products': 'Solo Productos',
+            'investigators': 'Investigadores'
+        };
+        showToast(`Filtro aplicado: ${typeNames[type]}`);
+    }, 300);
+}
+
+// Función de utilidad para scroll suave a sección
+function scrollToSection(sectionId) {
+    const section = document.getElementById(sectionId);
+    if (section) {
+        section.scrollIntoView({behavior: 'smooth'});
+    }
+}
+
 // Event listener para búsqueda con Enter
 document.addEventListener('DOMContentLoaded', function() {
     console.log('🚀 DOM cargado, inicializando aplicación...');
@@ -685,11 +758,21 @@ document.addEventListener('DOMContentLoaded', function() {
         document: typeof document
     });
     
+    // Event listeners para inputs de búsqueda
     const searchInput = document.getElementById('searchInput');
     if (searchInput) {
         searchInput.addEventListener('keypress', function(e) {
             if (e.key === 'Enter') {
                 performSearch();
+            }
+        });
+    }
+    
+    const heroSearchInput = document.getElementById('heroSearchInput');
+    if (heroSearchInput) {
+        heroSearchInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                performHeroSearch();
             }
         });
     }

@@ -1,31 +1,47 @@
-/* Estilos personalizados para CTeI-Manager */
+/* ========================================
+   CTeI-Manager - Sistema de Diseño Consistente
+   Basado en variables CSS customizadas con soporte para modo oscuro
+======================================== */
 
-/* Variables CSS con el esquema de colores proporcionado */
+/* Variables CSS del sistema de diseño */
 :root {
+  /* Colores base */
   --background: oklch(0.9911 0 0);
   --foreground: oklch(0.2046 0 0);
   --card: oklch(0.9911 0 0);
   --card-foreground: oklch(0.2046 0 0);
   --popover: oklch(0.9911 0 0);
   --popover-foreground: oklch(0.4386 0 0);
+  
+  /* Colores primarios (verde científico) */
   --primary: oklch(0.8348 0.1302 160.9080);
   --primary-foreground: oklch(0.2626 0.0147 166.4589);
+  
+  /* Colores secundarios */
   --secondary: oklch(0.9940 0 0);
   --secondary-foreground: oklch(0.2046 0 0);
   --muted: oklch(0.9461 0 0);
-  --muted-foreground: oklch(0.3500 0 0); /* Mejorado para WCAG AA: ratio 4.5:1 */
+  --muted-foreground: oklch(0.2435 0 0);
   --accent: oklch(0.9461 0 0);
   --accent-foreground: oklch(0.2435 0 0);
+  
+  /* Colores de estado */
   --destructive: oklch(0.5523 0.1927 32.7272);
   --destructive-foreground: oklch(0.9934 0.0032 17.2118);
+  
+  /* Elementos UI */
   --border: oklch(0.9037 0 0);
   --input: oklch(0.9731 0 0);
   --ring: oklch(0.8348 0.1302 160.9080);
+  
+  /* Colores de gráficos */
   --chart-1: oklch(0.8348 0.1302 160.9080);
   --chart-2: oklch(0.6231 0.1880 259.8145);
   --chart-3: oklch(0.6056 0.2189 292.7172);
   --chart-4: oklch(0.7686 0.1647 70.0804);
   --chart-5: oklch(0.6959 0.1491 162.4796);
+  
+  /* Sidebar */
   --sidebar: oklch(0.9911 0 0);
   --sidebar-foreground: oklch(0.5452 0 0);
   --sidebar-primary: oklch(0.8348 0.1302 160.9080);
@@ -34,10 +50,16 @@
   --sidebar-accent-foreground: oklch(0.2435 0 0);
   --sidebar-border: oklch(0.9037 0 0);
   --sidebar-ring: oklch(0.8348 0.1302 160.9080);
+  
+  /* Tipografías */
   --font-sans: Outfit, sans-serif;
   --font-serif: ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;
   --font-mono: monospace;
+  
+  /* Border radius */
   --radius: 0.5rem;
+  
+  /* Sombras */
   --shadow-2xs: 0px 1px 3px 0px hsl(0 0% 0% / 0.09);
   --shadow-xs: 0px 1px 3px 0px hsl(0 0% 0% / 0.09);
   --shadow-sm: 0px 1px 3px 0px hsl(0 0% 0% / 0.17), 0px 1px 2px -1px hsl(0 0% 0% / 0.17);
@@ -46,10 +68,13 @@
   --shadow-lg: 0px 1px 3px 0px hsl(0 0% 0% / 0.17), 0px 4px 6px -1px hsl(0 0% 0% / 0.17);
   --shadow-xl: 0px 1px 3px 0px hsl(0 0% 0% / 0.17), 0px 8px 10px -1px hsl(0 0% 0% / 0.17);
   --shadow-2xl: 0px 1px 3px 0px hsl(0 0% 0% / 0.43);
+  
+  /* Espaciado y tipografía */
   --tracking-normal: 0.025em;
   --spacing: 0.25rem;
 }
 
+/* Modo oscuro */
 .dark {
   --background: oklch(0.1822 0 0);
   --foreground: oklch(0.9288 0.0126 255.5078);
@@ -62,7 +87,7 @@
   --secondary: oklch(0.2603 0 0);
   --secondary-foreground: oklch(0.9851 0 0);
   --muted: oklch(0.2393 0 0);
-  --muted-foreground: oklch(0.7500 0 0); /* Mejorado para WCAG AA en modo oscuro */
+  --muted-foreground: oklch(0.7122 0 0);
   --accent: oklch(0.3132 0 0);
   --accent-foreground: oklch(0.9851 0 0);
   --destructive: oklch(0.3123 0.0852 29.7877);
@@ -83,332 +108,457 @@
   --sidebar-accent-foreground: oklch(0.9851 0 0);
   --sidebar-border: oklch(0.2809 0 0);
   --sidebar-ring: oklch(0.8003 0.1821 151.7110);
-  --font-sans: Outfit, sans-serif;
-  --font-serif: ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;
-  --font-mono: monospace;
-  --radius: 0.5rem;
-  --shadow-2xs: 0px 1px 3px 0px hsl(0 0% 0% / 0.09);
-  --shadow-xs: 0px 1px 3px 0px hsl(0 0% 0% / 0.09);
-  --shadow-sm: 0px 1px 3px 0px hsl(0 0% 0% / 0.17), 0px 1px 2px -1px hsl(0 0% 0% / 0.17);
-  --shadow: 0px 1px 3px 0px hsl(0 0% 0% / 0.17), 0px 1px 2px -1px hsl(0 0% 0% / 0.17);
-  --shadow-md: 0px 1px 3px 0px hsl(0 0% 0% / 0.17), 0px 2px 4px -1px hsl(0 0% 0% / 0.17);
-  --shadow-lg: 0px 1px 3px 0px hsl(0 0% 0% / 0.17), 0px 4px 6px -1px hsl(0 0% 0% / 0.17);
-  --shadow-xl: 0px 1px 3px 0px hsl(0 0% 0% / 0.17), 0px 8px 10px -1px hsl(0 0% 0% / 0.17);
-  --shadow-2xl: 0px 1px 3px 0px hsl(0 0% 0% / 0.43);
 }
 
-/* Mapeo de colores para Tailwind */
-@layer base {
-  :root {
-    --color-background: var(--background);
-    --color-foreground: var(--foreground);
-    --color-card: var(--card);
-    --color-card-foreground: var(--card-foreground);
-    --color-popover: var(--popover);
-    --color-popover-foreground: var(--popover-foreground);
-    --color-primary: var(--primary);
-    --color-primary-foreground: var(--primary-foreground);
-    --color-secondary: var(--secondary);
-    --color-secondary-foreground: var(--secondary-foreground);
-    --color-muted: var(--muted);
-    --color-muted-foreground: var(--muted-foreground);
-    --color-accent: var(--accent);
-    --color-accent-foreground: var(--accent-foreground);
-    --color-destructive: var(--destructive);
-    --color-destructive-foreground: var(--destructive-foreground);
-    --color-border: var(--border);
-    --color-input: var(--input);
-    --color-ring: var(--ring);
-    --color-chart-1: var(--chart-1);
-    --color-chart-2: var(--chart-2);
-    --color-chart-3: var(--chart-3);
-    --color-chart-4: var(--chart-4);
-    --color-chart-5: var(--chart-5);
-    --color-sidebar: var(--sidebar);
-    --color-sidebar-foreground: var(--sidebar-foreground);
-    --color-sidebar-primary: var(--sidebar-primary);
-    --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
-    --color-sidebar-accent: var(--sidebar-accent);
-    --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
-    --color-sidebar-border: var(--sidebar-border);
-    --color-sidebar-ring: var(--sidebar-ring);
+/* Aplicar las variables CSS como clases de Tailwind */
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
 
-    --font-sans: var(--font-sans);
-    --font-mono: var(--font-mono);
-    --font-serif: var(--font-serif);
+  --font-sans: var(--font-sans);
+  --font-mono: var(--font-mono);
+  --font-serif: var(--font-serif);
 
-    --radius-sm: calc(var(--radius) - 4px);
-    --radius-md: calc(var(--radius) - 2px);
-    --radius-lg: var(--radius);
-    --radius-xl: calc(var(--radius) + 4px);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
 
-    --shadow-2xs: var(--shadow-2xs);
-    --shadow-xs: var(--shadow-xs);
-    --shadow-sm: var(--shadow-sm);
-    --shadow: var(--shadow);
-    --shadow-md: var(--shadow-md);
-    --shadow-lg: var(--shadow-lg);
-    --shadow-xl: var(--shadow-xl);
-    --shadow-2xl: var(--shadow-2xl);
+  --shadow-2xs: var(--shadow-2xs);
+  --shadow-xs: var(--shadow-xs);
+  --shadow-sm: var(--shadow-sm);
+  --shadow: var(--shadow);
+  --shadow-md: var(--shadow-md);
+  --shadow-lg: var(--shadow-lg);
+  --shadow-xl: var(--shadow-xl);
+  --shadow-2xl: var(--shadow-2xl);
 
-    --tracking-tighter: calc(var(--tracking-normal) - 0.05em);
-    --tracking-tight: calc(var(--tracking-normal) - 0.025em);
-    --tracking-normal: var(--tracking-normal);
-    --tracking-wide: calc(var(--tracking-normal) + 0.025em);
-    --tracking-wider: calc(var(--tracking-normal) + 0.05em);
-    --tracking-widest: calc(var(--tracking-normal) + 0.1em);
-  }
+  --tracking-tighter: calc(var(--tracking-normal) - 0.05em);
+  --tracking-tight: calc(var(--tracking-normal) - 0.025em);
+  --tracking-normal: var(--tracking-normal);
+  --tracking-wide: calc(var(--tracking-normal) + 0.025em);
+  --tracking-wider: calc(var(--tracking-normal) + 0.05em);
+  --tracking-widest: calc(var(--tracking-normal) + 0.1em);
 }
 
+/* Configuración global del body */
 body {
-  letter-spacing: var(--tracking-normal);
   font-family: var(--font-sans);
+  letter-spacing: var(--tracking-normal);
+  background-color: rgb(from var(--background) r g b);
+  color: rgb(from var(--foreground) r g b);
 }
 
-/* Estilos personalizados */
-.btn-primary {
-  background: var(--primary);
-  color: var(--primary-foreground);
-  border-radius: var(--radius);
-  box-shadow: var(--shadow);
+/* ========================================
+   HERO SECTION - Diseño inmersivo
+======================================== */
+
+/* Gradiente del hero más suave y profesional */
+.hero-gradient {
+  background: linear-gradient(135deg, 
+    rgb(from var(--sidebar) r g b) 0%,
+    rgb(from var(--accent) r g b / 0.8) 50%,
+    rgb(from var(--primary) r g b / 0.6) 100%
+  );
 }
 
-.btn-primary:hover {
-  opacity: 0.9;
+/* Patrón científico de fondo */
+.scientific-pattern {
+  background-image: 
+    radial-gradient(circle at 25px 25px, rgb(from var(--primary) r g b / 0.1) 2px, transparent 2px),
+    radial-gradient(circle at 75px 75px, rgb(from var(--chart-2) r g b / 0.1) 1px, transparent 1px);
+  background-size: 100px 100px;
 }
 
-.card {
-  background: var(--card);
-  color: var(--card-foreground);
-  border: 1px solid var(--border);
+/* Efecto glass morphism para elementos del hero */
+.glass-morphism {
+  background: rgb(from var(--card) r g b / 0.1);
+  backdrop-filter: blur(16px);
+  border: 1px solid rgb(from var(--border) r g b / 0.3);
+}
+
+/* ========================================
+   COMPONENTES UI CONSISTENTES
+======================================== */
+
+/* Cards principales */
+.ctei-card {
+  background-color: rgb(from var(--card) r g b);
+  color: rgb(from var(--card-foreground) r g b);
   border-radius: var(--radius);
   box-shadow: var(--shadow-sm);
+  border: 1px solid rgb(from var(--border) r g b);
   transition: all 0.2s ease-in-out;
 }
 
-.card:hover {
+.ctei-card:hover {
+  box-shadow: var(--shadow-md);
+  transform: translateY(-1px);
+}
+
+/* Botones primarios */
+.ctei-btn-primary {
+  background-color: rgb(from var(--primary) r g b);
+  color: rgb(from var(--primary-foreground) r g b);
+  border: none;
+  border-radius: var(--radius);
+  font-weight: 500;
+  transition: all 0.2s ease-in-out;
+  font-family: var(--font-sans);
+}
+
+.ctei-btn-primary:hover {
+  background-color: rgb(from var(--primary) r g b / 0.9);
+  box-shadow: var(--shadow-sm);
+}
+
+/* Botones secundarios */
+.ctei-btn-secondary {
+  background-color: rgb(from var(--secondary) r g b);
+  color: rgb(from var(--secondary-foreground) r g b);
+  border: 1px solid rgb(from var(--border) r g b);
+  border-radius: var(--radius);
+  font-weight: 500;
+  transition: all 0.2s ease-in-out;
+  font-family: var(--font-sans);
+}
+
+.ctei-btn-secondary:hover {
+  background-color: rgb(from var(--accent) r g b);
+  color: rgb(from var(--accent-foreground) r g b);
+}
+
+/* Inputs y formularios */
+.ctei-input {
+  background-color: rgb(from var(--input) r g b);
+  color: rgb(from var(--foreground) r g b);
+  border: 1px solid rgb(from var(--border) r g b);
+  border-radius: var(--radius);
+  padding: 0.75rem 1rem;
+  font-family: var(--font-sans);
+  transition: all 0.2s ease-in-out;
+}
+
+.ctei-input:focus {
+  outline: none;
+  border-color: rgb(from var(--ring) r g b);
+  box-shadow: 0 0 0 2px rgb(from var(--ring) r g b / 0.2);
+}
+
+/* Selectores */
+.ctei-select {
+  background-color: rgb(from var(--input) r g b);
+  color: rgb(from var(--foreground) r g b);
+  border: 1px solid rgb(from var(--border) r g b);
+  border-radius: var(--radius);
+  padding: 0.75rem 1rem;
+  font-family: var(--font-sans);
+  transition: all 0.2s ease-in-out;
+}
+
+/* ========================================
+   ESTADÍSTICAS Y MÉTRICAS
+======================================== */
+
+.stats-card {
+  background: linear-gradient(135deg, 
+    rgb(from var(--card) r g b), 
+    rgb(from var(--accent) r g b / 0.05)
+  );
+  border: 1px solid rgb(from var(--border) r g b);
+  border-radius: var(--radius);
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.stats-card:hover {
+  border-color: rgb(from var(--primary) r g b);
   box-shadow: var(--shadow-lg);
   transform: translateY(-2px);
 }
 
-.card:focus-within {
-  outline: 2px solid var(--ring);
-  outline-offset: 2px;
+.stats-card .stats-number {
+  color: rgb(from var(--primary) r g b);
+  font-family: var(--font-mono);
+  font-weight: 700;
 }
 
-.input {
-  background: var(--input);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-}
-
-.input:focus {
-  outline: 2px solid var(--ring);
-  outline-offset: 2px;
-}
-
-/* Animaciones suaves */
-.fade-in {
-  animation: fadeIn 0.3s ease-in;
-}
-
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-.slide-in {
-  animation: slideIn 0.3s ease-out;
-}
-
-@keyframes slideIn {
-  from { transform: translateX(-100%); }
-  to { transform: translateX(0); }
-}
-
-/* Responsive design improvements */
-@media (max-width: 768px) {
-  .navbar-mobile {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-  
-  .stats-grid {
-    grid-template-columns: 1fr;
-  }
-}
-
-/* Tooltips para etiquetas técnicas */
-.tooltip-container {
-  position: relative;
-  display: inline-block;
-}
-
-.tooltip {
-  position: absolute;
-  bottom: 100%;
-  left: 50%;
-  transform: translateX(-50%);
-  background: var(--popover);
-  color: var(--popover-foreground);
-  padding: 8px 12px;
-  border-radius: 6px;
-  font-size: 0.875rem;
-  white-space: nowrap;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-  border: 1px solid var(--border);
-  opacity: 0;
-  visibility: hidden;
-  transition: opacity 0.2s, visibility 0.2s;
-  z-index: 1000;
-  margin-bottom: 5px;
-}
-
-.tooltip::after {
-  content: '';
-  position: absolute;
-  top: 100%;
-  left: 50%;
-  transform: translateX(-50%);
-  border: 5px solid transparent;
-  border-top-color: var(--popover);
-}
-
-.tooltip-container:hover .tooltip,
-.tooltip-container:focus .tooltip {
-  opacity: 1;
-  visibility: visible;
-}
-
-/* Estilos para etiquetas técnicas */
-.tech-label {
-  background: var(--secondary);
-  color: var(--secondary-foreground);
-  padding: 2px 8px;
-  border-radius: 4px;
-  font-size: 0.75rem;
+.stats-card .stats-label {
+  color: rgb(from var(--muted-foreground) r g b);
   font-weight: 500;
+}
+
+.stats-card .stats-icon {
+  color: rgb(from var(--primary) r g b);
+  opacity: 0.8;
+}
+
+/* ========================================
+   NAVEGACIÓN Y HEADER
+======================================== */
+
+/* Navbar científico con glassmorphism */
+.ctei-navbar {
+  background: rgb(from var(--background) r g b / 0.8);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid rgb(from var(--border) r g b / 0.5);
+  transition: all 0.3s ease;
+}
+
+.ctei-navbar-link {
+  color: rgb(from var(--muted-foreground) r g b);
+  transition: color 0.2s ease;
+  font-weight: 500;
+}
+
+.ctei-navbar-link:hover {
+  color: rgb(from var(--primary) r g b);
+}
+
+/* ========================================
+   FILTROS Y BÚSQUEDA
+======================================== */
+
+.ctei-filter-container {
+  background-color: rgb(from var(--card) r g b);
+  border: 1px solid rgb(from var(--border) r g b);
+  border-radius: var(--radius);
+  padding: 1.5rem;
+}
+
+.ctei-search-input {
+  background-color: rgb(from var(--input) r g b);
+  border: 1px solid rgb(from var(--border) r g b);
+  color: rgb(from var(--foreground) r g b);
+  border-radius: var(--radius);
+  transition: all 0.2s ease;
+}
+
+.ctei-search-input:focus {
+  border-color: rgb(from var(--primary) r g b);
+  box-shadow: 0 0 0 2px rgb(from var(--primary) r g b / 0.1);
+}
+
+/* Botones de filtros rápidos */
+.ctei-filter-tag {
+  background-color: rgb(from var(--secondary) r g b);
+  color: rgb(from var(--secondary-foreground) r g b);
+  border: 1px solid rgb(from var(--border) r g b);
+  border-radius: calc(var(--radius) * 2);
+  padding: 0.5rem 1rem;
+  transition: all 0.2s ease;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.ctei-filter-tag:hover,
+.ctei-filter-tag.active {
+  background-color: rgb(from var(--primary) r g b);
+  color: rgb(from var(--primary-foreground) r g b);
+  border-color: rgb(from var(--primary) r g b);
+}
+
+/* ========================================
+   PROYECTOS Y PRODUCTOS
+======================================== */
+
+.project-card,
+.product-card {
+  background-color: rgb(from var(--card) r g b);
+  border: 1px solid rgb(from var(--border) r g b);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-sm);
+  transition: all 0.3s ease;
+  overflow: hidden;
+}
+
+.project-card:hover,
+.product-card:hover {
+  box-shadow: var(--shadow-lg);
+  transform: translateY(-1px);
+  border-color: rgb(from var(--primary) r g b / 0.5);
+}
+
+/* Badges de categorías y tipos */
+.ctei-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.25rem 0.75rem;
+  border-radius: calc(var(--radius) * 1.5);
+  font-size: 0.75rem;
+  font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 0.025em;
-  cursor: help;
-  transition: all 0.2s;
+  letter-spacing: 0.05em;
 }
 
-.tech-label:hover {
-  background: var(--accent);
-  color: var(--accent-foreground);
+.ctei-badge-primary {
+  background-color: rgb(from var(--primary) r g b / 0.1);
+  color: rgb(from var(--primary) r g b);
+  border: 1px solid rgb(from var(--primary) r g b / 0.2);
 }
 
-/* Loading spinner */
-.spinner {
-  border: 2px solid var(--muted);
-  border-top: 2px solid var(--primary);
-  border-radius: 50%;
-  width: 20px;
-  height: 20px;
-  animation: spin 1s linear infinite;
+.ctei-badge-secondary {
+  background-color: rgb(from var(--secondary) r g b);
+  color: rgb(from var(--secondary-foreground) r g b);
+  border: 1px solid rgb(from var(--border) r g b);
 }
 
-@keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
-}
+/* ========================================
+   ANIMACIONES Y TRANSICIONES
+======================================== */
 
-/* Estados interactivos mejorados */
+/* Animación suave para elementos interactivos */
 .interactive-element {
-  transition: all 0.2s ease-in-out;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .interactive-element:hover {
   transform: translateY(-1px);
 }
 
-.interactive-element:active {
-  transform: translateY(0);
+/* Efecto de carga para estadísticas */
+@keyframes countUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
-/* Mejorar estados de los botones */
-button, .btn {
-  transition: all 0.2s ease-in-out;
-  position: relative;
-  overflow: hidden;
+.stats-animate {
+  animation: countUp 0.6s ease-out;
 }
 
-button:hover, .btn:hover {
-  transform: translateY(-1px);
-  box-shadow: var(--shadow-md);
+/* Animación de entrada para cards */
+@keyframes slideIn {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
-button:active, .btn:active {
-  transform: translateY(0);
+.slide-in {
+  animation: slideIn 0.4s ease-out;
 }
 
-button:focus-visible, .btn:focus-visible {
-  outline: 2px solid var(--ring);
+/* ========================================
+   ESTADO RESPONSIVE Y ACCESIBILIDAD
+======================================== */
+
+/* Estados de focus mejorados para accesibilidad */
+.ctei-focusable:focus {
+  outline: 2px solid rgb(from var(--ring) r g b);
   outline-offset: 2px;
 }
 
-/* Estados de las tarjetas de estadísticas */
-.stats-card {
-  transition: all 0.3s ease-in-out;
-  cursor: pointer;
+/* Texto muted consistente */
+.ctei-text-muted {
+  color: rgb(from var(--muted-foreground) r g b);
 }
 
-.stats-card:hover {
-  box-shadow: var(--shadow-lg);
-  transform: translateY(-3px) scale(1.02);
+/* Enlaces consistentes */
+.ctei-link {
+  color: rgb(from var(--primary) r g b);
+  text-decoration: none;
+  transition: color 0.2s ease;
 }
 
-/* Estados de enlaces de navegación */
-nav a {
-  transition: all 0.2s ease-in-out;
-  position: relative;
+.ctei-link:hover {
+  color: rgb(from var(--primary) r g b / 0.8);
+  text-decoration: underline;
 }
 
-nav a:hover {
-  transform: translateY(-1px);
+/* ========================================
+   MODALOS Y OVERLAYS
+======================================== */
+
+.ctei-modal-backdrop {
+  background-color: rgb(0 0 0 / 0.6);
+  backdrop-filter: blur(4px);
 }
 
-nav a:focus-visible {
-  outline: 2px solid var(--ring);
-  outline-offset: 2px;
+.ctei-modal {
+  background-color: rgb(from var(--card) r g b);
+  border: 1px solid rgb(from var(--border) r g b);
   border-radius: var(--radius);
+  box-shadow: var(--shadow-xl);
 }
 
-/* Estados de campos de entrada */
-input, select, textarea {
-  transition: all 0.2s ease-in-out;
+/* ========================================
+   UTILIDADES DE ESPACIADO
+======================================== */
+
+.ctei-spacing {
+  padding: var(--spacing);
 }
 
-input:focus, select:focus, textarea:focus {
-  transform: translateY(-1px);
-  box-shadow: var(--shadow-md);
+.ctei-spacing-md {
+  padding: calc(var(--spacing) * 2);
 }
 
-/* Toast notifications */
-.toast {
-  position: fixed;
-  top: 20px;
-  right: 20px;
-  z-index: 1000;
-  max-width: 400px;
-  padding: 12px 16px;
-  border-radius: var(--radius);
-  box-shadow: var(--shadow-lg);
-  animation: slideInRight 0.3s ease-out;
+.ctei-spacing-lg {
+  padding: calc(var(--spacing) * 4);
 }
 
-.toast-success {
-  background: var(--primary);
-  color: var(--primary-foreground);
+/* ========================================
+   PERSONALIZACIONES DE SCROLL
+======================================== */
+
+/* Scrollbar personalizado */
+::-webkit-scrollbar {
+  width: 8px;
 }
 
-.toast-error {
-  background: var(--destructive);
-  color: var(--destructive-foreground);
+::-webkit-scrollbar-track {
+  background: rgb(from var(--muted) r g b);
+  border-radius: 4px;
 }
 
-@keyframes slideInRight {
-  from { transform: translateX(100%); }
-  to { transform: translateX(0); }
+::-webkit-scrollbar-thumb {
+  background: rgb(from var(--muted-foreground) r g b / 0.5);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgb(from var(--primary) r g b / 0.7);
+}
+
+/* ========================================
+   PRINT STYLES
+======================================== */
+
+@media print {
+  .no-print {
+    display: none !important;
+  }
+  
+  .ctei-card {
+    box-shadow: none;
+    border: 1px solid #ccc;
+  }
 }

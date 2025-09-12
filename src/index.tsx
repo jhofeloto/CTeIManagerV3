@@ -397,31 +397,31 @@ app.get('/', (c) => {
         </script>
     </head>
     <body class="bg-background text-foreground">
-        <!-- Navbar -->
-        <nav class="bg-card shadow-lg border-b border-border">
+        <!-- Navbar Flotante -->
+        <nav class="fixed top-0 left-0 right-0 z-50 ctei-navbar">
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div class="flex justify-between h-16">
                     <div class="flex items-center">
-                        <h1 class="text-xl font-bold text-primary">
-                            <i class="fas fa-flask mr-2"></i>
+                        <h1 class="text-xl font-bold text-foreground">
+                            <i class="fas fa-dna mr-2" style="color: rgb(from var(--primary) r g b)"></i>
                             CTeI-Manager
                         </h1>
                     </div>
                     <div class="flex items-center space-x-4">
-                        <a href="#projects" class="text-foreground hover:text-primary px-3 py-2 rounded-md text-sm font-medium">Proyectos</a>
-                        <a href="#products" class="text-foreground hover:text-primary px-3 py-2 rounded-md text-sm font-medium">Productos</a>
-                        <a href="#stats" class="text-foreground hover:text-primary px-3 py-2 rounded-md text-sm font-medium">Analíticas</a>
+                        <a href="#projects" class="ctei-navbar-link px-3 py-2 rounded-md text-sm font-medium transition-colors">Proyectos</a>
+                        <a href="#products" class="ctei-navbar-link px-3 py-2 rounded-md text-sm font-medium transition-colors">Productos</a>
+                        <a href="#stats" class="ctei-navbar-link px-3 py-2 rounded-md text-sm font-medium transition-colors">Analíticas</a>
                         
                         <!-- Botones para usuarios no autenticados -->
                         <div id="unauthenticatedButtons" class="flex items-center space-x-4">
-                            <button onclick="showLoginModal()" class="bg-primary text-primary-foreground px-4 py-2 rounded-lg font-medium hover:opacity-90">
+                            <button onclick="showLoginModal()" class="ctei-btn-primary px-4 py-2 rounded-lg">
                                 <i class="fas fa-sign-in-alt mr-1"></i>
                                 Ingresar
                             </button>
-                            <button onclick="testDirectLogin()" class="bg-orange-500 text-white px-3 py-1 rounded text-sm font-medium hover:opacity-90">
-                                🔧 Test Login
+                            <button onclick="testDirectLogin()" class="bg-orange-600 hover:bg-orange-700 text-white px-3 py-1 rounded text-sm font-medium transition-colors">
+                                🔧 Test
                             </button>
-                            <button onclick="showRegisterModal()" class="bg-secondary text-secondary-foreground px-4 py-2 rounded-lg font-medium hover:opacity-90">
+                            <button onclick="showRegisterModal()" class="ctei-btn-secondary px-4 py-2 rounded-lg">
                                 <i class="fas fa-user-plus mr-1"></i>
                                 Registro
                             </button>
@@ -429,12 +429,12 @@ app.get('/', (c) => {
                         
                         <!-- Botones para usuarios autenticados -->
                         <div id="authenticatedButtons" class="hidden items-center space-x-4">
-                            <span id="userInfo" class="text-sm text-muted-foreground"></span>
-                            <a href="/dashboard" class="bg-accent text-accent-foreground px-4 py-2 rounded-lg font-medium hover:opacity-90">
+                            <span id="userInfo" class="text-sm text-gray-300"></span>
+                            <a href="/dashboard" class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg font-medium transition-colors">
                                 <i class="fas fa-tachometer-alt mr-1"></i>
                                 Dashboard
                             </a>
-                            <button onclick="logout()" class="bg-destructive text-destructive-foreground px-4 py-2 rounded-lg font-medium hover:opacity-90">
+                            <button onclick="logout()" class="text-red-400 hover:text-red-300 px-4 py-2 rounded-lg font-medium transition-colors">
                                 <i class="fas fa-sign-out-alt mr-1"></i>
                                 Salir
                             </button>
@@ -444,18 +444,97 @@ app.get('/', (c) => {
             </div>
         </nav>
 
-        <!-- Contenido principal -->
-        <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-            <!-- Hero Section -->
-            <div class="bg-gradient-to-r from-primary/10 to-accent/10 rounded-xl p-8 mb-8">
-                <h2 class="text-3xl font-bold text-center mb-4">
-                    Portal de Gestión de Ciencia, Tecnología e Innovación
-                </h2>
-                <p class="text-muted-foreground text-center text-lg max-w-3xl mx-auto">
-                    Plataforma integral para la gestión, visualización y análisis de proyectos y productos de CTeI. 
-                    Conectando investigadores, comunidad académica y sociedad.
+        <!-- Hero Section Inmersivo -->
+        <section class="relative min-h-screen flex items-center justify-center overflow-hidden bg-background">
+            <!-- Fondo con gradiente del sistema de diseño -->
+            <div class="absolute inset-0 bg-gradient-to-br from-background to-muted"></div>
+            <div class="absolute inset-0 scientific-pattern opacity-20"></div>
+            
+            <!-- Overlay para legibilidad -->
+            <div class="absolute inset-0 bg-gradient-to-t from-background/40 via-transparent to-background/20"></div>
+
+            <!-- Contenido principal del hero -->
+            <div class="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+                <!-- Badge superior -->
+                <div class="inline-flex items-center px-6 py-2 rounded-full bg-primary/10 border border-primary/20 text-primary text-sm font-medium mb-8">
+                    <i class="fas fa-atom mr-2"></i>
+                    Impulsando una Nueva Era de Investigación CTeI
+                </div>
+
+                <!-- Título principal -->
+                <h1 class="text-5xl sm:text-6xl lg:text-7xl font-bold mb-6 leading-tight text-foreground">
+                    <span class="text-primary">
+                        Innovación
+                    </span>
+                    <br>
+                    que Transforma 
+                    <br>
+                    <span class="text-foreground">el Futuro</span>
+                </h1>
+
+                <!-- Subtítulo -->
+                <p class="text-xl sm:text-2xl text-muted-foreground mb-12 max-w-4xl mx-auto leading-relaxed">
+                    La plataforma para visualizar y conectar la ciencia que define el mañana. 
+                    <span class="text-primary font-medium">Descubre, colabora y acelera</span> el conocimiento científico.
                 </p>
+
+                <!-- Barra de búsqueda estilizada -->
+                <div class="max-w-2xl mx-auto mb-16">
+                    <div class="relative">
+                        <div class="bg-card border border-border rounded-2xl p-2 shadow-lg">
+                            <div class="flex items-center">
+                                <div class="flex-1">
+                                    <input 
+                                        type="text" 
+                                        id="heroSearchInput"
+                                        placeholder="Explora proyectos, productos y descubrimientos..." 
+                                        class="w-full bg-transparent text-foreground placeholder-muted-foreground px-6 py-4 text-lg focus:outline-none"
+                                    >
+                                </div>
+                                <button 
+                                    onclick="performHeroSearch()"
+                                    class="bg-primary text-primary-foreground hover:bg-primary/90 px-8 py-4 rounded-xl flex items-center font-medium transition-colors"
+                                >
+                                    <i class="fas fa-search mr-2"></i>
+                                    Buscar
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Filtros rápidos -->
+                    <div class="flex flex-wrap justify-center gap-2 mt-6">
+                        <button onclick="performQuickFilter('projects')" class="px-4 py-2 bg-secondary hover:bg-accent border border-border rounded-full text-sm text-secondary-foreground hover:text-accent-foreground transition-colors">
+                            <i class="fas fa-project-diagram mr-1"></i> Proyectos
+                        </button>
+                        <button onclick="performQuickFilter('products')" class="px-4 py-2 bg-secondary hover:bg-accent border border-border rounded-full text-sm text-secondary-foreground hover:text-accent-foreground transition-colors">
+                            <i class="fas fa-cubes mr-1"></i> Productos
+                        </button>
+                        <button onclick="performQuickFilter('investigators')" class="px-4 py-2 bg-secondary hover:bg-accent border border-border rounded-full text-sm text-secondary-foreground hover:text-accent-foreground transition-colors">
+                            <i class="fas fa-users mr-1"></i> Investigadores
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Indicador de scroll -->
+                <div class="animate-bounce">
+                    <button onclick="document.getElementById('content-section').scrollIntoView({behavior: 'smooth'})" class="text-muted-foreground hover:text-foreground transition-colors">
+                        <div class="flex flex-col items-center">
+                            <span class="text-sm mb-2">Explora más</span>
+                            <i class="fas fa-chevron-down text-xl"></i>
+                        </div>
+                    </button>
+                </div>
             </div>
+
+            <!-- Elementos decorativos -->
+            <div class="absolute top-20 left-10 w-32 h-32 bg-primary/10 rounded-full blur-2xl animate-pulse"></div>
+            <div class="absolute bottom-20 right-10 w-48 h-48 bg-chart-2/10 rounded-full blur-3xl animate-pulse delay-1000"></div>
+        </section>
+
+        <!-- Contenido principal -->
+        <main id="content-section" class="bg-background text-foreground">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
 
             <!-- Búsqueda Avanzada -->
             <div class="bg-card rounded-lg shadow-md p-6 mb-8">
