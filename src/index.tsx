@@ -82,14 +82,31 @@ app.get('/', (c) => {
                         <a href="#projects" class="text-foreground hover:text-primary px-3 py-2 rounded-md text-sm font-medium">Proyectos</a>
                         <a href="#products" class="text-foreground hover:text-primary px-3 py-2 rounded-md text-sm font-medium">Productos</a>
                         <a href="#stats" class="text-foreground hover:text-primary px-3 py-2 rounded-md text-sm font-medium">Analíticas</a>
-                        <button onclick="showLoginModal()" class="bg-primary text-primary-foreground px-4 py-2 rounded-lg font-medium hover:opacity-90">
-                            <i class="fas fa-sign-in-alt mr-1"></i>
-                            Ingresar
-                        </button>
-                        <button onclick="showRegisterModal()" class="bg-secondary text-secondary-foreground px-4 py-2 rounded-lg font-medium hover:opacity-90">
-                            <i class="fas fa-user-plus mr-1"></i>
-                            Registro
-                        </button>
+                        
+                        <!-- Botones para usuarios no autenticados -->
+                        <div id="unauthenticatedButtons" class="flex items-center space-x-4">
+                            <button onclick="showLoginModal()" class="bg-primary text-primary-foreground px-4 py-2 rounded-lg font-medium hover:opacity-90">
+                                <i class="fas fa-sign-in-alt mr-1"></i>
+                                Ingresar
+                            </button>
+                            <button onclick="showRegisterModal()" class="bg-secondary text-secondary-foreground px-4 py-2 rounded-lg font-medium hover:opacity-90">
+                                <i class="fas fa-user-plus mr-1"></i>
+                                Registro
+                            </button>
+                        </div>
+                        
+                        <!-- Botones para usuarios autenticados -->
+                        <div id="authenticatedButtons" class="hidden items-center space-x-4">
+                            <span id="userInfo" class="text-sm text-muted-foreground"></span>
+                            <a href="/dashboard" class="bg-accent text-accent-foreground px-4 py-2 rounded-lg font-medium hover:opacity-90">
+                                <i class="fas fa-tachometer-alt mr-1"></i>
+                                Dashboard
+                            </a>
+                            <button onclick="logout()" class="bg-destructive text-destructive-foreground px-4 py-2 rounded-lg font-medium hover:opacity-90">
+                                <i class="fas fa-sign-out-alt mr-1"></i>
+                                Salir
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -283,6 +300,7 @@ app.get('/', (c) => {
         </div>
 
         <script src="https://cdn.jsdelivr.net/npm/axios@1.6.0/dist/axios.min.js"></script>
+        <script src="/static/phase1-enhancements.js"></script>
         <script src="/static/app.js"></script>
     </body>
     </html>
@@ -330,6 +348,7 @@ app.get('/dashboard', (c) => {
         <script src="/static/phase1-enhancements.js"></script>
         <script src="/static/dashboard.js"></script>
         <script src="/static/enhanced-dashboard.js"></script>
+        <script src="/static/product-authorship.js"></script>
     </body>
     </html>
   `)

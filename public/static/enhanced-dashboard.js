@@ -302,15 +302,38 @@ async function loadProjectProducts(projectId) {
                     `;
                 }).join(' ');
                 
+                // Mostrar algunos productos destacados
+                const featuredProducts = products.slice(0, 3).map(product => `
+                    <div class="text-xs border-l-2 border-gray-300 pl-2 mb-1">
+                        <div class="font-medium">${product.product_code}</div>
+                        <div class="text-gray-600">
+                            ${getProductCategoryInfo(product.product_type).name}
+                            ${product.creator_name ? `• ${product.creator_name}` : ''}
+                            ${product.is_public ? '• Público' : '• Privado'}
+                        </div>
+                    </div>
+                `).join('');
+                
                 previewContainer.innerHTML = `
-                    <div class="space-y-1">
+                    <div class="space-y-2">
                         <div class="text-xs font-medium">
                             <i class="fas fa-cubes mr-1"></i>
                             ${products.length} producto${products.length !== 1 ? 's' : ''}:
                         </div>
-                        <div class="flex flex-wrap gap-1">
+                        <div class="flex flex-wrap gap-1 mb-2">
                             ${badges}
                         </div>
+                        ${products.length > 0 ? `
+                            <div class="border-t border-gray-200 pt-2">
+                                <div class="text-xs text-gray-500 mb-1">Productos recientes:</div>
+                                ${featuredProducts}
+                                ${products.length > 3 ? `
+                                    <div class="text-xs text-gray-400 mt-1">
+                                        +${products.length - 3} producto${products.length - 3 !== 1 ? 's' : ''} más
+                                    </div>
+                                ` : ''}
+                            </div>
+                        ` : ''}
                     </div>
                 `;
             }

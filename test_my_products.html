@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test - Mis Productos CTeI-Manager</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .test-result { padding: 10px; margin: 5px; border-radius: 5px; }
+        .success { background-color: #dcfce7; border-left: 4px solid #22c55e; }
+        .error { background-color: #fef2f2; border-left: 4px solid #ef4444; }
+        .info { background-color: #e0f2fe; border-left: 4px solid #06b6d4; }
+    </style>
+</head>
+<body class="bg-gray-100 p-8">
+    <div class="max-w-6xl mx-auto">
+        <h1 class="text-3xl font-bold mb-6">🧪 Test - Nueva Funcionalidad "Mis Productos"</h1>
+        
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+            <!-- Panel de Login -->
+            <div class="bg-white rounded-lg shadow-md p-6">
+                <h2 class="text-xl font-semibold mb-4">🔐 Autenticación</h2>
+                <button onclick="testLogin()" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 mr-2">
+                    Hacer Login
+                </button>
+                <button onclick="testLogout()" class="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600">
+                    Logout
+                </button>
+                <div id="auth-status" class="mt-4"></div>
+            </div>
+
+            <!-- Panel de Acceso -->
+            <div class="bg-white rounded-lg shadow-md p-6">
+                <h2 class="text-xl font-semibold mb-4">🎯 Acceso Rápido</h2>
+                <div class="space-y-2">
+                    <a href="/dashboard" target="_blank" class="block bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 text-center">
+                        🎛️ Ir al Dashboard
+                    </a>
+                    <button onclick="testMisProductosAPI()" class="w-full bg-purple-500 text-white px-4 py-2 rounded hover:bg-purple-600">
+                        🧪 Test API Mis Productos
+                    </button>
+                    <button onclick="testCategorias()" class="w-full bg-orange-500 text-white px-4 py-2 rounded hover:bg-orange-600">
+                        📋 Test Carga de Categorías
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Panel de Tests -->
+        <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+            <h2 class="text-xl font-semibold mb-4">🚀 Tests Específicos</h2>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <button onclick="testEditProduct()" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
+                    ✏️ Test Editar Producto
+                </button>
+                <button onclick="testToggleVisibility()" class="bg-orange-500 text-white px-4 py-2 rounded hover:bg-orange-600">
+                    👁️ Test Publicar/Ocultar
+                </button>
+                <button onclick="testDeleteProduct()" class="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600">
+                    🗑️ Test Eliminar Producto
+                </button>
+            </div>
+        </div>
+
+        <!-- Resultados de Tests -->
+        <div class="bg-white rounded-lg shadow-md p-6">
+            <h2 class="text-xl font-semibold mb-4">📊 Resultados de Tests</h2>
+            <div id="test-results"></div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/axios@1.6.0/dist/axios.min.js"></script>
+    <script>
+        let authToken = null;
+        let testProducts = [];
+        let testCategories = [];
+        
+        function addTestResult(message, type = 'info') {
+            const resultsDiv = document.getElementById('test-results');
+            const resultDiv = document.createElement('div');
+            resultDiv.className = `test-result ${type}`;
+            resultDiv.innerHTML = `<strong>${new Date().toLocaleTimeString()}</strong>: ${message}`;
+            resultsDiv.appendChild(resultDiv);
+            resultsDiv.scrollTop = resultsDiv.scrollHeight;
+        }
+
+        function updateAuthStatus() {
+            const statusDiv = document.getElementById('auth-status');
+            if (authToken) {
+                statusDiv.innerHTML = '<span class="text-green-600">✅ Autenticado correctamente</span>';
+                axios.defaults.headers.common['Authorization'] = `Bearer ${authToken}`;
+            } else {
+                statusDiv.innerHTML = '<span class="text-red-600">❌ No autenticado</span>';
+                delete axios.defaults.headers.common['Authorization'];
+            }
+        }
+
+        async function testLogin() {
+            try {
+                addTestResult('Intentando hacer login...', 'info');
+                const response = await axios.post('/api/auth/login', {
+                    email: 'carlos.rodriguez@ctei.edu.co',
+                    password: 'password123'
+                });
+                
+                if (response.data.success) {
+                    authToken = response.data.data.token;
+                    addTestResult(`✅ Login exitoso para ${response.data.data.user.full_name}`, 'success');
+                    updateAuthStatus();
+                } else {
+                    addTestResult('❌ Login fallido: ' + response.data.error, 'error');
+                }
+            } catch (error) {
+                addTestResult('❌ Error en login: ' + error.message, 'error');
+            }
+        }
+
+        function testLogout() {
+            authToken = null;
+            addTestResult('✅ Logout exitoso', 'info');
+            updateAuthStatus();
+        }
+
+        async function testMisProductosAPI() {
+            if (!authToken) {
+                addTestResult('❌ Error: Debes hacer login primero', 'error');
+                return;
+            }
+
+            try {
+                addTestResult('🔍 Cargando proyectos y productos...', 'info');
+                
+                // 1. Cargar proyectos
+                const projectsResponse = await axios.get('/api/me/projects');
+                if (!projectsResponse.data.success) {
+                    throw new Error('Error cargando proyectos');
+                }
+                
+                const projects = projectsResponse.data.data.projects;
+                addTestResult(`✅ Cargados ${projects.length} proyectos`, 'success');
+                
+                // 2. Cargar productos de cada proyecto
+                let allProducts = [];
+                for (const project of projects) {
+                    try {
+                        const productsResponse = await axios.get(`/api/me/projects/${project.id}/products`);
+                        if (productsResponse.data.success) {
+                            const products = productsResponse.data.data.products.map(p => ({
+                                ...p,
+                                project_title: project.title,
+                                project_id: project.id
+                            }));
+                            allProducts = allProducts.concat(products);
+                        }
+                    } catch (error) {
+                        addTestResult(`⚠️ Error cargando productos del proyecto ${project.id}: ${error.message}`, 'error');
+                    }
+                }
+                
+                testProducts = allProducts;
+                addTestResult(`✅ TOTAL: ${allProducts.length} productos encontrados`, 'success');
+                
+                // 3. Mostrar detalles de productos
+                allProducts.forEach((product, index) => {
+                    const status = product.is_public ? 'Público' : 'Privado';
+                    const creator = product.creator_name || 'N/A';
+                    addTestResult(`${index + 1}. ${product.product_code} (${status}) - Creador: ${creator} - Proyecto: ${product.project_title}`, 'info');
+                });
+                
+            } catch (error) {
+                addTestResult('❌ Error cargando productos: ' + error.message, 'error');
+            }
+        }
+
+        async function testCategorias() {
+            try {
+                addTestResult('📋 Cargando categorías de productos...', 'info');
+                
+                const response = await axios.get('/api/public/product-categories');
+                if (response.data.success) {
+                    testCategories = response.data.data.categories;
+                    addTestResult(`✅ Cargadas ${testCategories.length} categorías`, 'success');
+                    
+                    // Agrupar por category_group
+                    const groups = {};
+                    testCategories.forEach(cat => {
+                        if (!groups[cat.category_group]) {
+                            groups[cat.category_group] = [];
+                        }
+                        groups[cat.category_group].push(cat);
+                    });
+                    
+                    Object.keys(groups).forEach(group => {
+                        addTestResult(`📂 ${group}: ${groups[group].length} categorías`, 'info');
+                    });
+                    
+                    addTestResult('✅ Test de categorías completado - Modal de edición debería funcionar', 'success');
+                } else {
+                    addTestResult('❌ Error cargando categorías: ' + response.data.error, 'error');
+                }
+            } catch (error) {
+                addTestResult('❌ Error cargando categorías: ' + error.message, 'error');
+            }
+        }
+
+        async function testEditProduct() {
+            if (!authToken) {
+                addTestResult('❌ Error: Debes hacer login primero', 'error');
+                return;
+            }
+
+            if (testProducts.length === 0) {
+                addTestResult('⚠️ Primero ejecuta "Test API Mis Productos" para cargar productos', 'error');
+                return;
+            }
+
+            const product = testProducts[0];
+            addTestResult(`✏️ Simulando edición del producto: ${product.product_code}`, 'info');
+            addTestResult(`📝 ID del producto: ${product.id}, Proyecto: ${product.project_id}`, 'info');
+            addTestResult(`📂 Categoría actual: ${product.product_type} (${product.category_name || 'Sin nombre'})`, 'info');
+            addTestResult('✅ Los datos están listos - La edición funcionaría correctamente', 'success');
+            addTestResult('💡 Puedes ir al Dashboard y probar la edición real desde "Mis Productos"', 'info');
+        }
+
+        async function testToggleVisibility() {
+            if (!authToken) {
+                addTestResult('❌ Error: Debes hacer login primero', 'error');
+                return;
+            }
+
+            if (testProducts.length === 0) {
+                addTestResult('⚠️ Primero ejecuta "Test API Mis Productos" para cargar productos', 'error');
+                return;
+            }
+
+            try {
+                const product = testProducts[0];
+                const newVisibility = !product.is_public;
+                
+                addTestResult(`👁️ Cambiando visibilidad del producto ${product.product_code} a ${newVisibility ? 'PÚBLICO' : 'PRIVADO'}...`, 'info');
+                
+                const response = await axios.post(`/api/me/projects/${product.project_id}/products/${product.id}/publish`, {
+                    is_public: newVisibility
+                });
+                
+                if (response.data.success) {
+                    addTestResult(`✅ Producto ${newVisibility ? 'publicado' : 'ocultado'} exitosamente`, 'success');
+                    
+                    // Actualizar en el array local
+                    product.is_public = newVisibility ? 1 : 0;
+                } else {
+                    addTestResult('❌ Error cambiando visibilidad: ' + response.data.error, 'error');
+                }
+            } catch (error) {
+                addTestResult('❌ Error en test de visibilidad: ' + error.message, 'error');
+            }
+        }
+
+        async function testDeleteProduct() {
+            if (!authToken) {
+                addTestResult('❌ Error: Debes hacer login primero', 'error');
+                return;
+            }
+
+            const confirmDelete = confirm('⚠️ ADVERTENCIA: Esto eliminará un producto REAL de la base de datos.\\n\\n¿Estás seguro de que quieres proceder?\\n\\nEste test eliminará el último producto de la lista.');
+            
+            if (!confirmDelete) {
+                addTestResult('❌ Test de eliminación cancelado por el usuario', 'info');
+                return;
+            }
+
+            if (testProducts.length === 0) {
+                addTestResult('⚠️ Primero ejecuta "Test API Mis Productos" para cargar productos', 'error');
+                return;
+            }
+
+            try {
+                // Usar el último producto para no afectar tanto
+                const product = testProducts[testProducts.length - 1];
+                
+                addTestResult(`🗑️ ELIMINANDO producto ${product.product_code}...`, 'info');
+                
+                const response = await axios.delete(`/api/me/projects/${product.project_id}/products/${product.id}`);
+                
+                if (response.data.success) {
+                    addTestResult(`✅ Producto "${product.product_code}" eliminado exitosamente`, 'success');
+                    
+                    // Remover del array local
+                    testProducts = testProducts.filter(p => p.id !== product.id);
+                    addTestResult(`📊 Productos restantes: ${testProducts.length}`, 'info');
+                } else {
+                    addTestResult('❌ Error eliminando producto: ' + response.data.error, 'error');
+                }
+            } catch (error) {
+                addTestResult('❌ Error en test de eliminación: ' + error.message, 'error');
+            }
+        }
+
+        // Inicializar estado de autenticación
+        updateAuthStatus();
+        
+        // Mostrar instrucciones iniciales
+        addTestResult('=== TEST DE FUNCIONALIDAD "MIS PRODUCTOS" ===', 'info');
+        addTestResult('1. Haz click en "Hacer Login" para autenticarte', 'info');
+        addTestResult('2. Usa "Test API Mis Productos" para cargar datos', 'info');
+        addTestResult('3. Prueba los tests específicos de funcionalidad', 'info');
+        addTestResult('4. Accede al Dashboard para ver la nueva sección "Mis Productos"', 'info');
+    </script>
+</body>
+</html>

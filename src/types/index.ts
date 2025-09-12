@@ -68,10 +68,30 @@ export interface Product {
   citation_count?: number;
   metadata?: string; // JSON
   file_url?: string;
+  // Nuevos campos Fase 1.1 - Autoría
+  creator_id?: number;
+  last_editor_id?: number;
+  published_at?: string;
+  published_by?: number;
   created_at: string;
   updated_at: string;
   project?: Project;
   category?: ProductCategory;
+  creator?: User;
+  last_editor?: User;
+  publisher?: User;
+  authors?: ProductAuthor[];
+}
+
+export interface ProductAuthor {
+  product_id: number;
+  user_id: number;
+  user?: User;
+  author_role: 'AUTHOR' | 'CO_AUTHOR' | 'EDITOR' | 'REVIEWER';
+  author_order: number;
+  contribution_type?: string;
+  added_at: string;
+  added_by?: number;
 }
 
 export interface ProjectCollaborator {
@@ -150,6 +170,13 @@ export interface CreateProductRequest {
   impact_factor?: number;
   metadata?: string; // JSON
   file_url?: string;
+  // Campos de autoría opcionales
+  authors?: {
+    user_id: number;
+    author_role: 'AUTHOR' | 'CO_AUTHOR' | 'EDITOR' | 'REVIEWER';
+    author_order: number;
+    contribution_type?: string;
+  }[];
 }
 
 export interface UpdateProductRequest {
@@ -173,6 +200,13 @@ export interface AddCollaboratorRequest {
   can_add_products?: boolean;
   can_manage_team?: boolean;
   role_description?: string;
+}
+
+export interface AddProductAuthorRequest {
+  user_id: number;
+  author_role: 'AUTHOR' | 'CO_AUTHOR' | 'EDITOR' | 'REVIEWER';
+  author_order: number;
+  contribution_type?: string;
 }
 
 export interface Bindings {

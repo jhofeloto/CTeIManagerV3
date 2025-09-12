@@ -318,6 +318,225 @@ adminRoutes.post('/projects/:id/publish', async (c) => {
   }
 });
 
+// ===== GESTIÓN DE CATEGORÍAS DE PRODUCTOS =====
+
+// Listar todas las categorías de productos
+adminRoutes.get('/product-categories', async (c) => {
+  try {
+    const categories = await c.env.DB.prepare(`
+      SELECT code, name, description, category_group, impact_weight, created_at
+      FROM product_categories 
+      ORDER BY category_group, impact_weight DESC, name
+    `).all();
+
+    return c.json<APIResponse<{ categories: any[] }>>({
+      success: true,
+      data: { categories: categories.results }
+    });
+
+  } catch (error) {
+    console.error('Error obteniendo categorías:', error);
+    return c.json<APIResponse>({ 
+      success: false, 
+      error: 'Error interno del servidor' 
+    }, 500);
+  }
+});
+
+// Crear nueva categoría de producto
+adminRoutes.post('/product-categories', async (c) => {
+  try {
+    const body = await c.req.json<{
+      code: string;
+      name: string;
+      description?: string;
+      category_group: string;
+      impact_weight: number;
+    }>();
+
+    // Validar campos requeridos
+    if (!body.code || !body.name || !body.category_group || body.impact_weight === undefined) {
+      return c.json<APIResponse>({ 
+        success: false, 
+        error: 'Código, nombre, grupo de categoría y peso de impacto son requeridos' 
+      }, 400);
+    }
+
+    // Verificar que el código no exista
+    const existing = await c.env.DB.prepare(
+      'SELECT code FROM product_categories WHERE code = ?'
+    ).bind(body.code).first();
+
+    if (existing) {
+      return c.json<APIResponse>({ 
+        success: false, 
+        error: 'El código de categoría ya existe' 
+      }, 400);
+    }
+
+    const result = await c.env.DB.prepare(`
+      INSERT INTO product_categories (code, name, description, category_group, impact_weight)
+      VALUES (?, ?, ?, ?, ?)
+    `).bind(
+      body.code,
+      body.name,
+      body.description || null,
+      body.category_group,
+      body.impact_weight
+    ).run();
+
+    if (!result.success) {
+      return c.json<APIResponse>({ 
+        success: false, 
+        error: 'Error al crear la categoría' 
+      }, 500);
+    }
+
+    return c.json<APIResponse>({
+      success: true,
+      message: 'Categoría creada exitosamente'
+    });
+
+  } catch (error) {
+    console.error('Error creando categoría:', error);
+    return c.json<APIResponse>({ 
+      success: false, 
+      error: 'Error interno del servidor' 
+    }, 500);
+  }
+});
+
+// Actualizar categoría de producto
+adminRoutes.put('/product-categories/:code', async (c) => {
+  try {
+    const code = c.req.param('code');
+    const body = await c.req.json<{
+      name?: string;
+      description?: string;
+      category_group?: string;
+      impact_weight?: number;
+    }>();
+
+    // Verificar que la categoría existe
+    const existing = await c.env.DB.prepare(
+      'SELECT code FROM product_categories WHERE code = ?'
+    ).bind(code).first();
+
+    if (!existing) {
+      return c.json<APIResponse>({ 
+        success: false, 
+        error: 'Categoría no encontrada' 
+      }, 404);
+    }
+
+    const updateFields: string[] = [];
+    const params: any[] = [];
+
+    if (body.name) {
+      updateFields.push('name = ?');
+      params.push(body.name);
+    }
+
+    if (body.description !== undefined) {
+      updateFields.push('description = ?');
+      params.push(body.description || null);
+    }
+
+    if (body.category_group) {
+      updateFields.push('category_group = ?');
+      params.push(body.category_group);
+    }
+
+    if (body.impact_weight !== undefined) {
+      updateFields.push('impact_weight = ?');
+      params.push(body.impact_weight);
+    }
+
+    if (updateFields.length === 0) {
+      return c.json<APIResponse>({ 
+        success: false, 
+        error: 'No hay campos válidos para actualizar' 
+      }, 400);
+    }
+
+    params.push(code);
+
+    const result = await c.env.DB.prepare(`
+      UPDATE product_categories 
+      SET ${updateFields.join(', ')}
+      WHERE code = ?
+    `).bind(...params).run();
+
+    if (!result.success) {
+      return c.json<APIResponse>({ 
+        success: false, 
+        error: 'Error al actualizar la categoría' 
+      }, 500);
+    }
+
+    return c.json<APIResponse>({
+      success: true,
+      message: 'Categoría actualizada exitosamente'
+    });
+
+  } catch (error) {
+    console.error('Error actualizando categoría:', error);
+    return c.json<APIResponse>({ 
+      success: false, 
+      error: 'Error interno del servidor' 
+    }, 500);
+  }
+});
+
+// Eliminar categoría de producto
+adminRoutes.delete('/product-categories/:code', async (c) => {
+  try {
+    const code = c.req.param('code');
+
+    // Verificar si hay productos usando esta categoría
+    const productsUsingCategory = await c.env.DB.prepare(
+      'SELECT COUNT(*) as count FROM products WHERE product_type = ?'
+    ).bind(code).first<{ count: number }>();
+
+    if (productsUsingCategory && productsUsingCategory.count > 0) {
+      return c.json<APIResponse>({ 
+        success: false, 
+        error: `No se puede eliminar la categoría. Hay ${productsUsingCategory.count} producto(s) usando esta categoría` 
+      }, 400);
+    }
+
+    const result = await c.env.DB.prepare(
+      'DELETE FROM product_categories WHERE code = ?'
+    ).bind(code).run();
+
+    if (!result.success) {
+      return c.json<APIResponse>({ 
+        success: false, 
+        error: 'Error al eliminar la categoría' 
+      }, 500);
+    }
+
+    if (result.changes === 0) {
+      return c.json<APIResponse>({ 
+        success: false, 
+        error: 'Categoría no encontrada' 
+      }, 404);
+    }
+
+    return c.json<APIResponse>({
+      success: true,
+      message: 'Categoría eliminada exitosamente'
+    });
+
+  } catch (error) {
+    console.error('Error eliminando categoría:', error);
+    return c.json<APIResponse>({ 
+      success: false, 
+      error: 'Error interno del servidor' 
+    }, 500);
+  }
+});
+
 // ===== ESTADÍSTICAS GLOBALES =====
 
 // Dashboard completo de administrador

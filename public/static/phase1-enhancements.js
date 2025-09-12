@@ -2,7 +2,7 @@
 // Funciones adicionales para soportar las nuevas características
 
 // Cache global para datos auxiliares
-const Phase1Cache = {
+window.Phase1Cache = {
     productCategories: [],
     institutions: [],
     lastUpdated: null
@@ -12,23 +12,28 @@ const Phase1Cache = {
 async function loadAuxiliaryData() {
     try {
         const [categoriesResponse, institutionsResponse] = await Promise.all([
-            axios.get('/public/product-categories'),
-            axios.get('/public/institutions')
+            axios.get('/api/public/product-categories'),
+            axios.get('/api/public/institutions')
         ]);
         
         if (categoriesResponse.data.success) {
-            Phase1Cache.productCategories = categoriesResponse.data.data.categories;
+            window.Phase1Cache.productCategories = categoriesResponse.data.data.categories;
+            console.log('✅ Categorías cargadas:', window.Phase1Cache.productCategories.length);
+        } else {
+            console.error('❌ Error en categorías:', categoriesResponse.data);
         }
         
         if (institutionsResponse.data.success) {
-            Phase1Cache.institutions = institutionsResponse.data.data.institutions;
+            window.Phase1Cache.institutions = institutionsResponse.data.data.institutions;
+        } else {
+            console.error('❌ Error en instituciones:', institutionsResponse.data);
         }
         
-        Phase1Cache.lastUpdated = new Date();
+        window.Phase1Cache.lastUpdated = new Date();
         
         return true;
     } catch (error) {
-        console.error('Error cargando datos auxiliares:', error);
+        console.error('❌ Error cargando datos auxiliares:', error);
         return false;
     }
 }
@@ -37,7 +42,7 @@ async function loadAuxiliaryData() {
 function getProductCategoriesByGroup() {
     const groups = {};
     
-    Phase1Cache.productCategories.forEach(category => {
+    window.Phase1Cache.productCategories.forEach(category => {
         if (!groups[category.category_group]) {
             groups[category.category_group] = [];
         }

@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test - Sistema de Autoría CTeI-Manager</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .test-result { padding: 10px; margin: 5px; border-radius: 5px; }
+        .success { background-color: #dcfce7; border-left: 4px solid #22c55e; }
+        .error { background-color: #fef2f2; border-left: 4px solid #ef4444; }
+        .info { background-color: #e0f2fe; border-left: 4px solid #06b6d4; }
+    </style>
+</head>
+<body class="bg-gray-100 p-8">
+    <div class="max-w-4xl mx-auto">
+        <h1 class="text-3xl font-bold mb-6">🧪 Test del Sistema de Autoría de Productos</h1>
+        
+        <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+            <h2 class="text-xl font-semibold mb-4">🔐 Autenticación</h2>
+            <button onclick="testLogin()" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 mr-2">
+                Hacer Login
+            </button>
+            <button onclick="testLogout()" class="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600">
+                Logout
+            </button>
+            <div id="auth-status" class="mt-4"></div>
+        </div>
+
+        <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+            <h2 class="text-xl font-semibold mb-4">📋 Tests del Sistema de Autoría</h2>
+            <button onclick="runAllTests()" class="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 mb-4">
+                🚀 Ejecutar Todos los Tests
+            </button>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <button onclick="testProductsWithAuthorship()" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
+                    Test: Productos con Autoría
+                </button>
+                <button onclick="testAddAuthor()" class="bg-purple-500 text-white px-4 py-2 rounded hover:bg-purple-600">
+                    Test: Añadir Autor
+                </button>
+                <button onclick="testCreateProductWithAuthors()" class="bg-indigo-500 text-white px-4 py-2 rounded hover:bg-indigo-600">
+                    Test: Crear Producto con Autores
+                </button>
+                <button onclick="testPublishProduct()" class="bg-orange-500 text-white px-4 py-2 rounded hover:bg-orange-600">
+                    Test: Publicar Producto
+                </button>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-lg shadow-md p-6">
+            <h2 class="text-xl font-semibold mb-4">📊 Resultados de Tests</h2>
+            <div id="test-results"></div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/axios@1.6.0/dist/axios.min.js"></script>
+    <script>
+        let authToken = null;
+        
+        function addTestResult(message, type = 'info') {
+            const resultsDiv = document.getElementById('test-results');
+            const resultDiv = document.createElement('div');
+            resultDiv.className = `test-result ${type}`;
+            resultDiv.innerHTML = `<strong>${new Date().toLocaleTimeString()}</strong>: ${message}`;
+            resultsDiv.appendChild(resultDiv);
+            resultsDiv.scrollTop = resultsDiv.scrollHeight;
+        }
+
+        function updateAuthStatus() {
+            const statusDiv = document.getElementById('auth-status');
+            if (authToken) {
+                statusDiv.innerHTML = '<span class="text-green-600">✅ Autenticado correctamente</span>';
+            } else {
+                statusDiv.innerHTML = '<span class="text-red-600">❌ No autenticado</span>';
+            }
+        }
+
+        async function testLogin() {
+            try {
+                addTestResult('Intentando hacer login...', 'info');
+                const response = await axios.post('/api/auth/login', {
+                    email: 'carlos.rodriguez@ctei.edu.co',
+                    password: 'password123'
+                });
+                
+                if (response.data.success) {
+                    authToken = response.data.data.token;
+                    addTestResult(`Login exitoso para ${response.data.data.user.full_name}`, 'success');
+                    updateAuthStatus();
+                } else {
+                    addTestResult('Login fallido: ' + response.data.error, 'error');
+                }
+            } catch (error) {
+                addTestResult('Error en login: ' + error.message, 'error');
+            }
+        }
+
+        function testLogout() {
+            authToken = null;
+            addTestResult('Logout exitoso', 'info');
+            updateAuthStatus();
+        }
+
+        async function testProductsWithAuthorship() {
+            if (!authToken) {
+                addTestResult('Error: Debes hacer login primero', 'error');
+                return;
+            }
+
+            try {
+                addTestResult('Obteniendo productos con información de autoría...', 'info');
+                const response = await axios.get('/api/me/projects/1/products', {
+                    headers: { Authorization: `Bearer ${authToken}` }
+                });
+
+                if (response.data.success) {
+                    const products = response.data.data.products;
+                    addTestResult(`✅ Encontrados ${products.length} productos`, 'success');
+                    
+                    // Verificar que cada producto tenga creator_id
+                    let productsWithCreator = 0;
+                    products.forEach(product => {
+                        if (product.creator_id && product.creator_name) {
+                            productsWithCreator++;
+                        }
+                    });
+                    
+                    if (productsWithCreator === products.length) {
+                        addTestResult(`✅ TODOS los productos (${products.length}) tienen creador asignado`, 'success');
+                    } else {
+                        addTestResult(`❌ Solo ${productsWithCreator} de ${products.length} productos tienen creador`, 'error');
+                    }
+                } else {
+                    addTestResult('Error obteniendo productos: ' + response.data.error, 'error');
+                }
+            } catch (error) {
+                addTestResult('Error en test de productos: ' + error.message, 'error');
+            }
+        }
+
+        async function testAddAuthor() {
+            if (!authToken) {
+                addTestResult('Error: Debes hacer login primero', 'error');
+                return;
+            }
+
+            try {
+                addTestResult('Añadiendo nuevo autor al producto 1...', 'info');
+                const response = await axios.post('/api/me/projects/1/products/1/authors', {
+                    user_id: 4,
+                    author_role: 'EDITOR',
+                    author_order: 4,
+                    contribution_type: 'Revisión y edición final'
+                }, {
+                    headers: { Authorization: `Bearer ${authToken}` }
+                });
+
+                if (response.data.success) {
+                    addTestResult('✅ Autor añadido exitosamente', 'success');
+                    
+                    // Verificar que se añadió
+                    const authorsResponse = await axios.get('/api/me/projects/1/products/1/authors', {
+                        headers: { Authorization: `Bearer ${authToken}` }
+                    });
+                    
+                    if (authorsResponse.data.success) {
+                        const authors = authorsResponse.data.data.authors;
+                        addTestResult(`✅ El producto ahora tiene ${authors.length} autores`, 'success');
+                        
+                        authors.forEach((author, index) => {
+                            addTestResult(`   ${index + 1}. ${author.full_name} (${author.author_role})`, 'info');
+                        });
+                    }
+                } else {
+                    addTestResult('Error añadiendo autor: ' + response.data.error, 'error');
+                }
+            } catch (error) {
+                addTestResult('Error en test de añadir autor: ' + error.message, 'error');
+            }
+        }
+
+        async function testCreateProductWithAuthors() {
+            if (!authToken) {
+                addTestResult('Error: Debes hacer login primero', 'error');
+                return;
+            }
+
+            try {
+                addTestResult('Creando producto con múltiples autores...', 'info');
+                const response = await axios.post('/api/me/projects/1/products', {
+                    product_code: `TEST-AUTO-${Date.now()}`,
+                    product_type: 'CONFERENCE',
+                    description: 'Producto de prueba con autoría múltiple automática',
+                    authors: [
+                        {
+                            user_id: 3,
+                            author_role: 'CO_AUTHOR',
+                            author_order: 2,
+                            contribution_type: 'Análisis de resultados'
+                        },
+                        {
+                            user_id: 4,
+                            author_role: 'REVIEWER',
+                            author_order: 3,
+                            contribution_type: 'Revisión metodológica'
+                        }
+                    ]
+                }, {
+                    headers: { Authorization: `Bearer ${authToken}` }
+                });
+
+                if (response.data.success) {
+                    const productId = response.data.data.id;
+                    addTestResult(`✅ Producto creado exitosamente (ID: ${productId})`, 'success');
+                    
+                    // Verificar autores del nuevo producto
+                    const authorsResponse = await axios.get(`/api/me/projects/1/products/${productId}/authors`, {
+                        headers: { Authorization: `Bearer ${authToken}` }
+                    });
+                    
+                    if (authorsResponse.data.success) {
+                        const authors = authorsResponse.data.data.authors;
+                        addTestResult(`✅ El nuevo producto tiene ${authors.length} autores (incluye creador + coautores)`, 'success');
+                        
+                        authors.forEach((author, index) => {
+                            addTestResult(`   ${author.author_order}. ${author.full_name} (${author.author_role})`, 'info');
+                        });
+                    }
+                } else {
+                    addTestResult('Error creando producto: ' + response.data.error, 'error');
+                }
+            } catch (error) {
+                addTestResult('Error en test de crear producto: ' + error.message, 'error');
+            }
+        }
+
+        async function testPublishProduct() {
+            if (!authToken) {
+                addTestResult('Error: Debes hacer login primero', 'error');
+                return;
+            }
+
+            try {
+                addTestResult('Probando publicar/despublicar producto...', 'info');
+                
+                // Publicar producto
+                const publishResponse = await axios.post('/api/me/projects/1/products/1/publish', {
+                    is_public: true
+                }, {
+                    headers: { Authorization: `Bearer ${authToken}` }
+                });
+
+                if (publishResponse.data.success) {
+                    addTestResult('✅ Producto publicado exitosamente', 'success');
+                    
+                    // Despublicar producto
+                    const unpublishResponse = await axios.post('/api/me/projects/1/products/1/publish', {
+                        is_public: false
+                    }, {
+                        headers: { Authorization: `Bearer ${authToken}` }
+                    });
+                    
+                    if (unpublishResponse.data.success) {
+                        addTestResult('✅ Producto despublicado exitosamente', 'success');
+                        addTestResult('✅ Permisos de publicación funcionan correctamente', 'success');
+                    }
+                } else {
+                    addTestResult('Error publicando producto: ' + publishResponse.data.error, 'error');
+                }
+            } catch (error) {
+                addTestResult('Error en test de publicación: ' + error.message, 'error');
+            }
+        }
+
+        async function runAllTests() {
+            addTestResult('=== INICIANDO BATERÍA COMPLETA DE TESTS ===', 'info');
+            
+            // Limpiar resultados anteriores (opcional)
+            // document.getElementById('test-results').innerHTML = '';
+            
+            if (!authToken) {
+                await testLogin();
+                await new Promise(resolve => setTimeout(resolve, 500));
+            }
+            
+            if (authToken) {
+                await testProductsWithAuthorship();
+                await new Promise(resolve => setTimeout(resolve, 500));
+                
+                await testAddAuthor();
+                await new Promise(resolve => setTimeout(resolve, 500));
+                
+                await testCreateProductWithAuthors();
+                await new Promise(resolve => setTimeout(resolve, 500));
+                
+                await testPublishProduct();
+                
+                addTestResult('=== TESTS COMPLETADOS ===', 'info');
+            } else {
+                addTestResult('❌ No se pudo completar los tests - fallo en autenticación', 'error');
+            }
+        }
+
+        // Inicializar estado de autenticación
+        updateAuthStatus();
+    </script>
+</body>
+</html>

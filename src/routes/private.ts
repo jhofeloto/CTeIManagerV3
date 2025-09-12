@@ -1,7 +1,7 @@
 // Rutas privadas (requieren autenticación)
 import { Hono } from 'hono';
 import { authMiddleware, requireRole } from '../middleware/auth';
-import { Bindings, APIResponse, JWTPayload, CreateProjectRequest, UpdateProjectRequest, CreateProductRequest, UpdateProductRequest, AddCollaboratorRequest } from '../types/index';
+import { Bindings, APIResponse, JWTPayload, CreateProjectRequest, UpdateProjectRequest, CreateProductRequest, UpdateProductRequest, AddCollaboratorRequest, AddProductAuthorRequest } from '../types/index';
 
 const privateRoutes = new Hono<{ Bindings: Bindings; Variables: { user?: JWTPayload } }>();
 
@@ -413,13 +413,15 @@ privateRoutes.post('/projects/:projectId/products', requireRole('INVESTIGATOR', 
     const result = await c.env.DB.prepare(`
       INSERT INTO products (
         project_id, product_code, product_type, description,
-        doi, url, publication_date, journal, impact_factor, metadata, file_url
+        doi, url, publication_date, journal, impact_factor, metadata, file_url,
+        creator_id, last_editor_id
       ) 
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `).bind(
       projectId, product_code, product_type, description,
       doi || null, url || null, publication_date || null, journal || null,
-      impact_factor || null, metadata || null, file_url || null
+      impact_factor || null, metadata || null, file_url || null,
+      user.userId, user.userId
     ).run();
 
     if (!result.success) {
@@ -429,9 +431,41 @@ privateRoutes.post('/projects/:projectId/products', requireRole('INVESTIGATOR', 
       }, 500);
     }
 
+    const productId = result.meta.last_row_id as number;
+
+    // Insertar el creador como autor principal
+    await c.env.DB.prepare(`
+      INSERT INTO product_authors (
+        product_id, user_id, author_role, author_order, 
+        contribution_type, added_by
+      ) 
+      VALUES (?, ?, ?, ?, ?, ?)
+    `).bind(
+      productId, user.userId, 'AUTHOR', 1, 
+      'Autor principal del producto', user.userId
+    ).run();
+
+    // Si se especificaron autores adicionales
+    if (body.authors && Array.isArray(body.authors)) {
+      for (const author of body.authors) {
+        if (author.user_id !== user.userId) { // No duplicar al creador
+          await c.env.DB.prepare(`
+            INSERT INTO product_authors (
+              product_id, user_id, author_role, author_order, 
+              contribution_type, added_by
+            ) 
+            VALUES (?, ?, ?, ?, ?, ?)
+          `).bind(
+            productId, author.user_id, author.author_role, author.author_order,
+            author.contribution_type || null, user.userId
+          ).run();
+        }
+      }
+    }
+
     return c.json<APIResponse<{ id: number }>>({
       success: true,
-      data: { id: result.meta.last_row_id as number },
+      data: { id: productId },
       message: 'Producto creado exitosamente'
     }, 201);
 
@@ -467,11 +501,22 @@ privateRoutes.get('/projects/:projectId/products', async (c) => {
     }
 
     const products = await c.env.DB.prepare(`
-      SELECT id, project_id, product_code, product_type, description, 
-             is_public, created_at, updated_at
-      FROM products 
-      WHERE project_id = ?
-      ORDER BY created_at DESC
+      SELECT 
+        p.id, p.project_id, p.product_code, p.product_type, p.description, 
+        p.is_public, p.created_at, p.updated_at, p.doi, p.url, 
+        p.publication_date, p.journal, p.impact_factor, p.citation_count,
+        p.metadata, p.file_url, p.creator_id, p.last_editor_id, p.published_at, p.published_by,
+        creator.full_name as creator_name, creator.email as creator_email,
+        editor.full_name as last_editor_name,
+        publisher.full_name as publisher_name,
+        pc.name as category_name, pc.category_group, pc.impact_weight
+      FROM products p
+      LEFT JOIN users creator ON p.creator_id = creator.id
+      LEFT JOIN users editor ON p.last_editor_id = editor.id  
+      LEFT JOIN users publisher ON p.published_by = publisher.id
+      LEFT JOIN product_categories pc ON p.product_type = pc.code
+      WHERE p.project_id = ?
+      ORDER BY p.created_at DESC
     `).bind(projectId).all();
 
     return c.json<APIResponse<any>>({
@@ -650,6 +695,259 @@ privateRoutes.delete('/projects/:projectId/collaborators/:userId', requireRole('
   }
 });
 
+// Añadir autor a un producto
+privateRoutes.post('/projects/:projectId/products/:productId/authors', requireRole('INVESTIGATOR', 'ADMIN'), async (c) => {
+  try {
+    const user = c.get('user')!;
+    const projectId = parseInt(c.req.param('projectId'));
+    const productId = parseInt(c.req.param('productId'));
+    const body: AddProductAuthorRequest = await c.req.json();
+    const { user_id, author_role, author_order, contribution_type } = body;
+
+    // Verificar permisos sobre el producto
+    if (user.role !== 'ADMIN') {
+      const canEdit = await c.env.DB.prepare(`
+        SELECT 1 FROM products pr
+        JOIN projects p ON pr.project_id = p.id
+        LEFT JOIN project_collaborators pc ON p.id = pc.project_id AND pc.user_id = ?
+        WHERE pr.id = ? AND pr.project_id = ? 
+        AND (pr.creator_id = ? OR p.owner_id = ? OR (pc.user_id = ? AND pc.can_add_products = 1))
+      `).bind(user.userId, productId, projectId, user.userId, user.userId, user.userId).first();
+
+      if (!canEdit) {
+        return c.json<APIResponse>({ 
+          success: false, 
+          error: 'No tienes permiso para gestionar autores de este producto' 
+        }, 403);
+      }
+    }
+
+    // Verificar que el usuario a añadir existe
+    const authorUser = await c.env.DB.prepare(
+      'SELECT id FROM users WHERE id = ?'
+    ).bind(user_id).first();
+
+    if (!authorUser) {
+      return c.json<APIResponse>({ 
+        success: false, 
+        error: 'Usuario no encontrado' 
+      }, 404);
+    }
+
+    // Insertar autor (UPSERT - actualizar si ya existe)
+    const result = await c.env.DB.prepare(`
+      INSERT OR REPLACE INTO product_authors (
+        product_id, user_id, author_role, author_order, 
+        contribution_type, added_by, added_at
+      ) 
+      VALUES (?, ?, ?, ?, ?, ?, datetime('now'))
+    `).bind(productId, user_id, author_role, author_order, contribution_type || null, user.userId).run();
+
+    if (!result.success) {
+      return c.json<APIResponse>({ 
+        success: false, 
+        error: 'Error al añadir autor al producto' 
+      }, 500);
+    }
+
+    return c.json<APIResponse>({
+      success: true,
+      message: 'Autor añadido exitosamente al producto'
+    }, 201);
+
+  } catch (error) {
+    console.error('Error añadiendo autor al producto:', error);
+    return c.json<APIResponse>({ 
+      success: false, 
+      error: 'Error interno del servidor' 
+    }, 500);
+  }
+});
+
+// Listar autores de un producto
+privateRoutes.get('/projects/:projectId/products/:productId/authors', async (c) => {
+  try {
+    const user = c.get('user')!;
+    const projectId = parseInt(c.req.param('projectId'));
+    const productId = parseInt(c.req.param('productId'));
+
+    // Verificar acceso al producto
+    if (user.role !== 'ADMIN') {
+      const product = await c.env.DB.prepare(`
+        SELECT pr.id FROM products pr
+        JOIN projects p ON pr.project_id = p.id
+        LEFT JOIN project_collaborators pc ON p.id = pc.project_id
+        WHERE pr.id = ? AND pr.project_id = ? 
+        AND (p.owner_id = ? OR pc.user_id = ? OR p.is_public = 1 OR pr.creator_id = ?)
+      `).bind(productId, projectId, user.userId, user.userId, user.userId).first();
+
+      if (!product) {
+        return c.json<APIResponse>({ 
+          success: false, 
+          error: 'Producto no encontrado o sin permisos' 
+        }, 404);
+      }
+    }
+
+    const authors = await c.env.DB.prepare(`
+      SELECT 
+        pa.product_id, pa.user_id, pa.author_role, pa.author_order,
+        pa.contribution_type, pa.added_at,
+        u.full_name, u.email, u.role as user_role,
+        adder.full_name as added_by_name
+      FROM product_authors pa
+      JOIN users u ON pa.user_id = u.id
+      LEFT JOIN users adder ON pa.added_by = adder.id
+      WHERE pa.product_id = ?
+      ORDER BY pa.author_order, pa.added_at
+    `).bind(productId).all();
+
+    return c.json<APIResponse<any>>({
+      success: true,
+      data: { authors: authors.results }
+    });
+
+  } catch (error) {
+    console.error('Error obteniendo autores del producto:', error);
+    return c.json<APIResponse>({ 
+      success: false, 
+      error: 'Error interno del servidor' 
+    }, 500);
+  }
+});
+
+// Remover autor de un producto
+privateRoutes.delete('/projects/:projectId/products/:productId/authors/:userId', requireRole('INVESTIGATOR', 'ADMIN'), async (c) => {
+  try {
+    const user = c.get('user')!;
+    const projectId = parseInt(c.req.param('projectId'));
+    const productId = parseInt(c.req.param('productId'));
+    const authorUserId = parseInt(c.req.param('userId'));
+
+    // Verificar permisos - no se puede remover al creador del producto
+    const product = await c.env.DB.prepare(
+      'SELECT creator_id FROM products WHERE id = ? AND project_id = ?'
+    ).bind(productId, projectId).first<{ creator_id: number }>();
+
+    if (!product) {
+      return c.json<APIResponse>({ 
+        success: false, 
+        error: 'Producto no encontrado' 
+      }, 404);
+    }
+
+    if (product.creator_id === authorUserId) {
+      return c.json<APIResponse>({ 
+        success: false, 
+        error: 'No se puede remover al creador del producto' 
+      }, 400);
+    }
+
+    // Verificar permisos de edición
+    if (user.role !== 'ADMIN') {
+      const canEdit = await c.env.DB.prepare(`
+        SELECT 1 FROM products pr
+        JOIN projects p ON pr.project_id = p.id
+        LEFT JOIN project_collaborators pc ON p.id = pc.project_id AND pc.user_id = ?
+        WHERE pr.id = ? AND (pr.creator_id = ? OR p.owner_id = ? OR (pc.user_id = ? AND pc.can_add_products = 1))
+      `).bind(user.userId, productId, user.userId, user.userId, user.userId).first();
+
+      if (!canEdit) {
+        return c.json<APIResponse>({ 
+          success: false, 
+          error: 'No tienes permiso para gestionar autores de este producto' 
+        }, 403);
+      }
+    }
+
+    // Remover autor
+    const result = await c.env.DB.prepare(`
+      DELETE FROM product_authors 
+      WHERE product_id = ? AND user_id = ?
+    `).bind(productId, authorUserId).run();
+
+    if (!result.success) {
+      return c.json<APIResponse>({ 
+        success: false, 
+        error: 'Error al remover autor del producto' 
+      }, 500);
+    }
+
+    return c.json<APIResponse>({
+      success: true,
+      message: 'Autor removido exitosamente del producto'
+    });
+
+  } catch (error) {
+    console.error('Error removiendo autor del producto:', error);
+    return c.json<APIResponse>({ 
+      success: false, 
+      error: 'Error interno del servidor' 
+    }, 500);
+  }
+});
+
+// Publicar/despublicar producto individual
+privateRoutes.post('/projects/:projectId/products/:productId/publish', requireRole('INVESTIGATOR', 'ADMIN'), async (c) => {
+  try {
+    const user = c.get('user')!;
+    const projectId = parseInt(c.req.param('projectId'));
+    const productId = parseInt(c.req.param('productId'));
+    const { is_public } = await c.req.json<{ is_public: boolean }>();
+
+    // Verificar permisos sobre el producto
+    if (user.role !== 'ADMIN') {
+      const canPublish = await c.env.DB.prepare(`
+        SELECT pr.creator_id, p.owner_id FROM products pr
+        JOIN projects p ON pr.project_id = p.id
+        WHERE pr.id = ? AND pr.project_id = ?
+        AND (pr.creator_id = ? OR p.owner_id = ?)
+      `).bind(productId, projectId, user.userId, user.userId).first();
+
+      if (!canPublish) {
+        return c.json<APIResponse>({ 
+          success: false, 
+          error: 'Solo el creador del producto o el dueño del proyecto pueden publicar/despublicar' 
+        }, 403);
+      }
+    }
+
+    // Actualizar estado de publicación
+    const updateFields = [`is_public = ?`, `last_editor_id = ?`];
+    const params = [is_public ? 1 : 0, user.userId];
+
+    if (is_public) {
+      updateFields.push(`published_at = datetime('now')`, `published_by = ?`);
+      params.push(user.userId);
+    }
+
+    const result = await c.env.DB.prepare(`
+      UPDATE products 
+      SET ${updateFields.join(', ')}, updated_at = datetime('now')
+      WHERE id = ? AND project_id = ?
+    `).bind(...params, productId, projectId).run();
+
+    if (!result.success) {
+      return c.json<APIResponse>({ 
+        success: false, 
+        error: 'Error al actualizar el estado del producto' 
+      }, 500);
+    }
+
+    return c.json<APIResponse>({
+      success: true,
+      message: `Producto ${is_public ? 'publicado' : 'despublicado'} exitosamente`
+    });
+
+  } catch (error) {
+    console.error('Error actualizando estado del producto:', error);
+    return c.json<APIResponse>({ 
+      success: false, 
+      error: 'Error interno del servidor' 
+    }, 500);
+  }
+});
+
 // Dashboard stats privadas
 privateRoutes.get('/dashboard/stats', async (c) => {
   try {
@@ -696,6 +994,56 @@ privateRoutes.get('/dashboard/stats', async (c) => {
 
   } catch (error) {
     console.error('Error obteniendo estadísticas:', error);
+    return c.json<APIResponse>({ 
+      success: false, 
+      error: 'Error interno del servidor' 
+    }, 500);
+  }
+});
+
+// Eliminar producto
+privateRoutes.delete('/projects/:projectId/products/:productId', requireRole('INVESTIGATOR', 'ADMIN'), async (c) => {
+  try {
+    const user = c.get('user')!;
+    const projectId = parseInt(c.req.param('projectId'));
+    const productId = parseInt(c.req.param('productId'));
+
+    // Verificar permisos sobre el producto
+    if (user.role !== 'ADMIN') {
+      const canDelete = await c.env.DB.prepare(`
+        SELECT pr.creator_id, p.owner_id FROM products pr
+        JOIN projects p ON pr.project_id = p.id
+        WHERE pr.id = ? AND pr.project_id = ?
+        AND (pr.creator_id = ? OR p.owner_id = ?)
+      `).bind(productId, projectId, user.userId, user.userId).first();
+
+      if (!canDelete) {
+        return c.json<APIResponse>({ 
+          success: false, 
+          error: 'Solo el creador del producto o el dueño del proyecto pueden eliminar productos' 
+        }, 403);
+      }
+    }
+
+    // Eliminar producto (CASCADE eliminará autores automáticamente)
+    const result = await c.env.DB.prepare(
+      'DELETE FROM products WHERE id = ? AND project_id = ?'
+    ).bind(productId, projectId).run();
+
+    if (!result.success || result.meta.changes === 0) {
+      return c.json<APIResponse>({ 
+        success: false, 
+        error: 'Producto no encontrado o no se pudo eliminar' 
+      }, 404);
+    }
+
+    return c.json<APIResponse>({
+      success: true,
+      message: 'Producto eliminado exitosamente'
+    });
+
+  } catch (error) {
+    console.error('Error eliminando producto:', error);
     return c.json<APIResponse>({ 
       success: false, 
       error: 'Error interno del servidor' 
