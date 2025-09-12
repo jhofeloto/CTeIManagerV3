@@ -402,10 +402,12 @@ app.get('/', (c) => {
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div class="flex justify-between h-16">
                     <div class="flex items-center">
-                        <h1 class="text-xl font-bold text-foreground">
-                            <i class="fas fa-dna mr-2" style="color: rgb(from var(--primary) r g b)"></i>
-                            CTeI-Manager
-                        </h1>
+                        <div id="site-logo" class="flex items-center">
+                            <h1 class="text-xl font-bold text-foreground">
+                                <i class="fas fa-dna mr-2" style="color: rgb(from var(--primary) r g b)"></i>
+                                CTeI-Manager
+                            </h1>
+                        </div>
                     </div>
                     <div class="flex items-center space-x-4">
                         <a href="#projects" class="ctei-navbar-link">Proyectos</a>
@@ -789,6 +791,43 @@ app.get('/', (c) => {
 
         <script src="https://cdn.jsdelivr.net/npm/axios@1.6.0/dist/axios.min.js"></script>
         <script src="/static/phase1-enhancements.js?v=20240912-2"></script>
+        
+        <!-- Script para cargar logo dinámico -->
+        <script>
+        // Cargar configuración del sitio y aplicar logo
+        async function loadSiteConfig() {
+            try {
+                const response = await axios.get('/api/public/site-config');
+                
+                if (response.data.success && response.data.data.logo_url) {
+                    const logoContainer = document.getElementById('site-logo');
+                    const logoUrl = response.data.data.logo_url;
+                    const siteName = response.data.data.site_name || 'CTeI-Manager';
+                    
+                    // Reemplazar el contenido del logo con la imagen
+                    logoContainer.innerHTML = \`
+                        <img 
+                            src="\${logoUrl}" 
+                            alt="\${siteName} Logo" 
+                            class="h-8 w-auto mr-3"
+                            style="max-height: 32px; object-fit: contain;"
+                        >
+                        <span class="text-xl font-bold text-foreground">\${siteName}</span>
+                    \`;
+                    
+                    console.log('✅ Logo personalizado cargado:', logoUrl);
+                } else {
+                    console.log('ℹ️ Usando logo por defecto');
+                }
+            } catch (error) {
+                console.warn('⚠️ Error cargando configuración del sitio, usando logo por defecto:', error);
+            }
+        }
+
+        // Cargar configuración al cargar la página
+        document.addEventListener('DOMContentLoaded', loadSiteConfig);
+        </script>
+        
         <script src="/static/app.js?v=20240912-2"></script>
     </body>
     </html>

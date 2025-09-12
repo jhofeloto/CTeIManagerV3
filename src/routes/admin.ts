@@ -10,6 +10,201 @@ const adminRoutes = new Hono<{ Bindings: Bindings; Variables: { user?: JWTPayloa
 adminRoutes.use('/*', authMiddleware);
 adminRoutes.use('/*', requireRole('ADMIN'));
 
+// ===== GESTIÓN DE CONFIGURACIÓN =====
+
+// Obtener configuración actual del sitio
+adminRoutes.get('/site-config', async (c) => {
+  try {
+    // Obtener configuración almacenada en KV o D1
+    const logoUrl = await c.env.KV?.get('site_logo_url') || null;
+    const siteName = await c.env.KV?.get('site_name') || 'CTeI-Manager';
+    
+    const response: APIResponse<any> = {
+      success: true,
+      data: {
+        logo_url: logoUrl,
+        site_name: siteName
+      }
+    };
+    return c.json(response);
+  } catch (error) {
+    console.error('Error obteniendo configuración:', error);
+    const response: APIResponse<null> = {
+      success: false,
+      error: 'Error al obtener la configuración del sitio'
+    };
+    return c.json(response, 500);
+  }
+});
+
+// Actualizar logo del sitio
+adminRoutes.post('/upload-logo', async (c) => {
+  try {
+    const formData = await c.req.formData();
+    const logoFile = formData.get('logo') as File;
+    
+    if (!logoFile) {
+      const response: APIResponse<null> = {
+        success: false,
+        error: 'No se proporcionó ningún archivo de logo'
+      };
+      return c.json(response, 400);
+    }
+
+    // Validar tipo de archivo
+    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png'];
+    if (!allowedTypes.includes(logoFile.type)) {
+      const response: APIResponse<null> = {
+        success: false,
+        error: 'Solo se permiten archivos JPG y PNG'
+      };
+      return c.json(response, 400);
+    }
+
+    // Validar tamaño (máximo 2MB)
+    if (logoFile.size > 2 * 1024 * 1024) {
+      const response: APIResponse<null> = {
+        success: false,
+        error: 'El archivo no puede superar 2MB'
+      };
+      return c.json(response, 400);
+    }
+
+    // Generar nombre único para el archivo
+    const timestamp = Date.now();
+    const extension = logoFile.name.split('.').pop();
+    const fileName = `logo-${timestamp}.${extension}`;
+    
+    // Subir a R2 Storage de Cloudflare
+    if (c.env.R2) {
+      const arrayBuffer = await logoFile.arrayBuffer();
+      
+      // Eliminar logo anterior si existe
+      const oldLogoUrl = await c.env.KV?.get('site_logo_url');
+      if (oldLogoUrl) {
+        try {
+          const oldFileName = oldLogoUrl.split('/').pop();
+          if (oldFileName && oldFileName.startsWith('logo-')) {
+            await c.env.R2.delete(`logos/${oldFileName}`);
+          }
+        } catch (error) {
+          console.warn('Error eliminando logo anterior:', error);
+        }
+      }
+      
+      // Subir nuevo logo
+      await c.env.R2.put(`logos/${fileName}`, arrayBuffer, {
+        httpMetadata: {
+          contentType: logoFile.type,
+        },
+      });
+      
+      // Construir URL del logo
+      const logoUrl = `/api/admin/logo/${fileName}`;
+      
+      // Guardar URL en KV para persistencia
+      await c.env.KV?.put('site_logo_url', logoUrl);
+      
+      const response: APIResponse<any> = {
+        success: true,
+        data: {
+          logo_url: logoUrl,
+          message: 'Logo actualizado exitosamente'
+        }
+      };
+      return c.json(response);
+    } else {
+      // Fallback: guardar como base64 en KV si no hay R2
+      const arrayBuffer = await logoFile.arrayBuffer();
+      const base64 = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)));
+      const dataUrl = `data:${logoFile.type};base64,${base64}`;
+      
+      // Eliminar logo anterior
+      await c.env.KV?.delete('site_logo_url');
+      
+      // Guardar nuevo logo
+      await c.env.KV?.put('site_logo_url', dataUrl);
+      
+      const response: APIResponse<any> = {
+        success: true,
+        data: {
+          logo_url: dataUrl,
+          message: 'Logo actualizado exitosamente (almacenado como base64)'
+        }
+      };
+      return c.json(response);
+    }
+  } catch (error) {
+    console.error('Error subiendo logo:', error);
+    const response: APIResponse<null> = {
+      success: false,
+      error: 'Error al subir el logo'
+    };
+    return c.json(response, 500);
+  }
+});
+
+// Servir logo desde R2
+adminRoutes.get('/logo/:fileName', async (c) => {
+  try {
+    const fileName = c.req.param('fileName');
+    
+    if (c.env.R2) {
+      const object = await c.env.R2.get(`logos/${fileName}`);
+      
+      if (!object) {
+        return c.notFound();
+      }
+      
+      const headers = new Headers();
+      headers.set('Content-Type', object.httpMetadata?.contentType || 'image/jpeg');
+      headers.set('Cache-Control', 'public, max-age=31536000'); // Cache por 1 año
+      
+      return new Response(object.body, { headers });
+    } else {
+      return c.notFound();
+    }
+  } catch (error) {
+    console.error('Error sirviendo logo:', error);
+    return c.notFound();
+  }
+});
+
+// Eliminar logo actual
+adminRoutes.delete('/logo', async (c) => {
+  try {
+    const logoUrl = await c.env.KV?.get('site_logo_url');
+    
+    if (logoUrl && c.env.R2) {
+      // Eliminar de R2 si es una URL de archivo
+      if (logoUrl.startsWith('/api/admin/logo/')) {
+        const fileName = logoUrl.split('/').pop();
+        if (fileName) {
+          await c.env.R2.delete(`logos/${fileName}`);
+        }
+      }
+    }
+    
+    // Eliminar referencia en KV
+    await c.env.KV?.delete('site_logo_url');
+    
+    const response: APIResponse<any> = {
+      success: true,
+      data: {
+        message: 'Logo eliminado exitosamente'
+      }
+    };
+    return c.json(response);
+  } catch (error) {
+    console.error('Error eliminando logo:', error);
+    const response: APIResponse<null> = {
+      success: false,
+      error: 'Error al eliminar el logo'
+    };
+    return c.json(response, 500);
+  }
+});
+
 // ===== GESTIÓN DE PRODUCTOS =====
 
 // Listar todos los productos (para administrador)

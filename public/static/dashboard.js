@@ -113,10 +113,10 @@ function renderDashboard() {
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div class="flex justify-between h-16">
                     <div class="flex items-center">
-                        <h1 class="text-xl font-bold text-primary">
+                        <div id="dashboard-site-logo" class="text-xl font-bold text-primary">
                             <i class="fas fa-flask mr-2"></i>
                             CTeI-Manager
-                        </h1>
+                        </div>
                         <span class="ml-4 text-muted-foreground">Dashboard</span>
                     </div>
                     <div class="flex items-center space-x-4">
@@ -252,6 +252,15 @@ function renderDashboard() {
                                 Líneas de Acción
                             </button>
                         </li>
+                        <li>
+                            <button 
+                                onclick="showView('admin-site-config')" 
+                                class="nav-item w-full flex items-center px-3 py-2 text-left rounded-lg hover:bg-accent hover:text-accent-foreground transition-colors"
+                            >
+                                <i class="fas fa-cog mr-3"></i>
+                                Configuración del Sitio
+                            </button>
+                        </li>
                         ` : ''}
                     </ul>
                 </nav>
@@ -268,6 +277,9 @@ function renderDashboard() {
 
     // Establecer vista inicial
     showView('dashboard');
+    
+    // Cargar logo personalizado después de renderizar el navbar
+    setTimeout(loadDashboardSiteLogo, 100);
 }
 
 // Cargar datos del dashboard
@@ -364,6 +376,9 @@ function showView(view) {
             break;
         case 'admin-action-lines':
             if (typeof renderAdminActionLinesView === 'function') renderAdminActionLinesView();
+            break;
+        case 'admin-site-config':
+            renderAdminSiteConfigView();
             break;
         default:
             renderMainDashboard();
@@ -3610,5 +3625,369 @@ function goToPublicPortal() {
     } else {
         console.log('⚠️ No hay token, redirigiendo sin autenticación');
         location.href = '/';
+    }
+}
+
+// ========== GESTIÓN DE CONFIGURACIÓN DEL SITIO ==========
+
+function renderAdminSiteConfigView() {
+    document.getElementById('content').innerHTML = `
+        <div class="mb-6">
+            <div class="flex justify-between items-center">
+                <div>
+                    <h2 class="text-2xl font-bold">Configuración del Sitio</h2>
+                    <p class="text-muted-foreground">Gestionar configuraciones visuales y branding del sitio</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Gestión del Logo -->
+        <div class="card mb-6">
+            <div class="p-6">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-lg font-semibold">Logo del Sitio</h3>
+                    <button 
+                        onclick="loadCurrentLogo()"
+                        class="bg-secondary text-secondary-foreground px-3 py-2 rounded-lg hover:opacity-90 transition-opacity text-sm"
+                    >
+                        <i class="fas fa-sync mr-2"></i>
+                        Actualizar Vista
+                    </button>
+                </div>
+                
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <!-- Vista actual del logo -->
+                    <div>
+                        <h4 class="font-medium mb-3">Logo Actual</h4>
+                        <div class="level-2 p-4 text-center min-h-[200px] flex items-center justify-center" id="current-logo-container">
+                            <div class="text-muted-foreground">
+                                <i class="fas fa-image text-4xl mb-2"></i>
+                                <p>Cargando...</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Subida de nuevo logo -->
+                    <div>
+                        <h4 class="font-medium mb-3">Cambiar Logo</h4>
+                        <div class="space-y-4">
+                            <!-- Área de subida -->
+                            <div class="level-1 p-6 border-2 border-dashed border-border rounded-lg text-center">
+                                <input 
+                                    type="file" 
+                                    id="logo-file-input" 
+                                    accept="image/jpeg,image/jpg,image/png" 
+                                    style="display: none;"
+                                    onchange="handleLogoFileSelect(event)"
+                                >
+                                <button 
+                                    onclick="document.getElementById('logo-file-input').click()"
+                                    class="bg-primary text-primary-foreground px-4 py-2 rounded-lg hover:opacity-90 transition-opacity"
+                                >
+                                    <i class="fas fa-upload mr-2"></i>
+                                    Seleccionar Imagen
+                                </button>
+                                <p class="text-sm text-muted-foreground mt-2">
+                                    JPG o PNG, máximo 2MB
+                                </p>
+                            </div>
+                            
+                            <!-- Preview del nuevo logo -->
+                            <div id="logo-preview-container" class="hidden">
+                                <div class="level-2 p-4 text-center">
+                                    <img id="logo-preview" src="" alt="Preview del logo" class="max-h-32 mx-auto mb-3 rounded">
+                                    <div class="flex justify-center space-x-3">
+                                        <button 
+                                            onclick="uploadNewLogo()"
+                                            class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors text-sm"
+                                            id="upload-logo-btn"
+                                        >
+                                            <i class="fas fa-check mr-2"></i>
+                                            Confirmar Cambio
+                                        </button>
+                                        <button 
+                                            onclick="cancelLogoUpload()"
+                                            class="bg-secondary text-secondary-foreground px-4 py-2 rounded-lg hover:opacity-90 transition-opacity text-sm"
+                                        >
+                                            <i class="fas fa-times mr-2"></i>
+                                            Cancelar
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Botón para eliminar logo actual -->
+                            <div class="pt-2 border-t border-border">
+                                <button 
+                                    onclick="removeCurrentLogo()"
+                                    class="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors text-sm w-full"
+                                    id="remove-logo-btn"
+                                >
+                                    <i class="fas fa-trash mr-2"></i>
+                                    Eliminar Logo Actual
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Estado de carga -->
+                <div id="logo-upload-status" class="hidden mt-4">
+                    <div class="level-3 p-4 text-center">
+                        <i class="fas fa-spinner fa-spin text-2xl mb-2"></i>
+                        <p>Procesando logo...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Información adicional -->
+        <div class="card">
+            <div class="p-6">
+                <h3 class="text-lg font-semibold mb-3">Información</h3>
+                <div class="text-sm text-muted-foreground space-y-2">
+                    <p><strong>Formatos soportados:</strong> JPG, JPEG, PNG</p>
+                    <p><strong>Tamaño máximo:</strong> 2 MB</p>
+                    <p><strong>Recomendación:</strong> Usar imágenes con fondo transparente (PNG) y dimensiones cuadradas o rectangulares (proporción 2:1)</p>
+                    <p><strong>Ubicación:</strong> El logo aparecerá en la esquina superior izquierda del sitio</p>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    // Cargar logo actual
+    loadCurrentLogo();
+}
+
+// Variable global para almacenar el archivo seleccionado
+let selectedLogoFile = null;
+
+async function loadCurrentLogo() {
+    console.log('🖼️ Cargando logo actual...');
+    
+    try {
+        const response = await axios.get(`${API_BASE}/admin/site-config`);
+        
+        if (response.data.success) {
+            const config = response.data.data;
+            const container = document.getElementById('current-logo-container');
+            
+            if (config.logo_url) {
+                container.innerHTML = `
+                    <div>
+                        <img 
+                            src="${config.logo_url}" 
+                            alt="Logo actual" 
+                            class="max-h-32 mx-auto mb-3 rounded shadow-sm"
+                            style="max-width: 200px;"
+                        >
+                        <p class="text-sm text-muted-foreground">
+                            Logo cargado: ${config.logo_filename || 'logo personalizado'}
+                        </p>
+                    </div>
+                `;
+                
+                // Habilitar botón de eliminar
+                const removeBtn = document.getElementById('remove-logo-btn');
+                if (removeBtn) {
+                    removeBtn.disabled = false;
+                    removeBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+                }
+            } else {
+                container.innerHTML = `
+                    <div class="text-muted-foreground">
+                        <i class="fas fa-image text-4xl mb-2"></i>
+                        <p>No hay logo configurado</p>
+                        <p class="text-xs mt-2">Se usa el logo por defecto del sistema</p>
+                    </div>
+                `;
+                
+                // Deshabilitar botón de eliminar
+                const removeBtn = document.getElementById('remove-logo-btn');
+                if (removeBtn) {
+                    removeBtn.disabled = true;
+                    removeBtn.classList.add('opacity-50', 'cursor-not-allowed');
+                }
+            }
+        }
+    } catch (error) {
+        console.error('Error cargando logo actual:', error);
+        const container = document.getElementById('current-logo-container');
+        container.innerHTML = `
+            <div class="text-red-600">
+                <i class="fas fa-exclamation-triangle text-2xl mb-2"></i>
+                <p>Error al cargar logo</p>
+                <p class="text-xs">${error.message}</p>
+            </div>
+        `;
+    }
+}
+
+function handleLogoFileSelect(event) {
+    const file = event.target.files[0];
+    
+    if (!file) {
+        return;
+    }
+    
+    // Validar tipo de archivo
+    const validTypes = ['image/jpeg', 'image/jpg', 'image/png'];
+    if (!validTypes.includes(file.type)) {
+        showToast('Solo se permiten archivos JPG y PNG', 'error');
+        return;
+    }
+    
+    // Validar tamaño (2MB máximo)
+    if (file.size > 2 * 1024 * 1024) {
+        showToast('El archivo es demasiado grande. Máximo 2MB', 'error');
+        return;
+    }
+    
+    selectedLogoFile = file;
+    
+    // Mostrar preview
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        const preview = document.getElementById('logo-preview');
+        const container = document.getElementById('logo-preview-container');
+        
+        preview.src = e.target.result;
+        container.classList.remove('hidden');
+    };
+    reader.readAsDataURL(file);
+    
+    console.log('✅ Archivo seleccionado:', file.name, 'Tamaño:', (file.size / 1024).toFixed(2) + 'KB');
+}
+
+async function uploadNewLogo() {
+    if (!selectedLogoFile) {
+        showToast('No hay archivo seleccionado', 'error');
+        return;
+    }
+    
+    const uploadBtn = document.getElementById('upload-logo-btn');
+    const statusDiv = document.getElementById('logo-upload-status');
+    
+    try {
+        // Mostrar estado de carga
+        uploadBtn.disabled = true;
+        uploadBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Subiendo...';
+        statusDiv.classList.remove('hidden');
+        
+        // Crear FormData
+        const formData = new FormData();
+        formData.append('logo', selectedLogoFile);
+        
+        console.log('📤 Subiendo logo...', selectedLogoFile.name);
+        
+        // Enviar archivo
+        const response = await axios.post(`${API_BASE}/admin/upload-logo`, formData, {
+            headers: {
+                'Content-Type': 'multipart/form-data'
+            }
+        });
+        
+        if (response.data.success) {
+            showToast('Logo actualizado exitosamente', 'success');
+            
+            // Limpiar formulario
+            cancelLogoUpload();
+            
+            // Recargar logo actual
+            await loadCurrentLogo();
+            
+            console.log('✅ Logo subido exitosamente:', response.data.data.logo_url);
+        } else {
+            throw new Error(response.data.error || 'Error al subir logo');
+        }
+        
+    } catch (error) {
+        console.error('❌ Error subiendo logo:', error);
+        const errorMessage = error.response?.data?.error || error.message || 'Error desconocido';
+        showToast(`Error: ${errorMessage}`, 'error');
+    } finally {
+        // Restaurar botón
+        uploadBtn.disabled = false;
+        uploadBtn.innerHTML = '<i class="fas fa-check mr-2"></i>Confirmar Cambio';
+        statusDiv.classList.add('hidden');
+    }
+}
+
+function cancelLogoUpload() {
+    selectedLogoFile = null;
+    
+    // Limpiar input
+    const input = document.getElementById('logo-file-input');
+    input.value = '';
+    
+    // Ocultar preview
+    const container = document.getElementById('logo-preview-container');
+    container.classList.add('hidden');
+    
+    console.log('❌ Subida de logo cancelada');
+}
+
+async function removeCurrentLogo() {
+    if (!confirm('¿Estás seguro de que quieres eliminar el logo actual? Se usará el logo por defecto del sistema.')) {
+        return;
+    }
+    
+    const removeBtn = document.getElementById('remove-logo-btn');
+    
+    try {
+        removeBtn.disabled = true;
+        removeBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Eliminando...';
+        
+        console.log('🗑️ Eliminando logo actual...');
+        
+        const response = await axios.delete(`${API_BASE}/admin/logo`);
+        
+        if (response.data.success) {
+            showToast('Logo eliminado exitosamente', 'success');
+            await loadCurrentLogo();
+            console.log('✅ Logo eliminado exitosamente');
+        } else {
+            throw new Error(response.data.error || 'Error al eliminar logo');
+        }
+        
+    } catch (error) {
+        console.error('❌ Error eliminando logo:', error);
+        const errorMessage = error.response?.data?.error || error.message || 'Error desconocido';
+        showToast(`Error: ${errorMessage}`, 'error');
+    } finally {
+        removeBtn.disabled = false;
+        removeBtn.innerHTML = '<i class="fas fa-trash mr-2"></i>Eliminar Logo Actual';
+    }
+}
+
+// ========== GESTIÓN DE LOGO DINÁMICO EN NAVBAR ==========
+
+// Cargar configuración del sitio y aplicar logo en el dashboard
+async function loadDashboardSiteLogo() {
+    try {
+        const response = await axios.get(`${API_BASE}/public/site-config`);
+        
+        if (response.data.success && response.data.data.logo_url) {
+            const logoContainer = document.getElementById('dashboard-site-logo');
+            const logoUrl = response.data.data.logo_url;
+            const siteName = response.data.data.site_name || 'CTeI-Manager';
+            
+            // Reemplazar el contenido del logo con la imagen
+            logoContainer.innerHTML = `
+                <img 
+                    src="${logoUrl}" 
+                    alt="${siteName} Logo" 
+                    class="h-8 w-auto mr-3 inline"
+                    style="max-height: 32px; object-fit: contain;"
+                >
+                <span>${siteName}</span>
+            `;
+            
+            console.log('✅ Logo personalizado cargado en dashboard:', logoUrl);
+        } else {
+            console.log('ℹ️ Usando logo por defecto en dashboard');
+        }
+    } catch (error) {
+        console.warn('⚠️ Error cargando configuración del sitio en dashboard, usando logo por defecto:', error);
     }
 }

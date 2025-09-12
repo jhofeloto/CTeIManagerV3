@@ -408,4 +408,28 @@ publicRoutes.get('/stats', async (c) => {
   }
 });
 
+// Obtener configuración pública del sitio (logo, etc.)
+publicRoutes.get('/site-config', async (c) => {
+  try {
+    // Obtener configuración del sitio desde KV storage
+    const config = await c.env.KV?.get('site-config', 'json') || {};
+    
+    return c.json<APIResponse<any>>({
+      success: true,
+      data: {
+        logo_url: config.logo_url || null,
+        logo_filename: config.logo_filename || null,
+        site_name: config.site_name || 'CTeI-Manager'
+      }
+    });
+
+  } catch (error) {
+    console.error('Error obteniendo configuración pública del sitio:', error);
+    return c.json<APIResponse>({ 
+      success: false, 
+      error: 'Error interno del servidor' 
+    }, 500);
+  }
+});
+
 export { publicRoutes };
