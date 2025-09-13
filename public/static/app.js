@@ -352,42 +352,56 @@ function showProjectModal(project) {
         if (e.target === modal) modal.remove();
     };
     
-    // Crear componente de tags mejorado para palabras clave
+    // Crear componente de tags mejorado con diseño más elegante
     const createTag = (text) => `
-        <span class="inline-block px-3 py-1 text-sm font-medium rounded-full" 
-              style="background-color: var(--accent); color: var(--accent-foreground); font-family: var(--font-sans);">
-            ${text.trim()}
+        <span class="inline-block px-5 py-3 text-base font-semibold rounded-full border-2 transition-all duration-300 hover:scale-105 hover:shadow-lg cursor-default" 
+              style="background-color: var(--accent); color: var(--accent-foreground); font-family: var(--font-sans); border-color: var(--border);">
+            <i class="fas fa-tag mr-2 text-sm opacity-75"></i>${text.trim()}
         </span>
     `;
     
-    // Productos asociados con mejor diseño
+    // Productos asociados con diseño mejorado y elegante
     const productsList = project.products?.map(product => `
-        <div class="border border-border rounded-lg p-4 mb-3 hover:bg-muted/20 transition-colors duration-200">
-            <div class="flex justify-between items-start mb-2">
-                <span class="font-mono text-sm font-semibold text-primary">${product.product_code}</span>
-                ${createTechLabelWithTooltip(product.product_type, 'px-2 py-1 text-xs rounded bg-muted text-muted-foreground')}
+        <div class="bg-card border-2 border-border rounded-xl p-6 hover:bg-muted/10 transition-all duration-300 hover:shadow-lg hover:border-primary/30 group">
+            <div class="flex justify-between items-start mb-4">
+                <span class="font-mono text-lg font-bold text-primary px-4 py-2 bg-primary/10 rounded-lg">
+                    <i class="fas fa-barcode mr-2"></i>${product.product_code}
+                </span>
+                ${createTechLabelWithTooltip(product.product_type, 'px-3 py-2 text-sm rounded-lg bg-muted/80 text-muted-foreground border border-border')}
             </div>
-            <p class="text-sm text-foreground leading-relaxed">${product.description}</p>
+            <p class="text-lg text-foreground leading-relaxed mb-4 line-height-1.7">${product.description}</p>
             <button onclick="viewProductDetails(${product.id})" 
-                    class="mt-2 text-xs text-primary hover:text-primary/80 font-medium">
-                <i class="fas fa-external-link-alt mr-1"></i>Ver detalles
+                    class="inline-flex items-center px-4 py-2 text-sm text-primary hover:text-primary-foreground hover:bg-primary font-semibold rounded-lg border border-primary/30 hover:border-primary transition-all duration-300 group-hover:scale-105">
+                <i class="fas fa-external-link-alt mr-2"></i>Ver detalles del producto
             </button>
         </div>
-    `).join('') || `<div class="text-center py-8">
-        <i class="fas fa-flask text-4xl text-muted-foreground mb-3"></i>
-        <p class="text-muted-foreground font-style: italic;">No hay productos asociados a este proyecto</p>
+    `).join('') || `
+    <div class="text-center py-12 bg-background rounded-xl border-2 border-dashed border-border">
+        <div class="max-w-md mx-auto">
+            <i class="fas fa-flask text-6xl text-muted-foreground mb-6 opacity-50"></i>
+            <h3 class="text-xl font-semibold text-foreground mb-2">Sin Productos Asociados</h3>
+            <p class="text-muted-foreground">Este proyecto aún no tiene productos científicos registrados.</p>
+        </div>
     </div>`;
     
-    // Colaboradores como enlaces clicables
+    // Colaboradores con diseño mejorado y profesional
     const collaboratorsList = project.collaborators?.map(collab => `
         <button onclick="showCollaboratorDetails('${collab.id}')" 
-                class="inline-block px-3 py-1 text-sm font-medium rounded-full mr-2 mb-2 transition-colors duration-200 hover:opacity-80"
-                style="background-color: var(--accent); color: var(--accent-foreground); font-family: var(--font-sans);">
-            <i class="fas fa-user mr-1"></i>${collab.full_name}
+                class="inline-flex items-center px-6 py-4 text-base font-semibold rounded-xl mr-4 mb-4 transition-all duration-300 hover:scale-105 hover:shadow-lg border-2 group"
+                style="background-color: var(--accent); color: var(--accent-foreground); font-family: var(--font-sans); border-color: var(--border);">
+            <i class="fas fa-user-circle mr-3 text-xl p-2 bg-primary/20 rounded-lg group-hover:bg-primary/30 transition-colors"></i>
+            <div class="text-left">
+                <div class="font-bold">${collab.full_name}</div>
+                <div class="text-sm opacity-75">Colaborador</div>
+            </div>
         </button>
-    `).join('') || `<div class="text-center py-4">
-        <i class="fas fa-users text-2xl text-muted-foreground mb-2"></i>
-        <p class="text-muted-foreground" style="font-style: italic;">No hay colaboradores asignados</p>
+    `).join('') || `
+    <div class="text-center py-12 bg-background rounded-xl border-2 border-dashed border-border">
+        <div class="max-w-md mx-auto">
+            <i class="fas fa-users text-6xl text-muted-foreground mb-6 opacity-50"></i>
+            <h3 class="text-xl font-semibold text-foreground mb-2">Sin Colaboradores Asignados</h3>
+            <p class="text-muted-foreground">Este proyecto aún no tiene colaboradores registrados en el equipo de trabajo.</p>
+        </div>
     </div>`;
     
     // Tags para palabras clave
@@ -396,110 +410,173 @@ function showProjectModal(project) {
         `<p class="text-muted-foreground" style="font-style: italic;">No hay palabras clave definidas</p>`;
     
     modal.innerHTML = `
-        <div class="level-3 max-w-5xl w-full max-h-[90vh] overflow-hidden"
-             style="background-color: var(--card); border-radius: var(--radius-lg); box-shadow: var(--shadow-xl); font-family: var(--font-sans);">
+        <div class="level-3 max-w-6xl w-full max-h-[95vh] overflow-hidden"
+             style="background-color: var(--card); border: 2px solid var(--border); border-radius: var(--radius-lg); box-shadow: var(--shadow-xl); font-family: var(--font-sans);">
             
-            <!-- Encabezado Fuerte -->
-            <div class="px-8 py-6 border-b border-border">
+            <!-- Encabezado Prominente con Mayor Jerarquía Visual -->
+            <div class="px-10 py-10 border-b-2 border-border bg-gradient-to-r from-muted/30 to-muted/10">
                 <div class="flex justify-between items-start">
-                    <div class="flex-1 pr-6">
-                        <!-- Título principal con jerarquía visual clara -->
-                        <h1 class="text-3xl font-bold text-foreground mb-2 leading-tight" style="font-family: var(--font-sans);">
+                    <div class="flex-1 pr-8">
+                        <!-- Título principal con mayor tamaño y prominencia -->
+                        <h1 class="text-5xl font-bold text-foreground mb-4 leading-tight tracking-tight" style="font-family: var(--font-sans); color: var(--primary);">
                             ${project.title}
                         </h1>
-                        <!-- Identificador secundario -->
-                        <p class="text-lg text-muted-foreground font-mono">
-                            ${project.project_code || 'PROJ-' + String(project.id).padStart(3, '0')}
-                        </p>
+                        <!-- Identificador secundario mejorado -->
+                        <div class="flex items-center gap-4 mb-2">
+                            <span class="text-xl text-muted-foreground font-mono font-bold px-5 py-3 bg-muted/60 rounded-full border-2 border-border">
+                                <i class="fas fa-hashtag mr-2 text-primary"></i>
+                                ${project.project_code || 'PROJ-' + String(project.id).padStart(3, '0')}
+                            </span>
+                            ${project.status ? `
+                            <span class="px-4 py-2 rounded-full text-sm font-bold border-2" style="background-color: var(--primary); color: var(--primary-foreground); border-color: var(--primary);">
+                                <i class="fas fa-flag mr-2"></i>${project.status}
+                            </span>
+                            ` : ''}
+                        </div>
                     </div>
-                    <!-- Botón de cierre mejorado -->
+                    <!-- Botón de cierre mejorado con mejor accesibilidad -->
                     <button onclick="this.closest('.fixed').remove()" 
-                            class="p-3 rounded-full hover:bg-muted transition-colors duration-200"
-                            style="color: var(--muted-foreground);">
+                            class="p-5 rounded-full bg-destructive/10 hover:bg-destructive/20 transition-all duration-300 border-2 border-destructive/20 hover:border-destructive/40 hover:scale-110"
+                            style="color: var(--destructive);" 
+                            title="Cerrar modal">
                         <i class="fas fa-times text-xl"></i>
                     </button>
                 </div>
             </div>
             
-            <!-- Contenido principal con scroll -->
-            <div class="px-8 py-6 max-h-[calc(90vh-140px)] overflow-y-auto">
-                <div class="space-y-8">
+            <!-- Contenido principal con mejor espaciado y organización -->
+            <div class="px-10 py-10 max-h-[calc(95vh-220px)] overflow-y-auto" style="background-color: var(--background);">
+                <div class="space-y-16">
                     
-                    <!-- Descripción -->
-                    <section>
-                        <h2 class="text-xl font-semibold text-foreground mb-4" style="font-family: var(--font-sans);">
-                            Descripción
+                    <!-- Descripción con Mejor Jerarquía -->
+                    <section class="bg-card/50 p-8 rounded-xl border-2 border-border">
+                        <h2 class="text-3xl font-bold text-foreground mb-8 flex items-center pb-4 border-b-2 border-border" style="font-family: var(--font-sans); color: var(--primary);">
+                            <i class="fas fa-file-alt mr-4 p-3 bg-primary/10 rounded-lg text-2xl" style="color: var(--primary);"></i>
+                            Resumen del Proyecto
                         </h2>
-                        <p class="text-foreground leading-relaxed text-base">
-                            ${project.abstract || `<span class="text-muted-foreground" style="font-style: italic;">No hay descripción disponible</span>`}
-                        </p>
+                        <div class="bg-background p-8 rounded-xl border-l-6 border-primary shadow-sm">
+                            <p class="text-foreground leading-relaxed text-xl" style="line-height: 1.8;">
+                                ${project.abstract || `
+                                <div class="text-center py-6">
+                                    <i class="fas fa-file-text text-4xl text-muted-foreground mb-4 opacity-50"></i>
+                                    <p class="text-muted-foreground text-lg" style="font-style: italic;">No hay descripción disponible para este proyecto</p>
+                                </div>`}
+                            </p>
+                        </div>
                     </section>
                     
                     ${project.keywords ? `
-                    <!-- Palabras Clave como Tags -->
-                    <section>
-                        <h2 class="text-xl font-semibold text-foreground mb-4" style="font-family: var(--font-sans);">
+                    <!-- Palabras Clave con Diseño Mejorado -->
+                    <section class="bg-card/50 p-8 rounded-xl border-2 border-border">
+                        <h2 class="text-3xl font-bold text-foreground mb-8 flex items-center pb-4 border-b-2 border-border" style="font-family: var(--font-sans); color: var(--primary);">
+                            <i class="fas fa-tags mr-4 p-3 bg-primary/10 rounded-lg text-2xl" style="color: var(--primary);"></i>
                             Palabras Clave
                         </h2>
-                        <div class="flex flex-wrap gap-2">
-                            ${keywordTags}
+                        <div class="bg-background p-6 rounded-xl">
+                            <div class="flex flex-wrap gap-4">
+                                ${keywordTags}
+                            </div>
                         </div>
                     </section>
                     ` : ''}
                     
                     ${project.introduction ? `
-                    <!-- Introducción -->
-                    <section>
-                        <h2 class="text-xl font-semibold text-foreground mb-4 border-b border-border pb-2" style="font-family: var(--font-sans);">
+                    <!-- Introducción con Mejor Estructura -->
+                    <section class="bg-card/50 p-8 rounded-xl border-2 border-border">
+                        <h2 class="text-3xl font-bold text-foreground mb-8 flex items-center pb-4 border-b-2 border-border" style="font-family: var(--font-sans); color: var(--primary);">
+                            <i class="fas fa-lightbulb mr-4 p-3 bg-primary/10 rounded-lg text-2xl" style="color: var(--primary);"></i>
                             Introducción
                         </h2>
-                        <p class="text-foreground leading-relaxed text-base">
-                            ${project.introduction}
-                        </p>
+                        <div class="bg-background p-8 rounded-xl">
+                            <p class="text-foreground leading-relaxed text-xl" style="line-height: 1.8;">
+                                ${project.introduction}
+                            </p>
+                        </div>
                     </section>
                     ` : ''}
                     
                     ${project.methodology ? `
-                    <!-- Metodología -->
-                    <section>
-                        <h2 class="text-xl font-semibold text-foreground mb-4 border-b border-border pb-2" style="font-family: var(--font-sans);">
+                    <!-- Metodología con Diseño Prominente -->
+                    <section class="bg-card/50 p-8 rounded-xl border-2 border-border">
+                        <h2 class="text-3xl font-bold text-foreground mb-8 flex items-center pb-4 border-b-2 border-border" style="font-family: var(--font-sans); color: var(--primary);">
+                            <i class="fas fa-cogs mr-4 p-3 bg-primary/10 rounded-lg text-2xl" style="color: var(--primary);"></i>
                             Metodología
                         </h2>
-                        <p class="text-foreground leading-relaxed text-base">
-                            ${project.methodology}
-                        </p>
+                        <div class="bg-background p-8 rounded-xl">
+                            <p class="text-foreground leading-relaxed text-xl" style="line-height: 1.8;">
+                                ${project.methodology}
+                            </p>
+                        </div>
                     </section>
                     ` : ''}
                     
-                    <!-- Productos Asociados -->
-                    <section>
-                        <h2 class="text-xl font-semibold text-foreground mb-4 border-b border-border pb-2" style="font-family: var(--font-sans);">
+                    <!-- Productos Asociados con Mejor Organización -->
+                    <section class="bg-card/50 p-8 rounded-xl border-2 border-border">
+                        <h2 class="text-3xl font-bold text-foreground mb-8 flex items-center pb-4 border-b-2 border-border" style="font-family: var(--font-sans); color: var(--primary);">
+                            <i class="fas fa-cubes mr-4 p-3 bg-primary/10 rounded-lg text-2xl" style="color: var(--primary);"></i>
                             Productos de CTeI
+                            ${project.products?.length ? `<span class="ml-4 px-4 py-2 text-lg bg-primary/20 text-primary rounded-full">${project.products.length}</span>` : ''}
                         </h2>
-                        ${productsList}
+                        <div class="bg-background p-6 rounded-xl">
+                            <div class="space-y-6">
+                                ${productsList}
+                            </div>
+                        </div>
                     </section>
                     
-                    <!-- Colaboradores -->
-                    <section>
-                        <h2 class="text-xl font-semibold text-foreground mb-4 border-b border-border pb-2" style="font-family: var(--font-sans);">
-                            Colaboradores
+                    <!-- Colaboradores con Diseño Mejorado -->
+                    <section class="bg-card/50 p-8 rounded-xl border-2 border-border">
+                        <h2 class="text-3xl font-bold text-foreground mb-8 flex items-center pb-4 border-b-2 border-border" style="font-family: var(--font-sans); color: var(--primary);">
+                            <i class="fas fa-users mr-4 p-3 bg-primary/10 rounded-lg text-2xl" style="color: var(--primary);"></i>
+                            Equipo de Colaboradores
+                            ${project.collaborators?.length ? `<span class="ml-4 px-4 py-2 text-lg bg-primary/20 text-primary rounded-full">${project.collaborators.length}</span>` : ''}
                         </h2>
-                        ${collaboratorsList}
+                        <div class="bg-background p-8 rounded-xl">
+                            ${collaboratorsList}
+                        </div>
                     </section>
                     
                 </div>
             </div>
             
-            <!-- Pie de página con metadata -->
-            <div class="px-8 py-4 bg-muted/30 border-t border-border">
-                <div class="flex items-center justify-between text-sm text-muted-foreground">
-                    <div class="flex items-center space-x-6">
-                        <span><i class="fas fa-user mr-2"></i>Responsable: ${project.owner_name}</span>
-                        ${project.institution ? `<span><i class="fas fa-building mr-2"></i>${project.institution}</span>` : ''}
+            <!-- Pie de página con metadata mejorada -->
+            <div class="px-10 py-8 bg-gradient-to-r from-muted/30 to-muted/10 border-t-2 border-border">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 text-base">
+                    <div class="flex flex-col space-y-4 text-muted-foreground">
+                        <div class="flex items-center bg-background px-6 py-4 rounded-xl border border-border shadow-sm">
+                            <i class="fas fa-user-tie mr-4 text-primary text-xl p-2 bg-primary/10 rounded-lg"></i>
+                            <div>
+                                <div class="text-xs text-muted-foreground uppercase tracking-wide font-semibold">Responsable</div>
+                                <div class="text-lg font-semibold text-foreground">${project.owner_name}</div>
+                            </div>
+                        </div>
+                        ${project.institution ? `
+                        <div class="flex items-center bg-background px-6 py-4 rounded-xl border border-border shadow-sm">
+                            <i class="fas fa-building mr-4 text-primary text-xl p-2 bg-primary/10 rounded-lg"></i>
+                            <div>
+                                <div class="text-xs text-muted-foreground uppercase tracking-wide font-semibold">Institución</div>
+                                <div class="text-lg font-semibold text-foreground">${project.institution}</div>
+                            </div>
+                        </div>
+                        ` : ''}
                     </div>
-                    <div class="flex items-center space-x-6">
-                        <span><i class="fas fa-calendar-plus mr-2"></i>Creado: ${formatDate(project.created_at)}</span>
-                        ${project.status ? `<span class="px-2 py-1 rounded text-xs bg-primary/10 text-primary font-medium">${project.status}</span>` : ''}
+                    <div class="flex flex-col justify-end space-y-4 md:items-end text-muted-foreground">
+                        <div class="flex items-center bg-background px-6 py-4 rounded-xl border border-border shadow-sm">
+                            <i class="fas fa-calendar-plus mr-4 text-primary text-xl p-2 bg-primary/10 rounded-lg"></i>
+                            <div class="md:text-right">
+                                <div class="text-xs text-muted-foreground uppercase tracking-wide font-semibold">Fecha de Creación</div>
+                                <div class="text-lg font-semibold text-foreground">${formatDate(project.created_at)}</div>
+                            </div>
+                        </div>
+                        ${project.updated_at && project.updated_at !== project.created_at ? `
+                        <div class="flex items-center bg-background px-6 py-4 rounded-xl border border-border shadow-sm">
+                            <i class="fas fa-calendar-edit mr-4 text-primary text-xl p-2 bg-primary/10 rounded-lg"></i>
+                            <div class="md:text-right">
+                                <div class="text-xs text-muted-foreground uppercase tracking-wide font-semibold">Última Actualización</div>
+                                <div class="text-lg font-semibold text-foreground">${formatDate(project.updated_at)}</div>
+                            </div>
+                        </div>
+                        ` : ''}
                     </div>
                 </div>
             </div>
@@ -516,27 +593,44 @@ function showProductModal(product) {
         if (e.target === modal) modal.remove();
     };
     
-    // Autores y colaboradores con mejor diseño y enlaces clicables
+    // Autores y colaboradores con diseño mejorado y elegante
     const authorsList = product.authors?.map(author => `
-        <div class="flex items-center justify-between py-3 border-b border-border last:border-b-0 hover:bg-muted/30 transition-colors duration-200 rounded px-2">
-            <div class="flex-1">
-                <button onclick="showCollaboratorDetails('${author.user_id}')" 
-                        class="text-left hover:text-primary transition-colors duration-200">
-                    <div class="font-semibold text-foreground">${author.full_name}</div>
-                    <div class="text-sm text-muted-foreground">${author.email}</div>
-                </button>
-            </div>
-            <div class="text-right">
-                <div class="text-sm font-semibold px-2 py-1 rounded"
-                     style="background-color: var(--accent); color: var(--accent-foreground);">
-                    ${formatRole(author.author_role)}
+        <div class="bg-card border-2 border-border rounded-xl p-6 mb-4 hover:bg-muted/10 transition-all duration-300 hover:shadow-lg hover:border-primary/30 group">
+            <div class="flex items-center justify-between">
+                <div class="flex-1">
+                    <button onclick="showCollaboratorDetails('${author.user_id}')" 
+                            class="text-left hover:text-primary transition-colors duration-300 group">
+                        <div class="flex items-center mb-2">
+                            <i class="fas fa-user-circle mr-3 text-2xl text-primary p-2 bg-primary/10 rounded-lg group-hover:bg-primary/20 transition-colors"></i>
+                            <div>
+                                <div class="font-bold text-foreground text-lg group-hover:text-primary transition-colors">${author.full_name}</div>
+                                <div class="text-sm text-muted-foreground">${author.email}</div>
+                            </div>
+                        </div>
+                    </button>
+                    ${author.contribution_type ? `
+                    <div class="mt-3 px-4 py-2 bg-muted/50 rounded-lg border border-border">
+                        <div class="text-sm text-muted-foreground font-semibold">Tipo de Contribución</div>
+                        <div class="text-base text-foreground">${author.contribution_type}</div>
+                    </div>
+                    ` : ''}
                 </div>
-                ${author.contribution_type ? `<div class="text-xs text-muted-foreground mt-1">${author.contribution_type}</div>` : ''}
+                <div class="text-right ml-6">
+                    <div class="inline-flex items-center px-4 py-3 text-base font-bold rounded-xl border-2"
+                         style="background-color: var(--accent); color: var(--accent-foreground); border-color: var(--border);">
+                        <i class="fas fa-medal mr-2"></i>
+                        ${formatRole(author.author_role)}
+                    </div>
+                </div>
             </div>
         </div>
-    `).join('') || `<div class="text-center py-6">
-        <i class="fas fa-user-edit text-3xl text-muted-foreground mb-3"></i>
-        <p class="text-muted-foreground" style="font-style: italic;">No hay autores registrados para este producto</p>
+    `).join('') || `
+    <div class="text-center py-12 bg-background rounded-xl border-2 border-dashed border-border">
+        <div class="max-w-md mx-auto">
+            <i class="fas fa-user-edit text-6xl text-muted-foreground mb-6 opacity-50"></i>
+            <h3 class="text-xl font-semibold text-foreground mb-2">Sin Autores Registrados</h3>
+            <p class="text-muted-foreground">Este producto aún no tiene autores o colaboradores registrados.</p>
+        </div>
     </div>`;
     
     const typeColors = {
@@ -555,105 +649,119 @@ function showProductModal(product) {
                        'Producto de CTeI';
     
     modal.innerHTML = `
-        <div class="level-3 max-w-5xl w-full max-h-[90vh] overflow-hidden"
-             style="background-color: var(--card); border-radius: var(--radius-lg); box-shadow: var(--shadow-xl); font-family: var(--font-sans);">
+        <div class="level-3 max-w-6xl w-full max-h-[95vh] overflow-hidden"
+             style="background-color: var(--card); border: 2px solid var(--border); border-radius: var(--radius-lg); box-shadow: var(--shadow-xl); font-family: var(--font-sans);">
             
-            <!-- Encabezado Fuerte -->
-            <div class="px-8 py-6 border-b border-border">
+            <!-- Encabezado Prominente Consistente con Projects -->
+            <div class="px-10 py-10 border-b-2 border-border bg-gradient-to-r from-muted/30 to-muted/10">
                 <div class="flex justify-between items-start">
-                    <div class="flex-1 pr-6">
-                        <!-- Título principal con jerarquía visual clara -->
-                        <h1 class="text-3xl font-bold text-foreground mb-2 leading-tight" style="font-family: var(--font-sans);">
+                    <div class="flex-1 pr-8">
+                        <!-- Título principal con mayor prominencia -->
+                        <h1 class="text-4xl font-bold text-foreground mb-4 leading-tight tracking-tight" style="font-family: var(--font-sans); color: var(--primary);">
                             ${productName}
                         </h1>
-                        <!-- Identificador secundario y etiqueta técnica -->
-                        <div class="flex items-center gap-3 mb-3">
-                            <span class="text-lg text-muted-foreground font-mono font-semibold">
+                        <!-- Identificador y etiqueta mejorados -->
+                        <div class="flex items-center gap-4 mb-2">
+                            <span class="text-xl text-muted-foreground font-mono font-bold px-5 py-3 bg-muted/60 rounded-full border-2 border-border">
+                                <i class="fas fa-barcode mr-2 text-primary"></i>
                                 ${product.product_code}
                             </span>
-                            ${createTechLabelWithTooltip(product.product_type, `inline-flex items-center px-3 py-1 text-sm font-semibold rounded-full ${typeColors[product.product_type] || 'bg-muted text-muted-foreground'}`)}
+                            ${createTechLabelWithTooltip(product.product_type, `inline-flex items-center px-4 py-3 text-base font-bold rounded-xl border-2 ${typeColors[product.product_type] || 'bg-muted text-muted-foreground border-border'}`)}
                         </div>
                     </div>
-                    <!-- Botón de cierre mejorado -->
+                    <!-- Botón de cierre mejorado consistente -->
                     <button onclick="this.closest('.fixed').remove()" 
-                            class="p-3 rounded-full hover:bg-muted transition-colors duration-200"
-                            style="color: var(--muted-foreground);">
+                            class="p-5 rounded-full bg-destructive/10 hover:bg-destructive/20 transition-all duration-300 border-2 border-destructive/20 hover:border-destructive/40 hover:scale-110"
+                            style="color: var(--destructive);"
+                            title="Cerrar modal">
                         <i class="fas fa-times text-xl"></i>
                     </button>
                 </div>
             </div>
             
-            <!-- Contenido principal con scroll -->
-            <div class="px-8 py-6 max-h-[calc(90vh-140px)] overflow-y-auto">
-                <div class="space-y-8">
+            <!-- Contenido principal con mejor espaciado -->
+            <div class="px-10 py-10 max-h-[calc(95vh-220px)] overflow-y-auto" style="background-color: var(--background);">
+                <div class="space-y-16">
                     
-                    <!-- Descripción -->
-                    <section>
-                        <h2 class="text-xl font-semibold text-foreground mb-4" style="font-family: var(--font-sans);">
-                            Descripción
+                    <!-- Descripción con Diseño Mejorado -->
+                    <section class="bg-card/50 p-8 rounded-xl border-2 border-border">
+                        <h2 class="text-3xl font-bold text-foreground mb-8 flex items-center pb-4 border-b-2 border-border" style="font-family: var(--font-sans); color: var(--primary);">
+                            <i class="fas fa-file-text mr-4 p-3 bg-primary/10 rounded-lg text-2xl" style="color: var(--primary);"></i>
+                            Descripción del Producto
                         </h2>
-                        <p class="text-foreground leading-relaxed text-base">
-                            ${product.description || `<span class="text-muted-foreground" style="font-style: italic;">Sin descripción disponible</span>`}
-                        </p>
+                        <div class="bg-background p-8 rounded-xl border-l-6 border-primary shadow-sm">
+                            <p class="text-foreground leading-relaxed text-xl" style="line-height: 1.8;">
+                                ${product.description || `
+                                <div class="text-center py-6">
+                                    <i class="fas fa-file-alt text-4xl text-muted-foreground mb-4 opacity-50"></i>
+                                    <p class="text-muted-foreground text-lg" style="font-style: italic;">Sin descripción disponible para este producto</p>
+                                </div>`}
+                            </p>
+                        </div>
                     </section>
                     
                     ${product.category_description ? `
-                    <!-- Categoría -->
-                    <section>
-                        <h2 class="text-xl font-semibold text-foreground mb-4 border-b border-border pb-2" style="font-family: var(--font-sans);">
-                            Categoría
+                    <!-- Categoría con Mejor Diseño -->
+                    <section class="bg-card/50 p-8 rounded-xl border-2 border-border">
+                        <h2 class="text-3xl font-bold text-foreground mb-8 flex items-center pb-4 border-b-2 border-border" style="font-family: var(--font-sans); color: var(--primary);">
+                            <i class="fas fa-layer-group mr-4 p-3 bg-primary/10 rounded-lg text-2xl" style="color: var(--primary);"></i>
+                            Categoría Científica
                         </h2>
-                        <p class="text-foreground leading-relaxed text-base">
-                            ${product.category_description}
-                        </p>
+                        <div class="bg-background p-8 rounded-xl">
+                            <p class="text-foreground leading-relaxed text-xl" style="line-height: 1.8;">
+                                ${product.category_description}
+                            </p>
+                        </div>
                     </section>
                     ` : ''}
                     
                     ${product.doi || product.url || product.journal ? `
-                    <!-- Información de Publicación -->
-                    <section>
-                        <h2 class="text-xl font-semibold text-foreground mb-4 border-b border-border pb-2" style="font-family: var(--font-sans);">
+                    <!-- Información de Publicación Mejorada -->
+                    <section class="bg-card/50 p-8 rounded-xl border-2 border-border">
+                        <h2 class="text-3xl font-bold text-foreground mb-8 flex items-center pb-4 border-b-2 border-border" style="font-family: var(--font-sans); color: var(--primary);">
+                            <i class="fas fa-book-open mr-4 p-3 bg-primary/10 rounded-lg text-2xl" style="color: var(--primary);"></i>
                             Información de Publicación
                         </h2>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="bg-background p-6 rounded-xl">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                             ${product.journal ? `
-                            <div class="flex items-start space-x-3 p-3 rounded-lg bg-muted/20">
-                                <i class="fas fa-book-open text-primary mt-1"></i>
+                            <div class="flex items-start space-x-4 p-6 rounded-xl bg-card border-2 border-border shadow-sm">
+                                <i class="fas fa-journal-whills text-primary text-2xl mt-1 p-3 bg-primary/10 rounded-lg"></i>
                                 <div>
-                                    <div class="font-medium text-foreground">Revista</div>
-                                    <div class="text-muted-foreground">${product.journal}</div>
+                                    <div class="font-bold text-foreground text-lg mb-1">Revista</div>
+                                    <div class="text-muted-foreground text-base">${product.journal}</div>
                                 </div>
                             </div>
                             ` : ''}
                             ${product.publication_date ? `
-                            <div class="flex items-start space-x-3 p-3 rounded-lg bg-muted/20">
-                                <i class="fas fa-calendar text-primary mt-1"></i>
+                            <div class="flex items-start space-x-4 p-6 rounded-xl bg-card border-2 border-border shadow-sm">
+                                <i class="fas fa-calendar-alt text-primary text-2xl mt-1 p-3 bg-primary/10 rounded-lg"></i>
                                 <div>
-                                    <div class="font-medium text-foreground">Fecha de Publicación</div>
-                                    <div class="text-muted-foreground">${formatDate(product.publication_date)}</div>
+                                    <div class="font-bold text-foreground text-lg mb-1">Fecha de Publicación</div>
+                                    <div class="text-muted-foreground text-base">${formatDate(product.publication_date)}</div>
                                 </div>
                             </div>
                             ` : ''}
                             ${product.doi ? `
-                            <div class="flex items-start space-x-3 p-3 rounded-lg bg-muted/20">
-                                <i class="fas fa-link text-primary mt-1"></i>
+                            <div class="flex items-start space-x-4 p-6 rounded-xl bg-card border-2 border-border shadow-sm">
+                                <i class="fas fa-fingerprint text-primary text-2xl mt-1 p-3 bg-primary/10 rounded-lg"></i>
                                 <div>
-                                    <div class="font-medium text-foreground">DOI</div>
+                                    <div class="font-bold text-foreground text-lg mb-1">DOI (Identificador Digital)</div>
                                     <a href="https://doi.org/${product.doi}" target="_blank" 
-                                       class="text-primary hover:text-primary/80 font-medium transition-colors duration-200">
-                                        ${product.doi}
+                                       class="text-primary hover:text-primary-foreground hover:bg-primary px-3 py-2 rounded-lg font-semibold transition-all duration-300 border border-primary/30 hover:border-primary inline-block">
+                                        <i class="fas fa-external-link-alt mr-2"></i>${product.doi}
                                     </a>
                                 </div>
                             </div>
                             ` : ''}
                             ${product.url ? `
-                            <div class="flex items-start space-x-3 p-3 rounded-lg bg-muted/20">
-                                <i class="fas fa-external-link-alt text-primary mt-1"></i>
+                            <div class="flex items-start space-x-4 p-6 rounded-xl bg-card border-2 border-border shadow-sm">
+                                <i class="fas fa-globe text-primary text-2xl mt-1 p-3 bg-primary/10 rounded-lg"></i>
                                 <div>
-                                    <div class="font-medium text-foreground">Enlace Externo</div>
+                                    <div class="font-bold text-foreground text-lg mb-1">Enlace Externo</div>
                                     <a href="${product.url}" target="_blank" 
-                                       class="text-primary hover:text-primary/80 font-medium transition-colors duration-200">
-                                        Visitar enlace
+                                       class="inline-flex items-center text-primary hover:text-primary-foreground hover:bg-primary px-4 py-3 rounded-lg font-semibold transition-all duration-300 border border-primary/30 hover:border-primary">
+                                        <i class="fas fa-external-link-alt mr-2"></i>Visitar enlace externo
                                     </a>
                                 </div>
                             </div>
@@ -681,42 +789,51 @@ function showProductModal(product) {
                     ` : ''}
                     
                     ${product.project ? `
-                    <!-- Proyecto Asociado -->
-                    <section>
-                        <h2 class="text-xl font-semibold text-foreground mb-4 border-b border-border pb-2" style="font-family: var(--font-sans);">
+                    <!-- Proyecto Asociado con Diseño Mejorado -->
+                    <section class="bg-card/50 p-8 rounded-xl border-2 border-border">
+                        <h2 class="text-3xl font-bold text-foreground mb-8 flex items-center pb-4 border-b-2 border-border" style="font-family: var(--font-sans); color: var(--primary);">
+                            <i class="fas fa-project-diagram mr-4 p-3 bg-primary/10 rounded-lg text-2xl" style="color: var(--primary);"></i>
                             Proyecto Asociado
                         </h2>
-                        <div class="p-6 rounded-lg border border-border hover:bg-muted/10 transition-colors duration-200">
+                        <div class="bg-background p-8 rounded-xl border-2 border-border hover:bg-muted/10 transition-all duration-300 hover:shadow-lg hover:border-primary/30 group">
                             <button onclick="viewProjectDetails(${product.project.id})" 
-                                    class="text-left w-full hover:text-primary transition-colors duration-200">
-                                <h3 class="text-lg font-semibold text-foreground mb-2">
+                                    class="text-left w-full hover:text-primary transition-colors duration-300 group">
+                                <h3 class="text-2xl font-bold text-foreground mb-4 group-hover:text-primary transition-colors">
                                     ${product.project.title}
-                                    <i class="fas fa-external-link-alt ml-2 text-sm text-primary"></i>
+                                    <i class="fas fa-external-link-alt ml-3 text-lg text-primary group-hover:scale-110 transition-transform"></i>
                                 </h3>
-                                <p class="text-muted-foreground leading-relaxed mb-4">
-                                    ${product.project.abstract || `<span style="font-style: italic;">Sin resumen disponible</span>`}
+                                <p class="text-muted-foreground leading-relaxed mb-6 text-lg" style="line-height: 1.7;">
+                                    ${product.project.abstract || `<span style="font-style: italic;">Sin resumen disponible para este proyecto</span>`}
                                 </p>
                             </button>
-                            <div class="flex items-center justify-between text-sm border-t border-border pt-4">
-                                <span class="flex items-center">
-                                    <i class="fas fa-user mr-2 text-primary"></i>
-                                    ${product.project.owner_name}
-                                </span>
-                                <span class="flex items-center">
-                                    <i class="fas fa-building mr-2 text-primary"></i>
-                                    ${product.project.institution || 'Sin institución'}
-                                </span>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 border-t-2 border-border pt-6">
+                                <div class="flex items-center bg-card px-4 py-3 rounded-lg border border-border">
+                                    <i class="fas fa-user-tie mr-3 text-primary text-xl p-2 bg-primary/10 rounded-lg"></i>
+                                    <div>
+                                        <div class="text-sm text-muted-foreground font-semibold">Responsable</div>
+                                        <div class="text-lg font-bold text-foreground">${product.project.owner_name}</div>
+                                    </div>
+                                </div>
+                                <div class="flex items-center bg-card px-4 py-3 rounded-lg border border-border">
+                                    <i class="fas fa-building mr-3 text-primary text-xl p-2 bg-primary/10 rounded-lg"></i>
+                                    <div>
+                                        <div class="text-sm text-muted-foreground font-semibold">Institución</div>
+                                        <div class="text-lg font-bold text-foreground">${product.project.institution || 'Sin institución'}</div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </section>
                     ` : ''}
                     
-                    <!-- Autores y Colaboradores -->
-                    <section>
-                        <h2 class="text-xl font-semibold text-foreground mb-4 border-b border-border pb-2" style="font-family: var(--font-sans);">
+                    <!-- Autores y Colaboradores Mejorado -->
+                    <section class="bg-card/50 p-8 rounded-xl border-2 border-border">
+                        <h2 class="text-3xl font-bold text-foreground mb-8 flex items-center pb-4 border-b-2 border-border" style="font-family: var(--font-sans); color: var(--primary);">
+                            <i class="fas fa-users mr-4 p-3 bg-primary/10 rounded-lg text-2xl" style="color: var(--primary);"></i>
                             Autores y Colaboradores
+                            ${product.authors?.length ? `<span class="ml-4 px-4 py-2 text-lg bg-primary/20 text-primary rounded-full">${product.authors.length}</span>` : ''}
                         </h2>
-                        <div class="bg-muted/20 p-6 rounded-lg">
+                        <div class="bg-background p-8 rounded-xl">
                             ${authorsList}
                         </div>
                     </section>
@@ -724,27 +841,43 @@ function showProductModal(product) {
                 </div>
             </div>
             
-            <!-- Pie de página con metadata -->
-            <div class="px-8 py-4 bg-muted/30 border-t border-border">
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-muted-foreground">
-                    <div class="space-y-1">
+            <!-- Pie de página con metadata mejorada -->
+            <div class="px-10 py-8 bg-gradient-to-r from-muted/30 to-muted/10 border-t-2 border-border">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 text-base">
+                    <div class="flex flex-col space-y-4 text-muted-foreground">
                         ${product.creator_name ? `
-                        <div class="flex items-center">
-                            <i class="fas fa-user-plus mr-2"></i>Creado por: ${product.creator_name}
+                        <div class="flex items-center bg-background px-6 py-4 rounded-xl border border-border shadow-sm">
+                            <i class="fas fa-user-plus mr-4 text-primary text-xl p-2 bg-primary/10 rounded-lg"></i>
+                            <div>
+                                <div class="text-xs text-muted-foreground uppercase tracking-wide font-semibold">Creado por</div>
+                                <div class="text-lg font-semibold text-foreground">${product.creator_name}</div>
+                            </div>
                         </div>
                         ` : ''}
                         ${product.last_editor_name ? `
-                        <div class="flex items-center">
-                            <i class="fas fa-edit mr-2"></i>Editado por: ${product.last_editor_name}
+                        <div class="flex items-center bg-background px-6 py-4 rounded-xl border border-border shadow-sm">
+                            <i class="fas fa-edit mr-4 text-primary text-xl p-2 bg-primary/10 rounded-lg"></i>
+                            <div>
+                                <div class="text-xs text-muted-foreground uppercase tracking-wide font-semibold">Última Edición por</div>
+                                <div class="text-lg font-semibold text-foreground">${product.last_editor_name}</div>
+                            </div>
                         </div>
                         ` : ''}
                     </div>
-                    <div class="space-y-1 md:text-right">
-                        <div class="flex items-center md:justify-end">
-                            <i class="fas fa-calendar-plus mr-2"></i>Creado: ${formatDate(product.created_at)}
+                    <div class="flex flex-col justify-end space-y-4 md:items-end text-muted-foreground">
+                        <div class="flex items-center bg-background px-6 py-4 rounded-xl border border-border shadow-sm">
+                            <i class="fas fa-calendar-plus mr-4 text-primary text-xl p-2 bg-primary/10 rounded-lg"></i>
+                            <div class="md:text-right">
+                                <div class="text-xs text-muted-foreground uppercase tracking-wide font-semibold">Fecha de Creación</div>
+                                <div class="text-lg font-semibold text-foreground">${formatDate(product.created_at)}</div>
+                            </div>
                         </div>
-                        <div class="flex items-center md:justify-end">
-                            <i class="fas fa-calendar-edit mr-2"></i>Actualizado: ${formatDate(product.updated_at)}
+                        <div class="flex items-center bg-background px-6 py-4 rounded-xl border border-border shadow-sm">
+                            <i class="fas fa-calendar-edit mr-4 text-primary text-xl p-2 bg-primary/10 rounded-lg"></i>
+                            <div class="md:text-right">
+                                <div class="text-xs text-muted-foreground uppercase tracking-wide font-semibold">Última Actualización</div>
+                                <div class="text-lg font-semibold text-foreground">${formatDate(product.updated_at)}</div>
+                            </div>
                         </div>
                     </div>
                 </div>
