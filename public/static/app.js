@@ -321,28 +321,16 @@ function createProductCard(product) {
     return card;
 }
 
+// 🎯 NUEVA FUNCIONALIDAD: Navegación directa a páginas dedicadas
 async function viewProjectDetails(projectId) {
-    try {
-        const response = await axios.get(`${API_BASE}/public/projects/${projectId}`);
-        if (response.data.success) {
-            const project = response.data.data;
-            showProjectModal(project);
-        }
-    } catch (error) {
-        showToast('Error al cargar detalles del proyecto', 'error');
-    }
+    // Navegar directamente a la página dedicada del proyecto
+    window.location.href = `/proyecto/${projectId}`;
 }
 
+// 🎯 NUEVA FUNCIONALIDAD: Navegación directa a páginas dedicadas  
 async function viewProductDetails(productId) {
-    try {
-        const response = await axios.get(`${API_BASE}/public/products/${productId}`);
-        if (response.data.success) {
-            const product = response.data.data;
-            showProductModal(product);
-        }
-    } catch (error) {
-        showToast('Error al cargar detalles del producto', 'error');
-    }
+    // Navegar directamente a la página dedicada del producto
+    window.location.href = `/producto/${productId}`;
 }
 
 function showProjectModal(project) {
@@ -908,16 +896,10 @@ function showCollaboratorDetails(collaboratorId) {
 }
 
 // Función para navegar a proyecto desde producto
+// 🎯 NUEVA FUNCIONALIDAD: Navegación directa a páginas dedicadas
 async function viewProjectFromProduct(projectId) {
-    try {
-        const response = await axios.get(`${API_BASE}/public/projects/${projectId}`);
-        if (response.data.success) {
-            const project = response.data.data;
-            showProjectModal(project);
-        }
-    } catch (error) {
-        showToast('Error al cargar detalles del proyecto asociado', 'error');
-    }
+    // Navegar directamente a la página dedicada del proyecto
+    window.location.href = `/proyecto/${projectId}`;
 }
 
 // Funciones de búsqueda

@@ -999,6 +999,130 @@ app.get('/', (c) => {
   `)
 })
 
+// ========================================
+// 🎯 NUEVAS RUTAS DINÁMICAS PARA PÁGINAS DEDICADAS
+// ========================================
+
+// Página dedicada de proyecto
+app.get('/proyecto/:id', async (c) => {
+  try {
+    const projectId = parseInt(c.req.param('id'));
+    
+    // Obtener datos del proyecto directamente desde la base de datos
+    const project = await c.env.DB.prepare(`
+      SELECT 
+        p.id, p.title, p.abstract, p.keywords, p.introduction, 
+        p.methodology, p.owner_id, p.is_public, p.created_at, p.updated_at,
+        p.status, p.start_date, p.end_date, p.institution, p.funding_source, 
+        p.budget, p.project_code,
+        u.full_name as owner_name, u.email as owner_email
+      FROM projects p 
+      JOIN users u ON p.owner_id = u.id 
+      WHERE p.id = ? AND p.is_public = 1
+    `).bind(projectId).first();
+
+    if (!project) {
+      return c.html(generateErrorPage('Proyecto no encontrado', 'El proyecto solicitado no existe o no es público.'));
+    }
+
+    // Obtener productos públicos del proyecto
+    const products = await c.env.DB.prepare(`
+      SELECT 
+        pr.id, pr.project_id, pr.product_code, pr.product_type, pr.description, 
+        pr.is_public, pr.created_at, pr.updated_at, pr.doi, pr.url, 
+        pr.publication_date, pr.journal, pr.impact_factor, pr.citation_count, 
+        pr.file_url,
+        pc.name as category_name, pc.category_group, pc.impact_weight
+      FROM products pr 
+      LEFT JOIN product_categories pc ON pr.product_type = pc.code
+      WHERE pr.project_id = ? AND pr.is_public = 1
+      ORDER BY pr.created_at DESC
+    `).bind(projectId).all();
+
+    // Obtener colaboradores del proyecto
+    const collaborators = await c.env.DB.prepare(`
+      SELECT 
+        u.id, u.full_name, u.email, u.role,
+        pc.collaboration_role, pc.role_description
+      FROM project_collaborators pc
+      JOIN users u ON pc.user_id = u.id
+      WHERE pc.project_id = ?
+      ORDER BY u.full_name
+    `).bind(projectId).all();
+
+    // Combinar datos
+    const projectWithData = {
+      ...project,
+      products: products.results || [],
+      collaborators: collaborators.results || []
+    };
+    
+    // Generar página HTML completa del proyecto
+    return c.html(generateProjectDetailPage(projectWithData));
+    
+  } catch (error) {
+    console.error('Error cargando página de proyecto:', error);
+    return c.html(generateErrorPage('Error de servidor', 'Hubo un problema al cargar el proyecto.'));
+  }
+})
+
+// Página dedicada de producto
+app.get('/producto/:id', async (c) => {
+  try {
+    const productId = parseInt(c.req.param('id'));
+    
+    // Obtener datos del producto directamente desde la base de datos
+    const product = await c.env.DB.prepare(`
+      SELECT 
+        pr.id, pr.project_id, pr.product_code, pr.product_type, 
+        pr.description, pr.is_public, pr.created_at, pr.updated_at,
+        pr.doi, pr.url, pr.publication_date, pr.journal, pr.impact_factor, 
+        pr.citation_count, pr.file_url, pr.creator_id, pr.last_editor_id, pr.published_by,
+        p.title as project_title, p.abstract as project_abstract, p.owner_id as project_owner_id,
+        pc.name as category_name, pc.description as category_description, 
+        pc.category_group, pc.impact_weight,
+        creator.full_name as creator_name, creator.email as creator_email,
+        editor.full_name as last_editor_name, editor.email as last_editor_email,
+        publisher.full_name as published_by_name, publisher.email as published_by_email
+      FROM products pr 
+      JOIN projects p ON pr.project_id = p.id 
+      LEFT JOIN product_categories pc ON pr.product_type = pc.code
+      LEFT JOIN users creator ON pr.creator_id = creator.id
+      LEFT JOIN users editor ON pr.last_editor_id = editor.id
+      LEFT JOIN users publisher ON pr.published_by = publisher.id
+      WHERE pr.id = ? AND pr.is_public = 1
+    `).bind(productId).first();
+
+    if (!product) {
+      return c.html(generateErrorPage('Producto no encontrado', 'El producto solicitado no existe o no es público.'));
+    }
+
+    // Obtener autores del producto
+    const authors = await c.env.DB.prepare(`
+      SELECT 
+        pa.author_role, pa.contribution_type, pa.author_order,
+        u.id as user_id, u.full_name, u.email, u.role as user_role
+      FROM product_authors pa
+      JOIN users u ON pa.user_id = u.id
+      WHERE pa.product_id = ?
+      ORDER BY pa.author_order ASC, pa.author_role ASC
+    `).bind(productId).all();
+
+    // Combinar datos
+    const productWithData = {
+      ...product,
+      authors: authors.results || []
+    };
+    
+    // Generar página HTML completa del producto
+    return c.html(generateProductDetailPage(productWithData));
+    
+  } catch (error) {
+    console.error('Error cargando página de producto:', error);
+    return c.html(generateErrorPage('Error de servidor', 'Hubo un problema al cargar el producto.'));
+  }
+})
+
 // Página de dashboard (requiere autenticación en el frontend)
 app.get('/dashboard', (c) => {
   return c.html(`
@@ -1224,5 +1348,778 @@ app.get('/dashboard-simple', (c) => {
     </html>
   `)
 })
+
+// ========================================
+// 🎨 FUNCIONES PARA GENERAR PÁGINAS DEDICADAS
+// ========================================
+
+/**
+ * Genera la página HTML completa para un proyecto específico
+ */
+function generateProjectDetailPage(project: any): string {
+  // Sanitizar strings para evitar errores de sintaxis JavaScript
+  const safeTitle = (project.title || '').replace(/'/g, '&#39;').replace(/"/g, '&quot;');
+  const safeAbstract = (project.abstract || '').replace(/'/g, '&#39;').replace(/"/g, '&quot;').substring(0, 160);
+  const safeOwnerName = (project.owner_name || '').replace(/'/g, '&#39;').replace(/"/g, '&quot;');
+  const safeOwnerEmail = project.owner_email || '';
+  const safeProjectCode = project.project_code || '';
+  
+  const keywords = project.keywords ? project.keywords.split(',').map((k: string) => k.trim()) : [];
+  
+  const collaboratorsList = project.collaborators?.map((c: any) => 
+    `<span class="inline-block bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full mr-2 mb-2">${c.full_name} - ${c.collaboration_role || c.role}</span>`
+  ).join('') || '';
+  
+  const productsList = project.products?.map((p: any) => `
+    <div class="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
+      <div class="flex items-start justify-between">
+        <div class="flex-1">
+          <h4 class="font-semibold text-gray-900 mb-1">
+            <a href="/producto/${p.id}" class="hover:text-primary transition-colors">${p.description || 'Sin descripción'}</a>
+          </h4>
+          <p class="text-sm text-gray-600 mb-2">${p.product_code || ''}</p>
+          <div class="flex items-center space-x-4 text-xs text-gray-500">
+            <span class="bg-blue-100 text-blue-800 px-2 py-1 rounded">
+              ${p.category_name || 'Sin categoría'}
+            </span>
+            ${p.publication_date ? `<span><i class="fas fa-calendar mr-1"></i>${new Date(p.publication_date).toLocaleDateString()}</span>` : ''}
+            ${p.impact_factor ? `<span><i class="fas fa-star mr-1"></i>IF: ${p.impact_factor}</span>` : ''}
+          </div>
+        </div>
+        <a href="/producto/${p.id}" class="ctei-btn-secondary text-sm ml-4">Ver Detalle</a>
+      </div>
+    </div>
+  `).join('') || '<p class="text-gray-500 italic">No hay productos publicados aún.</p>';
+
+  return `
+    <!DOCTYPE html>
+    <html lang="es">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>${safeTitle} | CTeI-Manager</title>
+        <meta name="description" content="${safeAbstract}">
+        <meta name="keywords" content="${keywords.join(', ')}">
+        
+        <!-- Open Graph -->
+        <meta property="og:title" content="${safeTitle}">
+        <meta property="og:description" content="${safeAbstract}">
+        <meta property="og:type" content="article">
+        <meta property="og:url" content="/proyecto/${project.id}">
+        
+        <!-- Twitter Card -->
+        <meta name="twitter:card" content="summary_large_image">
+        <meta name="twitter:title" content="${safeTitle}">
+        <meta name="twitter:description" content="${safeAbstract}">
+        
+        <script src="https://cdn.tailwindcss.com"></script>
+        <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
+        <link href="/static/styles.css" rel="stylesheet">
+        
+        <script>
+          tailwind.config = {
+            theme: {
+              extend: {
+                colors: {
+                  'primary': 'var(--color-primary)',
+                  'secondary': 'var(--color-secondary)', 
+                  'accent': 'var(--color-accent)',
+                  'background': 'var(--color-background)',
+                  'foreground': 'var(--color-foreground)',
+                  'card': 'var(--color-card)',
+                  'muted': 'var(--color-muted)',
+                  'border': 'var(--color-border)',
+                }
+              }
+            }
+          }
+        </script>
+    </head>
+    <body class="level-0 bg-background text-foreground">
+        <!-- Navbar -->
+        <nav class="ctei-navbar sticky top-0 z-50">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex justify-between h-16">
+                    <div class="flex items-center">
+                        <a href="/" class="flex items-center">
+                            <h1 class="text-xl font-bold text-foreground">
+                                <i class="fas fa-dna mr-2 text-primary"></i>
+                                CTeI-Manager
+                            </h1>
+                        </a>
+                    </div>
+                    <div class="flex items-center space-x-4">
+                        <a href="/#projects" class="ctei-navbar-link">Proyectos</a>
+                        <a href="/#products" class="ctei-navbar-link">Productos</a>
+                        <a href="/" class="ctei-btn-secondary">
+                            <i class="fas fa-home mr-2"></i>Inicio
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Breadcrumb -->
+        <div class="bg-muted border-b">
+            <div class="max-w-6xl mx-auto px-4 py-3">
+                <nav class="flex" aria-label="Breadcrumb">
+                    <ol class="inline-flex items-center space-x-1 md:space-x-3">
+                        <li class="inline-flex items-center">
+                            <a href="/" class="text-gray-500 hover:text-primary">Inicio</a>
+                        </li>
+                        <li>
+                            <div class="flex items-center">
+                                <i class="fas fa-chevron-right text-gray-400 mx-2"></i>
+                                <a href="/#projects" class="text-gray-500 hover:text-primary">Proyectos</a>
+                            </div>
+                        </li>
+                        <li aria-current="page">
+                            <div class="flex items-center">
+                                <i class="fas fa-chevron-right text-gray-400 mx-2"></i>
+                                <span class="text-foreground font-medium">${project.title}</span>
+                            </div>
+                        </li>
+                    </ol>
+                </nav>
+            </div>
+        </div>
+
+        <!-- Hero Banner -->
+        <section class="relative bg-gradient-to-r from-primary/10 to-accent/10 py-16">
+            <div class="absolute inset-0 scientific-pattern opacity-10"></div>
+            <div class="relative max-w-6xl mx-auto px-4">
+                <div class="text-center mb-8">
+                    <!-- Estado y código del proyecto -->
+                    <div class="flex items-center justify-center space-x-4 mb-4">
+                        <span class="ctei-badge ctei-badge-${project.status === 'ACTIVE' ? 'success' : 'warning'}">
+                            <i class="fas fa-circle mr-2"></i>${project.status === 'ACTIVE' ? 'Activo' : 'En Planificación'}
+                        </span>
+                        <span class="text-muted text-sm font-mono">${project.project_code}</span>
+                    </div>
+                    
+                    <!-- Título principal -->
+                    <h1 class="text-4xl md:text-5xl font-bold text-foreground mb-6 leading-tight">
+                        ${safeTitle}
+                    </h1>
+                    
+                    <!-- Líder del proyecto -->
+                    <div class="flex items-center justify-center text-muted mb-6">
+                        <i class="fas fa-user-tie mr-2"></i>
+                        <span>Liderado por <strong class="text-foreground">${safeOwnerName}</strong></span>
+                        <span class="mx-2">•</span>
+                        <span>${project.institution || 'Institución CTeI'}</span>
+                    </div>
+                    
+                    <!-- CTA Principal -->
+                    <div class="flex items-center justify-center space-x-4">
+                        ${project.owner_email ? `
+                            <a href="mailto:${safeOwnerEmail}?subject=Consulta sobre proyecto" class="ctei-btn-primary">
+                                <i class="fas fa-envelope mr-2"></i>Contactar Líder
+                            </a>
+                        ` : ''}
+                        <button class="ctei-btn-secondary" onclick="navigator.share ? navigator.share({title: 'Proyecto CTeI', url: window.location.href}) : navigator.clipboard.writeText(window.location.href)">
+                            <i class="fas fa-share mr-2"></i>Compartir
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Contenido Principal -->
+        <div class="max-w-6xl mx-auto px-4 py-12">
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <!-- Columna Principal (2/3) -->
+                <div class="lg:col-span-2 space-y-8">
+                    <!-- Resumen del Proyecto -->
+                    <section class="ctei-project-card">
+                        <h2 class="text-2xl font-bold mb-4 text-foreground">
+                            <i class="fas fa-info-circle mr-2 text-primary"></i>Resumen del Proyecto
+                        </h2>
+                        <div class="prose prose-lg max-w-none text-muted">
+                            ${project.abstract || '<p class="italic">Resumen no disponible.</p>'}
+                        </div>
+                    </section>
+
+                    <!-- Metodología -->
+                    ${project.methodology ? `
+                    <section class="ctei-project-card">
+                        <h2 class="text-2xl font-bold mb-4 text-foreground">
+                            <i class="fas fa-cogs mr-2 text-primary"></i>Metodología
+                        </h2>
+                        <div class="prose max-w-none text-muted">
+                            ${project.methodology}
+                        </div>
+                    </section>
+                    ` : ''}
+
+                    <!-- Productos Derivados -->
+                    <section class="ctei-project-card">
+                        <h2 class="text-2xl font-bold mb-6 text-foreground">
+                            <i class="fas fa-cube mr-2 text-primary"></i>Productos Científicos
+                            ${project.products?.length ? `<span class="text-lg font-normal text-muted">(${project.products.length})</span>` : ''}
+                        </h2>
+                        <div class="grid gap-4">
+                            ${productsList}
+                        </div>
+                    </section>
+                </div>
+
+                <!-- Sidebar (1/3) -->
+                <div class="space-y-6">
+                    <!-- Ficha Técnica -->
+                    <div class="ctei-project-card">
+                        <h3 class="text-lg font-bold mb-4 text-foreground">
+                            <i class="fas fa-clipboard-list mr-2 text-primary"></i>Información del Proyecto
+                        </h3>
+                        <div class="space-y-3 text-sm">
+                            <div class="flex justify-between">
+                                <span class="text-muted">Líder:</span>
+                                <span class="font-medium text-foreground">${project.owner_name}</span>
+                            </div>
+                            ${project.start_date ? `
+                            <div class="flex justify-between">
+                                <span class="text-muted">Inicio:</span>
+                                <span class="font-medium text-foreground">${formatDate(project.start_date)}</span>
+                            </div>
+                            ` : ''}
+                            ${project.end_date ? `
+                            <div class="flex justify-between">
+                                <span class="text-muted">Finalización:</span>
+                                <span class="font-medium text-foreground">${formatDate(project.end_date)}</span>
+                            </div>
+                            ` : ''}
+                            ${project.funding_source ? `
+                            <div class="flex justify-between">
+                                <span class="text-muted">Financiación:</span>
+                                <span class="font-medium text-foreground">${project.funding_source}</span>
+                            </div>
+                            ` : ''}
+                            ${project.budget ? `
+                            <div class="flex justify-between">
+                                <span class="text-muted">Presupuesto:</span>
+                                <span class="font-medium text-foreground">$${formatCurrency(project.budget)}</span>
+                            </div>
+                            ` : ''}
+                        </div>
+                    </div>
+
+                    <!-- Palabras Clave -->
+                    ${keywords.length > 0 ? `
+                    <div class="ctei-project-card">
+                        <h3 class="text-lg font-bold mb-4 text-foreground">
+                            <i class="fas fa-tags mr-2 text-primary"></i>Palabras Clave
+                        </h3>
+                        <div class="flex flex-wrap gap-2">
+                            ${keywords.map(keyword => `
+                                <span class="inline-block bg-accent/20 text-accent-foreground text-xs px-3 py-1 rounded-full">
+                                    ${keyword}
+                                </span>
+                            `).join('')}
+                        </div>
+                    </div>
+                    ` : ''}
+
+                    <!-- Equipo Colaborador -->
+                    ${project.collaborators?.length > 0 ? `
+                    <div class="ctei-project-card">
+                        <h3 class="text-lg font-bold mb-4 text-foreground">
+                            <i class="fas fa-users mr-2 text-primary"></i>Equipo Colaborador
+                        </h3>
+                        <div class="space-y-2">
+                            ${collaboratorsList}
+                        </div>
+                    </div>
+                    ` : ''}
+                </div>
+            </div>
+        </div>
+
+        <!-- Proyectos Relacionados -->
+        <section class="bg-muted py-16">
+            <div class="max-w-6xl mx-auto px-4">
+                <h2 class="text-3xl font-bold text-center mb-12 text-foreground">
+                    <i class="fas fa-network-wired mr-2 text-primary"></i>Explora Más Proyectos
+                </h2>
+                <div id="related-projects" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <!-- Se cargarán dinámicamente -->
+                </div>
+                <div class="text-center mt-8">
+                    <a href="/#projects" class="ctei-btn-primary">
+                        <i class="fas fa-arrow-left mr-2"></i>Ver Todos los Proyectos
+                    </a>
+                </div>
+            </div>
+        </section>
+
+        <!-- Footer -->
+        <footer class="bg-background border-t py-8">
+            <div class="max-w-6xl mx-auto px-4 text-center text-muted">
+                <p>&copy; 2025 CTeI-Manager - Sistema Departamental de Ciencias del Chocó</p>
+                <p class="mt-2 text-sm">Impulsando la investigación y la innovación científica</p>
+            </div>
+        </footer>
+
+        <script>
+            // Cargar proyectos relacionados
+            document.addEventListener('DOMContentLoaded', async function() {
+                try {
+                    const response = await fetch('/api/public/projects?limit=3');
+                    const data = await response.json();
+                    if (data.success && data.data.projects) {
+                        const container = document.getElementById('related-projects');
+                        if (container) {
+                            container.innerHTML = data.data.projects
+                                .slice(0, 3)
+                                .map(p => \`
+                                    <div class="ctei-project-card hover:shadow-lg transition-shadow">
+                                        <h3 class="font-bold mb-2">
+                                            <a href="/proyecto/\${p.id}" class="hover:text-primary transition-colors">\${p.title || 'Sin título'}</a>
+                                        </h3>
+                                        <p class="text-muted text-sm mb-3">\${(p.abstract || '').substring(0, 100)}...</p>
+                                        <div class="flex justify-between items-center">
+                                            <span class="text-xs text-muted">\${p.owner_name || 'Sin autor'}</span>
+                                            <a href="/proyecto/\${p.id}" class="ctei-btn-secondary text-sm">Ver Proyecto</a>
+                                        </div>
+                                    </div>
+                                \`).join('');
+                        }
+                    }
+                } catch (error) {
+                    console.error('Error loading related projects:', error);
+                }
+            });
+        </script>
+    </body>
+    </html>
+  `;
+}
+
+/**
+ * Genera la página HTML completa para un producto específico
+ */
+function generateProductDetailPage(product: any): string {
+  // Sanitizar strings
+  const safeDescription = (product.description || 'Sin descripción').replace(/'/g, '&#39;').replace(/"/g, '&quot;');
+  const safeCode = (product.product_code || '').replace(/'/g, '&#39;').replace(/"/g, '&quot;');
+  const safeCategoryName = (product.category_name || 'Sin categoría').replace(/'/g, '&#39;').replace(/"/g, '&quot;');
+  const safeProjectTitle = (product.project_title || '').replace(/'/g, '&#39;').replace(/"/g, '&quot;');
+  
+  const authorsList = product.authors?.map((a: any) => `
+    <div class="flex items-center justify-between p-3 bg-gray-50 rounded">
+        <div>
+            <p class="font-medium text-foreground">${a.full_name || 'Sin nombre'}</p>
+            <p class="text-sm text-muted">${a.author_role || 'Autor'} ${a.contribution_type ? `• ${a.contribution_type}` : ''}</p>
+        </div>
+        ${a.email ? `<a href="mailto:${a.email}" class="text-primary hover:underline text-sm">Contactar</a>` : ''}
+    </div>
+  `).join('') || '<p class="text-muted italic">Información de autores no disponible.</p>';
+
+  return `
+    <!DOCTYPE html>
+    <html lang="es">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>${safeDescription} | CTeI-Manager</title>
+        <meta name="description" content="${safeDescription} - Producto científico del proyecto ${safeProjectTitle}">
+        
+        <!-- Open Graph -->
+        <meta property="og:title" content="${safeDescription}">
+        <meta property="og:description" content="Producto científico: ${safeCategoryName}">
+        <meta property="og:type" content="article">
+        <meta property="og:url" content="/producto/${product.id}">
+        
+        <script src="https://cdn.tailwindcss.com"></script>
+        <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
+        <link href="/static/styles.css" rel="stylesheet">
+        
+        <script>
+          tailwind.config = {
+            theme: {
+              extend: {
+                colors: {
+                  'primary': 'var(--color-primary)',
+                  'secondary': 'var(--color-secondary)', 
+                  'accent': 'var(--color-accent)',
+                  'background': 'var(--color-background)',
+                  'foreground': 'var(--color-foreground)',
+                  'card': 'var(--color-card)',
+                  'muted': 'var(--color-muted)',
+                  'border': 'var(--color-border)',
+                }
+              }
+            }
+          }
+        </script>
+    </head>
+    <body class="level-0 bg-background text-foreground">
+        <!-- Navbar -->
+        <nav class="ctei-navbar sticky top-0 z-50">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex justify-between h-16">
+                    <div class="flex items-center">
+                        <a href="/" class="flex items-center">
+                            <h1 class="text-xl font-bold text-foreground">
+                                <i class="fas fa-dna mr-2 text-primary"></i>
+                                CTeI-Manager
+                            </h1>
+                        </a>
+                    </div>
+                    <div class="flex items-center space-x-4">
+                        <a href="/#products" class="ctei-navbar-link">Productos</a>
+                        <a href="/#projects" class="ctei-navbar-link">Proyectos</a>
+                        <a href="/" class="ctei-btn-secondary">
+                            <i class="fas fa-home mr-2"></i>Inicio
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Breadcrumb -->
+        <div class="bg-muted border-b">
+            <div class="max-w-6xl mx-auto px-4 py-3">
+                <nav class="flex" aria-label="Breadcrumb">
+                    <ol class="inline-flex items-center space-x-1 md:space-x-3">
+                        <li class="inline-flex items-center">
+                            <a href="/" class="text-gray-500 hover:text-primary">Inicio</a>
+                        </li>
+                        <li>
+                            <div class="flex items-center">
+                                <i class="fas fa-chevron-right text-gray-400 mx-2"></i>
+                                <a href="/#products" class="text-gray-500 hover:text-primary">Productos</a>
+                            </div>
+                        </li>
+                        ${product.project_title ? `
+                        <li>
+                            <div class="flex items-center">
+                                <i class="fas fa-chevron-right text-gray-400 mx-2"></i>
+                                <a href="/proyecto/${product.project_id}" class="text-gray-500 hover:text-primary">${product.project_title}</a>
+                            </div>
+                        </li>
+                        ` : ''}
+                        <li aria-current="page">
+                            <div class="flex items-center">
+                                <i class="fas fa-chevron-right text-gray-400 mx-2"></i>
+                                <span class="text-foreground font-medium">${product.product_code}</span>
+                            </div>
+                        </li>
+                    </ol>
+                </nav>
+            </div>
+        </div>
+
+        <!-- Hero Banner -->
+        <section class="relative bg-gradient-to-r from-accent/10 to-primary/10 py-16">
+            <div class="absolute inset-0 scientific-pattern opacity-10"></div>
+            <div class="relative max-w-6xl mx-auto px-4 text-center">
+                <div class="mb-4">
+                    <span class="ctei-badge ctei-badge-${getCategoryColorJS(product.category_group)}">
+                        <i class="fas fa-cube mr-2"></i>${product.category_name}
+                    </span>
+                </div>
+                
+                <h1 class="text-4xl md:text-5xl font-bold text-foreground mb-6 leading-tight">
+                    ${safeDescription}
+                </h1>
+                
+                <div class="flex items-center justify-center text-muted mb-6">
+                    <span class="font-mono text-lg">${safeCode}</span>
+                    ${product.publication_date ? `
+                        <span class="mx-2">•</span>
+                        <span>Publicado ${new Date(product.publication_date).toLocaleDateString()}</span>
+                    ` : ''}
+                </div>
+                
+                <div class="flex items-center justify-center space-x-4">
+                    ${product.doi ? `
+                        <a href="https://doi.org/${product.doi}" target="_blank" class="ctei-btn-primary">
+                            <i class="fas fa-external-link-alt mr-2"></i>Ver DOI
+                        </a>
+                    ` : ''}
+                    ${product.url ? `
+                        <a href="${product.url}" target="_blank" class="ctei-btn-secondary">
+                            <i class="fas fa-link mr-2"></i>Enlace Externo
+                        </a>
+                    ` : ''}
+                    <button class="ctei-btn-secondary" onclick="navigator.share ? navigator.share({title: 'Producto CTeI', url: window.location.href}) : navigator.clipboard.writeText(window.location.href)">
+                        <i class="fas fa-share mr-2"></i>Compartir
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Contenido Principal -->
+        <div class="max-w-6xl mx-auto px-4 py-12">
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <!-- Columna Principal -->
+                <div class="lg:col-span-2 space-y-8">
+                    <!-- Información del Producto -->
+                    <section class="ctei-project-card">
+                        <h2 class="text-2xl font-bold mb-6 text-foreground">
+                            <i class="fas fa-info-circle mr-2 text-primary"></i>Información del Producto
+                        </h2>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            ${product.journal ? `
+                            <div class="bg-gray-50 p-4 rounded-lg">
+                                <h4 class="font-semibold text-foreground mb-2">
+                                    <i class="fas fa-journal-whills mr-2 text-primary"></i>Revista/Editorial
+                                </h4>
+                                <p class="text-muted">${product.journal}</p>
+                            </div>
+                            ` : ''}
+                            
+                            ${product.impact_factor ? `
+                            <div class="bg-gray-50 p-4 rounded-lg">
+                                <h4 class="font-semibold text-foreground mb-2">
+                                    <i class="fas fa-star mr-2 text-primary"></i>Factor de Impacto
+                                </h4>
+                                <p class="text-muted font-mono text-lg">${product.impact_factor}</p>
+                            </div>
+                            ` : ''}
+                            
+                            ${product.citation_count ? `
+                            <div class="bg-gray-50 p-4 rounded-lg">
+                                <h4 class="font-semibold text-foreground mb-2">
+                                    <i class="fas fa-quote-right mr-2 text-primary"></i>Citas
+                                </h4>
+                                <p class="text-muted font-mono text-lg">${product.citation_count}</p>
+                            </div>
+                            ` : ''}
+                            
+                            <div class="bg-gray-50 p-4 rounded-lg">
+                                <h4 class="font-semibold text-foreground mb-2">
+                                    <i class="fas fa-weight-hanging mr-2 text-primary"></i>Peso de Impacto
+                                </h4>
+                                <p class="text-muted">${product.impact_weight || 'No especificado'}</p>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- Autores -->
+                    <section class="ctei-project-card">
+                        <h2 class="text-2xl font-bold mb-6 text-foreground">
+                            <i class="fas fa-users mr-2 text-primary"></i>Autores
+                        </h2>
+                        <div class="space-y-3">
+                            ${authorsList}
+                        </div>
+                    </section>
+
+                    <!-- Proyecto Asociado -->
+                    ${product.project_title ? `
+                    <section class="ctei-project-card">
+                        <h2 class="text-2xl font-bold mb-6 text-foreground">
+                            <i class="fas fa-project-diagram mr-2 text-primary"></i>Proyecto Asociado
+                        </h2>
+                        <div class="bg-gradient-to-r from-primary/5 to-accent/5 p-6 rounded-lg border">
+                            <h3 class="text-lg font-semibold mb-2">
+                                <a href="/proyecto/${product.project_id}" class="hover:text-primary transition-colors">
+                                    ${product.project_title}
+                                </a>
+                            </h3>
+                            ${product.project_abstract ? `
+                                <p class="text-muted mb-4">${product.project_abstract.substring(0, 200)}...</p>
+                            ` : ''}
+                            <a href="/proyecto/${product.project_id}" class="ctei-btn-secondary">
+                                <i class="fas fa-arrow-right mr-2"></i>Ver Proyecto Completo
+                            </a>
+                        </div>
+                    </section>
+                    ` : ''}
+                </div>
+
+                <!-- Sidebar -->
+                <div class="space-y-6">
+                    <!-- Detalles Técnicos -->
+                    <div class="ctei-project-card">
+                        <h3 class="text-lg font-bold mb-4 text-foreground">
+                            <i class="fas fa-clipboard-list mr-2 text-primary"></i>Detalles Técnicos
+                        </h3>
+                        <div class="space-y-3 text-sm">
+                            <div class="flex justify-between">
+                                <span class="text-muted">Código:</span>
+                                <span class="font-mono text-foreground">${product.product_code}</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-muted">Categoría:</span>
+                                <span class="font-medium text-foreground">${product.category_name}</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-muted">Grupo:</span>
+                                <span class="font-medium text-foreground">${product.category_group}</span>
+                            </div>
+                            ${product.publication_date ? `
+                            <div class="flex justify-between">
+                                <span class="text-muted">Publicación:</span>
+                                <span class="font-medium text-foreground">${formatDateJS(product.publication_date)}</span>
+                            </div>
+                            ` : ''}
+                            ${product.created_at ? `
+                            <div class="flex justify-between">
+                                <span class="text-muted">Registrado:</span>
+                                <span class="font-medium text-foreground">${formatDateJS(product.created_at)}</span>
+                            </div>
+                            ` : ''}
+                        </div>
+                    </div>
+
+                    <!-- Enlaces Externos -->
+                    ${(product.doi || product.url || product.file_url) ? `
+                    <div class="ctei-project-card">
+                        <h3 class="text-lg font-bold mb-4 text-foreground">
+                            <i class="fas fa-external-link-alt mr-2 text-primary"></i>Enlaces
+                        </h3>
+                        <div class="space-y-2">
+                            ${product.doi ? `
+                                <a href="https://doi.org/${product.doi}" target="_blank" class="flex items-center p-3 bg-blue-50 hover:bg-blue-100 rounded transition-colors">
+                                    <i class="fas fa-fingerprint mr-3 text-blue-600"></i>
+                                    <span class="text-blue-800">Ver en DOI</span>
+                                </a>
+                            ` : ''}
+                            ${product.url ? `
+                                <a href="${product.url}" target="_blank" class="flex items-center p-3 bg-green-50 hover:bg-green-100 rounded transition-colors">
+                                    <i class="fas fa-globe mr-3 text-green-600"></i>
+                                    <span class="text-green-800">Sitio Web</span>
+                                </a>
+                            ` : ''}
+                            ${product.file_url ? `
+                                <a href="${product.file_url}" target="_blank" class="flex items-center p-3 bg-purple-50 hover:bg-purple-100 rounded transition-colors">
+                                    <i class="fas fa-download mr-3 text-purple-600"></i>
+                                    <span class="text-purple-800">Descargar Archivo</span>
+                                </a>
+                            ` : ''}
+                        </div>
+                    </div>
+                    ` : ''}
+                </div>
+            </div>
+        </div>
+
+        <!-- Productos Relacionados -->
+        <section class="bg-muted py-16">
+            <div class="max-w-6xl mx-auto px-4">
+                <h2 class="text-3xl font-bold text-center mb-12 text-foreground">
+                    <i class="fas fa-cubes mr-2 text-primary"></i>Otros Productos Científicos
+                </h2>
+                <div id="related-products" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <!-- Se cargarán dinámicamente -->
+                </div>
+                <div class="text-center mt-8">
+                    <a href="/#products" class="ctei-btn-primary">
+                        <i class="fas fa-arrow-left mr-2"></i>Ver Todos los Productos
+                    </a>
+                </div>
+            </div>
+        </section>
+
+        <!-- Footer -->
+        <footer class="bg-background border-t py-8">
+            <div class="max-w-6xl mx-auto px-4 text-center text-muted">
+                <p>&copy; 2025 CTeI-Manager - Sistema Departamental de Ciencias del Chocó</p>
+                <p class="mt-2 text-sm">Impulsando la investigación y la innovación científica</p>
+            </div>
+        </footer>
+
+        <script>
+            document.addEventListener('DOMContentLoaded', async function() {
+                try {
+                    const response = await fetch('/api/public/products?limit=3');
+                    const data = await response.json();
+                    if (data.success && data.data.products) {
+                        const container = document.getElementById('related-products');
+                        if (container) {
+                            container.innerHTML = data.data.products
+                                .slice(0, 3)
+                                .map(p => \`
+                                    <div class="ctei-project-card hover:shadow-lg transition-shadow">
+                                        <div class="mb-3">
+                                            <span class="ctei-badge ctei-badge-primary">
+                                                \${p.category_name || 'Sin categoría'}
+                                            </span>
+                                        </div>
+                                        <h3 class="font-bold mb-2">
+                                            <a href="/producto/\${p.id}" class="hover:text-primary transition-colors">
+                                                \${p.description || 'Sin descripción'}
+                                            </a>
+                                        </h3>
+                                        <p class="text-muted text-sm mb-3">\${p.product_code || ''}</p>
+                                        <div class="flex justify-between items-center">
+                                            <span class="text-xs text-muted">\${p.project_title || 'Sin proyecto'}</span>
+                                            <a href="/producto/\${p.id}" class="ctei-btn-secondary text-sm">Ver Producto</a>
+                                        </div>
+                                    </div>
+                                \`).join('');
+                        }
+                    }
+                } catch (error) {
+                    console.error('Error loading related products:', error);
+                }
+            });
+        </script>
+    </body>
+    </html>
+  `;
+}
+
+/**
+ * Genera página de error personalizada
+ */
+function generateErrorPage(title: string, message: string): string {
+  return `
+    <!DOCTYPE html>
+    <html lang="es">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>${title} | CTeI-Manager</title>
+        <script src="https://cdn.tailwindcss.com"></script>
+        <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
+        <link href="/static/styles.css" rel="stylesheet">
+    </head>
+    <body class="level-0 bg-background text-foreground">
+        <nav class="ctei-navbar">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex justify-between h-16">
+                    <div class="flex items-center">
+                        <a href="/" class="flex items-center">
+                            <h1 class="text-xl font-bold text-foreground">
+                                <i class="fas fa-dna mr-2 text-primary"></i>
+                                CTeI-Manager
+                            </h1>
+                        </a>
+                    </div>
+                    <div class="flex items-center">
+                        <a href="/" class="ctei-btn-secondary">
+                            <i class="fas fa-home mr-2"></i>Inicio
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </nav>
+        
+        <div class="min-h-screen flex items-center justify-center bg-background">
+            <div class="max-w-md mx-auto text-center">
+                <div class="mb-8">
+                    <i class="fas fa-exclamation-triangle text-6xl text-yellow-500 mb-4"></i>
+                    <h1 class="text-3xl font-bold text-foreground mb-4">${title}</h1>
+                    <p class="text-muted mb-8">${message}</p>
+                </div>
+                
+                <div class="space-y-4">
+                    <a href="/" class="ctei-btn-primary block">
+                        <i class="fas fa-home mr-2"></i>Volver al Inicio
+                    </a>
+                    <button onclick="window.history.back()" class="ctei-btn-secondary block w-full">
+                        <i class="fas fa-arrow-left mr-2"></i>Página Anterior
+                    </button>
+                </div>
+            </div>
+        </div>
+    </body>
+    </html>
+  `;
+}
 
 export default app
