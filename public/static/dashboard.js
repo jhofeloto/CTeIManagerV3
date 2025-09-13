@@ -107,6 +107,13 @@ function renderDashboard() {
     const isAdmin = DashboardState.user.role === 'ADMIN';
     const isInvestigator = DashboardState.user.role === 'INVESTIGATOR' || isAdmin;
     
+    // DEBUG: Logging para identificar problemas de roles
+    console.log('🔍 DASHBOARD DEBUG:');
+    console.log('   - User:', DashboardState.user);
+    console.log('   - User Role:', DashboardState.user?.role);
+    console.log('   - isAdmin:', isAdmin);
+    console.log('   - isInvestigator:', isInvestigator);
+    
     app.innerHTML = `
         <!-- Navbar -->
         <nav class="bg-card shadow-lg border-b border-border">
@@ -232,6 +239,15 @@ function renderDashboard() {
                             >
                                 <i class="fas fa-chart-line mr-3"></i>
                                 Monitoreo en Tiempo Real
+                            </button>
+                        </li>
+                        <li>
+                            <button 
+                                onclick="debugMonitoringView()" 
+                                class="nav-item w-full flex items-center px-3 py-2 text-left rounded-lg hover:bg-red-100 hover:text-red-700 transition-colors border border-red-200"
+                            >
+                                <i class="fas fa-bug mr-3"></i>
+                                🔧 Debug Monitoreo
                             </button>
                         </li>
                         <li>
@@ -1562,6 +1578,126 @@ async function updateProfile(event) {
         // Restaurar botón
         submitButton.disabled = false;
         submitButton.innerHTML = originalText;
+    }
+}
+
+// ===== FUNCIÓN DE DEBUG PARA MONITOREO =====
+async function debugMonitoringView() {
+    console.log('🔧 DEBUG: Iniciando debug de monitoreo');
+    
+    const content = document.getElementById('content');
+    
+    content.innerHTML = `
+        <div class="space-y-6">
+            <div class="ctei-content-card">
+                <div class="ctei-content-card-header">
+                    <div class="ctei-content-card-title">
+                        🔧 Debug: Sistema de Monitoreo en Tiempo Real
+                    </div>
+                    <div class="ctei-content-card-description">
+                        Diagnóstico del sistema de monitoreo - Fase 2A Semana 2
+                    </div>
+                </div>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Panel de Estado del Usuario -->
+                <div class="ctei-content-card">
+                    <div class="ctei-content-card-header">
+                        <div class="ctei-content-card-title">👤 Estado del Usuario</div>
+                    </div>
+                    <div class="p-4 space-y-2 text-sm">
+                        <div><strong>Email:</strong> ${DashboardState.user?.email || 'No disponible'}</div>
+                        <div><strong>Nombre:</strong> ${DashboardState.user?.full_name || 'No disponible'}</div>
+                        <div><strong>Rol:</strong> <span class="font-mono px-2 py-1 bg-blue-100 rounded">${DashboardState.user?.role || 'No disponible'}</span></div>
+                        <div><strong>Token:</strong> ${DashboardState.token ? '✅ Presente' : '❌ Ausente'}</div>
+                        <div><strong>Es Admin:</strong> ${DashboardState.user?.role === 'ADMIN' ? '✅ SÍ' : '❌ NO'}</div>
+                    </div>
+                </div>
+                
+                <!-- Panel de Tests API -->
+                <div class="ctei-content-card">
+                    <div class="ctei-content-card-header">
+                        <div class="ctei-content-card-title">🔌 Test APIs</div>
+                    </div>
+                    <div class="p-4 space-y-3">
+                        <button onclick="testMonitoringAPIDebug()" class="w-full bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600">
+                            Test API Monitoreo
+                        </button>
+                        <button onclick="showView('monitoring')" class="w-full bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
+                            Cargar Monitoreo Real
+                        </button>
+                        <button onclick="loadMonitoringOverview()" class="w-full bg-purple-500 text-white px-4 py-2 rounded hover:bg-purple-600">
+                            Test Función loadMonitoringOverview()
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Panel de Resultados -->
+            <div class="ctei-content-card">
+                <div class="ctei-content-card-header">
+                    <div class="ctei-content-card-title">📊 Resultados de Pruebas</div>
+                </div>
+                <div id="debug-results" class="p-4 min-h-[200px] bg-gray-50 rounded">
+                    <p class="text-gray-500">Los resultados de las pruebas aparecerán aquí...</p>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+async function testMonitoringAPIDebug() {
+    const resultsDiv = document.getElementById('debug-results');
+    resultsDiv.innerHTML = '<div class="animate-pulse">🔄 Probando API de monitoreo...</div>';
+    
+    try {
+        console.log('🔧 Probando API con token:', DashboardState.token);
+        
+        const response = await axios.get('/api/admin/monitoring/overview');
+        
+        resultsDiv.innerHTML = \`
+            <div class="space-y-4">
+                <h3 class="text-lg font-semibold text-green-600">✅ API Response Exitosa</h3>
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                    <div class="bg-white p-3 rounded">
+                        <div class="font-semibold">Proyectos</div>
+                        <div class="text-2xl text-blue-600">\${response.data.data.system_metrics.total_projects}</div>
+                    </div>
+                    <div class="bg-white p-3 rounded">
+                        <div class="font-semibold">Productos</div>
+                        <div class="text-2xl text-green-600">\${response.data.data.system_metrics.total_products}</div>
+                    </div>
+                    <div class="bg-white p-3 rounded">
+                        <div class="font-semibold">Investigadores</div>
+                        <div class="text-2xl text-purple-600">\${response.data.data.system_metrics.total_researchers}</div>
+                    </div>
+                    <div class="bg-white p-3 rounded">
+                        <div class="font-semibold">Líneas de Acción</div>
+                        <div class="text-2xl text-orange-600">\${response.data.data.action_line_metrics.length}</div>
+                    </div>
+                </div>
+                <details class="mt-4">
+                    <summary class="cursor-pointer font-medium">Ver JSON completo</summary>
+                    <pre class="mt-2 p-4 bg-gray-100 rounded text-xs overflow-auto max-h-64">\${JSON.stringify(response.data.data, null, 2)}</pre>
+                </details>
+            </div>
+        \`;
+        
+    } catch (error) {
+        console.error('❌ Error en API:', error);
+        resultsDiv.innerHTML = \`
+            <div class="text-red-600">
+                <h3 class="text-lg font-semibold">❌ Error en API</h3>
+                <p><strong>Status:</strong> \${error.response?.status || 'N/A'}</p>
+                <p><strong>Mensaje:</strong> \${error.message}</p>
+                <p><strong>URL:</strong> /api/admin/monitoring/overview</p>
+                <details class="mt-2">
+                    <summary class="cursor-pointer">Ver error completo</summary>
+                    <pre class="mt-2 p-4 bg-red-50 rounded text-xs overflow-auto max-h-32">\${JSON.stringify(error.response?.data || error, null, 2)}</pre>
+                </details>
+            </div>
+        \`;
     }
 }
 

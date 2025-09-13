@@ -31,6 +31,152 @@ app.get('/test-password-change.html', async (c) => {
   }
 })
 
+// Página de prueba directa del dashboard de monitoreo
+app.get('/monitoring-test.html', async (c) => {
+  return c.html(`<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔧 Test Dashboard Monitoreo - CTeI Manager</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="/static/styles.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/axios@1.6.0/dist/axios.min.js"></script>
+</head>
+<body class="bg-gray-100">
+    <div class="container mx-auto p-8">
+        <h1 class="text-3xl font-bold mb-6">🔧 Test Dashboard de Monitoreo</h1>
+        <div class="space-y-4">
+            <div class="bg-white p-6 rounded-lg shadow">
+                <h2 class="text-xl font-semibold mb-4">1. Login como Admin</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium mb-2">Email:</label>
+                        <input type="email" id="email" value="test.admin@ctei.edu.co" class="w-full p-2 border rounded">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-2">Password:</label>
+                        <input type="password" id="password" value="admin123" class="w-full p-2 border rounded">
+                    </div>
+                </div>
+                <button onclick="testLogin()" class="mt-4 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
+                    <i class="fas fa-sign-in-alt mr-2"></i>Login & Ir al Dashboard
+                </button>
+            </div>
+            <div class="bg-white p-6 rounded-lg shadow">
+                <h2 class="text-xl font-semibold mb-4">2. Test API Monitoreo</h2>
+                <button onclick="testMonitoringAPI()" class="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600">
+                    <i class="fas fa-chart-line mr-2"></i>Probar API Monitoreo
+                </button>
+                <div id="apiResult" class="mt-4 p-4 bg-gray-100 rounded hidden"></div>
+            </div>
+            <div class="bg-white p-6 rounded-lg shadow">
+                <h2 class="text-xl font-semibold mb-4">3. Test Dashboard Directo</h2>
+                <button onclick="testDashboard()" class="bg-purple-500 text-white px-4 py-2 rounded hover:bg-purple-600">
+                    <i class="fas fa-dashboard mr-2"></i>Cargar Dashboard Monitoreo
+                </button>
+                <div id="dashboardContainer" class="mt-4"></div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        let adminToken = null;
+        
+        async function testLogin() {
+            try {
+                const email = document.getElementById('email').value;
+                const password = document.getElementById('password').value;
+                
+                const response = await axios.post('/api/auth/login', {
+                    email,
+                    password
+                });
+                
+                if (response.data.success) {
+                    adminToken = response.data.data.token;
+                    localStorage.setItem('ctei_token', adminToken);
+                    axios.defaults.headers.common['Authorization'] = \`Bearer \${adminToken}\`;
+                    
+                    alert('✅ Login exitoso! Token guardado. Ir al dashboard?');
+                    if (confirm('¿Ir al dashboard principal?')) {
+                        window.location.href = '/dashboard';
+                    }
+                } else {
+                    alert('❌ Error en login: ' + response.data.error);
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('❌ Error de conexión: ' + error.message);
+            }
+        }
+        
+        async function testMonitoringAPI() {
+            if (!adminToken) {
+                alert('⚠️ Necesitas hacer login primero');
+                return;
+            }
+            
+            try {
+                const response = await axios.get('/api/admin/monitoring/overview', {
+                    headers: { 'Authorization': \`Bearer \${adminToken}\` }
+                });
+                
+                const resultDiv = document.getElementById('apiResult');
+                resultDiv.classList.remove('hidden');
+                resultDiv.innerHTML = \`
+                    <h3 class="font-semibold text-green-600">✅ API Response:</h3>
+                    <p><strong>Proyectos:</strong> \${response.data.data.system_metrics.total_projects}</p>
+                    <p><strong>Productos:</strong> \${response.data.data.system_metrics.total_products}</p>
+                    <p><strong>Investigadores:</strong> \${response.data.data.system_metrics.total_researchers}</p>
+                    <p><strong>Líneas de Acción:</strong> \${response.data.data.action_line_metrics.length}</p>
+                    <pre class="mt-2 text-xs bg-white p-2 rounded overflow-auto max-h-32">\${JSON.stringify(response.data.data.system_metrics, null, 2)}</pre>
+                \`;
+            } catch (error) {
+                document.getElementById('apiResult').innerHTML = \`
+                    <h3 class="font-semibold text-red-600">❌ API Error:</h3>
+                    <p>\${error.message}</p>
+                \`;
+                document.getElementById('apiResult').classList.remove('hidden');
+            }
+        }
+        
+        async function testDashboard() {
+            if (!adminToken) {
+                alert('⚠️ Necesitas hacer login primero');
+                return;
+            }
+            
+            const container = document.getElementById('dashboardContainer');
+            container.innerHTML = \`
+                <div class="bg-blue-50 p-4 rounded">
+                    <h3 class="font-semibold mb-2">🚀 Simulación Dashboard Monitoreo</h3>
+                    <div class="space-y-2">
+                        <div class="bg-white p-2 rounded">📊 Métricas del Sistema</div>
+                        <div class="bg-white p-2 rounded">📈 Líneas de Acción</div>
+                        <div class="bg-white p-2 rounded">⚠️ Proyectos de Atención</div>
+                        <div class="bg-white p-2 rounded">🔄 Auto-refresh: 30s</div>
+                        <button onclick="window.location.href='/dashboard'" class="bg-blue-500 text-white px-3 py-1 rounded text-sm">
+                            Ir al Dashboard Real
+                        </button>
+                    </div>
+                </div>
+            \`;
+        }
+        
+        // Auto-load token si existe
+        const existingToken = localStorage.getItem('ctei_token');
+        if (existingToken) {
+            adminToken = existingToken;
+            axios.defaults.headers.common['Authorization'] = \`Bearer \${existingToken}\`;
+            console.log('🎫 Token existente cargado');
+        }
+    </script>
+</body>
+</html>`);
+});
+
 // Página de login limpia sin interferencias
 app.get('/login-clean.html', async (c) => {
   return c.html(`<!DOCTYPE html>
