@@ -261,6 +261,15 @@ function renderDashboard() {
                         </li>
                         <li>
                             <button 
+                                onclick="showView('files')" 
+                                class="nav-item w-full flex items-center px-3 py-2 text-left rounded-lg hover:bg-accent hover:text-accent-foreground transition-colors"
+                            >
+                                <i class="fas fa-folder-open mr-3"></i>
+                                Gestión de Archivos
+                            </button>
+                        </li>
+                        <li>
+                            <button 
                                 onclick="debugMonitoringView()" 
                                 class="nav-item w-full flex items-center px-3 py-2 text-left rounded-lg hover:bg-red-100 hover:text-red-700 transition-colors border border-red-200"
                             >
@@ -440,6 +449,9 @@ function showView(view) {
             break;
         case 'scoring':
             renderScoringDashboard();
+            break;
+        case 'files':
+            renderFilesDashboard();
             break;
         case 'basic-monitoring':
             if (typeof renderBasicMonitoringView === 'function') renderBasicMonitoringView();
@@ -6642,4 +6654,1348 @@ function clearScoringFilters() {
 
 function refreshScoringDashboard() {
     loadScoringOverview();
+}
+
+// ===== FUNCIONES PARA GESTIÓN DE ARCHIVOS =====
+
+// Renderizar dashboard de archivos
+async function renderFilesDashboard() {
+    try {
+        document.getElementById('content').innerHTML = `
+            <div class="mb-6">
+                <div class="flex justify-between items-center">
+                    <div>
+                        <h2 class="text-2xl font-bold text-foreground">
+                            <i class="fas fa-folder-open mr-2 text-primary"></i>
+                            Gestión de Archivos
+                        </h2>
+                        <p class="text-muted-foreground">Sistema centralizado de archivos para proyectos y productos</p>
+                    </div>
+                    <div class="flex space-x-2">
+                        <button onclick="showUploadModal()" class="bg-primary text-primary-foreground px-4 py-2 rounded-lg hover:opacity-90">
+                            <i class="fas fa-upload mr-2"></i>
+                            Subir Archivo
+                        </button>
+                        <button onclick="refreshFilesDashboard()" class="bg-secondary text-secondary-foreground px-4 py-2 rounded-lg hover:opacity-90">
+                            <i class="fas fa-refresh mr-2"></i>
+                            Actualizar
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Pestañas -->
+            <div class="mb-6">
+                <div class="border-b border-border">
+                    <nav class="flex space-x-8">
+                        <button onclick="setActiveFileTab('overview')" id="tab-overview" class="border-b-2 border-primary text-primary py-2 px-1 text-sm font-medium">
+                            Dashboard
+                        </button>
+                        <button onclick="setActiveFileTab('search')" id="tab-search" class="border-b-2 border-transparent text-muted-foreground hover:text-foreground py-2 px-1 text-sm font-medium">
+                            Buscar Archivos
+                        </button>
+                        <button onclick="setActiveFileTab('projects')" id="tab-projects" class="border-b-2 border-transparent text-muted-foreground hover:text-foreground py-2 px-1 text-sm font-medium">
+                            Por Proyectos
+                        </button>
+                        <button onclick="setActiveFileTab('products')" id="tab-products" class="border-b-2 border-transparent text-muted-foreground hover:text-foreground py-2 px-1 text-sm font-medium">
+                            Por Productos
+                        </button>
+                    </nav>
+                </div>
+            </div>
+
+            <!-- Contenido de pestañas -->
+            <div id="files-tab-content">
+                <!-- El contenido se cargará dinámicamente -->
+            </div>
+        `;
+        
+        // Cargar pestaña por defecto
+        await setActiveFileTab('overview');
+
+    } catch (error) {
+        console.error('Error renderizando dashboard de archivos:', error);
+        showToast('Error al cargar el dashboard de archivos', 'error');
+    }
+}
+
+// Cambiar pestaña activa
+async function setActiveFileTab(tab) {
+    // Actualizar estado visual de las pestañas
+    document.querySelectorAll('[id^="tab-"]').forEach(btn => {
+        btn.className = "border-b-2 border-transparent text-muted-foreground hover:text-foreground py-2 px-1 text-sm font-medium";
+    });
+    document.getElementById(`tab-${tab}`).className = "border-b-2 border-primary text-primary py-2 px-1 text-sm font-medium";
+
+    // Cargar contenido de la pestaña
+    const contentDiv = document.getElementById('files-tab-content');
+    
+    switch (tab) {
+        case 'overview':
+            await loadFilesOverview();
+            break;
+        case 'search':
+            await loadFilesSearch();
+            break;
+        case 'projects':
+            await loadFilesByProjects();
+            break;
+        case 'products':
+            await loadFilesByProducts();
+            break;
+    }
+}
+
+// Cargar vista general de archivos
+async function loadFilesOverview() {
+    try {
+        const response = await axios.get(`${API_BASE}/admin/files/dashboard`);
+        const data = response.data.data;
+
+        document.getElementById('files-tab-content').innerHTML = `
+            <!-- Estadísticas -->
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
+                <div class="bg-card text-card-foreground p-4 rounded-lg border border-border">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm font-medium text-muted-foreground">Total de Archivos</p>
+                            <p class="text-2xl font-bold">${data.statistics.total_files}</p>
+                        </div>
+                        <i class="fas fa-files text-primary text-2xl"></i>
+                    </div>
+                </div>
+                <div class="bg-card text-card-foreground p-4 rounded-lg border border-border">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm font-medium text-muted-foreground">Tamaño Total</p>
+                            <p class="text-2xl font-bold">${data.statistics.total_size_mb} MB</p>
+                        </div>
+                        <i class="fas fa-database text-primary text-2xl"></i>
+                    </div>
+                </div>
+                <div class="bg-card text-card-foreground p-4 rounded-lg border border-border">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm font-medium text-muted-foreground">Documentos</p>
+                            <p class="text-2xl font-bold">${data.files_by_type.find(f => f.file_type === 'document')?.count || 0}</p>
+                        </div>
+                        <i class="fas fa-file-alt text-primary text-2xl"></i>
+                    </div>
+                </div>
+                <div class="bg-card text-card-foreground p-4 rounded-lg border border-border">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm font-medium text-muted-foreground">Imágenes</p>
+                            <p class="text-2xl font-bold">${data.files_by_type.find(f => f.file_type === 'image')?.count || 0}</p>
+                        </div>
+                        <i class="fas fa-image text-primary text-2xl"></i>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <!-- Archivos Recientes -->
+                <div class="bg-card text-card-foreground rounded-lg border border-border">
+                    <div class="p-4 border-b border-border">
+                        <h3 class="font-semibold">Archivos Recientes</h3>
+                        <p class="text-sm text-muted-foreground">Últimos 7 días</p>
+                    </div>
+                    <div class="p-4">
+                        ${data.recent_files.length > 0 ? `
+                            <div class="space-y-3">
+                                ${data.recent_files.slice(0, 5).map(file => `
+                                    <div class="flex items-center justify-between p-2 border border-border rounded hover:bg-muted">
+                                        <div class="flex items-center space-x-3">
+                                            <i class="fas ${getFileIcon(file.file_type)} text-primary"></i>
+                                            <div>
+                                                <p class="font-medium text-sm">${file.original_name}</p>
+                                                <p class="text-xs text-muted-foreground">
+                                                    ${file.uploaded_by_name || 'Usuario desconocido'} • ${formatFileSize(file.file_size)}
+                                                </p>
+                                            </div>
+                                        </div>
+                                        <div class="flex space-x-2">
+                                            <button onclick="viewFileDetails('${file.id}')" class="text-primary hover:text-primary/80">
+                                                <i class="fas fa-eye"></i>
+                                            </button>
+                                            <button onclick="downloadFile('${file.id}')" class="text-primary hover:text-primary/80">
+                                                <i class="fas fa-download"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        ` : '<p class="text-muted-foreground text-center py-8">No hay archivos recientes</p>'}
+                    </div>
+                </div>
+
+                <!-- Archivos Más Grandes -->
+                <div class="bg-card text-card-foreground rounded-lg border border-border">
+                    <div class="p-4 border-b border-border">
+                        <h3 class="font-semibold">Archivos Más Grandes</h3>
+                        <p class="text-sm text-muted-foreground">Top 5 por tamaño</p>
+                    </div>
+                    <div class="p-4">
+                        ${data.largest_files.length > 0 ? `
+                            <div class="space-y-3">
+                                ${data.largest_files.map(file => `
+                                    <div class="flex items-center justify-between p-2 border border-border rounded hover:bg-muted">
+                                        <div class="flex items-center space-x-3">
+                                            <i class="fas ${getFileIcon(file.file_type)} text-primary"></i>
+                                            <div>
+                                                <p class="font-medium text-sm">${file.original_name}</p>
+                                                <p class="text-xs text-muted-foreground">
+                                                    ${file.uploaded_by_name || 'Usuario desconocido'}
+                                                </p>
+                                            </div>
+                                        </div>
+                                        <div class="text-right">
+                                            <p class="font-medium text-sm">${formatFileSize(file.file_size)}</p>
+                                            <div class="flex space-x-2">
+                                                <button onclick="viewFileDetails('${file.id}')" class="text-primary hover:text-primary/80">
+                                                    <i class="fas fa-eye"></i>
+                                                </button>
+                                                <button onclick="downloadFile('${file.id}')" class="text-primary hover:text-primary/80">
+                                                    <i class="fas fa-download"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        ` : '<p class="text-muted-foreground text-center py-8">No hay archivos grandes</p>'}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Distribución por Tipo -->
+            <div class="mt-6 bg-card text-card-foreground rounded-lg border border-border">
+                <div class="p-4 border-b border-border">
+                    <h3 class="font-semibold">Distribución por Tipo de Archivo</h3>
+                </div>
+                <div class="p-4">
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        ${data.files_by_type.map(item => `
+                            <div class="text-center p-3 border border-border rounded">
+                                <i class="fas ${getFileIcon(item.file_type)} text-2xl text-primary mb-2"></i>
+                                <p class="font-medium text-sm capitalize">${item.file_type}</p>
+                                <p class="text-lg font-bold">${item.count}</p>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            </div>
+        `;
+
+    } catch (error) {
+        console.error('Error cargando vista general de archivos:', error);
+        document.getElementById('files-tab-content').innerHTML = `
+            <div class="text-center py-12">
+                <i class="fas fa-exclamation-triangle text-4xl text-destructive mb-4"></i>
+                <p class="text-destructive">Error al cargar las estadísticas de archivos</p>
+                <button onclick="loadFilesOverview()" class="mt-4 bg-primary text-primary-foreground px-4 py-2 rounded-lg">
+                    Intentar de nuevo
+                </button>
+            </div>
+        `;
+    }
+}
+
+// Cargar búsqueda de archivos
+async function loadFilesSearch() {
+    document.getElementById('files-tab-content').innerHTML = `
+        <!-- Filtros de Búsqueda -->
+        <div class="bg-card text-card-foreground rounded-lg border border-border mb-6">
+            <div class="p-4 border-b border-border">
+                <h3 class="font-semibold">Buscar Archivos</h3>
+            </div>
+            <div class="p-4">
+                <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium mb-1">Buscar</label>
+                        <input type="text" id="search-files-query" placeholder="Nombre del archivo..." 
+                               class="w-full p-2 border border-border rounded bg-background">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-1">Tipo</label>
+                        <select id="search-files-type" class="w-full p-2 border border-border rounded bg-background">
+                            <option value="">Todos</option>
+                            <option value="document">Documentos</option>
+                            <option value="image">Imágenes</option>
+                            <option value="project">Proyectos</option>
+                            <option value="product">Productos</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-1">Entidad</label>
+                        <select id="search-files-entity" class="w-full p-2 border border-border rounded bg-background">
+                            <option value="">Todas</option>
+                            <option value="project">Proyectos</option>
+                            <option value="product">Productos</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-1">Desde</label>
+                        <input type="date" id="search-files-from" 
+                               class="w-full p-2 border border-border rounded bg-background">
+                    </div>
+                    <div class="flex items-end space-x-2">
+                        <button onclick="searchFiles()" class="bg-primary text-primary-foreground px-4 py-2 rounded-lg hover:opacity-90">
+                            <i class="fas fa-search mr-2"></i>
+                            Buscar
+                        </button>
+                        <button onclick="clearSearchFiles()" class="bg-secondary text-secondary-foreground px-4 py-2 rounded-lg hover:opacity-90">
+                            <i class="fas fa-times mr-2"></i>
+                            Limpiar
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Resultados de Búsqueda -->
+        <div id="search-results">
+            <div class="text-center py-12">
+                <i class="fas fa-search text-4xl text-muted-foreground mb-4"></i>
+                <p class="text-muted-foreground">Usa los filtros de arriba para buscar archivos</p>
+            </div>
+        </div>
+    `;
+}
+
+// Buscar archivos con filtros
+async function searchFiles(page = 1) {
+    try {
+        const query = document.getElementById('search-files-query').value;
+        const fileType = document.getElementById('search-files-type').value;
+        const entityType = document.getElementById('search-files-entity').value;
+        const dateFrom = document.getElementById('search-files-from').value;
+
+        const params = new URLSearchParams({
+            page: page.toString(),
+            limit: '20'
+        });
+
+        if (query) params.append('search', query);
+        if (fileType) params.append('file_type', fileType);
+        if (entityType) params.append('entity_type', entityType);
+        if (dateFrom) params.append('date_from', dateFrom);
+
+        const response = await axios.get(`${API_BASE}/admin/files/search?${params}`);
+        const data = response.data.data;
+
+        displaySearchResults(data, page);
+
+    } catch (error) {
+        console.error('Error buscando archivos:', error);
+        showToast('Error al buscar archivos', 'error');
+    }
+}
+
+// Mostrar resultados de búsqueda
+function displaySearchResults(data, currentPage) {
+    const { files, pagination } = data;
+
+    document.getElementById('search-results').innerHTML = `
+        ${files.length > 0 ? `
+            <!-- Información de Resultados -->
+            <div class="flex justify-between items-center mb-4">
+                <p class="text-sm text-muted-foreground">
+                    Mostrando ${files.length} de ${pagination.total_items} archivos
+                </p>
+                <div class="flex items-center space-x-2">
+                    <select id="results-per-page" onchange="changeResultsPerPage()" class="text-sm p-1 border border-border rounded bg-background">
+                        <option value="10">10 por página</option>
+                        <option value="20" selected>20 por página</option>
+                        <option value="50">50 por página</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Lista de Archivos -->
+            <div class="bg-card text-card-foreground rounded-lg border border-border">
+                <div class="overflow-x-auto">
+                    <table class="w-full">
+                        <thead class="border-b border-border">
+                            <tr class="text-left">
+                                <th class="p-3 font-medium">Archivo</th>
+                                <th class="p-3 font-medium">Tipo</th>
+                                <th class="p-3 font-medium">Tamaño</th>
+                                <th class="p-3 font-medium">Entidad</th>
+                                <th class="p-3 font-medium">Subido por</th>
+                                <th class="p-3 font-medium">Fecha</th>
+                                <th class="p-3 font-medium">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${files.map(file => `
+                                <tr class="border-b border-border hover:bg-muted">
+                                    <td class="p-3">
+                                        <div class="flex items-center space-x-3">
+                                            <i class="fas ${getFileIcon(file.file_type)} text-primary"></i>
+                                            <div>
+                                                <p class="font-medium">${file.original_name}</p>
+                                                <p class="text-xs text-muted-foreground">${file.filename}</p>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="p-3">
+                                        <span class="px-2 py-1 bg-primary/10 text-primary rounded-full text-xs capitalize">
+                                            ${file.file_type}
+                                        </span>
+                                    </td>
+                                    <td class="p-3">${formatFileSize(file.file_size)}</td>
+                                    <td class="p-3">
+                                        ${file.entity_name ? `
+                                            <div>
+                                                <span class="text-xs text-muted-foreground capitalize">${file.entity_type}</span>
+                                                <p class="text-sm">${file.entity_name}</p>
+                                            </div>
+                                        ` : '<span class="text-muted-foreground">-</span>'}
+                                    </td>
+                                    <td class="p-3">${file.uploaded_by_name || 'Desconocido'}</td>
+                                    <td class="p-3">
+                                        <span class="text-sm">${new Date(file.uploaded_at).toLocaleDateString()}</span>
+                                    </td>
+                                    <td class="p-3">
+                                        <div class="flex space-x-2">
+                                            <button onclick="viewFileDetails('${file.id}')" 
+                                                    class="text-primary hover:text-primary/80" title="Ver detalles">
+                                                <i class="fas fa-eye"></i>
+                                            </button>
+                                            <button onclick="downloadFile('${file.id}')" 
+                                                    class="text-primary hover:text-primary/80" title="Descargar">
+                                                <i class="fas fa-download"></i>
+                                            </button>
+                                            <button onclick="editFileMetadata('${file.id}')" 
+                                                    class="text-accent hover:text-accent/80" title="Editar">
+                                                <i class="fas fa-edit"></i>
+                                            </button>
+                                            <button onclick="deleteFile('${file.id}')" 
+                                                    class="text-destructive hover:text-destructive/80" title="Eliminar">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Paginación -->
+            ${pagination.total_pages > 1 ? `
+                <div class="flex justify-center mt-6">
+                    <div class="flex space-x-2">
+                        ${currentPage > 1 ? `
+                            <button onclick="searchFiles(${currentPage - 1})" 
+                                    class="px-3 py-2 border border-border rounded hover:bg-muted">
+                                <i class="fas fa-chevron-left"></i>
+                            </button>
+                        ` : ''}
+                        
+                        ${Array.from({length: Math.min(5, pagination.total_pages)}, (_, i) => {
+                            const pageNum = Math.max(1, currentPage - 2) + i;
+                            if (pageNum <= pagination.total_pages) {
+                                return `
+                                    <button onclick="searchFiles(${pageNum})" 
+                                            class="px-3 py-2 border border-border rounded hover:bg-muted ${pageNum === currentPage ? 'bg-primary text-primary-foreground' : ''}">
+                                        ${pageNum}
+                                    </button>
+                                `;
+                            }
+                            return '';
+                        }).join('')}
+                        
+                        ${currentPage < pagination.total_pages ? `
+                            <button onclick="searchFiles(${currentPage + 1})" 
+                                    class="px-3 py-2 border border-border rounded hover:bg-muted">
+                                <i class="fas fa-chevron-right"></i>
+                            </button>
+                        ` : ''}
+                    </div>
+                </div>
+            ` : ''}
+        ` : `
+            <div class="text-center py-12">
+                <i class="fas fa-inbox text-4xl text-muted-foreground mb-4"></i>
+                <p class="text-muted-foreground">No se encontraron archivos con los criterios seleccionados</p>
+            </div>
+        `}
+    `;
+}
+
+// Limpiar filtros de búsqueda
+function clearSearchFiles() {
+    document.getElementById('search-files-query').value = '';
+    document.getElementById('search-files-type').value = '';
+    document.getElementById('search-files-entity').value = '';
+    document.getElementById('search-files-from').value = '';
+    
+    document.getElementById('search-results').innerHTML = `
+        <div class="text-center py-12">
+            <i class="fas fa-search text-4xl text-muted-foreground mb-4"></i>
+            <p class="text-muted-foreground">Usa los filtros de arriba para buscar archivos</p>
+        </div>
+    `;
+}
+
+// Mostrar modal de subida de archivos
+function showUploadModal() {
+    const modal = document.createElement('div');
+    modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';
+    modal.innerHTML = `
+        <div class="bg-background rounded-lg shadow-lg max-w-md w-full mx-4">
+            <div class="p-6">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-lg font-semibold">Subir Archivo</h3>
+                    <button onclick="this.closest('.fixed').remove()" class="text-muted-foreground hover:text-foreground">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                
+                <form onsubmit="uploadFile(event)" id="upload-form">
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium mb-2">Tipo de Archivo</label>
+                            <select id="upload-type" required class="w-full p-2 border border-border rounded bg-background">
+                                <option value="">Seleccionar tipo...</option>
+                                <option value="document">Documento</option>
+                                <option value="image">Imagen</option>
+                                <option value="project">Archivo de Proyecto</option>
+                                <option value="product">Archivo de Producto</option>
+                                <option value="general">General</option>
+                            </select>
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium mb-2">ID de Entidad (Opcional)</label>
+                            <input type="text" id="upload-entity-id" placeholder="ID del proyecto o producto..."
+                                   class="w-full p-2 border border-border rounded bg-background">
+                            <p class="text-xs text-muted-foreground mt-1">Deja en blanco para archivos generales</p>
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium mb-2">Archivo</label>
+                            <input type="file" id="upload-file" required 
+                                   class="w-full p-2 border border-border rounded bg-background">
+                            <p class="text-xs text-muted-foreground mt-1">Tamaño máximo: 20MB</p>
+                        </div>
+                    </div>
+                    
+                    <div class="flex justify-end space-x-3 mt-6">
+                        <button type="button" onclick="this.closest('.fixed').remove()" 
+                                class="px-4 py-2 text-muted-foreground border border-border rounded hover:bg-muted">
+                            Cancelar
+                        </button>
+                        <button type="submit" 
+                                class="px-4 py-2 bg-primary text-primary-foreground rounded hover:opacity-90">
+                            <i class="fas fa-upload mr-2"></i>
+                            Subir Archivo
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+}
+
+// Subir archivo
+async function uploadFile(event) {
+    event.preventDefault();
+    
+    const form = event.target;
+    const submitButton = form.querySelector('button[type="submit"]');
+    const originalText = submitButton.innerHTML;
+    
+    try {
+        submitButton.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Subiendo...';
+        submitButton.disabled = true;
+        
+        const fileInput = document.getElementById('upload-file');
+        const typeInput = document.getElementById('upload-type');
+        const entityIdInput = document.getElementById('upload-entity-id');
+        
+        if (!fileInput.files[0]) {
+            throw new Error('Selecciona un archivo');
+        }
+        
+        const formData = new FormData();
+        formData.append('file', fileInput.files[0]);
+        formData.append('type', typeInput.value);
+        formData.append('entityId', entityIdInput.value || 'general');
+        
+        const response = await axios.post(`${API_BASE}/admin/upload-file`, formData, {
+            headers: {
+                'Content-Type': 'multipart/form-data'
+            }
+        });
+        
+        if (response.data.success) {
+            showToast('Archivo subido exitosamente', 'success');
+            form.closest('.fixed').remove();
+            
+            // Actualizar la vista actual
+            const activeTab = document.querySelector('[id^="tab-"].border-primary').id.replace('tab-', '');
+            await setActiveFileTab(activeTab);
+        } else {
+            throw new Error(response.data.error || 'Error al subir archivo');
+        }
+        
+    } catch (error) {
+        console.error('Error subiendo archivo:', error);
+        showToast(error.message || 'Error al subir archivo', 'error');
+        submitButton.innerHTML = originalText;
+        submitButton.disabled = false;
+    }
+}
+
+// Funciones auxiliares
+function getFileIcon(fileType) {
+    const icons = {
+        'document': 'fa-file-alt',
+        'image': 'fa-image',
+        'project': 'fa-project-diagram',
+        'product': 'fa-box',
+        'logo': 'fa-image',
+        'general': 'fa-file'
+    };
+    return icons[fileType] || 'fa-file';
+}
+
+function formatFileSize(bytes) {
+    if (bytes === 0) return '0 B';
+    const k = 1024;
+    const sizes = ['B', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+}
+
+// Placeholder para funciones adicionales que se implementarán
+async function loadFilesByProjects() {
+    try {
+        // Obtener lista de proyectos con archivos
+        const projectsResponse = await axios.get(`${API_BASE}/admin/projects?has_files=true&limit=50`);
+        
+        if (!projectsResponse.data.success) {
+            throw new Error('Error al cargar proyectos');
+        }
+        
+        const projects = projectsResponse.data.data.projects || [];
+        
+        document.getElementById('files-tab-content').innerHTML = `
+            <div class="space-y-6">
+                ${projects.length > 0 ? `
+                    <!-- Resumen -->
+                    <div class="bg-card text-card-foreground p-4 rounded-lg border border-border">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <h3 class="font-semibold">Archivos por Proyectos</h3>
+                                <p class="text-sm text-muted-foreground">${projects.length} proyectos con archivos</p>
+                            </div>
+                            <i class="fas fa-project-diagram text-2xl text-primary"></i>
+                        </div>
+                    </div>
+                    
+                    <!-- Lista de Proyectos -->
+                    <div class="space-y-4">
+                        ${projects.map(project => `
+                            <div class="bg-card text-card-foreground rounded-lg border border-border">
+                                <div class="p-4 border-b border-border">
+                                    <div class="flex items-start justify-between">
+                                        <div class="flex-1">
+                                            <h4 class="font-semibold text-lg">${project.title}</h4>
+                                            <p class="text-sm text-muted-foreground mt-1">${project.abstract || 'Sin descripción'}</p>
+                                            <div class="flex items-center space-x-4 mt-2">
+                                                <span class="text-xs text-muted-foreground">
+                                                    <i class="fas fa-user mr-1"></i>
+                                                    ${project.owner_name}
+                                                </span>
+                                                <span class="text-xs text-muted-foreground">
+                                                    <i class="fas fa-calendar mr-1"></i>
+                                                    ${new Date(project.created_at).toLocaleDateString()}
+                                                </span>
+                                            </div>
+                                        </div>
+                                        <button onclick="toggleProjectFiles('${project.id}')" 
+                                                class="bg-primary text-primary-foreground px-3 py-1 rounded text-sm hover:opacity-90">
+                                            <i class="fas fa-folder mr-1"></i>
+                                            Ver Archivos
+                                        </button>
+                                    </div>
+                                </div>
+                                <div id="project-files-${project.id}" class="hidden">
+                                    <!-- Los archivos se cargarán dinámicamente -->
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                ` : `
+                    <div class="text-center py-12">
+                        <i class="fas fa-folder-open text-4xl text-muted-foreground mb-4"></i>
+                        <p class="text-muted-foreground text-lg mb-2">No hay proyectos con archivos</p>
+                        <p class="text-sm text-muted-foreground">Los archivos aparecerán aquí cuando se suban a proyectos</p>
+                    </div>
+                `}
+            </div>
+        `;
+        
+    } catch (error) {
+        console.error('Error cargando archivos por proyectos:', error);
+        document.getElementById('files-tab-content').innerHTML = `
+            <div class="text-center py-12">
+                <i class="fas fa-exclamation-triangle text-4xl text-destructive mb-4"></i>
+                <p class="text-destructive">Error al cargar archivos por proyectos</p>
+                <button onclick="loadFilesByProjects()" class="mt-4 bg-primary text-primary-foreground px-4 py-2 rounded-lg">
+                    Intentar de nuevo
+                </button>
+            </div>
+        `;
+    }
+}
+
+async function loadFilesByProducts() {
+    try {
+        // Obtener lista de productos con archivos
+        const productsResponse = await axios.get(`${API_BASE}/admin/products?has_files=true&limit=50`);
+        
+        if (!productsResponse.data.success) {
+            throw new Error('Error al cargar productos');
+        }
+        
+        const products = productsResponse.data.data.products || [];
+        
+        document.getElementById('files-tab-content').innerHTML = `
+            <div class="space-y-6">
+                ${products.length > 0 ? `
+                    <!-- Resumen -->
+                    <div class="bg-card text-card-foreground p-4 rounded-lg border border-border">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <h3 class="font-semibold">Archivos por Productos</h3>
+                                <p class="text-sm text-muted-foreground">${products.length} productos con archivos</p>
+                            </div>
+                            <i class="fas fa-box text-2xl text-primary"></i>
+                        </div>
+                    </div>
+                    
+                    <!-- Galería de Productos -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        ${products.map(product => `
+                            <div class="bg-card text-card-foreground rounded-lg border border-border overflow-hidden">
+                                <div class="p-4">
+                                    <div class="flex items-start justify-between mb-3">
+                                        <span class="px-2 py-1 bg-primary/10 text-primary rounded-full text-xs">
+                                            ${product.category_name || product.product_type}
+                                        </span>
+                                        <span class="text-xs text-muted-foreground">
+                                            ${product.product_code}
+                                        </span>
+                                    </div>
+                                    
+                                    <h4 class="font-semibold mb-2">${product.description}</h4>
+                                    
+                                    <div class="text-sm text-muted-foreground space-y-1 mb-3">
+                                        <div class="flex items-center">
+                                            <i class="fas fa-project-diagram mr-2 w-4"></i>
+                                            <span>${product.project_title}</span>
+                                        </div>
+                                        <div class="flex items-center">
+                                            <i class="fas fa-user mr-2 w-4"></i>
+                                            <span>${product.owner_name}</span>
+                                        </div>
+                                        <div class="flex items-center">
+                                            <i class="fas fa-calendar mr-2 w-4"></i>
+                                            <span>${new Date(product.created_at).toLocaleDateString()}</span>
+                                        </div>
+                                    </div>
+                                    
+                                    <button onclick="toggleProductFiles('${product.id}')" 
+                                            class="w-full bg-primary text-primary-foreground py-2 rounded text-sm hover:opacity-90">
+                                        <i class="fas fa-images mr-1"></i>
+                                        Ver Archivos
+                                    </button>
+                                </div>
+                                
+                                <div id="product-files-${product.id}" class="hidden border-t border-border">
+                                    <!-- Los archivos se cargarán dinámicamente -->
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                ` : `
+                    <div class="text-center py-12">
+                        <i class="fas fa-box text-4xl text-muted-foreground mb-4"></i>
+                        <p class="text-muted-foreground text-lg mb-2">No hay productos con archivos</p>
+                        <p class="text-sm text-muted-foreground">Los archivos aparecerán aquí cuando se suban a productos</p>
+                    </div>
+                `}
+            </div>
+        `;
+        
+    } catch (error) {
+        console.error('Error cargando archivos por productos:', error);
+        document.getElementById('files-tab-content').innerHTML = `
+            <div class="text-center py-12">
+                <i class="fas fa-exclamation-triangle text-4xl text-destructive mb-4"></i>
+                <p class="text-destructive">Error al cargar archivos por productos</p>
+                <button onclick="loadFilesByProducts()" class="mt-4 bg-primary text-primary-foreground px-4 py-2 rounded-lg">
+                    Intentar de nuevo
+                </button>
+            </div>
+        `;
+    }
+}
+
+// Alternar vista de archivos de proyecto
+async function toggleProjectFiles(projectId) {
+    const container = document.getElementById(`project-files-${projectId}`);
+    
+    if (container.classList.contains('hidden')) {
+        // Mostrar archivos del proyecto
+        container.classList.remove('hidden');
+        await loadProjectFiles(projectId);
+    } else {
+        // Ocultar archivos
+        container.classList.add('hidden');
+    }
+}
+
+// Cargar archivos de un proyecto específico
+async function loadProjectFiles(projectId) {
+    const container = document.getElementById(`project-files-${projectId}`);
+    
+    try {
+        container.innerHTML = `
+            <div class="p-4 text-center">
+                <i class="fas fa-spinner fa-spin text-primary text-xl"></i>
+                <p class="text-muted-foreground mt-2">Cargando archivos...</p>
+            </div>
+        `;
+        
+        const response = await axios.get(`${API_BASE}/admin/files/project/${projectId}`);
+        
+        if (response.data.success) {
+            const files = response.data.data || [];
+            
+            if (files.length > 0) {
+                container.innerHTML = `
+                    <div class="p-4">
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                            ${files.map(file => `
+                                <div class="flex items-center space-x-3 p-3 border border-border rounded hover:bg-muted">
+                                    <i class="fas ${getFileIcon(file.file_type)} text-primary text-lg"></i>
+                                    <div class="flex-1 min-w-0">
+                                        <p class="font-medium text-sm truncate">${file.original_name}</p>
+                                        <p class="text-xs text-muted-foreground">${formatFileSize(file.file_size)}</p>
+                                    </div>
+                                    <div class="flex space-x-1">
+                                        <button onclick="viewFileDetails('${file.id}')" 
+                                                class="text-primary hover:text-primary/80" title="Ver detalles">
+                                            <i class="fas fa-eye"></i>
+                                        </button>
+                                        <button onclick="downloadFile('${file.id}')" 
+                                                class="text-primary hover:text-primary/80" title="Descargar">
+                                            <i class="fas fa-download"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                `;
+            } else {
+                container.innerHTML = `
+                    <div class="p-4 text-center">
+                        <i class="fas fa-folder-open text-2xl text-muted-foreground mb-2"></i>
+                        <p class="text-muted-foreground">No hay archivos en este proyecto</p>
+                    </div>
+                `;
+            }
+        } else {
+            throw new Error(response.data.error || 'Error al cargar archivos');
+        }
+        
+    } catch (error) {
+        console.error('Error cargando archivos del proyecto:', error);
+        container.innerHTML = `
+            <div class="p-4 text-center">
+                <i class="fas fa-exclamation-triangle text-xl text-destructive mb-2"></i>
+                <p class="text-destructive text-sm">Error al cargar archivos</p>
+            </div>
+        `;
+    }
+}
+
+// Alternar vista de archivos de producto
+async function toggleProductFiles(productId) {
+    const container = document.getElementById(`product-files-${productId}`);
+    
+    if (container.classList.contains('hidden')) {
+        // Mostrar archivos del producto
+        container.classList.remove('hidden');
+        await loadProductFiles(productId);
+    } else {
+        // Ocultar archivos
+        container.classList.add('hidden');
+    }
+}
+
+// Cargar archivos de un producto específico
+async function loadProductFiles(productId) {
+    const container = document.getElementById(`product-files-${productId}`);
+    
+    try {
+        container.innerHTML = `
+            <div class="p-4 text-center">
+                <i class="fas fa-spinner fa-spin text-primary text-xl"></i>
+                <p class="text-muted-foreground mt-2">Cargando archivos...</p>
+            </div>
+        `;
+        
+        const response = await axios.get(`${API_BASE}/admin/files/product/${productId}`);
+        
+        if (response.data.success) {
+            const files = response.data.data || [];
+            
+            if (files.length > 0) {
+                // Separar imágenes de otros archivos
+                const images = files.filter(f => f.file_type === 'image' || f.mime_type.startsWith('image/'));
+                const documents = files.filter(f => f.file_type !== 'image' && !f.mime_type.startsWith('image/'));
+                
+                container.innerHTML = `
+                    <div class="p-4 space-y-4">
+                        ${images.length > 0 ? `
+                            <div>
+                                <h5 class="font-medium text-sm mb-2 text-primary">Imágenes</h5>
+                                <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
+                                    ${images.map(file => `
+                                        <div class="relative group">
+                                            <div class="aspect-square bg-muted rounded-lg overflow-hidden">
+                                                <img src="${file.file_url}" alt="${file.original_name}"
+                                                     class="w-full h-full object-cover"
+                                                     onerror="this.src='data:image/svg+xml,<svg xmlns=\\"http://www.w3.org/2000/svg\\" width=\\"100\\" height=\\"100\\" viewBox=\\"0 0 24 24\\"><rect fill=\\"%23f3f4f6\\" width=\\"24\\" height=\\"24\\"/><path fill=\\"%239ca3af\\" d=\\"M9 3v2H7a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1V6a1 1 0 0 0-1-1h-2V3h2a3 3 0 0 1 3 3v12a3 3 0 0 1-3 3H7a3 3 0 0 1-3-3V6a3 3 0 0 1 3-3h2z\\"/></svg>'">
+                                            </div>
+                                            <div class="absolute inset-0 bg-black bg-opacity-50 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg flex items-center justify-center space-x-2">
+                                                <button onclick="viewFileDetails('${file.id}')" 
+                                                        class="text-white hover:text-primary" title="Ver detalles">
+                                                    <i class="fas fa-eye"></i>
+                                                </button>
+                                                <button onclick="downloadFile('${file.id}')" 
+                                                        class="text-white hover:text-primary" title="Descargar">
+                                                    <i class="fas fa-download"></i>
+                                                </button>
+                                            </div>
+                                            <p class="text-xs text-muted-foreground mt-1 truncate">${file.original_name}</p>
+                                        </div>
+                                    `).join('')}
+                                </div>
+                            </div>
+                        ` : ''}
+                        
+                        ${documents.length > 0 ? `
+                            <div>
+                                <h5 class="font-medium text-sm mb-2 text-primary">Documentos</h5>
+                                <div class="space-y-2">
+                                    ${documents.map(file => `
+                                        <div class="flex items-center space-x-3 p-2 border border-border rounded hover:bg-muted">
+                                            <i class="fas ${getFileIcon(file.file_type)} text-primary"></i>
+                                            <div class="flex-1 min-w-0">
+                                                <p class="font-medium text-sm truncate">${file.original_name}</p>
+                                                <p class="text-xs text-muted-foreground">${formatFileSize(file.file_size)}</p>
+                                            </div>
+                                            <div class="flex space-x-1">
+                                                <button onclick="viewFileDetails('${file.id}')" 
+                                                        class="text-primary hover:text-primary/80" title="Ver detalles">
+                                                    <i class="fas fa-eye"></i>
+                                                </button>
+                                                <button onclick="downloadFile('${file.id}')" 
+                                                        class="text-primary hover:text-primary/80" title="Descargar">
+                                                    <i class="fas fa-download"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    `).join('')}
+                                </div>
+                            </div>
+                        ` : ''}
+                        
+                        ${images.length === 0 && documents.length === 0 ? `
+                            <div class="text-center py-4">
+                                <i class="fas fa-folder-open text-2xl text-muted-foreground mb-2"></i>
+                                <p class="text-muted-foreground">No hay archivos en este producto</p>
+                            </div>
+                        ` : ''}
+                    </div>
+                `;
+            } else {
+                container.innerHTML = `
+                    <div class="p-4 text-center">
+                        <i class="fas fa-folder-open text-2xl text-muted-foreground mb-2"></i>
+                        <p class="text-muted-foreground">No hay archivos en este producto</p>
+                    </div>
+                `;
+            }
+        } else {
+            throw new Error(response.data.error || 'Error al cargar archivos');
+        }
+        
+    } catch (error) {
+        console.error('Error cargando archivos del producto:', error);
+        container.innerHTML = `
+            <div class="p-4 text-center">
+                <i class="fas fa-exclamation-triangle text-xl text-destructive mb-2"></i>
+                <p class="text-destructive text-sm">Error al cargar archivos</p>
+            </div>
+        `;
+    }
+}
+
+async function viewFileDetails(fileId) {
+    try {
+        const response = await axios.get(`${API_BASE}/admin/files/details/${fileId}`);
+        
+        if (response.data.success) {
+            const fileInfo = response.data.data.file_info;
+            const r2Metadata = response.data.data.r2_metadata;
+            
+            showFileDetailsModal(fileInfo, r2Metadata);
+        } else {
+            throw new Error(response.data.error || 'Error al obtener detalles del archivo');
+        }
+        
+    } catch (error) {
+        console.error('Error obteniendo detalles del archivo:', error);
+        showToast('Error al obtener detalles del archivo', 'error');
+    }
+}
+
+function showFileDetailsModal(fileInfo, r2Metadata) {
+    const modal = document.createElement('div');
+    modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4';
+    modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
+    
+    modal.innerHTML = `
+        <div class="bg-background rounded-lg shadow-lg max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+            <div class="p-6">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-xl font-semibold flex items-center">
+                        <i class="fas ${getFileIcon(fileInfo.file_type)} text-primary mr-2"></i>
+                        Detalles del Archivo
+                    </h3>
+                    <button onclick="this.closest('.fixed').remove()" class="text-muted-foreground hover:text-foreground">
+                        <i class="fas fa-times text-xl"></i>
+                    </button>
+                </div>
+                
+                <div class="space-y-6">
+                    <!-- Información Básica -->
+                    <div class="bg-muted/30 rounded-lg p-4">
+                        <h4 class="font-semibold mb-3 text-primary">Información General</h4>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+                            <div>
+                                <span class="font-medium text-muted-foreground">Nombre Original:</span>
+                                <p class="mt-1">${fileInfo.original_name}</p>
+                            </div>
+                            <div>
+                                <span class="font-medium text-muted-foreground">Nombre del Sistema:</span>
+                                <p class="mt-1 font-mono text-xs">${fileInfo.filename}</p>
+                            </div>
+                            <div>
+                                <span class="font-medium text-muted-foreground">Tipo de Archivo:</span>
+                                <p class="mt-1">
+                                    <span class="px-2 py-1 bg-primary/10 text-primary rounded-full text-xs capitalize">
+                                        ${fileInfo.file_type}
+                                    </span>
+                                </p>
+                            </div>
+                            <div>
+                                <span class="font-medium text-muted-foreground">Tamaño:</span>
+                                <p class="mt-1">${formatFileSize(fileInfo.file_size)}</p>
+                            </div>
+                            <div>
+                                <span class="font-medium text-muted-foreground">Tipo MIME:</span>
+                                <p class="mt-1 font-mono text-xs">${fileInfo.mime_type}</p>
+                            </div>
+                            <div>
+                                <span class="font-medium text-muted-foreground">URL del Archivo:</span>
+                                <p class="mt-1 font-mono text-xs break-all">${fileInfo.file_url}</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Información de Entidad -->
+                    ${fileInfo.entity_type ? `
+                        <div class="bg-muted/30 rounded-lg p-4">
+                            <h4 class="font-semibold mb-3 text-primary">Entidad Asociada</h4>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+                                <div>
+                                    <span class="font-medium text-muted-foreground">Tipo:</span>
+                                    <p class="mt-1 capitalize">${fileInfo.entity_type}</p>
+                                </div>
+                                <div>
+                                    <span class="font-medium text-muted-foreground">ID:</span>
+                                    <p class="mt-1">${fileInfo.entity_id}</p>
+                                </div>
+                                ${fileInfo.entity_name ? `
+                                    <div class="md:col-span-2">
+                                        <span class="font-medium text-muted-foreground">Nombre:</span>
+                                        <p class="mt-1">${fileInfo.entity_name}</p>
+                                    </div>
+                                ` : ''}
+                            </div>
+                        </div>
+                    ` : ''}
+                    
+                    <!-- Información de Subida -->
+                    <div class="bg-muted/30 rounded-lg p-4">
+                        <h4 class="font-semibold mb-3 text-primary">Información de Subida</h4>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+                            <div>
+                                <span class="font-medium text-muted-foreground">Subido por:</span>
+                                <p class="mt-1">${fileInfo.uploaded_by_name || 'Usuario desconocido'}</p>
+                                ${fileInfo.uploaded_by_email ? `
+                                    <p class="text-xs text-muted-foreground">${fileInfo.uploaded_by_email}</p>
+                                ` : ''}
+                            </div>
+                            <div>
+                                <span class="font-medium text-muted-foreground">Fecha de Subida:</span>
+                                <p class="mt-1">${new Date(fileInfo.uploaded_at).toLocaleString()}</p>
+                            </div>
+                            <div>
+                                <span class="font-medium text-muted-foreground">Última Actualización:</span>
+                                <p class="mt-1">${new Date(fileInfo.updated_at).toLocaleString()}</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Metadatos de R2 (si disponibles) -->
+                    ${r2Metadata ? `
+                        <div class="bg-muted/30 rounded-lg p-4">
+                            <h4 class="font-semibold mb-3 text-primary">Metadatos de Almacenamiento</h4>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+                                <div>
+                                    <span class="font-medium text-muted-foreground">ETag:</span>
+                                    <p class="mt-1 font-mono text-xs">${r2Metadata.etag}</p>
+                                </div>
+                                <div>
+                                    <span class="font-medium text-muted-foreground">Tamaño en R2:</span>
+                                    <p class="mt-1">${formatFileSize(r2Metadata.size)}</p>
+                                </div>
+                                ${r2Metadata.uploaded ? `
+                                    <div>
+                                        <span class="font-medium text-muted-foreground">Subido a R2:</span>
+                                        <p class="mt-1">${new Date(r2Metadata.uploaded).toLocaleString()}</p>
+                                    </div>
+                                ` : ''}
+                            </div>
+                        </div>
+                    ` : ''}
+                </div>
+                
+                <!-- Acciones -->
+                <div class="flex justify-end space-x-3 mt-6 pt-4 border-t border-border">
+                    <button onclick="downloadFile('${fileInfo.id}')" 
+                            class="px-4 py-2 bg-primary text-primary-foreground rounded hover:opacity-90">
+                        <i class="fas fa-download mr-2"></i>
+                        Descargar
+                    </button>
+                    <button onclick="editFileMetadata('${fileInfo.id}')" 
+                            class="px-4 py-2 bg-accent text-accent-foreground rounded hover:opacity-90">
+                        <i class="fas fa-edit mr-2"></i>
+                        Editar
+                    </button>
+                    <button onclick="this.closest('.fixed').remove()" 
+                            class="px-4 py-2 bg-muted text-muted-foreground rounded hover:bg-muted/80">
+                        Cerrar
+                    </button>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+}
+
+async function downloadFile(fileId) {
+    try {
+        // Obtener información del archivo para construir la URL
+        const response = await axios.get(`${API_BASE}/admin/files/details/${fileId}`);
+        
+        if (response.data.success) {
+            const fileInfo = response.data.data.file_info;
+            
+            // Crear enlace temporal para descarga
+            const downloadLink = document.createElement('a');
+            downloadLink.href = fileInfo.file_url;
+            downloadLink.download = fileInfo.original_name;
+            downloadLink.target = '_blank';
+            
+            // Disparar descarga
+            document.body.appendChild(downloadLink);
+            downloadLink.click();
+            document.body.removeChild(downloadLink);
+            
+            showToast('Descarga iniciada', 'success');
+        } else {
+            throw new Error(response.data.error || 'Error al obtener información del archivo');
+        }
+        
+    } catch (error) {
+        console.error('Error descargando archivo:', error);
+        showToast('Error al descargar archivo', 'error');
+    }
+}
+
+async function editFileMetadata(fileId) {
+    try {
+        // Obtener información actual del archivo
+        const response = await axios.get(`${API_BASE}/admin/files/details/${fileId}`);
+        
+        if (response.data.success) {
+            const fileInfo = response.data.data.file_info;
+            showEditMetadataModal(fileInfo);
+        } else {
+            throw new Error(response.data.error || 'Error al obtener información del archivo');
+        }
+        
+    } catch (error) {
+        console.error('Error cargando archivo para edición:', error);
+        showToast('Error al cargar archivo', 'error');
+    }
+}
+
+function showEditMetadataModal(fileInfo) {
+    const modal = document.createElement('div');
+    modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4';
+    modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
+    
+    modal.innerHTML = `
+        <div class="bg-background rounded-lg shadow-lg max-w-md w-full mx-4">
+            <div class="p-6">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-lg font-semibold">Editar Metadatos</h3>
+                    <button onclick="this.closest('.fixed').remove()" class="text-muted-foreground hover:text-foreground">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                
+                <form onsubmit="updateFileMetadata(event, '${fileInfo.id}')" id="edit-metadata-form">
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium mb-2">Nombre Original</label>
+                            <input type="text" id="edit-original-name" value="${fileInfo.original_name}"
+                                   class="w-full p-2 border border-border rounded bg-background" required>
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium mb-2">Tipo de Archivo</label>
+                            <select id="edit-file-type" class="w-full p-2 border border-border rounded bg-background" required>
+                                <option value="document" ${fileInfo.file_type === 'document' ? 'selected' : ''}>Documento</option>
+                                <option value="image" ${fileInfo.file_type === 'image' ? 'selected' : ''}>Imagen</option>
+                                <option value="project" ${fileInfo.file_type === 'project' ? 'selected' : ''}>Archivo de Proyecto</option>
+                                <option value="product" ${fileInfo.file_type === 'product' ? 'selected' : ''}>Archivo de Producto</option>
+                                <option value="logo" ${fileInfo.file_type === 'logo' ? 'selected' : ''}>Logo</option>
+                                <option value="general" ${fileInfo.file_type === 'general' ? 'selected' : ''}>General</option>
+                            </select>
+                        </div>
+                        
+                        <div class="bg-muted/30 p-3 rounded">
+                            <p class="text-sm text-muted-foreground">
+                                <i class="fas fa-info-circle mr-1"></i>
+                                Archivo: ${fileInfo.filename}
+                            </p>
+                            <p class="text-sm text-muted-foreground">
+                                Tamaño: ${formatFileSize(fileInfo.file_size)}
+                            </p>
+                        </div>
+                    </div>
+                    
+                    <div class="flex justify-end space-x-3 mt-6">
+                        <button type="button" onclick="this.closest('.fixed').remove()" 
+                                class="px-4 py-2 text-muted-foreground border border-border rounded hover:bg-muted">
+                            Cancelar
+                        </button>
+                        <button type="submit" 
+                                class="px-4 py-2 bg-primary text-primary-foreground rounded hover:opacity-90">
+                            <i class="fas fa-save mr-2"></i>
+                            Guardar Cambios
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+}
+
+async function updateFileMetadata(event, fileId) {
+    event.preventDefault();
+    
+    const form = event.target;
+    const submitButton = form.querySelector('button[type="submit"]');
+    const originalText = submitButton.innerHTML;
+    
+    try {
+        submitButton.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Guardando...';
+        submitButton.disabled = true;
+        
+        const originalName = document.getElementById('edit-original-name').value.trim();
+        const fileType = document.getElementById('edit-file-type').value;
+        
+        if (!originalName) {
+            throw new Error('El nombre original no puede estar vacío');
+        }
+        
+        const response = await axios.put(`${API_BASE}/admin/files/${fileId}/metadata`, {
+            original_name: originalName,
+            file_type: fileType
+        });
+        
+        if (response.data.success) {
+            showToast('Metadatos actualizados exitosamente', 'success');
+            form.closest('.fixed').remove();
+            
+            // Actualizar la vista actual
+            const activeTab = document.querySelector('[id^="tab-"].border-primary').id.replace('tab-', '');
+            await setActiveFileTab(activeTab);
+        } else {
+            throw new Error(response.data.error || 'Error al actualizar metadatos');
+        }
+        
+    } catch (error) {
+        console.error('Error actualizando metadatos:', error);
+        showToast(error.message || 'Error al actualizar metadatos', 'error');
+        submitButton.innerHTML = originalText;
+        submitButton.disabled = false;
+    }
+}
+
+async function deleteFile(fileId) {
+    // Implementar eliminación de archivo
+    if (confirm('¿Estás seguro de que quieres eliminar este archivo?')) {
+        try {
+            const response = await axios.delete(`${API_BASE}/admin/files/${fileId}`);
+            if (response.data.success) {
+                showToast('Archivo eliminado exitosamente', 'success');
+                // Actualizar la vista actual
+                const activeTab = document.querySelector('[id^="tab-"].border-primary').id.replace('tab-', '');
+                await setActiveFileTab(activeTab);
+            } else {
+                throw new Error(response.data.error || 'Error al eliminar archivo');
+            }
+        } catch (error) {
+            console.error('Error eliminando archivo:', error);
+            showToast('Error al eliminar archivo', 'error');
+        }
+    }
+}
+
+function refreshFilesDashboard() {
+    const activeTab = document.querySelector('[id^="tab-"].border-primary').id.replace('tab-', '');
+    setActiveFileTab(activeTab);
 }

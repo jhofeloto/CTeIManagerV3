@@ -2862,4 +2862,334 @@ function getSeverityLabel(level: number): string {
   return labels[level] || 'Desconocido';
 }
 
+// ===== ENDPOINTS ADICIONALES PARA GESTIÓN DE ARCHIVOS =====
+
+// Dashboard de archivos - estadísticas generales
+adminRoutes.get('/files/dashboard', async (c) => {
+  try {
+    if (!c.env.DB) {
+      return c.json({ success: false, error: 'Base de datos no disponible' }, 500);
+    }
+
+    // Estadísticas generales
+    const totalFiles = await c.env.DB.prepare(`
+      SELECT COUNT(*) as count FROM files
+    `).first();
+
+    // Archivos por tipo
+    const filesByType = await c.env.DB.prepare(`
+      SELECT file_type, COUNT(*) as count 
+      FROM files 
+      GROUP BY file_type 
+      ORDER BY count DESC
+    `).all();
+
+    // Archivos por entidad
+    const filesByEntity = await c.env.DB.prepare(`
+      SELECT entity_type, COUNT(*) as count 
+      FROM files 
+      WHERE entity_type IS NOT NULL
+      GROUP BY entity_type 
+      ORDER BY count DESC
+    `).all();
+
+    // Archivos recientes (últimos 7 días)
+    const recentFiles = await c.env.DB.prepare(`
+      SELECT f.*, u.full_name as uploaded_by_name
+      FROM files f
+      LEFT JOIN users u ON f.uploaded_by = u.id
+      WHERE f.uploaded_at >= datetime('now', '-7 days')
+      ORDER BY f.uploaded_at DESC
+      LIMIT 10
+    `).all();
+
+    // Tamaño total de archivos (en MB)
+    const totalSize = await c.env.DB.prepare(`
+      SELECT SUM(file_size) as total_size FROM files
+    `).first();
+
+    // Archivos más grandes
+    const largestFiles = await c.env.DB.prepare(`
+      SELECT f.*, u.full_name as uploaded_by_name
+      FROM files f
+      LEFT JOIN users u ON f.uploaded_by = u.id
+      ORDER BY f.file_size DESC
+      LIMIT 5
+    `).all();
+
+    const response = {
+      success: true,
+      data: {
+        statistics: {
+          total_files: totalFiles?.count || 0,
+          total_size_mb: Math.round((totalSize?.total_size || 0) / (1024 * 1024) * 100) / 100
+        },
+        files_by_type: filesByType.results,
+        files_by_entity: filesByEntity.results,
+        recent_files: recentFiles.results,
+        largest_files: largestFiles.results
+      }
+    };
+    return c.json(response);
+
+  } catch (error) {
+    console.error('Error en dashboard de archivos:', error);
+    return c.json({ success: false, error: 'Error al obtener estadísticas de archivos' }, 500);
+  }
+});
+
+// Buscar archivos con filtros avanzados
+adminRoutes.get('/files/search', async (c) => {
+  try {
+    if (!c.env.DB) {
+      return c.json({ success: false, error: 'Base de datos no disponible' }, 500);
+    }
+
+    const page = parseInt(c.req.query('page') || '1');
+    const limit = parseInt(c.req.query('limit') || '20');
+    const search = c.req.query('search') || '';
+    const fileType = c.req.query('file_type') || '';
+    const entityType = c.req.query('entity_type') || '';
+    const mimeType = c.req.query('mime_type') || '';
+    const dateFrom = c.req.query('date_from') || '';
+    const dateTo = c.req.query('date_to') || '';
+    const offset = (page - 1) * limit;
+
+    let query = `
+      SELECT f.*, u.full_name as uploaded_by_name,
+        CASE 
+          WHEN f.entity_type = 'project' THEN p.title 
+          WHEN f.entity_type = 'product' THEN pr.description 
+          ELSE 'Sin entidad'
+        END as entity_name
+      FROM files f
+      LEFT JOIN users u ON f.uploaded_by = u.id
+      LEFT JOIN projects p ON f.entity_type = 'project' AND f.entity_id = CAST(p.id AS TEXT)
+      LEFT JOIN products pr ON f.entity_type = 'product' AND f.entity_id = CAST(pr.id AS TEXT)
+      WHERE 1=1
+    `;
+    const params: any[] = [];
+
+    if (search) {
+      query += ` AND (f.original_name LIKE ? OR f.filename LIKE ?)`;
+      const searchTerm = `%${search}%`;
+      params.push(searchTerm, searchTerm);
+    }
+
+    if (fileType) {
+      query += ` AND f.file_type = ?`;
+      params.push(fileType);
+    }
+
+    if (entityType) {
+      query += ` AND f.entity_type = ?`;
+      params.push(entityType);
+    }
+
+    if (mimeType) {
+      query += ` AND f.mime_type LIKE ?`;
+      params.push(`%${mimeType}%`);
+    }
+
+    if (dateFrom) {
+      query += ` AND f.uploaded_at >= ?`;
+      params.push(dateFrom);
+    }
+
+    if (dateTo) {
+      query += ` AND f.uploaded_at <= ?`;
+      params.push(dateTo);
+    }
+
+    query += ` ORDER BY f.uploaded_at DESC LIMIT ? OFFSET ?`;
+    params.push(limit, offset);
+
+    const files = await c.env.DB.prepare(query).bind(...params).all();
+
+    // Contar total para paginación
+    let countQuery = `
+      SELECT COUNT(*) as total
+      FROM files f
+      WHERE 1=1
+    `;
+    const countParams: any[] = [];
+
+    if (search) {
+      countQuery += ` AND (f.original_name LIKE ? OR f.filename LIKE ?)`;
+      const searchTerm = `%${search}%`;
+      countParams.push(searchTerm, searchTerm);
+    }
+
+    if (fileType) {
+      countQuery += ` AND f.file_type = ?`;
+      countParams.push(fileType);
+    }
+
+    if (entityType) {
+      countQuery += ` AND f.entity_type = ?`;
+      countParams.push(entityType);
+    }
+
+    if (mimeType) {
+      countQuery += ` AND f.mime_type LIKE ?`;
+      countParams.push(`%${mimeType}%`);
+    }
+
+    if (dateFrom) {
+      countQuery += ` AND f.uploaded_at >= ?`;
+      countParams.push(dateFrom);
+    }
+
+    if (dateTo) {
+      countQuery += ` AND f.uploaded_at <= ?`;
+      countParams.push(dateTo);
+    }
+
+    const totalResult = await c.env.DB.prepare(countQuery).bind(...countParams).first();
+    const total = totalResult?.total || 0;
+
+    const response = {
+      success: true,
+      data: {
+        files: files.results,
+        pagination: {
+          current_page: page,
+          total_pages: Math.ceil(total / limit),
+          total_items: total,
+          items_per_page: limit
+        }
+      }
+    };
+    return c.json(response);
+
+  } catch (error) {
+    console.error('Error buscando archivos:', error);
+    return c.json({ success: false, error: 'Error al buscar archivos' }, 500);
+  }
+});
+
+// Obtener metadatos detallados de un archivo
+adminRoutes.get('/files/details/:fileId', async (c) => {
+  try {
+    const { fileId } = c.req.param();
+
+    if (!c.env.DB) {
+      return c.json({ success: false, error: 'Base de datos no disponible' }, 500);
+    }
+
+    const file = await c.env.DB.prepare(`
+      SELECT f.*, u.full_name as uploaded_by_name, u.email as uploaded_by_email,
+        CASE 
+          WHEN f.entity_type = 'project' THEN p.title 
+          WHEN f.entity_type = 'product' THEN pr.description 
+          ELSE 'Sin entidad'
+        END as entity_name
+      FROM files f
+      LEFT JOIN users u ON f.uploaded_by = u.id
+      LEFT JOIN projects p ON f.entity_type = 'project' AND f.entity_id = CAST(p.id AS TEXT)
+      LEFT JOIN products pr ON f.entity_type = 'product' AND f.entity_id = CAST(pr.id AS TEXT)
+      WHERE f.id = ?
+    `).bind(fileId).first();
+
+    if (!file) {
+      return c.json({ success: false, error: 'Archivo no encontrado' }, 404);
+    }
+
+    // Obtener metadatos del archivo en R2 si está disponible
+    let r2Metadata = null;
+    if (c.env.R2) {
+      try {
+        const r2Object = await c.env.R2.head(file.file_path);
+        if (r2Object) {
+          r2Metadata = {
+            size: r2Object.size,
+            etag: r2Object.etag,
+            uploaded: r2Object.uploaded,
+            httpMetadata: r2Object.httpMetadata,
+            customMetadata: r2Object.customMetadata
+          };
+        }
+      } catch (error) {
+        console.warn('Error obteniendo metadatos de R2:', error);
+      }
+    }
+
+    const response = {
+      success: true,
+      data: {
+        file_info: file,
+        r2_metadata: r2Metadata
+      }
+    };
+    return c.json(response);
+
+  } catch (error) {
+    console.error('Error obteniendo detalles del archivo:', error);
+    return c.json({ success: false, error: 'Error al obtener detalles del archivo' }, 500);
+  }
+});
+
+// Actualizar metadatos de un archivo
+adminRoutes.put('/files/:fileId/metadata', async (c) => {
+  try {
+    const { fileId } = c.req.param();
+    const { original_name, file_type } = await c.req.json();
+
+    if (!c.env.DB) {
+      return c.json({ success: false, error: 'Base de datos no disponible' }, 500);
+    }
+
+    // Validar que el archivo existe
+    const existingFile = await c.env.DB.prepare(`
+      SELECT * FROM files WHERE id = ?
+    `).bind(fileId).first();
+
+    if (!existingFile) {
+      return c.json({ success: false, error: 'Archivo no encontrado' }, 404);
+    }
+
+    // Validar tipo de archivo si se proporciona
+    if (file_type) {
+      const validTypes = ['document', 'image', 'project', 'product', 'logo', 'general'];
+      if (!validTypes.includes(file_type)) {
+        return c.json({ 
+          success: false, 
+          error: `Tipo de archivo no válido. Tipos permitidos: ${validTypes.join(', ')}` 
+        }, 400);
+      }
+    }
+
+    // Actualizar en base de datos
+    let updateQuery = 'UPDATE files SET updated_at = CURRENT_TIMESTAMP';
+    const params: any[] = [];
+
+    if (original_name) {
+      updateQuery += ', original_name = ?';
+      params.push(original_name);
+    }
+
+    if (file_type) {
+      updateQuery += ', file_type = ?';
+      params.push(file_type);
+    }
+
+    updateQuery += ' WHERE id = ?';
+    params.push(fileId);
+
+    await c.env.DB.prepare(updateQuery).bind(...params).run();
+
+    const response = {
+      success: true,
+      data: {
+        message: 'Metadatos actualizados exitosamente'
+      }
+    };
+    return c.json(response);
+
+  } catch (error) {
+    console.error('Error actualizando metadatos:', error);
+    return c.json({ success: false, error: 'Error al actualizar metadatos del archivo' }, 500);
+  }
+});
+
 export { adminRoutes };
