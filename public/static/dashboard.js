@@ -198,11 +198,11 @@ function renderDashboard() {
                         </li>
                         <li>
                             <button 
-                                onclick="showView('monitoring')" 
+                                onclick="showView('basic-monitoring')" 
                                 class="nav-item w-full flex items-center px-3 py-2 text-left rounded-lg hover:bg-accent hover:text-accent-foreground transition-colors"
                             >
                                 <i class="fas fa-chart-bar mr-3"></i>
-                                Monitoreo
+                                Monitoreo Básico
                             </button>
                         </li>
                         ` : ''}
@@ -401,11 +401,12 @@ function showView(view) {
         case 'monitoring':
             renderMonitoringDashboard();
             break;
+        case 'basic-monitoring':
+            if (typeof renderBasicMonitoringView === 'function') renderBasicMonitoringView();
+            else showToast('Vista de monitoreo básico en desarrollo', 'info');
+            break;
         case 'timeline':
             if (typeof renderTimelineView === 'function') renderTimelineView();
-            break;
-        case 'monitoring':
-            if (typeof renderMonitoringView === 'function') renderMonitoringView();
             break;
         case 'admin-monitoring':
             if (typeof renderAdminMonitoringView === 'function') renderAdminMonitoringView();
