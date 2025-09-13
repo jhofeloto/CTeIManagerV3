@@ -523,6 +523,7 @@ app.get('/', (c) => {
         <script src="https://cdn.tailwindcss.com"></script>
         <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
         <link href="/static/styles.css" rel="stylesheet">
+        <script src="https://cdn.jsdelivr.net/npm/axios@1.6.0/dist/axios.min.js"></script>
         <script>
           tailwind.config = {
             theme: {
@@ -566,29 +567,30 @@ app.get('/', (c) => {
                         </button>
                         
                         <!-- Botones para usuarios no autenticados -->
-                        <div id="unauthenticatedButtons" class="flex items-center space-x-4">
+                        <div id="unauthenticatedButtons" class="flex items-center space-x-3">
                             <button onclick="showLoginModal()" class="ctei-btn-primary">
-                                <i class="fas fa-sign-in-alt"></i>
+                                <i class="fas fa-sign-in-alt mr-2"></i>
                                 Ingresar
                             </button>
-                            <button onclick="testDirectLogin()" class="ctei-btn-secondary" style="background-color: var(--chart-4); color: var(--background);">
-                                🔧 Test
+                            <button onclick="testDirectLogin()" class="ctei-btn-secondary">
+                                <i class="fas fa-flask mr-2"></i>
+                                Test
                             </button>
                             <button onclick="showRegisterModal()" class="ctei-btn-secondary">
-                                <i class="fas fa-user-plus"></i>
+                                <i class="fas fa-user-plus mr-2"></i>
                                 Registro
                             </button>
                         </div>
                         
                         <!-- Botones para usuarios autenticados -->
-                        <div id="authenticatedButtons" class="hidden items-center space-x-4">
-                            <span id="userInfo" class="ctei-project-card-metadata"></span>
-                            <a href="/dashboard" class="ctei-btn-primary" style="background-color: var(--chart-3); color: var(--background);">
-                                <i class="fas fa-tachometer-alt"></i>
+                        <div id="authenticatedButtons" class="hidden items-center space-x-3">
+                            <span id="userInfo" class="text-muted-foreground text-sm font-medium"></span>
+                            <a href="/dashboard" class="ctei-btn-primary">
+                                <i class="fas fa-tachometer-alt mr-2"></i>
                                 Dashboard
                             </a>
-                            <button onclick="logout()" class="ctei-btn-secondary" style="color: var(--destructive); border-color: var(--destructive);">
-                                <i class="fas fa-sign-out-alt"></i>
+                            <button onclick="logout()" class="ctei-btn-secondary text-destructive border-destructive hover:bg-destructive hover:text-destructive-foreground">
+                                <i class="fas fa-sign-out-alt mr-2"></i>
                                 Salir
                             </button>
                         </div>
@@ -652,16 +654,19 @@ app.get('/', (c) => {
                         </div>
                     </div>
                     
-                    <!-- Filtros rápidos -->
-                    <div class="flex flex-wrap justify-center gap-2 mt-6">
-                        <button onclick="performQuickFilter('projects')" class="ctei-badge ctei-badge-secondary">
-                            <i class="fas fa-project-diagram mr-1"></i> Proyectos
+                    <!-- Filtros Pill Toggle Interactivos -->
+                    <div class="flex flex-wrap justify-center gap-3 mt-8">
+                        <button id="filter-all" onclick="setActiveFilter('all', this)" class="ctei-pill-toggle ctei-pill-toggle--active">
+                            <i class="fas fa-th-large mr-2"></i> Todo
                         </button>
-                        <button onclick="performQuickFilter('products')" class="ctei-badge ctei-badge-secondary">
-                            <i class="fas fa-cubes mr-1"></i> Productos
+                        <button id="filter-projects" onclick="setActiveFilter('projects', this)" class="ctei-pill-toggle">
+                            <i class="fas fa-project-diagram mr-2"></i> Proyectos
                         </button>
-                        <button onclick="performQuickFilter('investigators')" class="ctei-badge ctei-badge-secondary">
-                            <i class="fas fa-users mr-1"></i> Investigadores
+                        <button id="filter-products" onclick="setActiveFilter('products', this)" class="ctei-pill-toggle">
+                            <i class="fas fa-cubes mr-2"></i> Productos
+                        </button>
+                        <button id="filter-investigators" onclick="setActiveFilter('investigators', this)" class="ctei-pill-toggle">
+                            <i class="fas fa-users mr-2"></i> Investigadores
                         </button>
                     </div>
                 </div>
@@ -1135,6 +1140,7 @@ app.get('/dashboard', (c) => {
         <script src="https://cdn.tailwindcss.com"></script>
         <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
         <link href="/static/styles.css" rel="stylesheet">
+        <script src="https://cdn.jsdelivr.net/npm/axios@1.6.0/dist/axios.min.js"></script>
         <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
         <script>
           tailwind.config = {
@@ -1367,19 +1373,19 @@ function generateProjectDetailPage(project: any): string {
   const keywords = project.keywords ? project.keywords.split(',').map((k: string) => k.trim()) : [];
   
   const collaboratorsList = project.collaborators?.map((c: any) => 
-    `<span class="inline-block bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full mr-2 mb-2">${c.full_name} - ${c.collaboration_role || c.role}</span>`
+    `<span class="ctei-tag ctei-tag--secondary ctei-tag--small mr-2 mb-2">${c.full_name} - ${c.collaboration_role || c.role}</span>`
   ).join('') || '';
   
   const productsList = project.products?.map((p: any) => `
     <div class="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
       <div class="flex items-start justify-between">
         <div class="flex-1">
-          <h4 class="font-semibold text-gray-900 mb-1">
+          <h4 class="font-semibold text-foreground mb-1">
             <a href="/producto/${p.id}" class="hover:text-primary transition-colors">${p.description || 'Sin descripción'}</a>
           </h4>
-          <p class="text-sm text-gray-600 mb-2">${p.product_code || ''}</p>
-          <div class="flex items-center space-x-4 text-xs text-gray-500">
-            <span class="bg-blue-100 text-blue-800 px-2 py-1 rounded">
+          <p class="text-sm text-muted-foreground mb-2">${p.product_code || ''}</p>
+          <div class="flex items-center space-x-4 text-xs text-muted-foreground">
+            <span class="ctei-tag ctei-tag--info ctei-tag--small">
               ${p.category_name || 'Sin categoría'}
             </span>
             ${p.publication_date ? `<span><i class="fas fa-calendar mr-1"></i>${new Date(p.publication_date).toLocaleDateString()}</span>` : ''}
@@ -1389,7 +1395,7 @@ function generateProjectDetailPage(project: any): string {
         <a href="/producto/${p.id}" class="ctei-btn-secondary text-sm ml-4">Ver Detalle</a>
       </div>
     </div>
-  `).join('') || '<p class="text-gray-500 italic">No hay productos publicados aún.</p>';
+  `).join('') || '<p class="text-muted-foreground italic">No hay productos publicados aún.</p>';
 
   return `
     <!DOCTYPE html>
@@ -1415,6 +1421,7 @@ function generateProjectDetailPage(project: any): string {
         <script src="https://cdn.tailwindcss.com"></script>
         <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
         <link href="/static/styles.css" rel="stylesheet">
+        <script src="https://cdn.jsdelivr.net/npm/axios@1.6.0/dist/axios.min.js"></script>
         
         <script>
           tailwind.config = {
@@ -1451,6 +1458,12 @@ function generateProjectDetailPage(project: any): string {
                     <div class="flex items-center space-x-4">
                         <a href="/#projects" class="ctei-navbar-link">Proyectos</a>
                         <a href="/#products" class="ctei-navbar-link">Productos</a>
+                        
+                        <!-- Toggle de modo oscuro -->
+                        <button id="theme-toggle" class="ctei-theme-toggle ml-4" title="Cambiar tema">
+                            <i class="fas fa-moon" id="theme-icon"></i>
+                        </button>
+                        
                         <a href="/" class="ctei-btn-secondary">
                             <i class="fas fa-home mr-2"></i>Inicio
                         </a>
@@ -1465,17 +1478,17 @@ function generateProjectDetailPage(project: any): string {
                 <nav class="flex" aria-label="Breadcrumb">
                     <ol class="inline-flex items-center space-x-1 md:space-x-3">
                         <li class="inline-flex items-center">
-                            <a href="/" class="text-gray-500 hover:text-primary">Inicio</a>
+                            <a href="/" class="text-muted-foreground hover:text-primary">Inicio</a>
                         </li>
                         <li>
                             <div class="flex items-center">
-                                <i class="fas fa-chevron-right text-gray-400 mx-2"></i>
-                                <a href="/#projects" class="text-gray-500 hover:text-primary">Proyectos</a>
+                                <i class="fas fa-chevron-right text-muted-foreground mx-2"></i>
+                                <a href="/#projects" class="text-muted-foreground hover:text-primary">Proyectos</a>
                             </div>
                         </li>
                         <li aria-current="page">
                             <div class="flex items-center">
-                                <i class="fas fa-chevron-right text-gray-400 mx-2"></i>
+                                <i class="fas fa-chevron-right text-muted-foreground mx-2"></i>
                                 <span class="text-foreground font-medium">${project.title}</span>
                             </div>
                         </li>
@@ -1494,7 +1507,7 @@ function generateProjectDetailPage(project: any): string {
                         <span class="ctei-badge ctei-badge-${project.status === 'ACTIVE' ? 'success' : 'warning'}">
                             <i class="fas fa-circle mr-2"></i>${project.status === 'ACTIVE' ? 'Activo' : 'En Planificación'}
                         </span>
-                        <span class="text-muted text-sm font-mono">${project.project_code}</span>
+                        ${project.project_code && project.project_code !== 'null' ? `<span class="text-muted text-sm font-mono">${project.project_code}</span>` : ''}
                     </div>
                     
                     <!-- Título principal -->
@@ -1566,58 +1579,82 @@ function generateProjectDetailPage(project: any): string {
 
                 <!-- Sidebar (1/3) -->
                 <div class="space-y-6">
-                    <!-- Ficha Técnica -->
+                    <!-- Fact Sheet Consolidado -->
                     <div class="ctei-project-card">
-                        <h3 class="text-lg font-bold mb-4 text-foreground">
-                            <i class="fas fa-clipboard-list mr-2 text-primary"></i>Información del Proyecto
+                        <h3 class="text-lg font-bold mb-6 text-foreground border-b border-border pb-3">
+                            <i class="fas fa-clipboard-list mr-2 text-primary"></i>Resumen Ejecutivo
                         </h3>
-                        <div class="space-y-3 text-sm">
-                            <div class="flex justify-between">
-                                <span class="text-muted">Líder:</span>
-                                <span class="font-medium text-foreground">${project.owner_name}</span>
+                        
+                        <!-- Estado del Proyecto -->
+                        <div class="mb-4">
+                            <span class="ctei-tag ctei-tag--${project.status === 'ACTIVE' ? 'success' : 'warning'} ctei-tag--small">
+                                <i class="fas fa-circle mr-1"></i>${project.status === 'ACTIVE' ? 'Activo' : 'En Planificación'}
+                            </span>
+                        </div>
+                        
+                        <!-- Metadata Grid -->
+                        <div class="space-y-4 text-sm">
+                            <!-- Líder del Proyecto -->
+                            <div class="flex flex-col space-y-1">
+                                <span class="text-muted-foreground font-medium">Líder del Proyecto</span>
+                                <span class="font-semibold text-foreground">${project.owner_name}</span>
+                                ${project.owner_email ? `<a href="mailto:${project.owner_email}" class="text-primary text-xs hover:underline">Contactar</a>` : ''}
                             </div>
-                            ${project.start_date ? `
-                            <div class="flex justify-between">
-                                <span class="text-muted">Inicio:</span>
-                                <span class="font-medium text-foreground">${formatDate(project.start_date)}</span>
+                            
+                            <!-- Código del Proyecto -->
+                            ${project.project_code ? `
+                            <div class="flex flex-col space-y-1">
+                                <span class="text-muted-foreground font-medium">Código</span>
+                                <code class="font-mono text-xs bg-muted/50 px-2 py-1 rounded">${project.project_code}</code>
                             </div>
                             ` : ''}
-                            ${project.end_date ? `
-                            <div class="flex justify-between">
-                                <span class="text-muted">Finalización:</span>
-                                <span class="font-medium text-foreground">${formatDate(project.end_date)}</span>
+                            
+                            <!-- Fechas Clave -->
+                            ${project.start_date || project.end_date ? `
+                            <div class="flex flex-col space-y-1">
+                                <span class="text-muted-foreground font-medium">Cronograma</span>
+                                ${project.start_date ? `<div class="text-xs"><strong>Inicio:</strong> ${new Date(project.start_date).toLocaleDateString()}</div>` : ''}
+                                ${project.end_date ? `<div class="text-xs"><strong>Fin:</strong> ${new Date(project.end_date).toLocaleDateString()}</div>` : ''}
                             </div>
                             ` : ''}
+                            
+                            <!-- Financiación -->
                             ${project.funding_source ? `
-                            <div class="flex justify-between">
-                                <span class="text-muted">Financiación:</span>
-                                <span class="font-medium text-foreground">${project.funding_source}</span>
+                            <div class="flex flex-col space-y-1">
+                                <span class="text-muted-foreground font-medium">Financiación</span>
+                                <span class="text-foreground text-xs">${project.funding_source}</span>
                             </div>
                             ` : ''}
+                            
+                            <!-- Institución -->
+                            ${project.institution ? `
+                            <div class="flex flex-col space-y-1">
+                                <span class="text-muted-foreground font-medium">Institución</span>
+                                <span class="text-foreground text-xs">${project.institution}</span>
+                            </div>
+                            ` : ''}
+                            
+                            <!-- Presupuesto -->
                             ${project.budget ? `
-                            <div class="flex justify-between">
-                                <span class="text-muted">Presupuesto:</span>
-                                <span class="font-medium text-foreground">$${formatCurrency(project.budget)}</span>
+                            <div class="flex flex-col space-y-1">
+                                <span class="text-muted-foreground font-medium">Presupuesto</span>
+                                <span class="font-semibold text-primary">${new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP' }).format(project.budget)}</span>
+                            </div>
+                            ` : ''}
+                            
+                            <!-- Palabras Clave -->
+                            ${keywords.length > 0 ? `
+                            <div class="flex flex-col space-y-2">
+                                <span class="text-muted-foreground font-medium">Palabras Clave</span>
+                                <div class="flex flex-wrap gap-1">
+                                    ${keywords.slice(0, 5).map(keyword => `
+                                        <span class="ctei-tag ctei-tag--outline ctei-tag--small">${keyword}</span>
+                                    `).join('')}
+                                </div>
                             </div>
                             ` : ''}
                         </div>
                     </div>
-
-                    <!-- Palabras Clave -->
-                    ${keywords.length > 0 ? `
-                    <div class="ctei-project-card">
-                        <h3 class="text-lg font-bold mb-4 text-foreground">
-                            <i class="fas fa-tags mr-2 text-primary"></i>Palabras Clave
-                        </h3>
-                        <div class="flex flex-wrap gap-2">
-                            ${keywords.map(keyword => `
-                                <span class="inline-block bg-accent/20 text-accent-foreground text-xs px-3 py-1 rounded-full">
-                                    ${keyword}
-                                </span>
-                            `).join('')}
-                        </div>
-                    </div>
-                    ` : ''}
 
                     <!-- Equipo Colaborador -->
                     ${project.collaborators?.length > 0 ? `
@@ -1689,6 +1726,61 @@ function generateProjectDetailPage(project: any): string {
                 }
             });
         </script>
+        
+        <!-- Footer consistente -->
+        <footer class="ctei-footer">
+            <div class="max-w-6xl mx-auto px-4">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8 py-8">
+                    <div class="text-center md:text-left">
+                        <h3 class="text-lg font-bold text-foreground mb-4 flex items-center justify-center md:justify-start">
+                            <i class="fas fa-dna mr-2 text-primary"></i>
+                            CTeI-Manager
+                        </h3>
+                        <p class="text-muted">Portal de Ciencia, Tecnología e Innovación del Chocó</p>
+                    </div>
+                    <div class="text-center">
+                        <h4 class="font-semibold text-foreground mb-4">Enlaces Rápidos</h4>
+                        <div class="space-y-2">
+                            <a href="/#projects" class="ctei-footer-link block">Proyectos</a>
+                            <a href="/#products" class="ctei-footer-link block">Productos</a>
+                            <a href="/#stats" class="ctei-footer-link block">Analíticas</a>
+                        </div>
+                    </div>
+                    <div class="text-center md:text-right">
+                        <h4 class="font-semibold text-foreground mb-4">Contacto</h4>
+                        <p class="text-muted text-sm">
+                            <i class="fas fa-envelope mr-2"></i>
+                            info@ctei-choco.edu.co
+                        </p>
+                        <p class="text-muted text-sm mt-2">
+                            <i class="fas fa-phone mr-2"></i>
+                            +57 (4) 671-2345
+                        </p>
+                    </div>
+                </div>
+                <div class="border-t border-border pt-6 pb-4">
+                    <div class="flex flex-col md:flex-row justify-between items-center">
+                        <p class="text-muted text-sm">
+                            © ${new Date().getFullYear()} CTeI-Manager. Todos los derechos reservados.
+                        </p>
+                        <div class="flex space-x-4 mt-4 md:mt-0">
+                            <a href="#" class="text-muted hover:text-primary transition-colors">
+                                <i class="fab fa-github"></i>
+                            </a>
+                            <a href="#" class="text-muted hover:text-primary transition-colors">
+                                <i class="fab fa-linkedin"></i>
+                            </a>
+                            <a href="#" class="text-muted hover:text-primary transition-colors">
+                                <i class="fas fa-envelope"></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </footer>
+        
+        <!-- Incluir app.js para funcionalidad del tema -->
+        <script src="/static/app.js"></script>
     </body>
     </html>
   `;
@@ -1705,7 +1797,7 @@ function generateProductDetailPage(product: any): string {
   const safeProjectTitle = (product.project_title || '').replace(/'/g, '&#39;').replace(/"/g, '&quot;');
   
   const authorsList = product.authors?.map((a: any) => `
-    <div class="flex items-center justify-between p-3 bg-gray-50 rounded">
+    <div class="flex items-center justify-between p-3 bg-muted/50 rounded">
         <div>
             <p class="font-medium text-foreground">${a.full_name || 'Sin nombre'}</p>
             <p class="text-sm text-muted">${a.author_role || 'Autor'} ${a.contribution_type ? `• ${a.contribution_type}` : ''}</p>
@@ -1732,6 +1824,7 @@ function generateProductDetailPage(product: any): string {
         <script src="https://cdn.tailwindcss.com"></script>
         <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
         <link href="/static/styles.css" rel="stylesheet">
+        <script src="https://cdn.jsdelivr.net/npm/axios@1.6.0/dist/axios.min.js"></script>
         
         <script>
           tailwind.config = {
@@ -1768,6 +1861,12 @@ function generateProductDetailPage(product: any): string {
                     <div class="flex items-center space-x-4">
                         <a href="/#products" class="ctei-navbar-link">Productos</a>
                         <a href="/#projects" class="ctei-navbar-link">Proyectos</a>
+                        
+                        <!-- Toggle de modo oscuro -->
+                        <button id="theme-toggle" class="ctei-theme-toggle ml-4" title="Cambiar tema">
+                            <i class="fas fa-moon" id="theme-icon"></i>
+                        </button>
+                        
                         <a href="/" class="ctei-btn-secondary">
                             <i class="fas fa-home mr-2"></i>Inicio
                         </a>
@@ -1782,25 +1881,25 @@ function generateProductDetailPage(product: any): string {
                 <nav class="flex" aria-label="Breadcrumb">
                     <ol class="inline-flex items-center space-x-1 md:space-x-3">
                         <li class="inline-flex items-center">
-                            <a href="/" class="text-gray-500 hover:text-primary">Inicio</a>
+                            <a href="/" class="text-muted-foreground hover:text-primary">Inicio</a>
                         </li>
                         <li>
                             <div class="flex items-center">
-                                <i class="fas fa-chevron-right text-gray-400 mx-2"></i>
-                                <a href="/#products" class="text-gray-500 hover:text-primary">Productos</a>
+                                <i class="fas fa-chevron-right text-muted-foreground mx-2"></i>
+                                <a href="/#products" class="text-muted-foreground hover:text-primary">Productos</a>
                             </div>
                         </li>
                         ${product.project_title ? `
                         <li>
                             <div class="flex items-center">
-                                <i class="fas fa-chevron-right text-gray-400 mx-2"></i>
-                                <a href="/proyecto/${product.project_id}" class="text-gray-500 hover:text-primary">${product.project_title}</a>
+                                <i class="fas fa-chevron-right text-muted-foreground mx-2"></i>
+                                <a href="/proyecto/${product.project_id}" class="text-muted-foreground hover:text-primary">${product.project_title}</a>
                             </div>
                         </li>
                         ` : ''}
                         <li aria-current="page">
                             <div class="flex items-center">
-                                <i class="fas fa-chevron-right text-gray-400 mx-2"></i>
+                                <i class="fas fa-chevron-right text-muted-foreground mx-2"></i>
                                 <span class="text-foreground font-medium">${product.product_code}</span>
                             </div>
                         </li>
@@ -1814,8 +1913,8 @@ function generateProductDetailPage(product: any): string {
             <div class="absolute inset-0 scientific-pattern opacity-10"></div>
             <div class="relative max-w-6xl mx-auto px-4 text-center">
                 <div class="mb-4">
-                    <span class="ctei-badge ctei-badge-${getCategoryColorJS(product.category_group)}">
-                        <i class="fas fa-cube mr-2"></i>${product.category_name}
+                    <span class="ctei-badge ctei-badge-primary">
+                        <i class="fas fa-cube mr-2"></i>${safeCategoryName}
                     </span>
                 </div>
                 
@@ -1862,7 +1961,7 @@ function generateProductDetailPage(product: any): string {
                         
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                             ${product.journal ? `
-                            <div class="bg-gray-50 p-4 rounded-lg">
+                            <div class="bg-muted/30 p-4 rounded-lg">
                                 <h4 class="font-semibold text-foreground mb-2">
                                     <i class="fas fa-journal-whills mr-2 text-primary"></i>Revista/Editorial
                                 </h4>
@@ -1871,7 +1970,7 @@ function generateProductDetailPage(product: any): string {
                             ` : ''}
                             
                             ${product.impact_factor ? `
-                            <div class="bg-gray-50 p-4 rounded-lg">
+                            <div class="bg-muted/30 p-4 rounded-lg">
                                 <h4 class="font-semibold text-foreground mb-2">
                                     <i class="fas fa-star mr-2 text-primary"></i>Factor de Impacto
                                 </h4>
@@ -1880,7 +1979,7 @@ function generateProductDetailPage(product: any): string {
                             ` : ''}
                             
                             ${product.citation_count ? `
-                            <div class="bg-gray-50 p-4 rounded-lg">
+                            <div class="bg-muted/30 p-4 rounded-lg">
                                 <h4 class="font-semibold text-foreground mb-2">
                                     <i class="fas fa-quote-right mr-2 text-primary"></i>Citas
                                 </h4>
@@ -1888,7 +1987,7 @@ function generateProductDetailPage(product: any): string {
                             </div>
                             ` : ''}
                             
-                            <div class="bg-gray-50 p-4 rounded-lg">
+                            <div class="bg-muted/30 p-4 rounded-lg">
                                 <h4 class="font-semibold text-foreground mb-2">
                                     <i class="fas fa-weight-hanging mr-2 text-primary"></i>Peso de Impacto
                                 </h4>
@@ -1932,38 +2031,85 @@ function generateProductDetailPage(product: any): string {
 
                 <!-- Sidebar -->
                 <div class="space-y-6">
-                    <!-- Detalles Técnicos -->
+                    <!-- Fact Sheet Consolidado -->
                     <div class="ctei-project-card">
-                        <h3 class="text-lg font-bold mb-4 text-foreground">
-                            <i class="fas fa-clipboard-list mr-2 text-primary"></i>Detalles Técnicos
+                        <h3 class="text-lg font-bold mb-6 text-foreground border-b border-border pb-3">
+                            <i class="fas fa-clipboard-list mr-2 text-primary"></i>Resumen Ejecutivo
                         </h3>
-                        <div class="space-y-3 text-sm">
-                            <div class="flex justify-between">
-                                <span class="text-muted">Código:</span>
-                                <span class="font-mono text-foreground">${product.product_code}</span>
-                            </div>
-                            <div class="flex justify-between">
-                                <span class="text-muted">Categoría:</span>
-                                <span class="font-medium text-foreground">${product.category_name}</span>
-                            </div>
-                            <div class="flex justify-between">
-                                <span class="text-muted">Grupo:</span>
-                                <span class="font-medium text-foreground">${product.category_group}</span>
-                            </div>
-                            ${product.publication_date ? `
-                            <div class="flex justify-between">
-                                <span class="text-muted">Publicación:</span>
-                                <span class="font-medium text-foreground">${formatDateJS(product.publication_date)}</span>
-                            </div>
-                            ` : ''}
-                            ${product.created_at ? `
-                            <div class="flex justify-between">
-                                <span class="text-muted">Registrado:</span>
-                                <span class="font-medium text-foreground">${formatDateJS(product.created_at)}</span>
-                            </div>
-                            ` : ''}
+                        
+                        <!-- Categoría del Producto -->
+                        <div class="mb-4">
+                            <span class="ctei-tag ctei-tag--primary ctei-tag--small">
+                                <i class="fas fa-cube mr-1"></i>${product.category_name || 'Sin categoría'}
+                            </span>
                         </div>
-                    </div>
+                        
+                        <!-- Metadata Grid -->
+                        <div class="space-y-4 text-sm">
+                            <!-- Código del Producto -->
+                            <div class="flex flex-col space-y-1">
+                                <span class="text-muted-foreground font-medium">Código</span>
+                                <code class="font-mono text-xs bg-muted/50 px-2 py-1 rounded">${product.product_code}</code>
+                            </div>
+                            
+                            <!-- Grupo de Categoría -->
+                            ${product.category_group ? `
+                            <div class="flex flex-col space-y-1">
+                                <span class="text-muted-foreground font-medium">Grupo</span>
+                                <span class="text-foreground text-xs">${product.category_group}</span>
+                            </div>
+                            ` : ''}
+                            
+                            <!-- Fechas Clave -->
+                            <div class="flex flex-col space-y-1">
+                                <span class="text-muted-foreground font-medium">Cronograma</span>
+                                ${product.publication_date ? `<div class="text-xs"><strong>Publicado:</strong> ${new Date(product.publication_date).toLocaleDateString()}</div>` : ''}
+                                ${product.created_at ? `<div class="text-xs"><strong>Registrado:</strong> ${new Date(product.created_at).toLocaleDateString()}</div>` : ''}
+                            </div>
+                            
+                            <!-- Métricas de Impacto -->
+                            ${product.impact_factor || product.citation_count || product.impact_weight ? `
+                            <div class="flex flex-col space-y-2">
+                                <span class="text-muted-foreground font-medium">Métricas de Impacto</span>
+                                <div class="space-y-1">
+                                    ${product.impact_factor ? `<div class="text-xs"><strong>Factor:</strong> ${product.impact_factor}</div>` : ''}
+                                    ${product.citation_count ? `<div class="text-xs"><strong>Citas:</strong> ${product.citation_count}</div>` : ''}
+                                    ${product.impact_weight ? `<div class="text-xs"><strong>Peso:</strong> ${product.impact_weight}</div>` : ''}
+                                </div>
+                            </div>
+                            ` : ''}
+                            
+                            <!-- Revista/Editorial -->
+                            ${product.journal ? `
+                            <div class="flex flex-col space-y-1">
+                                <span class="text-muted-foreground font-medium">Revista/Editorial</span>
+                                <span class="text-foreground text-xs">${product.journal}</span>
+                            </div>
+                            ` : ''}
+                            
+                            <!-- Proyecto Asociado -->
+                            ${product.project_title ? `
+                            <div class="flex flex-col space-y-1">
+                                <span class="text-muted-foreground font-medium">Proyecto</span>
+                                <a href="/proyecto/${product.project_id}" class="text-primary text-xs hover:underline font-medium">${product.project_title}</a>
+                            </div>
+                            ` : ''}
+                            
+                            <!-- Autores Principales -->
+                            ${product.authors && product.authors.length > 0 ? `
+                            <div class="flex flex-col space-y-2">
+                                <span class="text-muted-foreground font-medium">Autores</span>
+                                <div class="space-y-1">
+                                    ${product.authors.slice(0, 3).map(author => `
+                                        <div class="text-xs">
+                                            <span class="font-medium">${author.full_name}</span>
+                                            ${author.author_role ? ` <span class="text-muted-foreground">(${author.author_role})</span>` : ''}
+                                        </div>
+                                    `).join('')}
+                                    ${product.authors.length > 3 ? `<div class="text-xs text-muted-foreground">+${product.authors.length - 3} más...</div>` : ''}
+                                </div>
+                            </div>
+                            ` : ''}
 
                     <!-- Enlaces Externos -->
                     ${(product.doi || product.url || product.file_url) ? `
@@ -1973,21 +2119,21 @@ function generateProductDetailPage(product: any): string {
                         </h3>
                         <div class="space-y-2">
                             ${product.doi ? `
-                                <a href="https://doi.org/${product.doi}" target="_blank" class="flex items-center p-3 bg-blue-50 hover:bg-blue-100 rounded transition-colors">
-                                    <i class="fas fa-fingerprint mr-3 text-blue-600"></i>
-                                    <span class="text-blue-800">Ver en DOI</span>
+                                <a href="https://doi.org/${product.doi}" target="_blank" class="flex items-center p-3 bg-chart-2/10 hover:bg-chart-2/20 rounded transition-colors border border-chart-2/20">
+                                    <i class="fas fa-fingerprint mr-3 text-chart-2"></i>
+                                    <span class="text-foreground font-medium">Ver en DOI</span>
                                 </a>
                             ` : ''}
                             ${product.url ? `
-                                <a href="${product.url}" target="_blank" class="flex items-center p-3 bg-green-50 hover:bg-green-100 rounded transition-colors">
-                                    <i class="fas fa-globe mr-3 text-green-600"></i>
-                                    <span class="text-green-800">Sitio Web</span>
+                                <a href="${product.url}" target="_blank" class="flex items-center p-3 bg-chart-1/10 hover:bg-chart-1/20 rounded transition-colors border border-chart-1/20">
+                                    <i class="fas fa-globe mr-3 text-chart-1"></i>
+                                    <span class="text-foreground font-medium">Sitio Web</span>
                                 </a>
                             ` : ''}
                             ${product.file_url ? `
-                                <a href="${product.file_url}" target="_blank" class="flex items-center p-3 bg-purple-50 hover:bg-purple-100 rounded transition-colors">
-                                    <i class="fas fa-download mr-3 text-purple-600"></i>
-                                    <span class="text-purple-800">Descargar Archivo</span>
+                                <a href="${product.file_url}" target="_blank" class="flex items-center p-3 bg-chart-3/10 hover:bg-chart-3/20 rounded transition-colors border border-chart-3/20">
+                                    <i class="fas fa-download mr-3 text-chart-3"></i>
+                                    <span class="text-foreground font-medium">Descargar Archivo</span>
                                 </a>
                             ` : ''}
                         </div>
@@ -2058,6 +2204,61 @@ function generateProductDetailPage(product: any): string {
                 }
             });
         </script>
+        
+        <!-- Footer consistente -->
+        <footer class="ctei-footer">
+            <div class="max-w-6xl mx-auto px-4">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8 py-8">
+                    <div class="text-center md:text-left">
+                        <h3 class="text-lg font-bold text-foreground mb-4 flex items-center justify-center md:justify-start">
+                            <i class="fas fa-dna mr-2 text-primary"></i>
+                            CTeI-Manager
+                        </h3>
+                        <p class="text-muted">Portal de Ciencia, Tecnología e Innovación del Chocó</p>
+                    </div>
+                    <div class="text-center">
+                        <h4 class="font-semibold text-foreground mb-4">Enlaces Rápidos</h4>
+                        <div class="space-y-2">
+                            <a href="/#projects" class="ctei-footer-link block">Proyectos</a>
+                            <a href="/#products" class="ctei-footer-link block">Productos</a>
+                            <a href="/#stats" class="ctei-footer-link block">Analíticas</a>
+                        </div>
+                    </div>
+                    <div class="text-center md:text-right">
+                        <h4 class="font-semibold text-foreground mb-4">Contacto</h4>
+                        <p class="text-muted text-sm">
+                            <i class="fas fa-envelope mr-2"></i>
+                            info@ctei-choco.edu.co
+                        </p>
+                        <p class="text-muted text-sm mt-2">
+                            <i class="fas fa-phone mr-2"></i>
+                            +57 (4) 671-2345
+                        </p>
+                    </div>
+                </div>
+                <div class="border-t border-border pt-6 pb-4">
+                    <div class="flex flex-col md:flex-row justify-between items-center">
+                        <p class="text-muted text-sm">
+                            © ${new Date().getFullYear()} CTeI-Manager. Todos los derechos reservados.
+                        </p>
+                        <div class="flex space-x-4 mt-4 md:mt-0">
+                            <a href="#" class="text-muted hover:text-primary transition-colors">
+                                <i class="fab fa-github"></i>
+                            </a>
+                            <a href="#" class="text-muted hover:text-primary transition-colors">
+                                <i class="fab fa-linkedin"></i>
+                            </a>
+                            <a href="#" class="text-muted hover:text-primary transition-colors">
+                                <i class="fas fa-envelope"></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </footer>
+        
+        <!-- Incluir app.js para funcionalidad del tema -->
+        <script src="/static/app.js"></script>
     </body>
     </html>
   `;
@@ -2077,6 +2278,7 @@ function generateErrorPage(title: string, message: string): string {
         <script src="https://cdn.tailwindcss.com"></script>
         <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
         <link href="/static/styles.css" rel="stylesheet">
+        <script src="https://cdn.jsdelivr.net/npm/axios@1.6.0/dist/axios.min.js"></script>
     </head>
     <body class="level-0 bg-background text-foreground">
         <nav class="ctei-navbar">

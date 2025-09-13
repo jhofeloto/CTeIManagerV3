@@ -1394,6 +1394,208 @@ body {
   border-color: var(--primary);
 }
 
+/* ===== COMPONENTE TAG UNIFICADO (TALLA MUNDIAL) ===== */
+/* Sistema de tags coherente para toda la aplicación */
+.ctei-tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.375rem 0.75rem;
+  border-radius: calc(var(--radius) * 2);
+  font-size: 0.75rem;
+  font-weight: 500;
+  letter-spacing: 0.025em;
+  transition: all 0.2s ease;
+  border: 1px solid transparent;
+}
+
+/* Variantes de estado */
+.ctei-tag--success {
+  background-color: var(--chart-1);
+  color: var(--background);
+}
+
+.ctei-tag--warning {
+  background-color: var(--chart-4);
+  color: var(--background);
+}
+
+.ctei-tag--info {
+  background-color: var(--chart-2);
+  color: var(--background);
+}
+
+.ctei-tag--primary {
+  background-color: var(--primary);
+  color: var(--primary-foreground);
+}
+
+.ctei-tag--secondary {
+  background-color: var(--muted);
+  color: var(--muted-foreground);
+  border-color: var(--border);
+}
+
+.ctei-tag--outline {
+  background-color: transparent;
+  color: var(--foreground);
+  border-color: var(--border);
+}
+
+/* Efectos hover para tags interactivos */
+.ctei-tag--interactive:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* ===== PILL TOGGLES PARA FILTROS (TALLA MUNDIAL) ===== */
+.ctei-pill-toggle {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.5rem 1rem;
+  border-radius: calc(var(--radius) * 4);
+  font-size: 0.875rem;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  cursor: pointer;
+  border: 2px solid transparent;
+  background-color: var(--muted);
+  color: var(--muted-foreground);
+}
+
+.ctei-pill-toggle:hover {
+  background-color: var(--accent);
+  color: var(--accent-foreground);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.ctei-pill-toggle--active {
+  background-color: var(--primary);
+  color: var(--primary-foreground);
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px var(--primary)/20;
+}
+
+.ctei-pill-toggle--active:hover {
+  background-color: var(--primary);
+  color: var(--primary-foreground);
+  transform: none;
+  box-shadow: 0 0 0 3px var(--primary)/30;
+}
+
+/* Tags de diferentes tamaños */
+.ctei-tag--small {
+  padding: 0.25rem 0.5rem;
+  font-size: 0.625rem;
+}
+
+.ctei-tag--large {
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+}
+
+/* ===== MICROINTERACCIONES Y TRANSICIONES (TALLA MUNDIAL) ===== */
+/* Animaciones sutiles para mejorar la experiencia */
+
+/* Fade-in para elementos de página */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.ctei-fade-in {
+  animation: fadeIn 0.6s ease-out;
+}
+
+/* Hero section con animación */
+.ctei-hero-content {
+  animation: fadeIn 0.8s ease-out;
+}
+
+/* Cards con hover suave */
+.ctei-project-card {
+  transition: all 0.3s ease;
+}
+
+.ctei-project-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+}
+
+/* Botones con microinteracciones */
+.ctei-btn-primary,
+.ctei-btn-secondary {
+  transition: all 0.2s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.ctei-btn-primary:hover,
+.ctei-btn-secondary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.ctei-btn-primary:active,
+.ctei-btn-secondary:active {
+  transform: translateY(0);
+}
+
+/* Enlaces con underline animado */
+a:not(.ctei-btn-primary):not(.ctei-btn-secondary):hover {
+  transition: color 0.2s ease;
+}
+
+/* Navbar con transición suave */
+.ctei-navbar {
+  transition: all 0.3s ease;
+}
+
+/* Theme toggle con rotación suave */
+.ctei-theme-toggle {
+  transition: transform 0.3s ease;
+}
+
+.ctei-theme-toggle:hover {
+  transform: rotate(15deg);
+}
+
+/* Breadcrumbs con hover suave */
+.ctei-navbar a,
+nav a {
+  transition: color 0.2s ease;
+  position: relative;
+}
+
+/* Focus states accesibles */
+*:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+  border-radius: var(--radius);
+}
+
+/* Skeleton loading para futuras mejoras */
+@keyframes shimmer {
+  0% {
+    background-position: -200px 0;
+  }
+  100% {
+    background-position: calc(200px + 100%) 0;
+  }
+}
+
+.ctei-skeleton {
+  background: linear-gradient(90deg, var(--muted) 25%, var(--accent) 50%, var(--muted) 75%);
+  background-size: 200px 100%;
+  animation: shimmer 2s infinite;
+}
+
 /* Tags y badges en modales con mejor contraste */
 .ctei-modal-content .ctei-tag {
   background-color: var(--accent);

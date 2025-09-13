@@ -1057,7 +1057,30 @@ function performHeroSearch() {
     }
 }
 
-// Función para filtros rápidos desde el hero
+// 🎯 NUEVA FUNCIONALIDAD: Pill Toggle Filters (Talla Mundial)
+function setActiveFilter(type, clickedButton) {
+    // Remover clase activa de todos los botones
+    document.querySelectorAll('.ctei-pill-toggle').forEach(btn => {
+        btn.classList.remove('ctei-pill-toggle--active');
+    });
+    
+    // Añadir clase activa al botón clickeado
+    clickedButton.classList.add('ctei-pill-toggle--active');
+    
+    // Aplicar filtro usando la función existente
+    if (type !== 'all') {
+        performQuickFilter(type);
+    } else {
+        // Limpiar filtros si es "Todo"
+        const typeFilter = document.getElementById('typeFilter');
+        if (typeFilter) {
+            typeFilter.value = '';
+        }
+        performSearch();
+    }
+}
+
+// Función para filtros rápidos desde el hero (función original mantenida)
 function performQuickFilter(type) {
     // Actualizar filtro de tipo
     const typeFilter = document.getElementById('typeFilter');
