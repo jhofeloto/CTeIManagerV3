@@ -12,7 +12,24 @@
 - Sistema de roles y colaboración granular para equipos de investigación
 - Dashboard analítico para visualización de métricas e impacto
 
-### 🆕 **NUEVO - Sistema de Autoría de Productos (Implementado)**
+### 🆕 **NUEVO - Fase 3A: Sistema de Scoring y Evaluación Automatizada (Implementado)**
+- ✅ **Evaluación automatizada multi-criterio**: Completitud, colaboración, productividad, impacto, innovación, cronograma
+- ✅ **Algoritmos inteligentes de scoring**: Cálculos ponderados con fórmulas especializadas por criterio
+- ✅ **Categorización automática**: EXCELENTE (85+), BUENO (70-84), REGULAR (50-69), NECESITA_MEJORA (<50)
+- ✅ **Recomendaciones automatizadas**: Sistema de IA que genera sugerencias específicas por proyecto
+- ✅ **Dashboard ejecutivo avanzado**: Métricas visuales, gráficos de distribución, estadísticas en tiempo real
+- ✅ **Análisis histórico**: Seguimiento de evolución del scoring a través del tiempo
+- ✅ **Sistema de filtrado**: Búsqueda por categoría, rango de score, y múltiples criterios
+- ✅ **Detalle granular**: Breakdown completo por criterio con pesos y explicaciones
+
+### ✅ **Fase 2B - Sistema de Alertas Inteligentes (Implementado)**
+- ✅ **Alertas proactivas categorizadas**: PERFORMANCE, RISK, OPPORTUNITY, COMPLIANCE  
+- ✅ **Detección automática de riesgos**: Análisis de patrones con scoring de prioridad
+- ✅ **Gestión de estados**: ACTIVE → ACKNOWLEDGED → IN_PROGRESS → RESOLVED
+- ✅ **Dashboard de alertas**: Filtros, estadísticas, y acciones recomendadas
+- ✅ **Motor de análisis con IA**: Generación automática de alertas basada en métricas
+
+### ✅ **Fase 1 - Sistema de Autoría de Productos (Implementado)**
 - ✅ **Autoría obligatoria**: Cada producto tiene al menos un investigador asociado
 - ✅ **Múltiples autores por producto** con roles específicos (AUTHOR, CO_AUTHOR, EDITOR, REVIEWER)
 - ✅ **Orden de autoría configurable** (primer autor, segundo autor, etc.)
@@ -39,6 +56,8 @@
 - **Estadísticas Públicas**: https://3000-ikn1warb4441jlaxw6wn4-6532622b.e2b.dev/api/public/stats
 - **Categorías de Productos**: https://3000-ikn1warb4441jlaxw6wn4-6532622b.e2b.dev/api/public/product-categories
 - **Instituciones**: https://3000-ikn1warb4441jlaxw6wn4-6532622b.e2b.dev/api/public/institutions
+- **🔔 Dashboard de Alertas (Fase 2B)**: https://3000-ikn1warb4441jlaxw6wn4-6532622b.e2b.dev/dashboard (Admin → Sistema de Alertas)
+- **📊 Dashboard de Scoring (Fase 3A)**: https://3000-ikn1warb4441jlaxw6wn4-6532622b.e2b.dev/dashboard (Admin → Evaluación y Scoring)
 - **🧪 Test Sistema de Autoría**: https://3000-ikn1warb4441jlaxw6wn4-6532622b.e2b.dev/test_authorship_system.html
 - **🎯 Test Mis Productos**: https://3000-ikn1warb4441jlaxw6wn4-6532622b.e2b.dev/test_my_products.html
 

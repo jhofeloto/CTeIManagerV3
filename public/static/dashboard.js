@@ -243,6 +243,24 @@ function renderDashboard() {
                         </li>
                         <li>
                             <button 
+                                onclick="showView('alerts')" 
+                                class="nav-item w-full flex items-center px-3 py-2 text-left rounded-lg hover:bg-accent hover:text-accent-foreground transition-colors"
+                            >
+                                <i class="fas fa-exclamation-triangle mr-3"></i>
+                                Sistema de Alertas
+                            </button>
+                        </li>
+                        <li>
+                            <button 
+                                onclick="showView('scoring')" 
+                                class="nav-item w-full flex items-center px-3 py-2 text-left rounded-lg hover:bg-accent hover:text-accent-foreground transition-colors"
+                            >
+                                <i class="fas fa-chart-bar mr-3"></i>
+                                Evaluación y Scoring
+                            </button>
+                        </li>
+                        <li>
+                            <button 
                                 onclick="debugMonitoringView()" 
                                 class="nav-item w-full flex items-center px-3 py-2 text-left rounded-lg hover:bg-red-100 hover:text-red-700 transition-colors border border-red-200"
                             >
@@ -416,6 +434,12 @@ function showView(view) {
             break;
         case 'monitoring':
             renderMonitoringDashboard();
+            break;
+        case 'alerts':
+            renderAlertsDashboard();
+            break;
+        case 'scoring':
+            renderScoringDashboard();
             break;
         case 'basic-monitoring':
             if (typeof renderBasicMonitoringView === 'function') renderBasicMonitoringView();
@@ -1579,6 +1603,581 @@ async function updateProfile(event) {
         submitButton.disabled = false;
         submitButton.innerHTML = originalText;
     }
+}
+
+// ===== DASHBOARD DE SISTEMA DE ALERTAS INTELIGENTES - FASE 2B =====
+async function renderAlertsDashboard() {
+    try {
+        document.getElementById('content').innerHTML = `
+            <div class="space-y-6">
+                <!-- Encabezado del Dashboard de Alertas -->
+                <div class="ctei-content-card">
+                    <div class="ctei-content-card-header">
+                        <div>
+                            <div class="ctei-content-card-title">
+                                <i class="fas fa-exclamation-triangle text-accent mr-3"></i>
+                                Sistema de Alertas Inteligentes
+                            </div>
+                            <div class="ctei-content-card-description">
+                                Fase 2B - Análisis Proactivo de Riesgos y Oportunidades
+                            </div>
+                        </div>
+                        <div class="flex items-center space-x-3">
+                            <div id="alerts-last-updated" class="text-sm text-muted-foreground">
+                                <i class="fas fa-sync-alt mr-1"></i>
+                                Cargando...
+                            </div>
+                            <button 
+                                onclick="refreshAlertsDashboard()"
+                                class="ctei-btn-primary"
+                            >
+                                <i class="fas fa-sync-alt mr-2"></i>
+                                Actualizar
+                            </button>
+                            <button 
+                                onclick="runRiskAnalysis()"
+                                class="ctei-btn-secondary"
+                                style="background-color: var(--chart-3); color: var(--background);"
+                            >
+                                <i class="fas fa-robot mr-2"></i>
+                                Análisis IA
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Filtros de Alertas -->
+                <div class="ctei-content-card">
+                    <div class="ctei-content-card-header">
+                        <div class="ctei-content-card-title">Filtros de Alertas</div>
+                    </div>
+                    <div class="p-4">
+                        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-foreground mb-2">Estado</label>
+                                <select id="alert-status-filter" onchange="filterAlerts()" 
+                                        class="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-primary">
+                                    <option value="ACTIVE">Activas</option>
+                                    <option value="ALL">Todas</option>
+                                    <option value="ACKNOWLEDGED">Reconocidas</option>
+                                    <option value="RESOLVED">Resueltas</option>
+                                    <option value="DISMISSED">Descartadas</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-foreground mb-2">Categoría</label>
+                                <select id="alert-category-filter" onchange="filterAlerts()" 
+                                        class="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-primary">
+                                    <option value="">Todas las categorías</option>
+                                    <option value="PERFORMANCE">Rendimiento</option>
+                                    <option value="RISK">Riesgos</option>
+                                    <option value="OPPORTUNITY">Oportunidades</option>
+                                    <option value="COMPLIANCE">Cumplimiento</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-foreground mb-2">Severidad</label>
+                                <select id="alert-severity-filter" onchange="filterAlerts()" 
+                                        class="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-primary">
+                                    <option value="">Todos los niveles</option>
+                                    <option value="1">Crítico</option>
+                                    <option value="2">Alto</option>
+                                    <option value="3">Medio</option>
+                                    <option value="4">Bajo</option>
+                                    <option value="5">Informativo</option>
+                                </select>
+                            </div>
+                            <div class="flex items-end">
+                                <button onclick="clearAlertsFilters()" 
+                                        class="w-full bg-muted text-muted-foreground px-4 py-2 rounded-lg font-medium hover:opacity-90">
+                                    <i class="fas fa-times mr-2"></i>
+                                    Limpiar
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Estadísticas de Alertas -->
+                <div id="alerts-statistics" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                    <!-- Se carga dinámicamente -->
+                </div>
+
+                <!-- Lista de Alertas -->
+                <div class="ctei-content-card">
+                    <div class="ctei-content-card-header">
+                        <div class="ctei-content-card-title">
+                            <i class="fas fa-list mr-2"></i>
+                            Alertas del Sistema
+                        </div>
+                        <div id="alerts-count" class="text-sm text-muted-foreground">
+                            <!-- Contador de alertas -->
+                        </div>
+                    </div>
+                    <div id="alerts-list" class="divide-y divide-border">
+                        <!-- Lista de alertas se carga dinámicamente -->
+                        <div class="p-8 text-center text-muted-foreground">
+                            <i class="fas fa-spinner fa-spin text-2xl mb-4"></i>
+                            <p>Cargando alertas del sistema...</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Paginación -->
+                <div id="alerts-pagination" class="flex justify-center">
+                    <!-- Paginación se carga dinámicamente -->
+                </div>
+            </div>
+        `;
+
+        // Cargar datos iniciales
+        await loadAlertsOverview();
+        
+        // Configurar actualización automática cada 2 minutos para alertas
+        if (window.alertsInterval) {
+            clearInterval(window.alertsInterval);
+        }
+        window.alertsInterval = setInterval(loadAlertsOverview, 120000);
+
+    } catch (error) {
+        console.error('Error renderizando dashboard de alertas:', error);
+        showToast('Error al cargar el dashboard de alertas', 'error');
+    }
+}
+
+// Cargar vista general de alertas
+async function loadAlertsOverview() {
+    try {
+        const status = document.getElementById('alert-status-filter')?.value || 'ACTIVE';
+        const category = document.getElementById('alert-category-filter')?.value || '';
+        const severity = document.getElementById('alert-severity-filter')?.value || '';
+        const page = window.currentAlertsPage || 1;
+
+        const params = new URLSearchParams({
+            page: page.toString(),
+            limit: '10',
+            status
+        });
+        
+        if (category) params.append('category', category);
+        if (severity) params.append('severity', severity);
+
+        const response = await axios.get(`/api/admin/alerts/overview?${params}`);
+        
+        if (response.data.success) {
+            renderAlertsStatistics(response.data.data.statistics);
+            renderAlertsList(response.data.data.alerts);
+            renderAlertsPagination(response.data.data.pagination);
+            
+            // Actualizar contador
+            const alertsCount = document.getElementById('alerts-count');
+            if (alertsCount) {
+                alertsCount.textContent = `${response.data.data.pagination.total} alertas encontradas`;
+            }
+
+            // Actualizar timestamp
+            const lastUpdated = document.getElementById('alerts-last-updated');
+            if (lastUpdated) {
+                lastUpdated.innerHTML = `<i class="fas fa-clock mr-1"></i>Actualizado: ${new Date().toLocaleTimeString()}`;
+            }
+        }
+    } catch (error) {
+        console.error('Error loading alerts overview:', error);
+        showToast('Error al cargar alertas', 'error');
+    }
+}
+
+// Renderizar estadísticas de alertas
+function renderAlertsStatistics(stats) {
+    const container = document.getElementById('alerts-statistics');
+    if (!container) return;
+
+    const categoryColors = {
+        PERFORMANCE: '#FF8C00',
+        RISK: '#FF4444', 
+        OPPORTUNITY: '#32CD32',
+        COMPLIANCE: '#4169E1'
+    };
+
+    let statisticsHTML = `
+        <!-- Total de Alertas Activas -->
+        <div class="ctei-stats-card">
+            <div class="flex items-center">
+                <div class="p-3" style="background-color: var(--chart-1); opacity: 0.1; border-radius: var(--radius);">
+                    <i class="ctei-stats-icon fas fa-exclamation-circle" style="color: var(--chart-1);"></i>
+                </div>
+                <div class="ml-4">
+                    <p class="ctei-stats-number">${stats.total_active}</p>
+                    <p class="ctei-stats-label">Alertas Activas</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Prioridad Promedio -->
+        <div class="ctei-stats-card">
+            <div class="flex items-center">
+                <div class="p-3" style="background-color: var(--chart-2); opacity: 0.1; border-radius: var(--radius);">
+                    <i class="ctei-stats-icon fas fa-tachometer-alt" style="color: var(--chart-2);"></i>
+                </div>
+                <div class="ml-4">
+                    <p class="ctei-stats-number">${Math.round(stats.avg_priority)}</p>
+                    <p class="ctei-stats-label">Prioridad Promedio</p>
+                </div>
+            </div>
+        </div>
+    `;
+
+    // Añadir estadísticas por categoría
+    const categories = Object.keys(stats.by_category);
+    if (categories.length > 0) {
+        const topCategory = categories.reduce((a, b) => 
+            stats.by_category[a] > stats.by_category[b] ? a : b
+        );
+        
+        statisticsHTML += `
+            <!-- Categoría Principal -->
+            <div class="ctei-stats-card">
+                <div class="flex items-center">
+                    <div class="p-3" style="background-color: ${categoryColors[topCategory] || '#666'}; opacity: 0.1; border-radius: var(--radius);">
+                        <i class="ctei-stats-icon fas fa-tags" style="color: ${categoryColors[topCategory] || '#666'};"></i>
+                    </div>
+                    <div class="ml-4">
+                        <p class="ctei-stats-number">${stats.by_category[topCategory]}</p>
+                        <p class="ctei-stats-label">${getCategoryDisplayName(topCategory)}</p>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    // Severidad crítica
+    const criticalCount = stats.by_severity[1] || 0;
+    statisticsHTML += `
+        <!-- Alertas Críticas -->
+        <div class="ctei-stats-card ${criticalCount > 0 ? 'border-l-4' : ''}" 
+             style="${criticalCount > 0 ? 'border-left-color: #FF0000;' : ''}">
+            <div class="flex items-center">
+                <div class="p-3" style="background-color: #FF0000; opacity: 0.1; border-radius: var(--radius);">
+                    <i class="ctei-stats-icon fas fa-exclamation-triangle" style="color: #FF0000;"></i>
+                </div>
+                <div class="ml-4">
+                    <p class="ctei-stats-number ${criticalCount > 0 ? 'text-red-600 font-bold' : ''}">${criticalCount}</p>
+                    <p class="ctei-stats-label">Alertas Críticas</p>
+                </div>
+            </div>
+        </div>
+    `;
+
+    container.innerHTML = statisticsHTML;
+}
+
+// Renderizar lista de alertas
+function renderAlertsList(alerts) {
+    const container = document.getElementById('alerts-list');
+    if (!container) return;
+
+    if (alerts.length === 0) {
+        container.innerHTML = `
+            <div class="p-8 text-center text-muted-foreground">
+                <i class="fas fa-check-circle text-4xl mb-4" style="color: var(--chart-3);"></i>
+                <p class="text-lg font-medium mb-2">¡Excelente!</p>
+                <p>No hay alertas que requieran atención en este momento.</p>
+            </div>
+        `;
+        return;
+    }
+
+    let alertsHTML = '';
+    
+    alerts.forEach(alert => {
+        const priorityClass = getPriorityClass(alert.priority_score);
+        const severityBadgeClass = getSeverityBadgeClass(alert.severity_level);
+        const categoryIcon = getCategoryIcon(alert.category);
+        
+        alertsHTML += `
+            <div class="p-6 hover:bg-muted/30 transition-colors" data-alert-id="${alert.id}">
+                <div class="flex items-start justify-between">
+                    <div class="flex items-start space-x-4 flex-1">
+                        <!-- Icono y indicador de prioridad -->
+                        <div class="flex-shrink-0">
+                            <div class="w-12 h-12 rounded-lg flex items-center justify-center" 
+                                 style="background-color: ${alert.color_code}20; border: 2px solid ${alert.color_code}40;">
+                                <i class="${alert.icon}" style="color: ${alert.color_code}; font-size: 1.2rem;"></i>
+                            </div>
+                        </div>
+
+                        <!-- Contenido de la alerta -->
+                        <div class="flex-1 min-w-0">
+                            <div class="flex items-center space-x-3 mb-2">
+                                <h3 class="text-lg font-semibold text-foreground truncate">
+                                    ${alert.title}
+                                </h3>
+                                <span class="px-2 py-1 text-xs font-medium rounded-full ${severityBadgeClass}">
+                                    ${alert.severity_label}
+                                </span>
+                                <span class="px-2 py-1 text-xs font-medium rounded-full ${priorityClass}">
+                                    ${alert.priority_label}
+                                </span>
+                            </div>
+                            
+                            <p class="text-muted-foreground mb-3 leading-relaxed">
+                                ${alert.message}
+                            </p>
+                            
+                            <div class="flex items-center space-x-4 text-sm text-muted-foreground mb-3">
+                                <span class="flex items-center">
+                                    <i class="${categoryIcon} mr-1"></i>
+                                    ${getCategoryDisplayName(alert.category)}
+                                </span>
+                                <span class="flex items-center">
+                                    <i class="fas fa-tag mr-1"></i>
+                                    ${alert.entity_type}: ${alert.entity_name}
+                                </span>
+                                <span class="flex items-center">
+                                    <i class="fas fa-clock mr-1"></i>
+                                    ${alert.time_ago}
+                                </span>
+                            </div>
+
+                            <!-- Acciones recomendadas -->
+                            ${alert.recommended_actions && alert.recommended_actions.length > 0 ? `
+                                <div class="mb-3">
+                                    <p class="text-sm font-medium text-foreground mb-2">
+                                        <i class="fas fa-lightbulb mr-1"></i>
+                                        Acciones Recomendadas:
+                                    </p>
+                                    <div class="flex flex-wrap gap-2">
+                                        ${alert.recommended_actions.slice(0, 3).map(action => 
+                                            `<span class="px-2 py-1 bg-primary/10 text-primary text-xs rounded-full border">
+                                                ${action}
+                                             </span>`
+                                        ).join('')}
+                                        ${alert.recommended_actions.length > 3 ? 
+                                            `<span class="text-xs text-muted-foreground">+${alert.recommended_actions.length - 3} más</span>`
+                                        : ''}
+                                    </div>
+                                </div>
+                            ` : ''}
+                        </div>
+                    </div>
+
+                    <!-- Acciones de la alerta -->
+                    <div class="flex items-center space-x-2 ml-4">
+                        ${alert.status === 'ACTIVE' ? `
+                            <button onclick="updateAlertStatus(${alert.id}, 'ACKNOWLEDGED')" 
+                                    class="px-3 py-1 bg-blue-500 text-white text-sm rounded-md hover:bg-blue-600 transition-colors">
+                                <i class="fas fa-check mr-1"></i>
+                                Reconocer
+                            </button>
+                            <button onclick="updateAlertStatus(${alert.id}, 'RESOLVED')" 
+                                    class="px-3 py-1 bg-green-500 text-white text-sm rounded-md hover:bg-green-600 transition-colors">
+                                <i class="fas fa-check-double mr-1"></i>
+                                Resolver
+                            </button>
+                        ` : `
+                            <span class="px-3 py-1 text-sm rounded-md ${getStatusBadgeClass(alert.status)}">
+                                ${getStatusDisplayName(alert.status)}
+                            </span>
+                        `}
+                        <button onclick="showAlertDetails(${alert.id})" 
+                                class="px-2 py-1 text-muted-foreground hover:text-foreground transition-colors">
+                            <i class="fas fa-info-circle"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+    });
+
+    container.innerHTML = alertsHTML;
+}
+
+// Renderizar paginación
+function renderAlertsPagination(pagination) {
+    const container = document.getElementById('alerts-pagination');
+    if (!container) return;
+
+    if (pagination.total_pages <= 1) {
+        container.innerHTML = '';
+        return;
+    }
+
+    let paginationHTML = '<div class="flex items-center space-x-2">';
+    
+    // Botón anterior
+    if (pagination.has_prev) {
+        paginationHTML += `
+            <button onclick="changeAlertsPage(${pagination.page - 1})" 
+                    class="px-3 py-2 border border-border rounded-md hover:bg-accent transition-colors">
+                <i class="fas fa-chevron-left"></i>
+            </button>
+        `;
+    }
+
+    // Números de página
+    const startPage = Math.max(1, pagination.page - 2);
+    const endPage = Math.min(pagination.total_pages, pagination.page + 2);
+
+    if (startPage > 1) {
+        paginationHTML += `<button onclick="changeAlertsPage(1)" class="px-3 py-2 border border-border rounded-md hover:bg-accent">1</button>`;
+        if (startPage > 2) {
+            paginationHTML += `<span class="px-2">...</span>`;
+        }
+    }
+
+    for (let i = startPage; i <= endPage; i++) {
+        const isActive = i === pagination.page;
+        paginationHTML += `
+            <button onclick="changeAlertsPage(${i})" 
+                    class="px-3 py-2 border rounded-md transition-colors ${isActive ? 'bg-primary text-primary-foreground' : 'border-border hover:bg-accent'}">
+                ${i}
+            </button>
+        `;
+    }
+
+    if (endPage < pagination.total_pages) {
+        if (endPage < pagination.total_pages - 1) {
+            paginationHTML += `<span class="px-2">...</span>`;
+        }
+        paginationHTML += `<button onclick="changeAlertsPage(${pagination.total_pages})" class="px-3 py-2 border border-border rounded-md hover:bg-accent">${pagination.total_pages}</button>`;
+    }
+
+    // Botón siguiente
+    if (pagination.has_next) {
+        paginationHTML += `
+            <button onclick="changeAlertsPage(${pagination.page + 1})" 
+                    class="px-3 py-2 border border-border rounded-md hover:bg-accent transition-colors">
+                <i class="fas fa-chevron-right"></i>
+            </button>
+        `;
+    }
+
+    paginationHTML += '</div>';
+    container.innerHTML = paginationHTML;
+}
+
+// Funciones de utilidad para alertas
+function getCategoryDisplayName(category) {
+    const names = {
+        PERFORMANCE: 'Rendimiento',
+        RISK: 'Riesgos',
+        OPPORTUNITY: 'Oportunidades', 
+        COMPLIANCE: 'Cumplimiento'
+    };
+    return names[category] || category;
+}
+
+function getCategoryIcon(category) {
+    const icons = {
+        PERFORMANCE: 'fas fa-chart-line',
+        RISK: 'fas fa-exclamation-triangle',
+        OPPORTUNITY: 'fas fa-rocket',
+        COMPLIANCE: 'fas fa-shield-alt'
+    };
+    return icons[category] || 'fas fa-tag';
+}
+
+function getPriorityClass(score) {
+    if (score >= 80) return 'bg-red-100 text-red-800';
+    if (score >= 60) return 'bg-orange-100 text-orange-800';
+    if (score >= 40) return 'bg-yellow-100 text-yellow-800';
+    return 'bg-green-100 text-green-800';
+}
+
+function getSeverityBadgeClass(level) {
+    const classes = {
+        1: 'bg-red-100 text-red-800',
+        2: 'bg-orange-100 text-orange-800',
+        3: 'bg-yellow-100 text-yellow-800',
+        4: 'bg-blue-100 text-blue-800',
+        5: 'bg-gray-100 text-gray-800'
+    };
+    return classes[level] || 'bg-gray-100 text-gray-800';
+}
+
+function getStatusBadgeClass(status) {
+    const classes = {
+        ACTIVE: 'bg-red-100 text-red-800',
+        ACKNOWLEDGED: 'bg-blue-100 text-blue-800',
+        IN_PROGRESS: 'bg-yellow-100 text-yellow-800',
+        RESOLVED: 'bg-green-100 text-green-800',
+        DISMISSED: 'bg-gray-100 text-gray-800'
+    };
+    return classes[status] || 'bg-gray-100 text-gray-800';
+}
+
+function getStatusDisplayName(status) {
+    const names = {
+        ACTIVE: 'Activa',
+        ACKNOWLEDGED: 'Reconocida',
+        IN_PROGRESS: 'En Progreso',
+        RESOLVED: 'Resuelta',
+        DISMISSED: 'Descartada'
+    };
+    return names[status] || status;
+}
+
+// Funciones de interacción
+async function updateAlertStatus(alertId, newStatus) {
+    try {
+        const response = await axios.put(`/api/admin/alerts/${alertId}/status`, {
+            status: newStatus
+        });
+        
+        if (response.data.success) {
+            showToast(response.data.data.message, 'success');
+            await loadAlertsOverview(); // Recargar la lista
+        }
+    } catch (error) {
+        console.error('Error updating alert status:', error);
+        showToast('Error al actualizar estado de alerta', 'error');
+    }
+}
+
+function filterAlerts() {
+    window.currentAlertsPage = 1; // Reset a la primera página
+    loadAlertsOverview();
+}
+
+function clearAlertsFilters() {
+    document.getElementById('alert-status-filter').value = 'ACTIVE';
+    document.getElementById('alert-category-filter').value = '';
+    document.getElementById('alert-severity-filter').value = '';
+    filterAlerts();
+}
+
+function changeAlertsPage(page) {
+    window.currentAlertsPage = page;
+    loadAlertsOverview();
+}
+
+function refreshAlertsDashboard() {
+    loadAlertsOverview();
+}
+
+async function runRiskAnalysis() {
+    try {
+        showToast('Ejecutando análisis de riesgos con IA...', 'info');
+        
+        const response = await axios.post('/api/admin/alerts/analyze-risks', {
+            type: 'all'
+        });
+        
+        if (response.data.success) {
+            showToast(response.data.data.message, 'success');
+            // Recargar las alertas después de un breve delay
+            setTimeout(() => {
+                loadAlertsOverview();
+            }, 1000);
+        }
+    } catch (error) {
+        console.error('Error running risk analysis:', error);
+        showToast('Error al ejecutar análisis de riesgos', 'error');
+    }
+}
+
+function showAlertDetails(alertId) {
+    showToast('Funcionalidad de detalles en desarrollo', 'info');
 }
 
 // ===== FUNCIÓN DE DEBUG PARA MONITOREO =====
@@ -5527,4 +6126,520 @@ async function startBulkUpload() {
     document.getElementById('startBulkUploadBtn').textContent = 'Cerrar';
     document.getElementById('startBulkUploadBtn').disabled = false;
     document.getElementById('startBulkUploadBtn').onclick = closeBulkUploadModal;
+}
+
+// ===== DASHBOARD DE SCORING Y EVALUACIÓN AUTOMATIZADA - FASE 3A =====
+
+async function renderScoringDashboard() {
+    try {
+        document.getElementById('content').innerHTML = `
+            <div class="space-y-6">
+                <!-- Encabezado del Dashboard de Scoring -->
+                <div class="ctei-content-card">
+                    <div class="ctei-content-card-header">
+                        <div>
+                            <div class="ctei-content-card-title">
+                                <i class="fas fa-chart-bar text-accent mr-3"></i>
+                                Sistema de Evaluación y Scoring
+                            </div>
+                            <div class="ctei-content-card-description">
+                                Fase 3A - Análisis Automatizado del Desempeño de Proyectos
+                            </div>
+                        </div>
+                        <div class="flex items-center space-x-3">
+                            <div id="scoring-last-updated" class="text-sm text-muted-foreground">
+                                <i class="fas fa-sync-alt mr-1"></i>
+                                Cargando...
+                            </div>
+                            <button 
+                                onclick="refreshScoringDashboard()"
+                                class="ctei-btn-primary"
+                            >
+                                <i class="fas fa-sync-alt mr-2"></i>
+                                Actualizar
+                            </button>
+                            <button 
+                                onclick="calculateAllScoring()"
+                                class="ctei-btn-secondary"
+                                style="background-color: var(--chart-1); color: var(--background);"
+                            >
+                                <i class="fas fa-calculator mr-2"></i>
+                                Calcular Scoring
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Filtros de Scoring -->
+                <div class="ctei-content-card">
+                    <div class="ctei-content-card-header">
+                        <div class="ctei-content-card-title">Filtros de Evaluación</div>
+                    </div>
+                    <div class="p-4">
+                        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-foreground mb-2">Categoría</label>
+                                <select id="scoring-category-filter" onchange="filterScoring()" 
+                                        class="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-primary">
+                                    <option value="">Todas las categorías</option>
+                                    <option value="EXCELENTE">Excelente</option>
+                                    <option value="BUENO">Bueno</option>
+                                    <option value="REGULAR">Regular</option>
+                                    <option value="NECESITA_MEJORA">Necesita Mejora</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-foreground mb-2">Score Mínimo</label>
+                                <input type="number" id="scoring-min-filter" onchange="filterScoring()" 
+                                       min="0" max="100" placeholder="0"
+                                       class="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-primary">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-foreground mb-2">Score Máximo</label>
+                                <input type="number" id="scoring-max-filter" onchange="filterScoring()" 
+                                       min="0" max="100" placeholder="100"
+                                       class="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-primary">
+                            </div>
+                            <div class="flex items-end">
+                                <button onclick="clearScoringFilters()" 
+                                        class="w-full bg-muted text-muted-foreground px-4 py-2 rounded-lg font-medium hover:opacity-90">
+                                    <i class="fas fa-times mr-2"></i>
+                                    Limpiar
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Estadísticas de Scoring -->
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                    <div id="scoring-stats-container">
+                        <!-- Las estadísticas se cargarán aquí -->
+                    </div>
+                </div>
+
+                <!-- Gráfico de Distribución -->
+                <div class="ctei-content-card">
+                    <div class="ctei-content-card-header">
+                        <div class="ctei-content-card-title">
+                            <i class="fas fa-chart-pie mr-2"></i>
+                            Distribución por Categoría de Evaluación
+                        </div>
+                    </div>
+                    <div class="p-6">
+                        <canvas id="scoringDistributionChart" width="400" height="200"></canvas>
+                    </div>
+                </div>
+
+                <!-- Lista de Proyectos con Scoring -->
+                <div class="ctei-content-card">
+                    <div class="ctei-content-card-header">
+                        <div class="ctei-content-card-title">
+                            <i class="fas fa-list mr-2"></i>
+                            Evaluación de Proyectos
+                        </div>
+                    </div>
+                    <div class="p-4">
+                        <div id="scoring-list-container">
+                            <!-- La lista de scoring se cargará aquí -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        // Cargar datos del dashboard
+        loadScoringOverview();
+        
+    } catch (error) {
+        console.error('Error rendering scoring dashboard:', error);
+        showToast('Error al cargar dashboard de scoring', 'error');
+    }
+}
+
+async function loadScoringOverview() {
+    try {
+        const category = document.getElementById('scoring-category-filter')?.value || '';
+        const minScore = document.getElementById('scoring-min-filter')?.value || '';
+        const maxScore = document.getElementById('scoring-max-filter')?.value || '';
+        
+        const params = new URLSearchParams();
+        if (category) params.append('category', category);
+        if (minScore) params.append('min_score', minScore);
+        if (maxScore) params.append('max_score', maxScore);
+        
+        const response = await axios.get(`/api/admin/scoring/overview?${params.toString()}`);
+        
+        if (response.data.success) {
+            const data = response.data.data;
+            
+            // Actualizar estadísticas
+            renderScoringStatistics(data.statistics);
+            
+            // Actualizar gráfico de distribución
+            renderScoringChart(data.statistics.by_category);
+            
+            // Actualizar lista de proyectos
+            renderScoringList(data.scores);
+            
+            // Actualizar timestamp
+            document.getElementById('scoring-last-updated').innerHTML = 
+                `<i class="fas fa-sync-alt mr-1"></i> Actualizado: ${new Date().toLocaleTimeString()}`;
+                
+        } else {
+            showToast('Error al cargar datos de scoring', 'error');
+        }
+        
+    } catch (error) {
+        console.error('Error loading scoring overview:', error);
+        showToast('Error de conexión al cargar scoring', 'error');
+    }
+}
+
+function renderScoringStatistics(stats) {
+    const container = document.getElementById('scoring-stats-container');
+    
+    // Estadística total
+    const totalProjects = stats.total_projects || 0;
+    
+    // Estadísticas por categoría
+    const categories = stats.by_category || [];
+    const categoryStats = categories.reduce((acc, cat) => {
+        acc[cat.evaluation_category] = cat;
+        return acc;
+    }, {});
+    
+    // Promedios por criterio
+    const criteriaAvgs = stats.by_criteria || {};
+    
+    container.innerHTML = `
+        <div class="ctei-metric-card">
+            <div class="ctei-metric-icon bg-blue-100 text-blue-600">
+                <i class="fas fa-clipboard-list"></i>
+            </div>
+            <div class="ctei-metric-content">
+                <div class="ctei-metric-value">${totalProjects}</div>
+                <div class="ctei-metric-label">Proyectos Evaluados</div>
+            </div>
+        </div>
+        
+        <div class="ctei-metric-card">
+            <div class="ctei-metric-icon bg-green-100 text-green-600">
+                <i class="fas fa-star"></i>
+            </div>
+            <div class="ctei-metric-content">
+                <div class="ctei-metric-value">${(criteriaAvgs.avg_total || 0).toFixed(1)}</div>
+                <div class="ctei-metric-label">Score Promedio</div>
+            </div>
+        </div>
+        
+        <div class="ctei-metric-card">
+            <div class="ctei-metric-icon bg-emerald-100 text-emerald-600">
+                <i class="fas fa-trophy"></i>
+            </div>
+            <div class="ctei-metric-content">
+                <div class="ctei-metric-value">${categoryStats.EXCELENTE?.count || 0}</div>
+                <div class="ctei-metric-label">Proyectos Excelentes</div>
+            </div>
+        </div>
+        
+        <div class="ctei-metric-card">
+            <div class="ctei-metric-icon bg-amber-100 text-amber-600">
+                <i class="fas fa-exclamation-triangle"></i>
+            </div>
+            <div class="ctei-metric-content">
+                <div class="ctei-metric-value">${categoryStats.NECESITA_MEJORA?.count || 0}</div>
+                <div class="ctei-metric-label">Requieren Mejora</div>
+            </div>
+        </div>
+    `;
+}
+
+function renderScoringChart(categoryData) {
+    const ctx = document.getElementById('scoringDistributionChart').getContext('2d');
+    
+    const categories = ['EXCELENTE', 'BUENO', 'REGULAR', 'NECESITA_MEJORA'];
+    const colors = ['#22C55E', '#3B82F6', '#F59E0B', '#EF4444'];
+    const labels = ['Excelente', 'Bueno', 'Regular', 'Necesita Mejora'];
+    
+    const data = categories.map(cat => {
+        const found = categoryData.find(item => item.evaluation_category === cat);
+        return found ? found.count : 0;
+    });
+    
+    new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: labels,
+            datasets: [{
+                data: data,
+                backgroundColor: colors,
+                borderWidth: 2,
+                borderColor: '#ffffff'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                    labels: {
+                        padding: 20,
+                        usePointStyle: true
+                    }
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            const label = context.label || '';
+                            const value = context.parsed || 0;
+                            const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                            const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
+                            return `${label}: ${value} (${percentage}%)`;
+                        }
+                    }
+                }
+            }
+        }
+    });
+}
+
+function renderScoringList(scores) {
+    const container = document.getElementById('scoring-list-container');
+    
+    if (!scores || scores.length === 0) {
+        container.innerHTML = `
+            <div class="text-center py-8 text-muted-foreground">
+                <i class="fas fa-chart-bar text-4xl mb-4"></i>
+                <p>No hay evaluaciones de scoring disponibles</p>
+                <p class="text-sm">Haz clic en "Calcular Scoring" para generar evaluaciones</p>
+            </div>
+        `;
+        return;
+    }
+    
+    const scoringHtml = scores.map(score => `
+        <div class="scoring-item border border-border rounded-lg p-4 hover:border-primary transition-all duration-200 mb-4">
+            <div class="flex items-start justify-between">
+                <div class="flex-1">
+                    <div class="flex items-center gap-3 mb-2">
+                        <h3 class="font-semibold text-lg text-foreground">${score.project_title}</h3>
+                        <span class="px-3 py-1 rounded-full text-sm font-medium" 
+                              style="background-color: ${score.category_color}20; color: ${score.category_color};">
+                            ${score.category_label}
+                        </span>
+                        <div class="flex items-center">
+                            <div class="w-12 h-12 rounded-full flex items-center justify-center text-lg font-bold text-white"
+                                 style="background-color: ${score.category_color};">
+                                ${score.total_score}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 mb-3">
+                        <div class="text-center p-2 bg-muted rounded">
+                            <div class="text-sm text-muted-foreground">Completitud</div>
+                            <div class="font-semibold">${score.completeness_score}</div>
+                        </div>
+                        <div class="text-center p-2 bg-muted rounded">
+                            <div class="text-sm text-muted-foreground">Colaboración</div>
+                            <div class="font-semibold">${score.collaboration_score}</div>
+                        </div>
+                        <div class="text-center p-2 bg-muted rounded">
+                            <div class="text-sm text-muted-foreground">Productividad</div>
+                            <div class="font-semibold">${score.productivity_score}</div>
+                        </div>
+                        <div class="text-center p-2 bg-muted rounded">
+                            <div class="text-sm text-muted-foreground">Impacto</div>
+                            <div class="font-semibold">${score.impact_score}</div>
+                        </div>
+                        <div class="text-center p-2 bg-muted rounded">
+                            <div class="text-sm text-muted-foreground">Innovación</div>
+                            <div class="font-semibold">${score.innovation_score}</div>
+                        </div>
+                        <div class="text-center p-2 bg-muted rounded">
+                            <div class="text-sm text-muted-foreground">Cronograma</div>
+                            <div class="font-semibold">${score.timeline_score}</div>
+                        </div>
+                    </div>
+                    
+                    ${score.recommendations && score.recommendations.length > 0 ? `
+                        <div class="mb-3">
+                            <h4 class="text-sm font-medium text-muted-foreground mb-2">Recomendaciones:</h4>
+                            <ul class="text-sm space-y-1">
+                                ${score.recommendations.slice(0, 3).map(rec => 
+                                    `<li class="flex items-center"><i class="fas fa-lightbulb text-amber-500 mr-2 text-xs"></i>${rec}</li>`
+                                ).join('')}
+                            </ul>
+                        </div>
+                    ` : ''}
+                    
+                    <div class="flex items-center justify-between text-sm text-muted-foreground">
+                        <div class="flex items-center gap-4">
+                            <span><i class="fas fa-user mr-1"></i>${score.owner_name}</span>
+                            <span><i class="fas fa-box mr-1"></i>${score.product_count || 0} productos</span>
+                            <span><i class="fas fa-users mr-1"></i>${score.collaborator_count || 0} colaboradores</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <span>${score.last_calculated_formatted}</span>
+                            <button onclick="viewScoringDetails(${score.project_id})" 
+                                    class="text-primary hover:text-primary-dark">
+                                <i class="fas fa-eye"></i> Ver detalle
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `).join('');
+    
+    container.innerHTML = scoringHtml;
+}
+
+async function calculateAllScoring() {
+    try {
+        const button = event.target;
+        const originalText = button.innerHTML;
+        button.disabled = true;
+        button.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Calculando...';
+        
+        const response = await axios.post('/api/admin/scoring/calculate', {});
+        
+        if (response.data.success) {
+            showToast(`Scoring calculado para ${response.data.data.results.length} proyectos`, 'success');
+            loadScoringOverview(); // Recargar datos
+        } else {
+            showToast('Error al calcular scoring', 'error');
+        }
+        
+    } catch (error) {
+        console.error('Error calculating scoring:', error);
+        showToast('Error de conexión al calcular scoring', 'error');
+    } finally {
+        const button = event.target;
+        button.disabled = false;
+        button.innerHTML = '<i class="fas fa-calculator mr-2"></i>Calcular Scoring';
+    }
+}
+
+async function viewScoringDetails(projectId) {
+    try {
+        const response = await axios.get(`/api/admin/scoring/project/${projectId}`);
+        
+        if (response.data.success) {
+            const data = response.data.data;
+            showScoringDetailsModal(data);
+        } else {
+            showToast('Error al cargar detalles de scoring', 'error');
+        }
+        
+    } catch (error) {
+        console.error('Error loading scoring details:', error);
+        showToast('Error de conexión', 'error');
+    }
+}
+
+function showScoringDetailsModal(data) {
+    const modal = document.createElement('div');
+    modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4';
+    modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
+    
+    modal.innerHTML = `
+        <div class="bg-background rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+            <div class="p-6 border-b border-border">
+                <div class="flex items-center justify-between">
+                    <h2 class="text-2xl font-bold text-foreground">Detalle de Evaluación</h2>
+                    <button onclick="this.closest('.fixed').remove()" class="text-muted-foreground hover:text-foreground">
+                        <i class="fas fa-times text-xl"></i>
+                    </button>
+                </div>
+                <p class="text-muted-foreground mt-1">${data.score.project_title}</p>
+            </div>
+            
+            <div class="p-6 space-y-6">
+                <!-- Score General -->
+                <div class="text-center">
+                    <div class="inline-flex items-center justify-center w-24 h-24 rounded-full text-3xl font-bold text-white mb-4"
+                         style="background-color: ${data.score.category_color};">
+                        ${data.score.total_score}
+                    </div>
+                    <div class="text-xl font-semibold">${data.score.category_label}</div>
+                    <div class="text-muted-foreground">Evaluación General</div>
+                </div>
+                
+                <!-- Breakdown por Criterios -->
+                <div>
+                    <h3 class="text-lg font-semibold mb-4">Breakdown por Criterios</h3>
+                    <div class="space-y-3">
+                        ${Object.entries(data.breakdown).map(([key, criterion]) => `
+                            <div class="flex items-center justify-between p-3 bg-muted rounded-lg">
+                                <div class="flex-1">
+                                    <div class="font-medium capitalize">${key === 'completeness' ? 'Completitud' : 
+                                        key === 'collaboration' ? 'Colaboración' :
+                                        key === 'productivity' ? 'Productividad' :
+                                        key === 'impact' ? 'Impacto' :
+                                        key === 'innovation' ? 'Innovación' : 'Cronograma'}</div>
+                                    <div class="text-sm text-muted-foreground">${criterion.description}</div>
+                                </div>
+                                <div class="text-right">
+                                    <div class="text-lg font-semibold">${criterion.score}/100</div>
+                                    <div class="text-sm text-muted-foreground">${criterion.weight}% peso</div>
+                                </div>
+                                <div class="w-16 ml-4">
+                                    <div class="w-full bg-gray-200 rounded-full h-2">
+                                        <div class="bg-primary h-2 rounded-full" style="width: ${criterion.score}%"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+                
+                <!-- Recomendaciones -->
+                ${data.score.recommendations && data.score.recommendations.length > 0 ? `
+                    <div>
+                        <h3 class="text-lg font-semibold mb-4">Recomendaciones</h3>
+                        <ul class="space-y-2">
+                            ${data.score.recommendations.map(rec => 
+                                `<li class="flex items-start"><i class="fas fa-lightbulb text-amber-500 mr-3 mt-1"></i><span>${rec}</span></li>`
+                            ).join('')}
+                        </ul>
+                    </div>
+                ` : ''}
+                
+                <!-- Historial -->
+                ${data.history && data.history.length > 1 ? `
+                    <div>
+                        <h3 class="text-lg font-semibold mb-4">Historial de Evaluaciones</h3>
+                        <div class="space-y-2">
+                            ${data.history.slice(0, 5).map(entry => `
+                                <div class="flex items-center justify-between p-2 border border-border rounded">
+                                    <span class="font-medium">${entry.total_score}</span>
+                                    <span class="text-sm text-muted-foreground">${new Date(entry.last_calculated_at).toLocaleDateString()}</span>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                ` : ''}
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+}
+
+function filterScoring() {
+    loadScoringOverview();
+}
+
+function clearScoringFilters() {
+    document.getElementById('scoring-category-filter').value = '';
+    document.getElementById('scoring-min-filter').value = '';
+    document.getElementById('scoring-max-filter').value = '';
+    loadScoringOverview();
+}
+
+function refreshScoringDashboard() {
+    loadScoringOverview();
 }
