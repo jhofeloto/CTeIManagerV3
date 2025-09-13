@@ -352,76 +352,154 @@ function showProjectModal(project) {
         if (e.target === modal) modal.remove();
     };
     
+    // Crear componente de tags mejorado para palabras clave
+    const createTag = (text) => `
+        <span class="inline-block px-3 py-1 text-sm font-medium rounded-full" 
+              style="background-color: var(--accent); color: var(--accent-foreground); font-family: var(--font-sans);">
+            ${text.trim()}
+        </span>
+    `;
+    
+    // Productos asociados con mejor diseño
     const productsList = project.products?.map(product => `
-        <div class="border border-border rounded p-3 mb-2">
-            <div class="flex justify-between items-start mb-1">
-                <span class="font-mono text-sm">${product.product_code}</span>
+        <div class="border border-border rounded-lg p-4 mb-3 hover:bg-muted/20 transition-colors duration-200">
+            <div class="flex justify-between items-start mb-2">
+                <span class="font-mono text-sm font-semibold text-primary">${product.product_code}</span>
                 ${createTechLabelWithTooltip(product.product_type, 'px-2 py-1 text-xs rounded bg-muted text-muted-foreground')}
             </div>
-            <p class="text-sm">${product.description}</p>
+            <p class="text-sm text-foreground leading-relaxed">${product.description}</p>
+            <button onclick="viewProductDetails(${product.id})" 
+                    class="mt-2 text-xs text-primary hover:text-primary/80 font-medium">
+                <i class="fas fa-external-link-alt mr-1"></i>Ver detalles
+            </button>
         </div>
-    `).join('') || '<p class="text-muted-foreground">No hay productos asociados</p>';
+    `).join('') || `<div class="text-center py-8">
+        <i class="fas fa-flask text-4xl text-muted-foreground mb-3"></i>
+        <p class="text-muted-foreground font-style: italic;">No hay productos asociados a este proyecto</p>
+    </div>`;
     
+    // Colaboradores como enlaces clicables
     const collaboratorsList = project.collaborators?.map(collab => `
-        <span class="inline-block bg-accent text-accent-foreground px-2 py-1 rounded text-sm mr-2 mb-2">
-            ${collab.full_name}
-        </span>
-    `).join('') || '<p class="text-muted-foreground">No hay colaboradores</p>';
+        <button onclick="showCollaboratorDetails('${collab.id}')" 
+                class="inline-block px-3 py-1 text-sm font-medium rounded-full mr-2 mb-2 transition-colors duration-200 hover:opacity-80"
+                style="background-color: var(--accent); color: var(--accent-foreground); font-family: var(--font-sans);">
+            <i class="fas fa-user mr-1"></i>${collab.full_name}
+        </button>
+    `).join('') || `<div class="text-center py-4">
+        <i class="fas fa-users text-2xl text-muted-foreground mb-2"></i>
+        <p class="text-muted-foreground" style="font-style: italic;">No hay colaboradores asignados</p>
+    </div>`;
+    
+    // Tags para palabras clave
+    const keywordTags = project.keywords ? 
+        project.keywords.split(',').map(keyword => createTag(keyword)).join(' ') :
+        `<p class="text-muted-foreground" style="font-style: italic;">No hay palabras clave definidas</p>`;
     
     modal.innerHTML = `
-        <div class="bg-card rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
-            <div class="p-6">
-                <div class="flex justify-between items-start mb-4">
-                    <h3 class="text-xl font-bold">${project.title}</h3>
-                    <button onclick="this.closest('.fixed').remove()" class="text-muted-foreground hover:text-foreground">
+        <div class="level-3 max-w-5xl w-full max-h-[90vh] overflow-hidden"
+             style="background-color: var(--card); border-radius: var(--radius-lg); box-shadow: var(--shadow-xl); font-family: var(--font-sans);">
+            
+            <!-- Encabezado Fuerte -->
+            <div class="px-8 py-6 border-b border-border">
+                <div class="flex justify-between items-start">
+                    <div class="flex-1 pr-6">
+                        <!-- Título principal con jerarquía visual clara -->
+                        <h1 class="text-3xl font-bold text-foreground mb-2 leading-tight" style="font-family: var(--font-sans);">
+                            ${project.title}
+                        </h1>
+                        <!-- Identificador secundario -->
+                        <p class="text-lg text-muted-foreground font-mono">
+                            ${project.project_code || 'PROJ-' + String(project.id).padStart(3, '0')}
+                        </p>
+                    </div>
+                    <!-- Botón de cierre mejorado -->
+                    <button onclick="this.closest('.fixed').remove()" 
+                            class="p-3 rounded-full hover:bg-muted transition-colors duration-200"
+                            style="color: var(--muted-foreground);">
                         <i class="fas fa-times text-xl"></i>
                     </button>
                 </div>
-                
-                <div class="space-y-4">
-                    <div>
-                        <h4 class="font-semibold mb-2">Resumen</h4>
-                        <p class="text-muted-foreground">${project.abstract}</p>
-                    </div>
+            </div>
+            
+            <!-- Contenido principal con scroll -->
+            <div class="px-8 py-6 max-h-[calc(90vh-140px)] overflow-y-auto">
+                <div class="space-y-8">
+                    
+                    <!-- Descripción -->
+                    <section>
+                        <h2 class="text-xl font-semibold text-foreground mb-4" style="font-family: var(--font-sans);">
+                            Descripción
+                        </h2>
+                        <p class="text-foreground leading-relaxed text-base">
+                            ${project.abstract || `<span class="text-muted-foreground" style="font-style: italic;">No hay descripción disponible</span>`}
+                        </p>
+                    </section>
                     
                     ${project.keywords ? `
-                    <div>
-                        <h4 class="font-semibold mb-2">Palabras Clave</h4>
+                    <!-- Palabras Clave como Tags -->
+                    <section>
+                        <h2 class="text-xl font-semibold text-foreground mb-4" style="font-family: var(--font-sans);">
+                            Palabras Clave
+                        </h2>
                         <div class="flex flex-wrap gap-2">
-                            ${project.keywords.split(',').map(keyword => 
-                                `<span class="bg-accent text-accent-foreground px-2 py-1 rounded text-sm">${keyword.trim()}</span>`
-                            ).join('')}
+                            ${keywordTags}
                         </div>
-                    </div>
+                    </section>
                     ` : ''}
                     
                     ${project.introduction ? `
-                    <div>
-                        <h4 class="font-semibold mb-2">Introducción</h4>
-                        <p class="text-muted-foreground">${project.introduction}</p>
-                    </div>
+                    <!-- Introducción -->
+                    <section>
+                        <h2 class="text-xl font-semibold text-foreground mb-4 border-b border-border pb-2" style="font-family: var(--font-sans);">
+                            Introducción
+                        </h2>
+                        <p class="text-foreground leading-relaxed text-base">
+                            ${project.introduction}
+                        </p>
+                    </section>
                     ` : ''}
                     
                     ${project.methodology ? `
-                    <div>
-                        <h4 class="font-semibold mb-2">Metodología</h4>
-                        <p class="text-muted-foreground">${project.methodology}</p>
-                    </div>
+                    <!-- Metodología -->
+                    <section>
+                        <h2 class="text-xl font-semibold text-foreground mb-4 border-b border-border pb-2" style="font-family: var(--font-sans);">
+                            Metodología
+                        </h2>
+                        <p class="text-foreground leading-relaxed text-base">
+                            ${project.methodology}
+                        </p>
+                    </section>
                     ` : ''}
                     
-                    <div>
-                        <h4 class="font-semibold mb-2">Productos de CTeI</h4>
+                    <!-- Productos Asociados -->
+                    <section>
+                        <h2 class="text-xl font-semibold text-foreground mb-4 border-b border-border pb-2" style="font-family: var(--font-sans);">
+                            Productos de CTeI
+                        </h2>
                         ${productsList}
-                    </div>
+                    </section>
                     
-                    <div>
-                        <h4 class="font-semibold mb-2">Colaboradores</h4>
+                    <!-- Colaboradores -->
+                    <section>
+                        <h2 class="text-xl font-semibold text-foreground mb-4 border-b border-border pb-2" style="font-family: var(--font-sans);">
+                            Colaboradores
+                        </h2>
                         ${collaboratorsList}
-                    </div>
+                    </section>
                     
-                    <div class="flex items-center justify-between pt-4 border-t border-border text-sm text-muted-foreground">
-                        <span><i class="fas fa-user mr-1"></i>${project.owner_name}</span>
-                        <span><i class="fas fa-calendar mr-1"></i>${formatDate(project.created_at)}</span>
+                </div>
+            </div>
+            
+            <!-- Pie de página con metadata -->
+            <div class="px-8 py-4 bg-muted/30 border-t border-border">
+                <div class="flex items-center justify-between text-sm text-muted-foreground">
+                    <div class="flex items-center space-x-6">
+                        <span><i class="fas fa-user mr-2"></i>Responsable: ${project.owner_name}</span>
+                        ${project.institution ? `<span><i class="fas fa-building mr-2"></i>${project.institution}</span>` : ''}
+                    </div>
+                    <div class="flex items-center space-x-6">
+                        <span><i class="fas fa-calendar-plus mr-2"></i>Creado: ${formatDate(project.created_at)}</span>
+                        ${project.status ? `<span class="px-2 py-1 rounded text-xs bg-primary/10 text-primary font-medium">${project.status}</span>` : ''}
                     </div>
                 </div>
             </div>
@@ -438,18 +516,28 @@ function showProductModal(product) {
         if (e.target === modal) modal.remove();
     };
     
+    // Autores y colaboradores con mejor diseño y enlaces clicables
     const authorsList = product.authors?.map(author => `
-        <div class="flex items-center justify-between py-2 border-b border-border last:border-b-0">
-            <div>
-                <span class="font-medium">${author.full_name}</span>
-                <span class="text-muted-foreground ml-2">(${author.email})</span>
+        <div class="flex items-center justify-between py-3 border-b border-border last:border-b-0 hover:bg-muted/30 transition-colors duration-200 rounded px-2">
+            <div class="flex-1">
+                <button onclick="showCollaboratorDetails('${author.user_id}')" 
+                        class="text-left hover:text-primary transition-colors duration-200">
+                    <div class="font-semibold text-foreground">${author.full_name}</div>
+                    <div class="text-sm text-muted-foreground">${author.email}</div>
+                </button>
             </div>
             <div class="text-right">
-                <div class="text-sm font-medium">${formatRole(author.author_role)}</div>
-                ${author.contribution_type ? `<div class="text-xs text-muted-foreground">${author.contribution_type}</div>` : ''}
+                <div class="text-sm font-semibold px-2 py-1 rounded"
+                     style="background-color: var(--accent); color: var(--accent-foreground);">
+                    ${formatRole(author.author_role)}
+                </div>
+                ${author.contribution_type ? `<div class="text-xs text-muted-foreground mt-1">${author.contribution_type}</div>` : ''}
             </div>
         </div>
-    `).join('') || '<p class="text-muted-foreground">No hay autores registrados</p>';
+    `).join('') || `<div class="text-center py-6">
+        <i class="fas fa-user-edit text-3xl text-muted-foreground mb-3"></i>
+        <p class="text-muted-foreground" style="font-style: italic;">No hay autores registrados para este producto</p>
+    </div>`;
     
     const typeColors = {
         'TOP': 'bg-chart-1 text-background',
@@ -461,78 +549,202 @@ function showProductModal(product) {
         'FRH_B': 'bg-accent text-accent-foreground'
     };
     
+    // Determinar el nombre descriptivo del producto
+    const productName = product.description || 
+                       (product.category_name ? `${product.category_name}` : 'Producto Científico') ||
+                       'Producto de CTeI';
+    
     modal.innerHTML = `
-        <div class="bg-card rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
-            <div class="p-6">
-                <div class="flex justify-between items-start mb-6">
-                    <div class="flex-1">
-                        <div class="flex items-center gap-3 mb-2">
-                            <span class="text-lg font-mono text-muted-foreground">${product.product_code}</span>
-                            ${createTechLabelWithTooltip(product.product_type, `px-3 py-1 text-sm font-semibold rounded ${typeColors[product.product_type] || 'bg-muted text-muted-foreground'}`)}
+        <div class="level-3 max-w-5xl w-full max-h-[90vh] overflow-hidden"
+             style="background-color: var(--card); border-radius: var(--radius-lg); box-shadow: var(--shadow-xl); font-family: var(--font-sans);">
+            
+            <!-- Encabezado Fuerte -->
+            <div class="px-8 py-6 border-b border-border">
+                <div class="flex justify-between items-start">
+                    <div class="flex-1 pr-6">
+                        <!-- Título principal con jerarquía visual clara -->
+                        <h1 class="text-3xl font-bold text-foreground mb-2 leading-tight" style="font-family: var(--font-sans);">
+                            ${productName}
+                        </h1>
+                        <!-- Identificador secundario y etiqueta técnica -->
+                        <div class="flex items-center gap-3 mb-3">
+                            <span class="text-lg text-muted-foreground font-mono font-semibold">
+                                ${product.product_code}
+                            </span>
+                            ${createTechLabelWithTooltip(product.product_type, `inline-flex items-center px-3 py-1 text-sm font-semibold rounded-full ${typeColors[product.product_type] || 'bg-muted text-muted-foreground'}`)}
                         </div>
-                        <h2 class="text-2xl font-bold">Producto de CTeI</h2>
                     </div>
-                    <button onclick="this.closest('.fixed').remove()" class="text-muted-foreground hover:text-foreground text-xl">
-                        <i class="fas fa-times"></i>
+                    <!-- Botón de cierre mejorado -->
+                    <button onclick="this.closest('.fixed').remove()" 
+                            class="p-3 rounded-full hover:bg-muted transition-colors duration-200"
+                            style="color: var(--muted-foreground);">
+                        <i class="fas fa-times text-xl"></i>
                     </button>
                 </div>
-                
-                <div class="space-y-6">
-                    <div>
-                        <h4 class="font-semibold mb-2">Descripción</h4>
-                        <p class="text-muted-foreground">${product.description || 'Sin descripción disponible'}</p>
-                    </div>
+            </div>
+            
+            <!-- Contenido principal con scroll -->
+            <div class="px-8 py-6 max-h-[calc(90vh-140px)] overflow-y-auto">
+                <div class="space-y-8">
+                    
+                    <!-- Descripción -->
+                    <section>
+                        <h2 class="text-xl font-semibold text-foreground mb-4" style="font-family: var(--font-sans);">
+                            Descripción
+                        </h2>
+                        <p class="text-foreground leading-relaxed text-base">
+                            ${product.description || `<span class="text-muted-foreground" style="font-style: italic;">Sin descripción disponible</span>`}
+                        </p>
+                    </section>
                     
                     ${product.category_description ? `
-                    <div>
-                        <h4 class="font-semibold mb-2">Categoría</h4>
-                        <p class="text-muted-foreground">${product.category_description}</p>
-                    </div>
+                    <!-- Categoría -->
+                    <section>
+                        <h2 class="text-xl font-semibold text-foreground mb-4 border-b border-border pb-2" style="font-family: var(--font-sans);">
+                            Categoría
+                        </h2>
+                        <p class="text-foreground leading-relaxed text-base">
+                            ${product.category_description}
+                        </p>
+                    </section>
                     ` : ''}
                     
                     ${product.doi || product.url || product.journal ? `
-                    <div>
-                        <h4 class="font-semibold mb-2">Información de Publicación</h4>
-                        <div class="space-y-2">
-                            ${product.journal ? `<p><i class="fas fa-book-open mr-2"></i><strong>Revista:</strong> ${product.journal}</p>` : ''}
-                            ${product.publication_date ? `<p><i class="fas fa-calendar mr-2"></i><strong>Fecha de Publicación:</strong> ${formatDate(product.publication_date)}</p>` : ''}
-                            ${product.doi ? `<p><i class="fas fa-link mr-2"></i><strong>DOI:</strong> <a href="https://doi.org/${product.doi}" target="_blank" class="text-primary hover:underline">${product.doi}</a></p>` : ''}
-                            ${product.url ? `<p><i class="fas fa-external-link-alt mr-2"></i><strong>URL:</strong> <a href="${product.url}" target="_blank" class="text-primary hover:underline">Enlace externo</a></p>` : ''}
-                            ${product.impact_factor ? `<p><i class="fas fa-star mr-2"></i><strong>Factor de Impacto:</strong> ${product.impact_factor}</p>` : ''}
-                            ${product.citation_count ? `<p><i class="fas fa-quote-right mr-2"></i><strong>Citaciones:</strong> ${product.citation_count}</p>` : ''}
+                    <!-- Información de Publicación -->
+                    <section>
+                        <h2 class="text-xl font-semibold text-foreground mb-4 border-b border-border pb-2" style="font-family: var(--font-sans);">
+                            Información de Publicación
+                        </h2>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            ${product.journal ? `
+                            <div class="flex items-start space-x-3 p-3 rounded-lg bg-muted/20">
+                                <i class="fas fa-book-open text-primary mt-1"></i>
+                                <div>
+                                    <div class="font-medium text-foreground">Revista</div>
+                                    <div class="text-muted-foreground">${product.journal}</div>
+                                </div>
+                            </div>
+                            ` : ''}
+                            ${product.publication_date ? `
+                            <div class="flex items-start space-x-3 p-3 rounded-lg bg-muted/20">
+                                <i class="fas fa-calendar text-primary mt-1"></i>
+                                <div>
+                                    <div class="font-medium text-foreground">Fecha de Publicación</div>
+                                    <div class="text-muted-foreground">${formatDate(product.publication_date)}</div>
+                                </div>
+                            </div>
+                            ` : ''}
+                            ${product.doi ? `
+                            <div class="flex items-start space-x-3 p-3 rounded-lg bg-muted/20">
+                                <i class="fas fa-link text-primary mt-1"></i>
+                                <div>
+                                    <div class="font-medium text-foreground">DOI</div>
+                                    <a href="https://doi.org/${product.doi}" target="_blank" 
+                                       class="text-primary hover:text-primary/80 font-medium transition-colors duration-200">
+                                        ${product.doi}
+                                    </a>
+                                </div>
+                            </div>
+                            ` : ''}
+                            ${product.url ? `
+                            <div class="flex items-start space-x-3 p-3 rounded-lg bg-muted/20">
+                                <i class="fas fa-external-link-alt text-primary mt-1"></i>
+                                <div>
+                                    <div class="font-medium text-foreground">Enlace Externo</div>
+                                    <a href="${product.url}" target="_blank" 
+                                       class="text-primary hover:text-primary/80 font-medium transition-colors duration-200">
+                                        Visitar enlace
+                                    </a>
+                                </div>
+                            </div>
+                            ` : ''}
+                            ${product.impact_factor ? `
+                            <div class="flex items-start space-x-3 p-3 rounded-lg bg-muted/20">
+                                <i class="fas fa-star text-primary mt-1"></i>
+                                <div>
+                                    <div class="font-medium text-foreground">Factor de Impacto</div>
+                                    <div class="text-muted-foreground font-semibold">${product.impact_factor}</div>
+                                </div>
+                            </div>
+                            ` : ''}
+                            ${product.citation_count ? `
+                            <div class="flex items-start space-x-3 p-3 rounded-lg bg-muted/20">
+                                <i class="fas fa-quote-right text-primary mt-1"></i>
+                                <div>
+                                    <div class="font-medium text-foreground">Citaciones</div>
+                                    <div class="text-muted-foreground font-semibold">${product.citation_count}</div>
+                                </div>
+                            </div>
+                            ` : ''}
                         </div>
-                    </div>
+                    </section>
                     ` : ''}
                     
                     ${product.project ? `
-                    <div>
-                        <h4 class="font-semibold mb-2">Proyecto Asociado</h4>
-                        <div class="bg-muted p-4 rounded-lg">
-                            <h5 class="font-medium">${product.project.title}</h5>
-                            <p class="text-sm text-muted-foreground mt-1">${product.project.abstract || 'Sin resumen disponible'}</p>
-                            <div class="flex items-center justify-between mt-3 text-sm">
-                                <span><i class="fas fa-user mr-1"></i>${product.project.owner_name}</span>
-                                <span><i class="fas fa-building mr-1"></i>${product.project.institution || 'Sin institución'}</span>
+                    <!-- Proyecto Asociado -->
+                    <section>
+                        <h2 class="text-xl font-semibold text-foreground mb-4 border-b border-border pb-2" style="font-family: var(--font-sans);">
+                            Proyecto Asociado
+                        </h2>
+                        <div class="p-6 rounded-lg border border-border hover:bg-muted/10 transition-colors duration-200">
+                            <button onclick="viewProjectDetails(${product.project.id})" 
+                                    class="text-left w-full hover:text-primary transition-colors duration-200">
+                                <h3 class="text-lg font-semibold text-foreground mb-2">
+                                    ${product.project.title}
+                                    <i class="fas fa-external-link-alt ml-2 text-sm text-primary"></i>
+                                </h3>
+                                <p class="text-muted-foreground leading-relaxed mb-4">
+                                    ${product.project.abstract || `<span style="font-style: italic;">Sin resumen disponible</span>`}
+                                </p>
+                            </button>
+                            <div class="flex items-center justify-between text-sm border-t border-border pt-4">
+                                <span class="flex items-center">
+                                    <i class="fas fa-user mr-2 text-primary"></i>
+                                    ${product.project.owner_name}
+                                </span>
+                                <span class="flex items-center">
+                                    <i class="fas fa-building mr-2 text-primary"></i>
+                                    ${product.project.institution || 'Sin institución'}
+                                </span>
                             </div>
                         </div>
-                    </div>
+                    </section>
                     ` : ''}
                     
-                    <div>
-                        <h4 class="font-semibold mb-2">Autores y Colaboradores</h4>
-                        <div class="bg-muted p-4 rounded-lg">
+                    <!-- Autores y Colaboradores -->
+                    <section>
+                        <h2 class="text-xl font-semibold text-foreground mb-4 border-b border-border pb-2" style="font-family: var(--font-sans);">
+                            Autores y Colaboradores
+                        </h2>
+                        <div class="bg-muted/20 p-6 rounded-lg">
                             ${authorsList}
                         </div>
-                    </div>
+                    </section>
                     
-                    <div class="flex items-center justify-between pt-4 border-t border-border text-sm text-muted-foreground">
-                        <div class="space-y-1">
-                            ${product.creator_name ? `<div><i class="fas fa-user-plus mr-1"></i>Creado por: ${product.creator_name}</div>` : ''}
-                            ${product.last_editor_name ? `<div><i class="fas fa-edit mr-1"></i>Editado por: ${product.last_editor_name}</div>` : ''}
+                </div>
+            </div>
+            
+            <!-- Pie de página con metadata -->
+            <div class="px-8 py-4 bg-muted/30 border-t border-border">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-muted-foreground">
+                    <div class="space-y-1">
+                        ${product.creator_name ? `
+                        <div class="flex items-center">
+                            <i class="fas fa-user-plus mr-2"></i>Creado por: ${product.creator_name}
                         </div>
-                        <div class="text-right space-y-1">
-                            <div><i class="fas fa-calendar-plus mr-1"></i>Creado: ${formatDate(product.created_at)}</div>
-                            <div><i class="fas fa-calendar-edit mr-1"></i>Actualizado: ${formatDate(product.updated_at)}</div>
+                        ` : ''}
+                        ${product.last_editor_name ? `
+                        <div class="flex items-center">
+                            <i class="fas fa-edit mr-2"></i>Editado por: ${product.last_editor_name}
+                        </div>
+                        ` : ''}
+                    </div>
+                    <div class="space-y-1 md:text-right">
+                        <div class="flex items-center md:justify-end">
+                            <i class="fas fa-calendar-plus mr-2"></i>Creado: ${formatDate(product.created_at)}
+                        </div>
+                        <div class="flex items-center md:justify-end">
+                            <i class="fas fa-calendar-edit mr-2"></i>Actualizado: ${formatDate(product.updated_at)}
                         </div>
                     </div>
                 </div>
@@ -551,6 +763,28 @@ function formatRole(role) {
         'REVIEWER': 'Revisor'
     };
     return roleNames[role] || role;
+}
+
+// ===== FUNCIONES AUXILIARES PARA MODALES REDISEÑADOS =====
+
+// Función para mostrar detalles de colaborador (placeholder)
+function showCollaboratorDetails(collaboratorId) {
+    showToast('Función de colaboradores próximamente disponible', 'info');
+    console.log('Mostrar detalles del colaborador:', collaboratorId);
+    // TODO: Implementar modal de detalles de colaborador
+}
+
+// Función para navegar a proyecto desde producto
+async function viewProjectFromProduct(projectId) {
+    try {
+        const response = await axios.get(`${API_BASE}/public/projects/${projectId}`);
+        if (response.data.success) {
+            const project = response.data.data;
+            showProjectModal(project);
+        }
+    } catch (error) {
+        showToast('Error al cargar detalles del proyecto asociado', 'error');
+    }
 }
 
 // Funciones de búsqueda
