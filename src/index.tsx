@@ -867,7 +867,7 @@ app.get('/', (c) => {
         </footer>
 
         <!-- Modales -->
-        <div id="loginModal" class="fixed inset-0 bg-background/80 backdrop-blur-sm hidden z-50">
+        <div id="loginModal" class="fixed inset-0 bg-black/60 backdrop-blur-md hidden z-50">
             <div class="flex items-center justify-center min-h-screen p-4">
                 <div class="level-3 max-w-md w-full">
                     <div class="p-6">
@@ -896,7 +896,7 @@ app.get('/', (c) => {
             </div>
         </div>
 
-        <div id="registerModal" class="fixed inset-0 bg-background/80 backdrop-blur-sm hidden z-50">
+        <div id="registerModal" class="fixed inset-0 bg-black/60 backdrop-blur-md hidden z-50">
             <div class="flex items-center justify-center min-h-screen p-4">
                 <div class="level-3 max-w-md w-full">
                     <div class="p-6">

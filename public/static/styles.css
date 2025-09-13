@@ -1321,3 +1321,103 @@ body {
 .ctei-accordion-content.hidden {
   display: none;
 }
+
+/* ========================================
+   MODALES MEJORADOS - MEJOR CONTRASTE Y LEGIBILIDAD  
+======================================== */
+
+/* Overlay de modal con mejor contraste */
+.ctei-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(8px);
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}
+
+/* Contenido de modal con mejor contraste */
+.ctei-modal-content {
+  background-color: var(--card);
+  color: var(--card-foreground);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-xl);
+  border: 1px solid var(--border);
+  max-width: 90vw;
+  max-height: 90vh;
+  overflow: hidden;
+  position: relative;
+}
+
+/* Asegurar que el texto en modales sea legible */
+.ctei-modal-content h1,
+.ctei-modal-content h2,
+.ctei-modal-content h3,
+.ctei-modal-content h4,
+.ctei-modal-content h5,
+.ctei-modal-content h6 {
+  color: var(--foreground);
+  font-family: var(--font-sans);
+}
+
+.ctei-modal-content p,
+.ctei-modal-content div,
+.ctei-modal-content span {
+  color: var(--foreground);
+}
+
+.ctei-modal-content .text-muted-foreground {
+  color: var(--muted-foreground);
+}
+
+.ctei-modal-content .text-primary {
+  color: var(--primary);
+}
+
+/* Botón de cierre mejorado */
+.ctei-modal-close {
+  background-color: var(--muted);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0.75rem;
+  color: var(--muted-foreground);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.ctei-modal-close:hover {
+  background-color: var(--accent);
+  color: var(--accent-foreground);
+  border-color: var(--primary);
+}
+
+/* Tags y badges en modales con mejor contraste */
+.ctei-modal-content .ctei-tag {
+  background-color: var(--accent);
+  color: var(--accent-foreground);
+  border: 1px solid var(--border);
+  padding: 0.25rem 0.75rem;
+  border-radius: var(--radius-xl);
+  font-size: 0.875rem;
+  font-weight: 500;
+  display: inline-block;
+  margin: 0.125rem;
+}
+
+/* Enlaces en modales con mejor visibilidad */
+.ctei-modal-content a,
+.ctei-modal-content button.link {
+  color: var(--primary);
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.ctei-modal-content a:hover,
+.ctei-modal-content button.link:hover {
+  color: var(--primary);
+  text-decoration: underline;
+  opacity: 0.8;
+}

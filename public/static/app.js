@@ -347,7 +347,7 @@ async function viewProductDetails(productId) {
 
 function showProjectModal(project) {
     const modal = document.createElement('div');
-    modal.className = 'fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center p-4';
+    modal.className = 'fixed inset-0 bg-black/60 backdrop-blur-md z-50 flex items-center justify-center p-4';
     modal.onclick = (e) => {
         if (e.target === modal) modal.remove();
     };
@@ -511,7 +511,7 @@ function showProjectModal(project) {
 
 function showProductModal(product) {
     const modal = document.createElement('div');
-    modal.className = 'fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center p-4';
+    modal.className = 'fixed inset-0 bg-black/60 backdrop-blur-md z-50 flex items-center justify-center p-4';
     modal.onclick = (e) => {
         if (e.target === modal) modal.remove();
     };
@@ -1284,7 +1284,7 @@ function showLoginModal() {
     }
     
     const modal = document.createElement('div');
-    modal.className = 'fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center p-4';
+    modal.className = 'fixed inset-0 bg-black/60 backdrop-blur-md z-50 flex items-center justify-center p-4';
     modal.id = 'loginModal';
     modal.onclick = (e) => {
         if (e.target === modal) closeLoginModal();
@@ -1385,7 +1385,7 @@ function closeLoginModal() {
 
 function showRegisterModal() {
     const modal = document.createElement('div');
-    modal.className = 'fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center p-4';
+    modal.className = 'fixed inset-0 bg-black/60 backdrop-blur-md z-50 flex items-center justify-center p-4';
     modal.id = 'registerModal';
     modal.onclick = (e) => {
         if (e.target === modal) closeRegisterModal();
