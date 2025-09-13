@@ -227,6 +227,15 @@ function renderDashboard() {
                         </li>
                         <li>
                             <button 
+                                onclick="showView('monitoring')" 
+                                class="nav-item w-full flex items-center px-3 py-2 text-left rounded-lg hover:bg-accent hover:text-accent-foreground transition-colors"
+                            >
+                                <i class="fas fa-chart-line mr-3"></i>
+                                Monitoreo en Tiempo Real
+                            </button>
+                        </li>
+                        <li>
+                            <button 
                                 onclick="showView('admin-projects')" 
                                 class="nav-item w-full flex items-center px-3 py-2 text-left rounded-lg hover:bg-accent hover:text-accent-foreground transition-colors"
                             >
@@ -388,6 +397,9 @@ function showView(view) {
             break;
         case 'admin-categories':
             renderAdminCategoriesView();
+            break;
+        case 'monitoring':
+            renderMonitoringDashboard();
             break;
         case 'timeline':
             if (typeof renderTimelineView === 'function') renderTimelineView();
@@ -1550,6 +1562,570 @@ async function updateProfile(event) {
         submitButton.disabled = false;
         submitButton.innerHTML = originalText;
     }
+}
+
+// ===== DASHBOARD DE MONITOREO EN TIEMPO REAL =====
+// Función para renderizar el dashboard de monitoreo
+async function renderMonitoringDashboard() {
+    try {
+        document.getElementById('content').innerHTML = `
+            <div class="space-y-6">
+                <!-- Encabezado del Dashboard de Monitoreo -->
+                <div class="ctei-content-card">
+                    <div class="ctei-content-card-header">
+                        <div>
+                            <div class="ctei-content-card-title">
+                                <i class="fas fa-chart-line text-accent mr-3"></i>
+                                Dashboard de Monitoreo en Tiempo Real
+                            </div>
+                            <div class="ctei-content-card-description">
+                                Sistema Departamental de Ciencias del Chocó - Fase 2A Semana 2
+                            </div>
+                        </div>
+                        <div class="flex items-center space-x-3">
+                            <div id="last-updated" class="text-sm text-muted-foreground">
+                                <i class="fas fa-clock mr-1"></i>
+                                Actualizando...
+                            </div>
+                            <button 
+                                onclick="loadMonitoringOverview()"
+                                class="ctei-btn-primary"
+                            >
+                                <i class="fas fa-sync-alt mr-2"></i>
+                                Actualizar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Métricas Generales del Sistema -->
+                <div id="system-metrics" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                    <!-- Se carga dinámicamente -->
+                </div>
+
+                <!-- Alertas Críticas -->
+                <div id="critical-alerts" class="ctei-content-card" style="display: none;">
+                    <div class="ctei-content-card-header">
+                        <div class="ctei-content-card-title">
+                            <i class="fas fa-exclamation-triangle text-destructive mr-2"></i>
+                            Alertas Críticas
+                        </div>
+                        <div class="text-sm text-muted-foreground" id="alerts-count">
+                            <!-- Contador de alertas -->
+                        </div>
+                    </div>
+                    <div class="ctei-content-card-body">
+                        <div id="alerts-container">
+                            <!-- Lista de alertas -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Proyectos que Requieren Atención -->
+                <div id="attention-projects" class="ctei-content-card">
+                    <div class="ctei-content-card-header">
+                        <div class="ctei-content-card-title">
+                            <i class="fas fa-exclamation-circle text-warning mr-2"></i>
+                            Proyectos que Requieren Atención
+                        </div>
+                        <div class="text-sm text-muted-foreground" id="attention-count">
+                            <!-- Contador de proyectos -->
+                        </div>
+                    </div>
+                    <div class="ctei-content-card-body">
+                        <div id="projects-attention-list">
+                            <!-- Lista de proyectos -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Métricas por Línea de Acción -->
+                <div class="ctei-content-card">
+                    <div class="ctei-content-card-header">
+                        <div class="ctei-content-card-title">
+                            <i class="fas fa-bullseye text-accent mr-2"></i>
+                            Estado por Línea de Acción
+                        </div>
+                    </div>
+                    <div class="ctei-content-card-body">
+                        <div id="action-lines-metrics" class="space-y-4">
+                            <!-- Métricas por línea -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Gráficos de Tendencias -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div class="ctei-content-card">
+                        <div class="ctei-content-card-header">
+                            <div class="ctei-content-card-title">
+                                <i class="fas fa-chart-area text-accent mr-2"></i>
+                                Tendencias de Proyectos (30 días)
+                            </div>
+                        </div>
+                        <div class="ctei-content-card-body">
+                            <div id="project-trends-chart" class="h-64 flex items-center justify-center text-muted-foreground">
+                                <i class="fas fa-spinner fa-spin mr-2"></i>
+                                Cargando gráfico...
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="ctei-content-card">
+                        <div class="ctei-content-card-header">
+                            <div class="ctei-content-card-title">
+                                <i class="fas fa-pie-chart text-accent mr-2"></i>
+                                Distribución por Estado
+                            </div>
+                        </div>
+                        <div class="ctei-content-card-body">
+                            <div id="status-distribution-chart" class="h-64 flex items-center justify-center text-muted-foreground">
+                                <i class="fas fa-spinner fa-spin mr-2"></i>
+                                Cargando gráfico...
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        // Cargar datos del dashboard
+        await loadMonitoringOverview();
+
+        // Configurar actualización automática cada 30 segundos
+        if (window.monitoringInterval) {
+            clearInterval(window.monitoringInterval);
+        }
+        window.monitoringInterval = setInterval(loadMonitoringOverview, 30000);
+
+    } catch (error) {
+        console.error('Error renderizando dashboard de monitoreo:', error);
+        showToast('Error al cargar el dashboard de monitoreo', 'error');
+    }
+}
+
+// Cargar datos de monitoreo general
+async function loadMonitoringOverview() {
+    try {
+        const response = await axios.get(`${API_BASE}/admin/monitoring/overview`);
+        
+        if (response.data.success) {
+            const data = response.data.data;
+            
+            // Actualizar timestamp
+            const lastUpdatedEl = document.getElementById('last-updated');
+            if (lastUpdatedEl) {
+                lastUpdatedEl.innerHTML = `
+                    <i class="fas fa-clock mr-1"></i>
+                    Actualizado: ${new Date().toLocaleTimeString()}
+                `;
+            }
+            
+            // Renderizar métricas del sistema
+            renderSystemMetrics(data.system_metrics);
+            
+            // Renderizar alertas críticas
+            renderCriticalAlerts(data.recent_alerts);
+            
+            // Renderizar proyectos que requieren atención
+            renderAttentionProjects(data.attention_projects);
+            
+            // Renderizar métricas por línea de acción
+            renderActionLineMetrics(data.action_line_metrics);
+            
+            // Cargar gráficos de tendencias
+            await loadRealTimeStats();
+            
+        } else {
+            throw new Error(response.data.error || 'Error al cargar datos de monitoreo');
+        }
+        
+    } catch (error) {
+        console.error('Error cargando overview de monitoreo:', error);
+        showToast('Error al actualizar datos de monitoreo', 'error');
+    }
+}
+
+// Renderizar métricas del sistema
+function renderSystemMetrics(metrics) {
+    const container = document.getElementById('system-metrics');
+    if (!container) return;
+    
+    const cards = [
+        {
+            title: 'Proyectos Totales',
+            value: metrics?.total_projects || 0,
+            subtitle: `${metrics?.active_projects || 0} activos`,
+            icon: 'fas fa-project-diagram',
+            color: 'bg-blue-500'
+        },
+        {
+            title: 'Productos CTeI',
+            value: metrics?.total_products || 0,
+            subtitle: `${metrics?.total_experiences || 0} experiencias`,
+            icon: 'fas fa-flask',
+            color: 'bg-green-500'
+        },
+        {
+            title: 'Investigadores',
+            value: metrics?.total_researchers || 0,
+            subtitle: 'únicos en el sistema',
+            icon: 'fas fa-users',
+            color: 'bg-purple-500'
+        },
+        {
+            title: 'Progreso Promedio',
+            value: `${Math.round(metrics?.avg_project_progress || 0)}%`,
+            subtitle: `${metrics?.high_risk_projects || 0} alto riesgo`,
+            icon: 'fas fa-chart-line',
+            color: (metrics?.high_risk_projects || 0) > 0 ? 'bg-red-500' : 'bg-teal-500'
+        }
+    ];
+    
+    container.innerHTML = cards.map(card => `
+        <div class="ctei-metric-card">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm font-medium text-muted-foreground">${card.title}</p>
+                    <p class="text-2xl font-bold text-foreground mt-1">${card.value}</p>
+                    <p class="text-xs text-muted-foreground mt-1">${card.subtitle}</p>
+                </div>
+                <div class="w-12 h-12 ${card.color} rounded-lg flex items-center justify-center">
+                    <i class="${card.icon} text-white text-lg"></i>
+                </div>
+            </div>
+        </div>
+    `).join('');
+}
+
+// Renderizar alertas críticas
+function renderCriticalAlerts(alerts) {
+    const container = document.getElementById('critical-alerts');
+    const alertsContainer = document.getElementById('alerts-container');
+    const alertsCount = document.getElementById('alerts-count');
+    
+    if (!container) return;
+    
+    if (!alerts || alerts.length === 0) {
+        container.style.display = 'none';
+        return;
+    }
+    
+    container.style.display = 'block';
+    if (alertsCount) {
+        alertsCount.textContent = `${alerts.length} alerta(s) pendiente(s)`;
+    }
+    
+    if (alertsContainer) {
+        alertsContainer.innerHTML = alerts.slice(0, 5).map(alert => `
+            <div class="flex items-start space-x-3 p-3 border-l-4 ${getSeverityBorderColor(alert.severity)} bg-muted/50 rounded-r-lg mb-3">
+                <div class="w-8 h-8 ${getSeverityBgColor(alert.severity)} rounded-full flex items-center justify-center flex-shrink-0">
+                    <i class="fas ${getSeverityIcon(alert.severity)} text-white text-sm"></i>
+                </div>
+                <div class="flex-1 min-w-0">
+                    <p class="text-sm font-medium text-foreground">${alert.title}</p>
+                    <p class="text-xs text-muted-foreground mt-1">${alert.message}</p>
+                    <div class="flex items-center space-x-4 mt-2">
+                        <span class="text-xs text-muted-foreground">
+                            <i class="fas fa-user mr-1"></i>
+                            ${alert.user_name}
+                        </span>
+                        ${alert.project_title ? `
+                            <span class="text-xs text-muted-foreground">
+                                <i class="fas fa-project-diagram mr-1"></i>
+                                ${alert.project_title}
+                            </span>
+                        ` : ''}
+                    </div>
+                </div>
+                <button 
+                    onclick="resolveAlert(${alert.id})"
+                    class="text-xs bg-primary text-primary-foreground px-2 py-1 rounded hover:opacity-90"
+                >
+                    Resolver
+                </button>
+            </div>
+        `).join('');
+    }
+}
+
+// Renderizar proyectos que requieren atención
+function renderAttentionProjects(projects) {
+    const container = document.getElementById('projects-attention-list');
+    const attentionCount = document.getElementById('attention-count');
+    
+    if (!container) return;
+    
+    if (!projects || projects.length === 0) {
+        container.innerHTML = `
+            <div class="text-center py-8 text-muted-foreground">
+                <i class="fas fa-check-circle text-4xl mb-3"></i>
+                <p>No hay proyectos que requieran atención inmediata</p>
+            </div>
+        `;
+        if (attentionCount) {
+            attentionCount.textContent = 'Todos los proyectos están en orden';
+        }
+        return;
+    }
+    
+    if (attentionCount) {
+        attentionCount.textContent = `${projects.length} proyecto(s) requieren atención`;
+    }
+    
+    container.innerHTML = projects.slice(0, 10).map(project => `
+        <div class="flex items-center justify-between p-4 border border-border rounded-lg mb-3 hover:bg-muted/50">
+            <div class="flex-1">
+                <div class="flex items-center space-x-3">
+                    <div 
+                        class="w-3 h-3 rounded-full" 
+                        style="background-color: ${project.action_line_color || '#6B7280'}"
+                    ></div>
+                    <h4 class="font-medium text-foreground">${project.title}</h4>
+                    <span class="text-xs bg-${getRiskLevelColor(project.risk_level)}-100 text-${getRiskLevelColor(project.risk_level)}-800 px-2 py-1 rounded">
+                        ${project.risk_level}
+                    </span>
+                </div>
+                <div class="flex items-center space-x-4 mt-2 text-sm text-muted-foreground">
+                    <span>
+                        <i class="fas fa-user mr-1"></i>
+                        ${project.owner_name}
+                    </span>
+                    <span>
+                        <i class="fas fa-percentage mr-1"></i>
+                        ${Math.round(project.progress_percentage)}% progreso
+                    </span>
+                    ${project.overdue_milestones > 0 ? `
+                        <span class="text-destructive">
+                            <i class="fas fa-clock mr-1"></i>
+                            ${project.overdue_milestones} vencido(s)
+                        </span>
+                    ` : ''}
+                </div>
+            </div>
+            <div class="ctei-actions-menu">
+                <button class="ctei-btn-secondary" onclick="viewProjectDetails(${project.id})">
+                    <i class="fas fa-eye"></i>
+                </button>
+            </div>
+        </div>
+    `).join('');
+}
+
+// Renderizar métricas por línea de acción
+function renderActionLineMetrics(actionLines) {
+    const container = document.getElementById('action-lines-metrics');
+    if (!container) return;
+    
+    if (!actionLines || actionLines.length === 0) {
+        container.innerHTML = '<p class="text-muted-foreground">No hay líneas de acción configuradas</p>';
+        return;
+    }
+    
+    container.innerHTML = actionLines.map(line => `
+        <div class="p-4 border border-border rounded-lg">
+            <div class="flex items-center justify-between mb-3">
+                <div class="flex items-center space-x-3">
+                    <div 
+                        class="w-4 h-4 rounded-full" 
+                        style="background-color: ${line.color_code}"
+                    ></div>
+                    <h4 class="font-medium text-foreground">${line.name}</h4>
+                    <span class="text-xs text-muted-foreground">(${line.code})</span>
+                </div>
+                <div class="flex items-center space-x-2">
+                    <span class="text-sm font-medium text-foreground">
+                        ${Math.round(line.avg_progress || 0)}% promedio
+                    </span>
+                </div>
+            </div>
+            
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div class="text-center">
+                    <div class="text-lg font-bold text-foreground">${line.project_count || 0}</div>
+                    <div class="text-xs text-muted-foreground">Proyectos</div>
+                </div>
+                <div class="text-center">
+                    <div class="text-lg font-bold text-green-600">${line.active_projects || 0}</div>
+                    <div class="text-xs text-muted-foreground">Activos</div>
+                </div>
+                <div class="text-center">
+                    <div class="text-lg font-bold text-blue-600">${line.product_count || 0}</div>
+                    <div class="text-xs text-muted-foreground">Productos</div>
+                </div>
+                <div class="text-center">
+                    <div class="text-lg font-bold text-purple-600">${line.experience_count || 0}</div>
+                    <div class="text-xs text-muted-foreground">Experiencias</div>
+                </div>
+            </div>
+        </div>
+    `).join('');
+}
+
+// Cargar estadísticas en tiempo real para gráficos
+async function loadRealTimeStats() {
+    try {
+        const response = await axios.get(`${API_BASE}/admin/monitoring/real-time-stats?timeframe=30`);
+        
+        if (response.data.success) {
+            const data = response.data.data;
+            
+            // Renderizar gráfico de tendencias (simulación simple)
+            renderProjectTrendsChart(data.project_progress);
+            
+            // Renderizar distribución por estado
+            renderStatusDistributionChart(data.status_distribution);
+        }
+        
+    } catch (error) {
+        console.error('Error cargando estadísticas en tiempo real:', error);
+    }
+}
+
+// Renderizar gráfico de tendencias (implementación simple)
+function renderProjectTrendsChart(trends) {
+    const container = document.getElementById('project-trends-chart');
+    if (!container) return;
+    
+    if (!trends || trends.length === 0) {
+        container.innerHTML = '<p class="text-muted-foreground">No hay datos disponibles</p>';
+        return;
+    }
+    
+    // Implementación simple de gráfico (sin librerías externas)
+    const maxValue = Math.max(...trends.map(t => t.projects_created)) || 1;
+    
+    container.innerHTML = `
+        <div class="w-full h-full flex items-end space-x-1 px-2">
+            ${trends.slice(-14).map((trend, index) => {
+                const height = Math.max((trend.projects_created / maxValue) * 80, 5);
+                return `
+                    <div class="flex-1 flex flex-col items-center">
+                        <div 
+                            class="bg-accent w-full rounded-t transition-all duration-300"
+                            style="height: ${height}%"
+                            title="${trend.date}: ${trend.projects_created} proyectos"
+                        ></div>
+                        <div class="text-xs text-muted-foreground mt-1 transform rotate-45 origin-top-left">
+                            ${new Date(trend.date).getDate()}
+                        </div>
+                    </div>
+                `;
+            }).join('')}
+        </div>
+    `;
+}
+
+// Renderizar distribución por estado
+function renderStatusDistributionChart(distribution) {
+    const container = document.getElementById('status-distribution-chart');
+    if (!container) return;
+    
+    if (!distribution || distribution.length === 0) {
+        container.innerHTML = '<p class="text-muted-foreground">No hay datos disponibles</p>';
+        return;
+    }
+    
+    const total = distribution.reduce((sum, item) => sum + item.count, 0);
+    const colors = {
+        'ACTIVE': 'bg-green-500',
+        'COMPLETED': 'bg-blue-500',
+        'DRAFT': 'bg-yellow-500',
+        'REVIEW': 'bg-purple-500',
+        'SUSPENDED': 'bg-red-500'
+    };
+    
+    container.innerHTML = `
+        <div class="space-y-3">
+            ${distribution.map(item => {
+                const percentage = total > 0 ? ((item.count / total) * 100).toFixed(1) : 0;
+                return `
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center space-x-3">
+                            <div class="w-4 h-4 ${colors[item.status] || 'bg-gray-500'} rounded"></div>
+                            <span class="text-sm font-medium">${item.status}</span>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <span class="text-sm font-bold">${item.count}</span>
+                            <span class="text-xs text-muted-foreground">(${percentage}%)</span>
+                        </div>
+                    </div>
+                    <div class="w-full bg-muted rounded-full h-2">
+                        <div 
+                            class="${colors[item.status] || 'bg-gray-500'} h-2 rounded-full transition-all duration-300"
+                            style="width: ${percentage}%"
+                        ></div>
+                    </div>
+                `;
+            }).join('')}
+        </div>
+    `;
+}
+
+// Funciones auxiliares
+function getSeverityBorderColor(severity) {
+    const colors = {
+        'CRITICAL': 'border-red-500',
+        'HIGH': 'border-orange-500',
+        'MEDIUM': 'border-yellow-500',
+        'LOW': 'border-blue-500'
+    };
+    return colors[severity] || 'border-gray-400';
+}
+
+function getSeverityBgColor(severity) {
+    const colors = {
+        'CRITICAL': 'bg-red-500',
+        'HIGH': 'bg-orange-500',
+        'MEDIUM': 'bg-yellow-500',
+        'LOW': 'bg-blue-500'
+    };
+    return colors[severity] || 'bg-gray-400';
+}
+
+function getSeverityIcon(severity) {
+    const icons = {
+        'CRITICAL': 'fa-exclamation-circle',
+        'HIGH': 'fa-exclamation-triangle',
+        'MEDIUM': 'fa-exclamation',
+        'LOW': 'fa-info-circle'
+    };
+    return icons[severity] || 'fa-info';
+}
+
+function getRiskLevelColor(riskLevel) {
+    const colors = {
+        'CRITICAL': 'red',
+        'HIGH': 'orange',
+        'MEDIUM': 'yellow',
+        'LOW': 'green'
+    };
+    return colors[riskLevel] || 'gray';
+}
+
+// Resolver alerta
+async function resolveAlert(alertId) {
+    try {
+        const response = await axios.put(`${API_BASE}/admin/alerts/${alertId}/resolve`);
+        
+        if (response.data.success) {
+            showToast('Alerta resuelta exitosamente', 'success');
+            await loadMonitoringOverview(); // Recargar datos
+        } else {
+            throw new Error(response.data.error || 'Error al resolver alerta');
+        }
+        
+    } catch (error) {
+        console.error('Error resolviendo alerta:', error);
+        showToast('Error al resolver alerta', 'error');
+    }
+}
+
+// Ver detalles de proyecto
+function viewProjectDetails(projectId) {
+    // Navegar a la vista de proyectos con filtro específico
+    showToast('Redirigiendo a detalles del proyecto...', 'info');
+    // Aquí podríamos implementar navegación específica o modal
 }
 
 function renderAdminUsersView() {
