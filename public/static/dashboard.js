@@ -4455,12 +4455,12 @@ async function loadFileManagerData() {
                                 totalSize += productFiles.reduce((sum, file) => sum + (file.file_size || 0), 0);
                             }
                         } catch (error) {
-                            console.warn(\`Error cargando archivos del producto \${product.id}:\`, error);
+                            console.warn(`Error cargando archivos del producto ${product.id}:`, error);
                         }
                     }
                 }
             } catch (error) {
-                console.warn(\`Error cargando archivos del proyecto \${project.id}:\`, error);
+                console.warn(`Error cargando archivos del proyecto ${project.id}:`, error);
             }
         }
         
@@ -4478,15 +4478,15 @@ async function loadFileManagerData() {
         
     } catch (error) {
         console.error('Error cargando datos de archivos:', error);
-        document.getElementById('filesList').innerHTML = \`
+        document.getElementById('filesList').innerHTML = `
             <div class="text-center py-8 text-red-600">
                 <i class="fas fa-exclamation-triangle text-4xl mb-3"></i>
-                <p>Error al cargar archivos: \${error.message}</p>
+                <p>Error al cargar archivos: ${error.message}</p>
                 <button onclick="loadFileManagerData()" class="ctei-btn-secondary mt-3">
                     Reintentar
                 </button>
             </div>
-        \`;
+        `;
     }
 }
 
@@ -4495,35 +4495,35 @@ function renderFilesList(files) {
     const container = document.getElementById('filesList');
     
     if (!files || files.length === 0) {
-        container.innerHTML = \`
+        container.innerHTML = `
             <div class="text-center py-8 text-muted-foreground">
                 <i class="fas fa-folder-open text-4xl mb-3"></i>
                 <p>No se encontraron archivos</p>
             </div>
-        \`;
+        `;
         return;
     }
     
-    container.innerHTML = files.map(file => \`
+    container.innerHTML = files.map(file => `
         <div class="ctei-file-item">
             <div class="flex items-center justify-between">
                 <div class="flex items-center space-x-4">
                     <div class="ctei-file-icon">
-                        \${FileManager.getFileIcon(file.mime_type)}
+                        ${FileManager.getFileIcon(file.mime_type)}
                     </div>
                     <div>
-                        <div class="font-medium text-foreground">\${file.original_name}</div>
+                        <div class="font-medium text-foreground">${file.original_name}</div>
                         <div class="text-sm text-muted-foreground">
-                            \${file.entity_type === 'project' ? '📁' : '📦'} \${file.entity_name} • 
-                            \${FileManager.formatFileSize(file.file_size)} • 
-                            \${new Date(file.uploaded_at).toLocaleDateString()}
+                            ${file.entity_type === 'project' ? '📁' : '📦'} ${file.entity_name} • 
+                            ${FileManager.formatFileSize(file.file_size)} • 
+                            ${new Date(file.uploaded_at).toLocaleDateString()}
                         </div>
-                        \${file.uploaded_by_name ? \`<div class="text-xs text-muted-foreground">Por: \${file.uploaded_by_name}</div>\` : ''}
+                        ${file.uploaded_by_name ? `<div class="text-xs text-muted-foreground">Por: ${file.uploaded_by_name}</div>` : ''}
                     </div>
                 </div>
                 <div class="flex items-center space-x-2">
                     <a 
-                        href="\${file.file_url}" 
+                        href="${file.file_url}" 
                         target="_blank" 
                         class="ctei-btn-secondary ctei-btn-sm"
                         title="Ver archivo"
@@ -4531,15 +4531,15 @@ function renderFilesList(files) {
                         <i class="fas fa-eye"></i>
                     </a>
                     <a 
-                        href="\${file.file_url}" 
-                        download="\${file.original_name}"
+                        href="${file.file_url}" 
+                        download="${file.original_name}"
                         class="ctei-btn-secondary ctei-btn-sm"
                         title="Descargar archivo"
                     >
                         <i class="fas fa-download"></i>
                     </a>
                     <button 
-                        onclick="confirmDeleteFileFromManager(\${file.id}, '\${file.original_name}')"
+                        onclick="confirmDeleteFileFromManager(${file.id}, '${file.original_name}')"
                         class="ctei-btn-secondary ctei-btn-sm hover:bg-red-100 hover:text-red-700"
                         title="Eliminar archivo"
                     >
@@ -4548,7 +4548,7 @@ function renderFilesList(files) {
                 </div>
             </div>
         </div>
-    \`).join('');
+    `).join('');
 }
 
 // Filtrar archivos
@@ -4592,7 +4592,7 @@ function refreshFileList() {
 
 // Confirmar eliminación desde el gestor
 function confirmDeleteFileFromManager(fileId, fileName) {
-    if (confirm(\`¿Estás seguro de que quieres eliminar el archivo "\${fileName}"?\\n\\nEsta acción no se puede deshacer.\`)) {
+    if (confirm(`¿Estás seguro de que quieres eliminar el archivo "${fileName}"?\\n\\nEsta acción no se puede deshacer.`)) {
         deleteFileFromManager(fileId);
     }
 }
@@ -4605,7 +4605,7 @@ async function deleteFileFromManager(fileId) {
         loadFileManagerData(); // Recargar datos
     } catch (error) {
         console.error('Error eliminando archivo:', error);
-        showNotification(\`Error al eliminar archivo: \${error.message}\`, 'error');
+        showNotification(`Error al eliminar archivo: ${error.message}`, 'error');
     }
 }
 
@@ -4624,7 +4624,7 @@ async function loadBulkUploadContent() {
     
     try {
         // Cargar proyectos para seleccionar destino
-        const projectsResponse = await axios.get(\`\${API_BASE}/me/projects\`);
+        const projectsResponse = await axios.get(`${API_BASE}/me/projects`);
         
         if (!projectsResponse.data.success) {
             throw new Error('Error al cargar proyectos');
@@ -4632,15 +4632,15 @@ async function loadBulkUploadContent() {
         
         const projects = projectsResponse.data.data;
         
-        content.innerHTML = \`
+        content.innerHTML = `
             <div class="space-y-6">
                 <div>
                     <label class="block text-sm font-medium mb-2">Proyecto de destino</label>
                     <select id="bulkProjectSelect" class="ctei-search-input">
                         <option value="">Seleccionar proyecto...</option>
-                        \${projects.map(project => \`
-                            <option value="\${project.id}">\${project.title}</option>
-                        \`).join('')}
+                        ${projects.map(project => `
+                            <option value="${project.id}">${project.title}</option>
+                        `).join('')}
                     </select>
                 </div>
                 
@@ -4672,18 +4672,18 @@ async function loadBulkUploadContent() {
                     </button>
                 </div>
             </div>
-        \`;
+        `;
         
         // Configurar eventos
         setupBulkUploadEvents();
         
     } catch (error) {
-        content.innerHTML = \`
+        content.innerHTML = `
             <div class="text-center py-8 text-red-600">
                 <i class="fas fa-exclamation-triangle text-4xl mb-3"></i>
-                <p>Error al cargar proyectos: \${error.message}</p>
+                <p>Error al cargar proyectos: ${error.message}</p>
             </div>
-        \`;
+        `;
     }
 }
 
@@ -4729,15 +4729,15 @@ function setupBulkUploadEvents() {
         uploadBtn.disabled = !hasFiles || !hasProject;
         
         if (hasFiles) {
-            dropZone.innerHTML = \`
+            dropZone.innerHTML = `
                 <i class="fas fa-check-circle text-4xl text-green-600 mb-3"></i>
                 <p class="text-foreground mb-2">
-                    \${fileInput.files.length} archivo(s) seleccionado(s)
+                    ${fileInput.files.length} archivo(s) seleccionado(s)
                 </p>
                 <p class="text-sm text-muted-foreground">
                     Haz click para cambiar la selección
                 </p>
-            \`;
+            `;
         }
     }
 }
@@ -4764,10 +4764,10 @@ async function startBulkUpload() {
     for (const file of files) {
         const fileDiv = document.createElement('div');
         fileDiv.className = 'flex items-center justify-between p-3 bg-card rounded-lg';
-        fileDiv.innerHTML = \`
+        fileDiv.innerHTML = `
             <div class="flex items-center space-x-3">
                 <i class="fas fa-file text-muted-foreground"></i>
-                <span class="text-sm">\${file.name}</span>
+                <span class="text-sm">${file.name}</span>
             </div>
             <div class="flex items-center space-x-2">
                 <div class="w-4 h-4">
@@ -4775,7 +4775,7 @@ async function startBulkUpload() {
                 </div>
                 <span class="text-xs text-muted-foreground">Subiendo...</span>
             </div>
-        \`;
+        `;
         progressList.appendChild(fileDiv);
         
         try {
@@ -4786,7 +4786,7 @@ async function startBulkUpload() {
             successCount++;
         } catch (error) {
             fileDiv.querySelector('.w-4').innerHTML = '<i class="fas fa-exclamation-circle text-red-600"></i>';
-            fileDiv.querySelector('.text-xs').textContent = \`Error: \${error.message}\`;
+            fileDiv.querySelector('.text-xs').textContent = `Error: ${error.message}`;
             fileDiv.querySelector('.text-xs').className = 'text-xs text-red-600';
             errorCount++;
         }
@@ -4795,19 +4795,19 @@ async function startBulkUpload() {
     // Mostrar resumen
     const summaryDiv = document.createElement('div');
     summaryDiv.className = 'mt-4 p-3 bg-muted rounded-lg';
-    summaryDiv.innerHTML = \`
+    summaryDiv.innerHTML = `
         <div class="text-sm font-medium">Resumen de subida:</div>
         <div class="text-sm text-muted-foreground">
-            \${successCount} archivo(s) subido(s) exitosamente, \${errorCount} error(es)
+            ${successCount} archivo(s) subido(s) exitosamente, ${errorCount} error(es)
         </div>
-    \`;
+    `;
     progressList.appendChild(summaryDiv);
     
     // Recargar datos principales si hubo éxitos
     if (successCount > 0) {
         setTimeout(() => {
             loadFileManagerData();
-            showNotification(\`\${successCount} archivo(s) subido(s) exitosamente\`, 'success');
+            showNotification(`${successCount} archivo(s) subido(s) exitosamente`, 'success');
         }, 1000);
     }
     
