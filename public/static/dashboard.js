@@ -1656,48 +1656,48 @@ async function testMonitoringAPIDebug() {
         
         const response = await axios.get('/api/admin/monitoring/overview');
         
-        resultsDiv.innerHTML = \`
+        resultsDiv.innerHTML = `
             <div class="space-y-4">
                 <h3 class="text-lg font-semibold text-green-600">✅ API Response Exitosa</h3>
                 <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                     <div class="bg-white p-3 rounded">
                         <div class="font-semibold">Proyectos</div>
-                        <div class="text-2xl text-blue-600">\${response.data.data.system_metrics.total_projects}</div>
+                        <div class="text-2xl text-blue-600">${response.data.data.system_metrics.total_projects}</div>
                     </div>
                     <div class="bg-white p-3 rounded">
                         <div class="font-semibold">Productos</div>
-                        <div class="text-2xl text-green-600">\${response.data.data.system_metrics.total_products}</div>
+                        <div class="text-2xl text-green-600">${response.data.data.system_metrics.total_products}</div>
                     </div>
                     <div class="bg-white p-3 rounded">
                         <div class="font-semibold">Investigadores</div>
-                        <div class="text-2xl text-purple-600">\${response.data.data.system_metrics.total_researchers}</div>
+                        <div class="text-2xl text-purple-600">${response.data.data.system_metrics.total_researchers}</div>
                     </div>
                     <div class="bg-white p-3 rounded">
                         <div class="font-semibold">Líneas de Acción</div>
-                        <div class="text-2xl text-orange-600">\${response.data.data.action_line_metrics.length}</div>
+                        <div class="text-2xl text-orange-600">${response.data.data.action_line_metrics.length}</div>
                     </div>
                 </div>
                 <details class="mt-4">
                     <summary class="cursor-pointer font-medium">Ver JSON completo</summary>
-                    <pre class="mt-2 p-4 bg-gray-100 rounded text-xs overflow-auto max-h-64">\${JSON.stringify(response.data.data, null, 2)}</pre>
+                    <pre class="mt-2 p-4 bg-gray-100 rounded text-xs overflow-auto max-h-64">${JSON.stringify(response.data.data, null, 2)}</pre>
                 </details>
             </div>
-        \`;
+        `;
         
     } catch (error) {
         console.error('❌ Error en API:', error);
-        resultsDiv.innerHTML = \`
+        resultsDiv.innerHTML = `
             <div class="text-red-600">
                 <h3 class="text-lg font-semibold">❌ Error en API</h3>
-                <p><strong>Status:</strong> \${error.response?.status || 'N/A'}</p>
-                <p><strong>Mensaje:</strong> \${error.message}</p>
+                <p><strong>Status:</strong> ${error.response?.status || 'N/A'}</p>
+                <p><strong>Mensaje:</strong> ${error.message}</p>
                 <p><strong>URL:</strong> /api/admin/monitoring/overview</p>
                 <details class="mt-2">
                     <summary class="cursor-pointer">Ver error completo</summary>
-                    <pre class="mt-2 p-4 bg-red-50 rounded text-xs overflow-auto max-h-32">\${JSON.stringify(error.response?.data || error, null, 2)}</pre>
+                    <pre class="mt-2 p-4 bg-red-50 rounded text-xs overflow-auto max-h-32">${JSON.stringify(error.response?.data || error, null, 2)}</pre>
                 </details>
             </div>
-        \`;
+        `;
     }
 }
 

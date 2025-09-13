@@ -1037,13 +1037,8 @@ app.get('/dashboard', (c) => {
         </div>
 
         <script src="https://cdn.jsdelivr.net/npm/axios@1.6.0/dist/axios.min.js"></script>
-        <script src="/static/phase1-enhancements.js?v=20240912-2"></script>
-        <script src="/static/file-management.js?v=20240912-3"></script>
-        <script src="/static/advanced-analytics.js?v=20240912-3"></script>
-        <script src="/static/dashboard.js?v=20240912-2"></script>
-        <script src="/static/enhanced-dashboard.js?v=20240912-2"></script>
-        <script src="/static/product-authorship.js?v=20240912-2"></script>
-        <script src="/static/strategic-monitoring.js?v=20240912-2"></script>
+        <!-- SOLO dashboard.js principal con versión corregida (sintaxis arreglada) -->
+        <script src="/static/dashboard.js?v=20250913-2"></script>
     </body>
     </html>
   `)
@@ -1053,6 +1048,181 @@ app.get('/dashboard', (c) => {
 app.get('*', (c) => {
   // Redireccionar a la página principal
   return c.redirect('/')
+})
+
+// Dashboard simple para debugging (sin cache)
+app.get('/dashboard-simple', (c) => {
+  return c.html(`
+    <!DOCTYPE html>
+    <html lang="es">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>🔧 Dashboard Simple - Debug</title>
+        <script src="https://cdn.tailwindcss.com"></script>
+        <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
+        <script src="https://cdn.jsdelivr.net/npm/axios@1.6.0/dist/axios.min.js"></script>
+    </head>
+    <body class="bg-gray-100">
+        <div id="app" class="p-8">
+            <div class="max-w-4xl mx-auto">
+                <h1 class="text-3xl font-bold mb-6">🔧 Dashboard Simple - Test</h1>
+                
+                <!-- Status Panel -->
+                <div class="bg-white p-6 rounded-lg shadow mb-6">
+                    <h2 class="text-xl font-semibold mb-4">Estado del Sistema</h2>
+                    <div id="status-info">
+                        <p>🔄 Verificando...</p>
+                    </div>
+                </div>
+
+                <!-- Quick Login -->
+                <div class="bg-white p-6 rounded-lg shadow mb-6">
+                    <h2 class="text-xl font-semibold mb-4">Login Rápido</h2>
+                    <div class="flex gap-4">
+                        <button onclick="quickLogin()" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
+                            Login como Admin
+                        </button>
+                        <button onclick="testMonitoringDirect()" class="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600">
+                            Test Monitoreo API
+                        </button>
+                        <button onclick="loadFullDashboard()" class="bg-purple-500 text-white px-4 py-2 rounded hover:bg-purple-600">
+                            Cargar Dashboard Completo
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Results Panel -->
+                <div class="bg-white p-6 rounded-lg shadow">
+                    <h2 class="text-xl font-semibold mb-4">Resultados</h2>
+                    <div id="results" class="min-h-[200px] bg-gray-50 p-4 rounded">
+                        <p class="text-gray-500">Los resultados aparecerán aquí...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <script>
+            let adminToken = null;
+            
+            // Check status on load
+            window.addEventListener('DOMContentLoaded', function() {
+                updateStatus();
+            });
+            
+            function updateStatus() {
+                const existing = localStorage.getItem('ctei_token');
+                document.getElementById('status-info').innerHTML = \`
+                    <div class="space-y-2">
+                        <p><strong>URL:</strong> \${window.location.href}</p>
+                        <p><strong>Token guardado:</strong> \${existing ? '✅ SÍ' : '❌ NO'}</p>
+                        <p><strong>Timestamp:</strong> \${new Date().toLocaleString()}</p>
+                    </div>
+                \`;
+                
+                if (existing) {
+                    adminToken = existing;
+                    axios.defaults.headers.common['Authorization'] = \`Bearer \${existing}\`;
+                }
+            }
+            
+            async function quickLogin() {
+                const results = document.getElementById('results');
+                results.innerHTML = '<div class="animate-pulse">🔄 Haciendo login...</div>';
+                
+                try {
+                    const response = await axios.post('/api/auth/login', {
+                        email: 'test.admin@ctei.edu.co',
+                        password: 'admin123'
+                    });
+                    
+                    if (response.data.success) {
+                        adminToken = response.data.data.token;
+                        localStorage.setItem('ctei_token', adminToken);
+                        axios.defaults.headers.common['Authorization'] = \`Bearer \${adminToken}\`;
+                        
+                        results.innerHTML = \`
+                            <div class="text-green-600">
+                                <h3 class="font-semibold mb-2">✅ Login Exitoso</h3>
+                                <p><strong>Usuario:</strong> \${response.data.data.user.full_name}</p>
+                                <p><strong>Rol:</strong> \${response.data.data.user.role}</p>
+                                <p><strong>Email:</strong> \${response.data.data.user.email}</p>
+                                <div class="mt-4">
+                                    <button onclick="window.location.href='/dashboard'" class="bg-blue-500 text-white px-4 py-2 rounded">
+                                        Ir al Dashboard Principal
+                                    </button>
+                                </div>
+                            </div>
+                        \`;
+                        updateStatus();
+                    } else {
+                        results.innerHTML = \`<div class="text-red-600">❌ Error: \${response.data.error}</div>\`;
+                    }
+                } catch (error) {
+                    console.error('Login error:', error);
+                    results.innerHTML = \`<div class="text-red-600">❌ Error de conexión: \${error.message}</div>\`;
+                }
+            }
+            
+            async function testMonitoringDirect() {
+                const results = document.getElementById('results');
+                
+                if (!adminToken) {
+                    results.innerHTML = '<div class="text-orange-600">⚠️ Necesitas hacer login primero</div>';
+                    return;
+                }
+                
+                results.innerHTML = '<div class="animate-pulse">🔄 Probando API de monitoreo...</div>';
+                
+                try {
+                    const response = await axios.get('/api/admin/monitoring/overview');
+                    
+                    results.innerHTML = \`
+                        <div class="text-green-600">
+                            <h3 class="font-semibold mb-2">✅ API Monitoreo Funcionando</h3>
+                            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
+                                <div class="bg-blue-50 p-3 rounded">
+                                    <div class="text-sm font-medium">Proyectos</div>
+                                    <div class="text-2xl font-bold text-blue-600">\${response.data.data.system_metrics.total_projects}</div>
+                                </div>
+                                <div class="bg-green-50 p-3 rounded">
+                                    <div class="text-sm font-medium">Productos</div>
+                                    <div class="text-2xl font-bold text-green-600">\${response.data.data.system_metrics.total_products}</div>
+                                </div>
+                                <div class="bg-purple-50 p-3 rounded">
+                                    <div class="text-sm font-medium">Investigadores</div>
+                                    <div class="text-2xl font-bold text-purple-600">\${response.data.data.system_metrics.total_researchers}</div>
+                                </div>
+                                <div class="bg-orange-50 p-3 rounded">
+                                    <div class="text-sm font-medium">Líneas de Acción</div>
+                                    <div class="text-2xl font-bold text-orange-600">\${response.data.data.action_line_metrics.length}</div>
+                                </div>
+                            </div>
+                        </div>
+                    \`;
+                } catch (error) {
+                    console.error('API error:', error);
+                    results.innerHTML = \`
+                        <div class="text-red-600">
+                            <h3 class="font-semibold mb-2">❌ Error en API</h3>
+                            <p><strong>Status:</strong> \${error.response?.status || 'N/A'}</p>
+                            <p><strong>Mensaje:</strong> \${error.message}</p>
+                        </div>
+                    \`;
+                }
+            }
+            
+            function loadFullDashboard() {
+                if (!adminToken) {
+                    document.getElementById('results').innerHTML = '<div class="text-orange-600">⚠️ Necesitas hacer login primero</div>';
+                    return;
+                }
+                window.location.href = '/dashboard';
+            }
+        </script>
+    </body>
+    </html>
+  `)
 })
 
 export default app
