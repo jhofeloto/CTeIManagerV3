@@ -171,6 +171,24 @@ function renderDashboard() {
                         </li>
                         <li>
                             <button 
+                                onclick="showView('file-manager')" 
+                                class="nav-item w-full flex items-center px-3 py-2 text-left rounded-lg hover:bg-accent hover:text-accent-foreground transition-colors"
+                            >
+                                <i class="fas fa-folder-open mr-3"></i>
+                                Gestión de Archivos
+                            </button>
+                        </li>
+                        <li>
+                            <button 
+                                onclick="showView('advanced-analytics')" 
+                                class="nav-item w-full flex items-center px-3 py-2 text-left rounded-lg hover:bg-accent hover:text-accent-foreground transition-colors"
+                            >
+                                <i class="fas fa-chart-line mr-3"></i>
+                                Analítica Avanzada
+                            </button>
+                        </li>
+                        <li>
+                            <button 
                                 onclick="showView('timeline')" 
                                 class="nav-item w-full flex items-center px-3 py-2 text-left rounded-lg hover:bg-accent hover:text-accent-foreground transition-colors"
                             >
@@ -349,6 +367,12 @@ function showView(view) {
             break;
         case 'my-products':
             renderMyProductsView();
+            break;
+        case 'file-manager':
+            renderFileManagerView();
+            break;
+        case 'advanced-analytics':
+            if (typeof renderAdvancedAnalyticsView === 'function') renderAdvancedAnalyticsView();
             break;
         case 'profile':
             renderProfileView();
@@ -4216,4 +4240,578 @@ async function loadDashboardSiteLogo() {
         `;
         console.warn('⚠️ Error cargando configuración del dashboard, usando logo fallback (solo imagen):', error);
     }
+}
+
+// ========== GESTIÓN DE ARCHIVOS ==========
+
+// Vista principal de gestión de archivos
+function renderFileManagerView() {
+    const mainContent = document.getElementById('mainContent');
+    mainContent.innerHTML = `
+        <div class="ctei-container">
+            <div class="mb-8">
+                <h2 class="text-3xl font-bold text-foreground mb-2">
+                    <i class="fas fa-folder-open mr-3"></i>
+                    Gestión de Archivos
+                </h2>
+                <p class="text-muted-foreground">
+                    Administra todos los archivos de tus proyectos y productos CTeI desde un lugar centralizado.
+                </p>
+            </div>
+            
+            <!-- Filtros y búsqueda -->
+            <div class="level-1 p-6 mb-6">
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium mb-2">Buscar archivos</label>
+                        <input 
+                            type="text" 
+                            id="fileSearchInput"
+                            placeholder="Nombre de archivo, proyecto..."
+                            class="ctei-search-input"
+                            oninput="filterFiles()"
+                        >
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-2">Tipo de entidad</label>
+                        <select id="fileEntityFilter" class="ctei-search-input" onchange="filterFiles()">
+                            <option value="">Todos</option>
+                            <option value="project">Archivos de Proyectos</option>
+                            <option value="product">Archivos de Productos</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-2">Tipo de archivo</label>
+                        <select id="fileTypeFilter" class="ctei-search-input" onchange="filterFiles()">
+                            <option value="">Todos los tipos</option>
+                            <option value="pdf">PDF</option>
+                            <option value="image">Imágenes</option>
+                            <option value="document">Documentos</option>
+                        </select>
+                    </div>
+                    <div class="flex items-end">
+                        <button onclick="clearFileFilters()" class="ctei-btn-secondary w-full">
+                            <i class="fas fa-times mr-2"></i>
+                            Limpiar Filtros
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Estadísticas rápidas -->
+            <div id="fileStats" class="ctei-grid ctei-grid-4 mb-6">
+                <div class="ctei-metric-card">
+                    <div class="flex items-center">
+                        <div class="p-3 rounded-full bg-primary/10">
+                            <i class="fas fa-file text-2xl text-primary"></i>
+                        </div>
+                        <div class="ml-4">
+                            <p class="text-2xl font-bold text-foreground" id="totalFiles">0</p>
+                            <p class="text-sm text-muted-foreground">Total Archivos</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="ctei-metric-card">
+                    <div class="flex items-center">
+                        <div class="p-3 rounded-full bg-chart-2/10">
+                            <i class="fas fa-project-diagram text-2xl text-chart-2"></i>
+                        </div>
+                        <div class="ml-4">
+                            <p class="text-2xl font-bold text-foreground" id="projectFiles">0</p>
+                            <p class="text-sm text-muted-foreground">Archivos de Proyectos</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="ctei-metric-card">
+                    <div class="flex items-center">
+                        <div class="p-3 rounded-full bg-chart-3/10">
+                            <i class="fas fa-cubes text-2xl text-chart-3"></i>
+                        </div>
+                        <div class="ml-4">
+                            <p class="text-2xl font-bold text-foreground" id="productFiles">0</p>
+                            <p class="text-sm text-muted-foreground">Archivos de Productos</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="ctei-metric-card">
+                    <div class="flex items-center">
+                        <div class="p-3 rounded-full bg-chart-4/10">
+                            <i class="fas fa-hdd text-2xl text-chart-4"></i>
+                        </div>
+                        <div class="ml-4">
+                            <p class="text-2xl font-bold text-foreground" id="totalSize">0 MB</p>
+                            <p class="text-sm text-muted-foreground">Espacio Usado</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Lista de archivos -->
+            <div id="filesContainer" class="level-1 p-6">
+                <div class="flex justify-between items-center mb-6">
+                    <h3 class="text-xl font-semibold">Todos los Archivos</h3>
+                    <div class="flex space-x-2">
+                        <button onclick="refreshFileList()" class="ctei-btn-secondary">
+                            <i class="fas fa-sync-alt mr-2"></i>
+                            Actualizar
+                        </button>
+                        <button onclick="showBulkUploadModal()" class="ctei-btn-primary">
+                            <i class="fas fa-upload mr-2"></i>
+                            Subir Archivos
+                        </button>
+                    </div>
+                </div>
+                
+                <div id="filesList" class="space-y-3">
+                    <div class="text-center py-8">
+                        <i class="fas fa-spinner fa-spin text-4xl text-muted-foreground mb-3"></i>
+                        <p class="text-muted-foreground">Cargando archivos...</p>
+                    </div>
+                </div>
+                
+                <!-- Paginación -->
+                <div id="filesPagination" class="mt-6 flex justify-center">
+                    <!-- Controles de paginación aparecerán aquí -->
+                </div>
+            </div>
+        </div>
+        
+        <!-- Modal de subida masiva -->
+        <div id="bulkUploadModal" class="fixed inset-0 bg-background/80 backdrop-blur-sm hidden z-50">
+            <div class="flex items-center justify-center min-h-screen p-4">
+                <div class="level-3 max-w-2xl w-full">
+                    <div class="p-6">
+                        <div class="flex justify-between items-center mb-6">
+                            <h3 class="text-xl font-semibold">Subir Archivos Masivamente</h3>
+                            <button onclick="closeBulkUploadModal()" class="text-muted-foreground hover:text-foreground">
+                                <i class="fas fa-times text-xl"></i>
+                            </button>
+                        </div>
+                        
+                        <div id="bulkUploadContent">
+                            <!-- Contenido del modal aparecerá aquí -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    // Cargar datos iniciales
+    loadFileManagerData();
+}
+
+// Cargar datos del gestor de archivos
+async function loadFileManagerData() {
+    try {
+        // Cargar todos los proyectos del usuario para mostrar archivos
+        const projectsResponse = await axios.get(`${API_BASE}/me/projects`);
+        
+        if (!projectsResponse.data.success) {
+            throw new Error('Error al cargar proyectos');
+        }
+        
+        const projects = projectsResponse.data.data;
+        const allFiles = [];
+        let totalSize = 0;
+        let projectFilesCount = 0;
+        let productFilesCount = 0;
+        
+        // Cargar archivos de cada proyecto
+        for (const project of projects) {
+            try {
+                // Archivos del proyecto
+                const projectFilesResponse = await axios.get(`${API_BASE}/me/projects/${project.id}/files`);
+                if (projectFilesResponse.data.success) {
+                    const projectFiles = projectFilesResponse.data.data.map(file => ({
+                        ...file,
+                        entity_type: 'project',
+                        entity_name: project.title,
+                        project_id: project.id
+                    }));
+                    allFiles.push(...projectFiles);
+                    projectFilesCount += projectFiles.length;
+                    totalSize += projectFiles.reduce((sum, file) => sum + (file.file_size || 0), 0);
+                }
+                
+                // Archivos de productos del proyecto
+                const productsResponse = await axios.get(`${API_BASE}/me/projects/${project.id}/products`);
+                if (productsResponse.data.success) {
+                    const products = productsResponse.data.data;
+                    
+                    for (const product of products) {
+                        try {
+                            const productFilesResponse = await axios.get(`${API_BASE}/me/projects/${project.id}/products/${product.id}/files`);
+                            if (productFilesResponse.data.success) {
+                                const productFiles = productFilesResponse.data.data.map(file => ({
+                                    ...file,
+                                    entity_type: 'product',
+                                    entity_name: product.product_code,
+                                    project_id: project.id,
+                                    product_id: product.id
+                                }));
+                                allFiles.push(...productFiles);
+                                productFilesCount += productFiles.length;
+                                totalSize += productFiles.reduce((sum, file) => sum + (file.file_size || 0), 0);
+                            }
+                        } catch (error) {
+                            console.warn(\`Error cargando archivos del producto \${product.id}:\`, error);
+                        }
+                    }
+                }
+            } catch (error) {
+                console.warn(\`Error cargando archivos del proyecto \${project.id}:\`, error);
+            }
+        }
+        
+        // Actualizar estadísticas
+        document.getElementById('totalFiles').textContent = allFiles.length;
+        document.getElementById('projectFiles').textContent = projectFilesCount;
+        document.getElementById('productFiles').textContent = productFilesCount;
+        document.getElementById('totalSize').textContent = FileManager.formatFileSize(totalSize);
+        
+        // Almacenar archivos para filtrado
+        window.allFilesData = allFiles;
+        
+        // Mostrar lista inicial
+        renderFilesList(allFiles);
+        
+    } catch (error) {
+        console.error('Error cargando datos de archivos:', error);
+        document.getElementById('filesList').innerHTML = \`
+            <div class="text-center py-8 text-red-600">
+                <i class="fas fa-exclamation-triangle text-4xl mb-3"></i>
+                <p>Error al cargar archivos: \${error.message}</p>
+                <button onclick="loadFileManagerData()" class="ctei-btn-secondary mt-3">
+                    Reintentar
+                </button>
+            </div>
+        \`;
+    }
+}
+
+// Renderizar lista de archivos
+function renderFilesList(files) {
+    const container = document.getElementById('filesList');
+    
+    if (!files || files.length === 0) {
+        container.innerHTML = \`
+            <div class="text-center py-8 text-muted-foreground">
+                <i class="fas fa-folder-open text-4xl mb-3"></i>
+                <p>No se encontraron archivos</p>
+            </div>
+        \`;
+        return;
+    }
+    
+    container.innerHTML = files.map(file => \`
+        <div class="ctei-file-item">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-4">
+                    <div class="ctei-file-icon">
+                        \${FileManager.getFileIcon(file.mime_type)}
+                    </div>
+                    <div>
+                        <div class="font-medium text-foreground">\${file.original_name}</div>
+                        <div class="text-sm text-muted-foreground">
+                            \${file.entity_type === 'project' ? '📁' : '📦'} \${file.entity_name} • 
+                            \${FileManager.formatFileSize(file.file_size)} • 
+                            \${new Date(file.uploaded_at).toLocaleDateString()}
+                        </div>
+                        \${file.uploaded_by_name ? \`<div class="text-xs text-muted-foreground">Por: \${file.uploaded_by_name}</div>\` : ''}
+                    </div>
+                </div>
+                <div class="flex items-center space-x-2">
+                    <a 
+                        href="\${file.file_url}" 
+                        target="_blank" 
+                        class="ctei-btn-secondary ctei-btn-sm"
+                        title="Ver archivo"
+                    >
+                        <i class="fas fa-eye"></i>
+                    </a>
+                    <a 
+                        href="\${file.file_url}" 
+                        download="\${file.original_name}"
+                        class="ctei-btn-secondary ctei-btn-sm"
+                        title="Descargar archivo"
+                    >
+                        <i class="fas fa-download"></i>
+                    </a>
+                    <button 
+                        onclick="confirmDeleteFileFromManager(\${file.id}, '\${file.original_name}')"
+                        class="ctei-btn-secondary ctei-btn-sm hover:bg-red-100 hover:text-red-700"
+                        title="Eliminar archivo"
+                    >
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    \`).join('');
+}
+
+// Filtrar archivos
+function filterFiles() {
+    if (!window.allFilesData) return;
+    
+    const searchTerm = document.getElementById('fileSearchInput').value.toLowerCase();
+    const entityFilter = document.getElementById('fileEntityFilter').value;
+    const typeFilter = document.getElementById('fileTypeFilter').value;
+    
+    let filteredFiles = window.allFilesData.filter(file => {
+        const matchesSearch = !searchTerm || 
+            file.original_name.toLowerCase().includes(searchTerm) ||
+            file.entity_name.toLowerCase().includes(searchTerm);
+            
+        const matchesEntity = !entityFilter || file.entity_type === entityFilter;
+        
+        const matchesType = !typeFilter || 
+            (typeFilter === 'pdf' && file.mime_type.includes('pdf')) ||
+            (typeFilter === 'image' && file.mime_type.includes('image')) ||
+            (typeFilter === 'document' && (file.mime_type.includes('word') || file.mime_type.includes('text')));
+            
+        return matchesSearch && matchesEntity && matchesType;
+    });
+    
+    renderFilesList(filteredFiles);
+}
+
+// Limpiar filtros
+function clearFileFilters() {
+    document.getElementById('fileSearchInput').value = '';
+    document.getElementById('fileEntityFilter').value = '';
+    document.getElementById('fileTypeFilter').value = '';
+    filterFiles();
+}
+
+// Actualizar lista
+function refreshFileList() {
+    loadFileManagerData();
+}
+
+// Confirmar eliminación desde el gestor
+function confirmDeleteFileFromManager(fileId, fileName) {
+    if (confirm(\`¿Estás seguro de que quieres eliminar el archivo "\${fileName}"?\\n\\nEsta acción no se puede deshacer.\`)) {
+        deleteFileFromManager(fileId);
+    }
+}
+
+// Eliminar archivo desde el gestor
+async function deleteFileFromManager(fileId) {
+    try {
+        await FileManager.deleteFile(fileId);
+        showNotification('Archivo eliminado exitosamente', 'success');
+        loadFileManagerData(); // Recargar datos
+    } catch (error) {
+        console.error('Error eliminando archivo:', error);
+        showNotification(\`Error al eliminar archivo: \${error.message}\`, 'error');
+    }
+}
+
+// Modal de subida masiva
+function showBulkUploadModal() {
+    document.getElementById('bulkUploadModal').classList.remove('hidden');
+    loadBulkUploadContent();
+}
+
+function closeBulkUploadModal() {
+    document.getElementById('bulkUploadModal').classList.add('hidden');
+}
+
+async function loadBulkUploadContent() {
+    const content = document.getElementById('bulkUploadContent');
+    
+    try {
+        // Cargar proyectos para seleccionar destino
+        const projectsResponse = await axios.get(\`\${API_BASE}/me/projects\`);
+        
+        if (!projectsResponse.data.success) {
+            throw new Error('Error al cargar proyectos');
+        }
+        
+        const projects = projectsResponse.data.data;
+        
+        content.innerHTML = \`
+            <div class="space-y-6">
+                <div>
+                    <label class="block text-sm font-medium mb-2">Proyecto de destino</label>
+                    <select id="bulkProjectSelect" class="ctei-search-input">
+                        <option value="">Seleccionar proyecto...</option>
+                        \${projects.map(project => \`
+                            <option value="\${project.id}">\${project.title}</option>
+                        \`).join('')}
+                    </select>
+                </div>
+                
+                <div id="bulkUploadZone" class="ctei-file-dropzone">
+                    <i class="fas fa-cloud-upload-alt text-4xl text-muted-foreground mb-3"></i>
+                    <p class="text-foreground mb-2">
+                        Arrastra múltiples archivos aquí o haz click para seleccionar
+                    </p>
+                    <p class="text-sm text-muted-foreground">
+                        PDFs, imágenes y documentos • Máximo 15MB por archivo
+                    </p>
+                    <input type="file" id="bulkFileInput" multiple class="hidden" accept=".pdf,.jpg,.jpeg,.png,.webp,.doc,.docx,.txt">
+                </div>
+                
+                <div id="bulkUploadProgress" class="hidden">
+                    <h4 class="font-medium mb-3">Progreso de subida:</h4>
+                    <div id="bulkUploadList" class="space-y-2 max-h-60 overflow-y-auto">
+                        <!-- Lista de archivos subiendo -->
+                    </div>
+                </div>
+                
+                <div class="flex justify-end space-x-3">
+                    <button onclick="closeBulkUploadModal()" class="ctei-btn-secondary">
+                        Cancelar
+                    </button>
+                    <button onclick="startBulkUpload()" id="startBulkUploadBtn" class="ctei-btn-primary" disabled>
+                        <i class="fas fa-upload mr-2"></i>
+                        Subir Archivos
+                    </button>
+                </div>
+            </div>
+        \`;
+        
+        // Configurar eventos
+        setupBulkUploadEvents();
+        
+    } catch (error) {
+        content.innerHTML = \`
+            <div class="text-center py-8 text-red-600">
+                <i class="fas fa-exclamation-triangle text-4xl mb-3"></i>
+                <p>Error al cargar proyectos: \${error.message}</p>
+            </div>
+        \`;
+    }
+}
+
+function setupBulkUploadEvents() {
+    const fileInput = document.getElementById('bulkFileInput');
+    const dropZone = document.getElementById('bulkUploadZone');
+    const projectSelect = document.getElementById('bulkProjectSelect');
+    const uploadBtn = document.getElementById('startBulkUploadBtn');
+    
+    // Click en zona de drop
+    dropZone.addEventListener('click', () => {
+        fileInput.click();
+    });
+    
+    // Drag & drop
+    dropZone.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        dropZone.classList.add('active');
+    });
+    
+    dropZone.addEventListener('dragleave', (e) => {
+        e.preventDefault();
+        dropZone.classList.remove('active');
+    });
+    
+    dropZone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        dropZone.classList.remove('active');
+        fileInput.files = e.dataTransfer.files;
+        updateBulkUploadUI();
+    });
+    
+    // Selección de archivos
+    fileInput.addEventListener('change', updateBulkUploadUI);
+    
+    // Selección de proyecto
+    projectSelect.addEventListener('change', updateBulkUploadUI);
+    
+    function updateBulkUploadUI() {
+        const hasFiles = fileInput.files && fileInput.files.length > 0;
+        const hasProject = projectSelect.value;
+        
+        uploadBtn.disabled = !hasFiles || !hasProject;
+        
+        if (hasFiles) {
+            dropZone.innerHTML = \`
+                <i class="fas fa-check-circle text-4xl text-green-600 mb-3"></i>
+                <p class="text-foreground mb-2">
+                    \${fileInput.files.length} archivo(s) seleccionado(s)
+                </p>
+                <p class="text-sm text-muted-foreground">
+                    Haz click para cambiar la selección
+                </p>
+            \`;
+        }
+    }
+}
+
+async function startBulkUpload() {
+    const fileInput = document.getElementById('bulkFileInput');
+    const projectSelect = document.getElementById('bulkProjectSelect');
+    const progressSection = document.getElementById('bulkUploadProgress');
+    const progressList = document.getElementById('bulkUploadList');
+    
+    if (!fileInput.files || fileInput.files.length === 0 || !projectSelect.value) {
+        alert('Por favor selecciona archivos y un proyecto de destino');
+        return;
+    }
+    
+    progressSection.classList.remove('hidden');
+    document.getElementById('startBulkUploadBtn').disabled = true;
+    
+    const files = Array.from(fileInput.files);
+    const projectId = projectSelect.value;
+    let successCount = 0;
+    let errorCount = 0;
+    
+    for (const file of files) {
+        const fileDiv = document.createElement('div');
+        fileDiv.className = 'flex items-center justify-between p-3 bg-card rounded-lg';
+        fileDiv.innerHTML = \`
+            <div class="flex items-center space-x-3">
+                <i class="fas fa-file text-muted-foreground"></i>
+                <span class="text-sm">\${file.name}</span>
+            </div>
+            <div class="flex items-center space-x-2">
+                <div class="w-4 h-4">
+                    <i class="fas fa-spinner fa-spin text-yellow-600"></i>
+                </div>
+                <span class="text-xs text-muted-foreground">Subiendo...</span>
+            </div>
+        \`;
+        progressList.appendChild(fileDiv);
+        
+        try {
+            await FileManager.uploadFile('project', projectId, file);
+            fileDiv.querySelector('.w-4').innerHTML = '<i class="fas fa-check-circle text-green-600"></i>';
+            fileDiv.querySelector('.text-xs').textContent = 'Completado';
+            fileDiv.querySelector('.text-xs').className = 'text-xs text-green-600';
+            successCount++;
+        } catch (error) {
+            fileDiv.querySelector('.w-4').innerHTML = '<i class="fas fa-exclamation-circle text-red-600"></i>';
+            fileDiv.querySelector('.text-xs').textContent = \`Error: \${error.message}\`;
+            fileDiv.querySelector('.text-xs').className = 'text-xs text-red-600';
+            errorCount++;
+        }
+    }
+    
+    // Mostrar resumen
+    const summaryDiv = document.createElement('div');
+    summaryDiv.className = 'mt-4 p-3 bg-muted rounded-lg';
+    summaryDiv.innerHTML = \`
+        <div class="text-sm font-medium">Resumen de subida:</div>
+        <div class="text-sm text-muted-foreground">
+            \${successCount} archivo(s) subido(s) exitosamente, \${errorCount} error(es)
+        </div>
+    \`;
+    progressList.appendChild(summaryDiv);
+    
+    // Recargar datos principales si hubo éxitos
+    if (successCount > 0) {
+        setTimeout(() => {
+            loadFileManagerData();
+            showNotification(\`\${successCount} archivo(s) subido(s) exitosamente\`, 'success');
+        }, 1000);
+    }
+    
+    document.getElementById('startBulkUploadBtn').textContent = 'Cerrar';
+    document.getElementById('startBulkUploadBtn').disabled = false;
+    document.getElementById('startBulkUploadBtn').onclick = closeBulkUploadModal;
 }

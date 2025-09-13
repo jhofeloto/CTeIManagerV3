@@ -10,6 +10,248 @@ const adminRoutes = new Hono<{ Bindings: Bindings; Variables: { user?: JWTPayloa
 adminRoutes.use('/*', authMiddleware);
 adminRoutes.use('/*', requireRole('ADMIN'));
 
+// ===== SISTEMA DE GESTIÓN DE ARCHIVOS =====
+
+// Servir archivos desde R2
+adminRoutes.get('/files/:type/:filename', async (c) => {
+  try {
+    const { type, filename } = c.req.param();
+    
+    // Validar tipo de archivo
+    const allowedTypes = ['logos', 'documents', 'images', 'projects', 'products'];
+    if (!allowedTypes.includes(type)) {
+      return c.notFound();
+    }
+    
+    if (!c.env.R2) {
+      return c.text('R2 storage no configurado', 500);
+    }
+    
+    const object = await c.env.R2.get(`${type}/${filename}`);
+    if (!object) {
+      return c.notFound();
+    }
+    
+    return new Response(object.body, {
+      headers: {
+        'Content-Type': object.httpMetadata?.contentType || 'application/octet-stream',
+        'Cache-Control': 'public, max-age=31536000',
+        'Content-Disposition': `inline; filename="${filename}"`,
+      },
+    });
+  } catch (error) {
+    console.error('Error sirviendo archivo:', error);
+    return c.text('Error interno del servidor', 500);
+  }
+});
+
+// Subir archivos para productos/proyectos
+adminRoutes.post('/upload-file', async (c) => {
+  try {
+    const formData = await c.req.formData();
+    const file = formData.get('file') as File;
+    const fileType = formData.get('type') as string; // 'document', 'image', 'project', 'product'
+    const entityId = formData.get('entityId') as string; // ID del proyecto o producto
+    
+    if (!file) {
+      const response: APIResponse<null> = {
+        success: false,
+        error: 'No se proporcionó ningún archivo'
+      };
+      return c.json(response, 400);
+    }
+    
+    // Validaciones según tipo
+    let allowedTypes: string[] = [];
+    let maxSize: number = 0;
+    let folder: string = '';
+    
+    switch (fileType) {
+      case 'document':
+        allowedTypes = ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
+        maxSize = 10 * 1024 * 1024; // 10MB
+        folder = 'documents';
+        break;
+      case 'image':
+        allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+        maxSize = 5 * 1024 * 1024; // 5MB
+        folder = 'images';
+        break;
+      case 'project':
+        allowedTypes = ['application/pdf', 'image/jpeg', 'image/png', 'image/jpg'];
+        maxSize = 15 * 1024 * 1024; // 15MB
+        folder = 'projects';
+        break;
+      case 'product':
+        allowedTypes = ['application/pdf', 'image/jpeg', 'image/png', 'image/jpg', 'text/plain'];
+        maxSize = 20 * 1024 * 1024; // 20MB
+        folder = 'products';
+        break;
+      default:
+        return c.json({ success: false, error: 'Tipo de archivo no válido' }, 400);
+    }
+    
+    // Validar tipo de archivo
+    if (!allowedTypes.includes(file.type)) {
+      const response: APIResponse<null> = {
+        success: false,
+        error: `Tipo de archivo no permitido. Permitidos: ${allowedTypes.join(', ')}`
+      };
+      return c.json(response, 400);
+    }
+    
+    // Validar tamaño
+    if (file.size > maxSize) {
+      const response: APIResponse<null> = {
+        success: false,
+        error: `El archivo no puede superar ${Math.round(maxSize / (1024 * 1024))}MB`
+      };
+      return c.json(response, 400);
+    }
+    
+    if (!c.env.R2) {
+      return c.json({ success: false, error: 'R2 storage no configurado' }, 500);
+    }
+    
+    // Generar nombre único
+    const timestamp = Date.now();
+    const randomId = Math.random().toString(36).substring(2, 15);
+    const extension = file.name.split('.').pop();
+    const fileName = `${entityId}-${timestamp}-${randomId}.${extension}`;
+    const fullPath = `${folder}/${fileName}`;
+    
+    // Subir a R2
+    const arrayBuffer = await file.arrayBuffer();
+    await c.env.R2.put(fullPath, arrayBuffer, {
+      httpMetadata: {
+        contentType: file.type,
+      },
+      customMetadata: {
+        originalName: file.name,
+        uploadedBy: c.get('user')?.id?.toString() || 'unknown',
+        entityId: entityId,
+        fileType: fileType,
+        uploadedAt: new Date().toISOString(),
+      },
+    });
+    
+    // Generar URL del archivo
+    const fileUrl = `/api/admin/files/${folder}/${fileName}`;
+    
+    // Registrar en base de datos
+    if (c.env.DB) {
+      await c.env.DB.prepare(`
+        INSERT INTO files (
+          filename, original_name, file_path, file_url, file_type, 
+          file_size, mime_type, entity_type, entity_id, uploaded_by, uploaded_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `).bind(
+        fileName,
+        file.name,
+        fullPath,
+        fileUrl,
+        fileType,
+        file.size,
+        file.type,
+        fileType === 'project' || fileType === 'product' ? fileType : 'general',
+        entityId,
+        c.get('user')?.id || null,
+        new Date().toISOString()
+      ).run();
+    }
+    
+    const response: APIResponse<any> = {
+      success: true,
+      data: {
+        file_url: fileUrl,
+        filename: fileName,
+        original_name: file.name,
+        file_size: file.size,
+        mime_type: file.type,
+        message: 'Archivo subido exitosamente'
+      }
+    };
+    return c.json(response);
+    
+  } catch (error) {
+    console.error('Error subiendo archivo:', error);
+    const response: APIResponse<null> = {
+      success: false,
+      error: 'Error interno al subir archivo'
+    };
+    return c.json(response, 500);
+  }
+});
+
+// Listar archivos de una entidad
+adminRoutes.get('/files/:entityType/:entityId', async (c) => {
+  try {
+    const { entityType, entityId } = c.req.param();
+    
+    if (!c.env.DB) {
+      return c.json({ success: false, error: 'Base de datos no disponible' }, 500);
+    }
+    
+    const files = await c.env.DB.prepare(`
+      SELECT * FROM files 
+      WHERE entity_type = ? AND entity_id = ?
+      ORDER BY uploaded_at DESC
+    `).bind(entityType, entityId).all();
+    
+    const response: APIResponse<any> = {
+      success: true,
+      data: files.results
+    };
+    return c.json(response);
+    
+  } catch (error) {
+    console.error('Error listando archivos:', error);
+    return c.json({ success: false, error: 'Error al listar archivos' }, 500);
+  }
+});
+
+// Eliminar archivo
+adminRoutes.delete('/files/:fileId', async (c) => {
+  try {
+    const { fileId } = c.req.param();
+    
+    if (!c.env.DB || !c.env.R2) {
+      return c.json({ success: false, error: 'Servicios no disponibles' }, 500);
+    }
+    
+    // Obtener información del archivo
+    const file = await c.env.DB.prepare(`
+      SELECT * FROM files WHERE id = ?
+    `).bind(fileId).first();
+    
+    if (!file) {
+      return c.json({ success: false, error: 'Archivo no encontrado' }, 404);
+    }
+    
+    // Eliminar de R2
+    try {
+      await c.env.R2.delete(file.file_path as string);
+    } catch (error) {
+      console.warn('Error eliminando de R2:', error);
+    }
+    
+    // Eliminar de base de datos
+    await c.env.DB.prepare(`
+      DELETE FROM files WHERE id = ?
+    `).bind(fileId).run();
+    
+    const response: APIResponse<any> = {
+      success: true,
+      data: { message: 'Archivo eliminado exitosamente' }
+    };
+    return c.json(response);
+    
+  } catch (error) {
+    console.error('Error eliminando archivo:', error);
+    return c.json({ success: false, error: 'Error al eliminar archivo' }, 500);
+  }
+});
+
 // ===== GESTIÓN DE CONFIGURACIÓN =====
 
 // Obtener configuración actual del sitio

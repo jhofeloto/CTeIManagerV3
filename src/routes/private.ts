@@ -1853,4 +1853,797 @@ privateRoutes.get('/alerts', async (c) => {
   }
 });
 
+// ===== SISTEMA DE GESTIÓN DE ARCHIVOS PARA INVESTIGADORES =====
+
+// Subir archivo para proyecto o producto
+privateRoutes.post('/projects/:projectId/upload', async (c) => {
+  try {
+    const { projectId } = c.req.param();
+    const user = c.get('user')!;
+    
+    // Verificar permisos sobre el proyecto
+    const projectAccess = await c.env.DB.prepare(`
+      SELECT p.*, pc.can_add_products, pc.can_edit_project
+      FROM projects p
+      LEFT JOIN project_collaborators pc ON p.id = pc.project_id AND pc.user_id = ?
+      WHERE p.id = ? AND (p.owner_id = ? OR pc.user_id = ?)
+    `).bind(user.id, projectId, user.id, user.id).first();
+    
+    if (!projectAccess) {
+      return c.json({ success: false, error: 'No tienes permisos para subir archivos a este proyecto' }, 403);
+    }
+    
+    const formData = await c.req.formData();
+    const file = formData.get('file') as File;
+    const fileType = (formData.get('type') as string) || 'project';
+    
+    if (!file) {
+      return c.json({ success: false, error: 'No se proporcionó ningún archivo' }, 400);
+    }
+    
+    // Validaciones de archivo
+    const allowedTypes = ['application/pdf', 'image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'text/plain'];
+    const maxSize = 15 * 1024 * 1024; // 15MB
+    
+    if (!allowedTypes.includes(file.type)) {
+      return c.json({ 
+        success: false, 
+        error: 'Tipo de archivo no permitido. Permitidos: PDF, JPG, PNG, WebP, TXT' 
+      }, 400);
+    }
+    
+    if (file.size > maxSize) {
+      return c.json({ 
+        success: false, 
+        error: 'El archivo no puede superar 15MB' 
+      }, 400);
+    }
+    
+    if (!c.env.R2) {
+      return c.json({ success: false, error: 'Almacenamiento no disponible' }, 500);
+    }
+    
+    // Generar nombre único
+    const timestamp = Date.now();
+    const randomId = Math.random().toString(36).substring(2, 15);
+    const extension = file.name.split('.').pop();
+    const fileName = `project-${projectId}-${timestamp}-${randomId}.${extension}`;
+    const fullPath = `projects/${fileName}`;
+    
+    // Subir a R2
+    const arrayBuffer = await file.arrayBuffer();
+    await c.env.R2.put(fullPath, arrayBuffer, {
+      httpMetadata: {
+        contentType: file.type,
+      },
+      customMetadata: {
+        originalName: file.name,
+        uploadedBy: user.id.toString(),
+        projectId: projectId,
+        uploadedAt: new Date().toISOString(),
+      },
+    });
+    
+    const fileUrl = `/api/admin/files/projects/${fileName}`;
+    
+    // Registrar en base de datos
+    await c.env.DB.prepare(`
+      INSERT INTO files (
+        filename, original_name, file_path, file_url, file_type, 
+        file_size, mime_type, entity_type, entity_id, uploaded_by, uploaded_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `).bind(
+      fileName,
+      file.name,
+      fullPath,
+      fileUrl,
+      fileType,
+      file.size,
+      file.type,
+      'project',
+      projectId,
+      user.id,
+      new Date().toISOString()
+    ).run();
+    
+    return c.json({
+      success: true,
+      data: {
+        file_url: fileUrl,
+        filename: fileName,
+        original_name: file.name,
+        file_size: file.size,
+        message: 'Archivo subido exitosamente'
+      }
+    });
+    
+  } catch (error) {
+    console.error('Error subiendo archivo:', error);
+    return c.json({ success: false, error: 'Error interno del servidor' }, 500);
+  }
+});
+
+// Subir archivo para producto específico
+privateRoutes.post('/projects/:projectId/products/:productId/upload', async (c) => {
+  try {
+    const { projectId, productId } = c.req.param();
+    const user = c.get('user')!;
+    
+    // Verificar permisos sobre el producto
+    const productAccess = await c.env.DB.prepare(`
+      SELECT pr.*, p.owner_id, pc.can_add_products,
+             (pr.creator_id = ? OR p.owner_id = ? OR pc.user_id = ?) as has_permission
+      FROM products pr
+      JOIN projects p ON pr.project_id = p.id
+      LEFT JOIN project_collaborators pc ON p.id = pc.project_id AND pc.user_id = ?
+      WHERE pr.id = ? AND pr.project_id = ?
+    `).bind(user.id, user.id, user.id, user.id, productId, projectId).first();
+    
+    if (!productAccess || !productAccess.has_permission) {
+      return c.json({ success: false, error: 'No tienes permisos para subir archivos a este producto' }, 403);
+    }
+    
+    const formData = await c.req.formData();
+    const file = formData.get('file') as File;
+    
+    if (!file) {
+      return c.json({ success: false, error: 'No se proporcionó ningún archivo' }, 400);
+    }
+    
+    // Validaciones específicas para productos
+    const allowedTypes = [
+      'application/pdf', 
+      'image/jpeg', 'image/jpg', 'image/png', 
+      'application/msword',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+    ];
+    const maxSize = 20 * 1024 * 1024; // 20MB para productos
+    
+    if (!allowedTypes.includes(file.type)) {
+      return c.json({ 
+        success: false, 
+        error: 'Tipo de archivo no permitido para productos CTeI' 
+      }, 400);
+    }
+    
+    if (file.size > maxSize) {
+      return c.json({ success: false, error: 'El archivo no puede superar 20MB' }, 400);
+    }
+    
+    if (!c.env.R2) {
+      return c.json({ success: false, error: 'Almacenamiento no disponible' }, 500);
+    }
+    
+    // Generar nombre único
+    const timestamp = Date.now();
+    const randomId = Math.random().toString(36).substring(2, 15);
+    const extension = file.name.split('.').pop();
+    const fileName = `product-${productId}-${timestamp}-${randomId}.${extension}`;
+    const fullPath = `products/${fileName}`;
+    
+    // Subir a R2
+    const arrayBuffer = await file.arrayBuffer();
+    await c.env.R2.put(fullPath, arrayBuffer, {
+      httpMetadata: {
+        contentType: file.type,
+      },
+      customMetadata: {
+        originalName: file.name,
+        uploadedBy: user.id.toString(),
+        productId: productId,
+        projectId: projectId,
+        uploadedAt: new Date().toISOString(),
+      },
+    });
+    
+    const fileUrl = `/api/admin/files/products/${fileName}`;
+    
+    // Registrar en base de datos
+    await c.env.DB.prepare(`
+      INSERT INTO files (
+        filename, original_name, file_path, file_url, file_type, 
+        file_size, mime_type, entity_type, entity_id, uploaded_by, uploaded_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `).bind(
+      fileName,
+      file.name,
+      fullPath,
+      fileUrl,
+      'product',
+      file.size,
+      file.type,
+      'product',
+      productId,
+      user.id,
+      new Date().toISOString()
+    ).run();
+    
+    // Actualizar el producto con la URL del archivo principal
+    await c.env.DB.prepare(`
+      UPDATE products SET file_url = ?, updated_at = CURRENT_TIMESTAMP
+      WHERE id = ? AND project_id = ?
+    `).bind(fileUrl, productId, projectId).run();
+    
+    return c.json({
+      success: true,
+      data: {
+        file_url: fileUrl,
+        filename: fileName,
+        original_name: file.name,
+        file_size: file.size,
+        message: 'Archivo del producto subido exitosamente'
+      }
+    });
+    
+  } catch (error) {
+    console.error('Error subiendo archivo del producto:', error);
+    return c.json({ success: false, error: 'Error interno del servidor' }, 500);
+  }
+});
+
+// Listar archivos de un proyecto
+privateRoutes.get('/projects/:projectId/files', async (c) => {
+  try {
+    const { projectId } = c.req.param();
+    const user = c.get('user')!;
+    
+    // Verificar acceso al proyecto
+    const hasAccess = await c.env.DB.prepare(`
+      SELECT 1 FROM projects p
+      LEFT JOIN project_collaborators pc ON p.id = pc.project_id AND pc.user_id = ?
+      WHERE p.id = ? AND (p.owner_id = ? OR pc.user_id = ?)
+    `).bind(user.id, projectId, user.id, user.id).first();
+    
+    if (!hasAccess) {
+      return c.json({ success: false, error: 'No tienes acceso a este proyecto' }, 403);
+    }
+    
+    const files = await c.env.DB.prepare(`
+      SELECT f.*, u.full_name as uploaded_by_name
+      FROM files f
+      LEFT JOIN users u ON f.uploaded_by = u.id
+      WHERE f.entity_type = 'project' AND f.entity_id = ?
+      ORDER BY f.uploaded_at DESC
+    `).bind(projectId).all();
+    
+    return c.json({
+      success: true,
+      data: files.results
+    });
+    
+  } catch (error) {
+    console.error('Error listando archivos:', error);
+    return c.json({ success: false, error: 'Error interno del servidor' }, 500);
+  }
+});
+
+// Listar archivos de un producto
+privateRoutes.get('/projects/:projectId/products/:productId/files', async (c) => {
+  try {
+    const { projectId, productId } = c.req.param();
+    const user = c.get('user')!;
+    
+    // Verificar acceso
+    const hasAccess = await c.env.DB.prepare(`
+      SELECT 1 FROM products pr
+      JOIN projects p ON pr.project_id = p.id
+      LEFT JOIN project_collaborators pc ON p.id = pc.project_id AND pc.user_id = ?
+      WHERE pr.id = ? AND pr.project_id = ? AND (p.owner_id = ? OR pc.user_id = ?)
+    `).bind(user.id, productId, projectId, user.id, user.id).first();
+    
+    if (!hasAccess) {
+      return c.json({ success: false, error: 'No tienes acceso a este producto' }, 403);
+    }
+    
+    const files = await c.env.DB.prepare(`
+      SELECT f.*, u.full_name as uploaded_by_name
+      FROM files f
+      LEFT JOIN users u ON f.uploaded_by = u.id
+      WHERE f.entity_type = 'product' AND f.entity_id = ?
+      ORDER BY f.uploaded_at DESC
+    `).bind(productId).all();
+    
+    return c.json({
+      success: true,
+      data: files.results
+    });
+    
+  } catch (error) {
+    console.error('Error listando archivos del producto:', error);
+    return c.json({ success: false, error: 'Error interno del servidor' }, 500);
+  }
+});
+
+// Eliminar archivo (solo el creador o propietario del proyecto)
+privateRoutes.delete('/files/:fileId', async (c) => {
+  try {
+    const { fileId } = c.req.param();
+    const user = c.get('user')!;
+    
+    // Obtener información del archivo y verificar permisos
+    const fileInfo = await c.env.DB.prepare(`
+      SELECT f.*, p.owner_id, pr.creator_id as product_creator
+      FROM files f
+      LEFT JOIN projects p ON (f.entity_type = 'project' AND f.entity_id = p.id)
+      LEFT JOIN products pr ON (f.entity_type = 'product' AND f.entity_id = pr.id)
+      WHERE f.id = ?
+    `).bind(fileId).first();
+    
+    if (!fileInfo) {
+      return c.json({ success: false, error: 'Archivo no encontrado' }, 404);
+    }
+    
+    // Verificar permisos
+    const canDelete = fileInfo.uploaded_by === user.id || 
+                     fileInfo.owner_id === user.id || 
+                     fileInfo.product_creator === user.id ||
+                     user.role === 'ADMIN';
+    
+    if (!canDelete) {
+      return c.json({ success: false, error: 'No tienes permisos para eliminar este archivo' }, 403);
+    }
+    
+    // Eliminar de R2
+    if (c.env.R2) {
+      try {
+        await c.env.R2.delete(fileInfo.file_path as string);
+      } catch (error) {
+        console.warn('Error eliminando de R2:', error);
+      }
+    }
+    
+    // Eliminar de base de datos
+    await c.env.DB.prepare(`DELETE FROM files WHERE id = ?`).bind(fileId).run();
+    
+    return c.json({
+      success: true,
+      data: { message: 'Archivo eliminado exitosamente' }
+    });
+    
+  } catch (error) {
+    console.error('Error eliminando archivo:', error);
+    return c.json({ success: false, error: 'Error interno del servidor' }, 500);
+  }
+});
+
+// ===== SISTEMA DE SCORING Y EVALUACIÓN AUTOMATIZADA =====
+
+// Calcular score de un proyecto específico
+privateRoutes.post('/projects/:projectId/calculate-score', async (c) => {
+  try {
+    const { projectId } = c.req.param();
+    const user = c.get('user')!;
+    
+    // Verificar permisos
+    const project = await c.env.DB.prepare(`
+      SELECT p.*, pc.can_edit_project
+      FROM projects p
+      LEFT JOIN project_collaborators pc ON p.id = pc.project_id AND pc.user_id = ?
+      WHERE p.id = ? AND (p.owner_id = ? OR pc.user_id = ?)
+    `).bind(user.id, projectId, user.id, user.id).first();
+    
+    if (!project) {
+      return c.json({ success: false, error: 'Proyecto no encontrado o sin permisos' }, 404);
+    }
+    
+    // Obtener criterios de scoring activos
+    const criteria = await c.env.DB.prepare(`
+      SELECT * FROM scoring_criteria WHERE is_active = 1 ORDER BY weight DESC
+    `).all();
+    
+    // Calcular scores por categoría
+    const scores = await calculateProjectScores(c.env.DB, projectId, criteria.results);
+    
+    // Generar recomendaciones
+    const recommendations = generateRecommendations(scores, project);
+    
+    // Determinar categoría de evaluación
+    const category = determineEvaluationCategory(scores.total_score);
+    
+    // Marcar scores anteriores como no actuales
+    await c.env.DB.prepare(`
+      UPDATE project_scores SET is_current = 0 WHERE project_id = ?
+    `).bind(projectId).run();
+    
+    // Guardar nuevo score
+    await c.env.DB.prepare(`
+      INSERT INTO project_scores (
+        project_id, completeness_score, collaboration_score, productivity_score,
+        impact_score, innovation_score, timeline_score, total_score,
+        evaluation_category, recommendations, last_calculated_at, is_current
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, 1)
+    `).bind(
+      projectId,
+      scores.completeness_score,
+      scores.collaboration_score,
+      scores.productivity_score,
+      scores.impact_score,
+      scores.innovation_score,
+      scores.timeline_score,
+      scores.total_score,
+      category,
+      JSON.stringify(recommendations)
+    ).run();
+    
+    // Generar alertas si es necesario
+    await generateProjectAlerts(c.env.DB, projectId, scores, project);
+    
+    return c.json({
+      success: true,
+      data: {
+        scores,
+        category,
+        recommendations,
+        message: 'Score calculado exitosamente'
+      }
+    });
+    
+  } catch (error) {
+    console.error('Error calculando score:', error);
+    return c.json({ success: false, error: 'Error interno del servidor' }, 500);
+  }
+});
+
+// Obtener score actual de un proyecto
+privateRoutes.get('/projects/:projectId/score', async (c) => {
+  try {
+    const { projectId } = c.req.param();
+    const user = c.get('user')!;
+    
+    // Verificar acceso al proyecto
+    const hasAccess = await c.env.DB.prepare(`
+      SELECT 1 FROM projects p
+      LEFT JOIN project_collaborators pc ON p.id = pc.project_id AND pc.user_id = ?
+      WHERE p.id = ? AND (p.owner_id = ? OR pc.user_id = ?)
+    `).bind(user.id, projectId, user.id, user.id).first();
+    
+    if (!hasAccess) {
+      return c.json({ success: false, error: 'No tienes acceso a este proyecto' }, 403);
+    }
+    
+    // Obtener score actual
+    const score = await c.env.DB.prepare(`
+      SELECT * FROM project_scores WHERE project_id = ? AND is_current = 1
+    `).bind(projectId).first();
+    
+    if (!score) {
+      return c.json({ success: false, error: 'No hay score calculado para este proyecto' }, 404);
+    }
+    
+    return c.json({
+      success: true,
+      data: {
+        ...score,
+        recommendations: score.recommendations ? JSON.parse(score.recommendations as string) : []
+      }
+    });
+    
+  } catch (error) {
+    console.error('Error obteniendo score:', error);
+    return c.json({ success: false, error: 'Error interno del servidor' }, 500);
+  }
+});
+
+// Obtener alertas activas de un proyecto
+privateRoutes.get('/projects/:projectId/alerts', async (c) => {
+  try {
+    const { projectId } = c.req.param();
+    const user = c.get('user')!;
+    
+    // Verificar acceso
+    const hasAccess = await c.env.DB.prepare(`
+      SELECT 1 FROM projects p
+      LEFT JOIN project_collaborators pc ON p.id = pc.project_id AND pc.user_id = ?
+      WHERE p.id = ? AND (p.owner_id = ? OR pc.user_id = ?)
+    `).bind(user.id, projectId, user.id, user.id).first();
+    
+    if (!hasAccess) {
+      return c.json({ success: false, error: 'No tienes acceso a este proyecto' }, 403);
+    }
+    
+    const alerts = await c.env.DB.prepare(`
+      SELECT * FROM project_alerts 
+      WHERE project_id = ? AND status = 'ACTIVE'
+      ORDER BY severity DESC, triggered_at DESC
+    `).bind(projectId).all();
+    
+    return c.json({
+      success: true,
+      data: alerts.results
+    });
+    
+  } catch (error) {
+    console.error('Error obteniendo alertas:', error);
+    return c.json({ success: false, error: 'Error interno del servidor' }, 500);
+  }
+});
+
+// Reconocer una alerta
+privateRoutes.put('/alerts/:alertId/acknowledge', async (c) => {
+  try {
+    const { alertId } = c.req.param();
+    const user = c.get('user')!;
+    
+    // Verificar que el usuario tiene acceso a la alerta
+    const alert = await c.env.DB.prepare(`
+      SELECT a.*, p.owner_id, pc.user_id as collaborator_id
+      FROM project_alerts a
+      JOIN projects p ON a.project_id = p.id
+      LEFT JOIN project_collaborators pc ON p.id = pc.project_id AND pc.user_id = ?
+      WHERE a.id = ? AND (p.owner_id = ? OR pc.user_id = ?)
+    `).bind(user.id, alertId, user.id, user.id).first();
+    
+    if (!alert) {
+      return c.json({ success: false, error: 'Alerta no encontrada o sin permisos' }, 404);
+    }
+    
+    // Actualizar alerta
+    await c.env.DB.prepare(`
+      UPDATE project_alerts 
+      SET status = 'ACKNOWLEDGED', acknowledged_by = ?, acknowledged_at = CURRENT_TIMESTAMP
+      WHERE id = ?
+    `).bind(user.id, alertId).run();
+    
+    return c.json({
+      success: true,
+      data: { message: 'Alerta reconocida exitosamente' }
+    });
+    
+  } catch (error) {
+    console.error('Error reconociendo alerta:', error);
+    return c.json({ success: false, error: 'Error interno del servidor' }, 500);
+  }
+});
+
+// Calcular scores masivos para todos los proyectos del usuario
+privateRoutes.post('/projects/calculate-all-scores', async (c) => {
+  try {
+    const user = c.get('user')!;
+    
+    // Obtener todos los proyectos del usuario
+    const projects = await c.env.DB.prepare(`
+      SELECT DISTINCT p.id FROM projects p
+      LEFT JOIN project_collaborators pc ON p.id = pc.project_id
+      WHERE p.owner_id = ? OR pc.user_id = ?
+    `).bind(user.id, user.id).all();
+    
+    const criteria = await c.env.DB.prepare(`
+      SELECT * FROM scoring_criteria WHERE is_active = 1 ORDER BY weight DESC
+    `).all();
+    
+    let processedCount = 0;
+    const results = [];
+    
+    for (const project of projects.results) {
+      try {
+        const scores = await calculateProjectScores(c.env.DB, project.id as number, criteria.results);
+        const category = determineEvaluationCategory(scores.total_score);
+        
+        // Marcar scores anteriores como no actuales
+        await c.env.DB.prepare(`
+          UPDATE project_scores SET is_current = 0 WHERE project_id = ?
+        `).bind(project.id).run();
+        
+        // Guardar nuevo score
+        await c.env.DB.prepare(`
+          INSERT INTO project_scores (
+            project_id, completeness_score, collaboration_score, productivity_score,
+            impact_score, innovation_score, timeline_score, total_score,
+            evaluation_category, last_calculated_at, is_current
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, 1)
+        `).bind(
+          project.id,
+          scores.completeness_score,
+          scores.collaboration_score,
+          scores.productivity_score,
+          scores.impact_score,
+          scores.innovation_score,
+          scores.timeline_score,
+          scores.total_score,
+          category
+        ).run();
+        
+        processedCount++;
+        results.push({ project_id: project.id, total_score: scores.total_score, category });
+        
+      } catch (error) {
+        console.error(`Error procesando proyecto ${project.id}:`, error);
+      }
+    }
+    
+    return c.json({
+      success: true,
+      data: {
+        processed_count: processedCount,
+        total_projects: projects.results.length,
+        results,
+        message: `${processedCount} proyectos procesados exitosamente`
+      }
+    });
+    
+  } catch (error) {
+    console.error('Error en cálculo masivo:', error);
+    return c.json({ success: false, error: 'Error interno del servidor' }, 500);
+  }
+});
+
+// ===== FUNCIONES AUXILIARES PARA SCORING =====
+
+async function calculateProjectScores(db: any, projectId: number, criteria: any[]) {
+  // Obtener datos del proyecto
+  const project = await db.prepare(`
+    SELECT p.*, COUNT(DISTINCT pc.user_id) as collaborator_count,
+           COUNT(DISTINCT pr.id) as product_count
+    FROM projects p
+    LEFT JOIN project_collaborators pc ON p.id = pc.project_id
+    LEFT JOIN products pr ON p.id = pr.project_id
+    WHERE p.id = ?
+    GROUP BY p.id
+  `).bind(projectId).first();
+  
+  if (!project) throw new Error('Proyecto no encontrado');
+  
+  // 1. Score de Completitud (0-100)
+  let completeness = 0;
+  if (project.title && project.title.length > 10) completeness += 20;
+  if (project.abstract && project.abstract.length > 50) completeness += 20;
+  if (project.methodology && project.methodology.length > 100) completeness += 15;
+  if (project.keywords && project.keywords.length > 0) completeness += 10;
+  if (project.introduction && project.introduction.length > 100) completeness += 15;
+  if (project.start_date) completeness += 10;
+  if (project.budget && project.budget > 0) completeness += 10;
+  
+  // 2. Score de Colaboración (0-100)
+  const collabCount = project.collaborator_count || 0;
+  let collaboration = Math.min(collabCount * 20, 80); // Máximo 80 por colaboradores
+  if (collabCount >= 5) collaboration += 20; // Bonus por red amplia
+  
+  // 3. Score de Productividad (0-100)
+  const productCount = project.product_count || 0;
+  let productivity = Math.min(productCount * 15, 85); // Máximo 85 por productos
+  if (productCount >= 10) productivity += 15; // Bonus por alta productividad
+  
+  // 4. Score de Impacto (0-100) - Simulado por ahora
+  const impact = Math.min(50 + (productCount * 10), 100);
+  
+  // 5. Score de Innovación (0-100) - Basado en diversidad de productos
+  const innovation = Math.min(30 + (productCount * 8), 100);
+  
+  // 6. Score de Timeline (0-100)
+  const now = new Date();
+  const updated = new Date(project.updated_at);
+  const daysSinceUpdate = Math.floor((now.getTime() - updated.getTime()) / (1000 * 60 * 60 * 24));
+  let timeline = Math.max(100 - (daysSinceUpdate * 2), 0); // Penalizar inactividad
+  
+  // Calcular score total ponderado
+  const criteriaWeights = criteria.reduce((acc: any, c: any) => {
+    acc[c.criterion_name] = c.weight;
+    return acc;
+  }, {});
+  
+  const total_score = Math.round(
+    (completeness * (criteriaWeights.completeness || 0.25)) +
+    (collaboration * (criteriaWeights.collaboration || 0.20)) +
+    (productivity * (criteriaWeights.productivity || 0.25)) +
+    (impact * (criteriaWeights.impact || 0.15)) +
+    (innovation * (criteriaWeights.innovation || 0.10)) +
+    (timeline * (criteriaWeights.timeline || 0.05))
+  );
+  
+  return {
+    completeness_score: Math.round(completeness),
+    collaboration_score: Math.round(collaboration),
+    productivity_score: Math.round(productivity),
+    impact_score: Math.round(impact),
+    innovation_score: Math.round(innovation),
+    timeline_score: Math.round(timeline),
+    total_score: Math.min(total_score, 100)
+  };
+}
+
+function generateRecommendations(scores: any, project: any) {
+  const recommendations = [];
+  
+  if (scores.completeness_score < 60) {
+    recommendations.push({
+      category: 'completeness',
+      priority: 'HIGH',
+      title: 'Mejorar Completitud del Proyecto',
+      description: 'Completa la información faltante: metodología, introducción, presupuesto y fechas.',
+      actions: ['Añadir metodología detallada', 'Completar introducción', 'Definir presupuesto']
+    });
+  }
+  
+  if (scores.collaboration_score < 40) {
+    recommendations.push({
+      category: 'collaboration',
+      priority: 'MEDIUM',
+      title: 'Ampliar Red de Colaboración',
+      description: 'Considera invitar más colaboradores para enriquecer el proyecto.',
+      actions: ['Invitar colaboradores externos', 'Contactar otras instituciones', 'Formar alianzas estratégicas']
+    });
+  }
+  
+  if (scores.productivity_score < 50) {
+    recommendations.push({
+      category: 'productivity',
+      priority: 'HIGH',
+      title: 'Incrementar Productividad',
+      description: 'El proyecto necesita generar más productos CTeI.',
+      actions: ['Crear más productos', 'Establecer metas de productividad', 'Optimizar flujo de trabajo']
+    });
+  }
+  
+  if (scores.timeline_score < 70) {
+    recommendations.push({
+      category: 'timeline',
+      priority: 'MEDIUM',
+      title: 'Activar Proyecto',
+      description: 'El proyecto muestra poca actividad reciente.',
+      actions: ['Actualizar información', 'Registrar avances', 'Definir próximos hitos']
+    });
+  }
+  
+  return recommendations;
+}
+
+function determineEvaluationCategory(totalScore: number): string {
+  if (totalScore >= 85) return 'EXCELENTE';
+  if (totalScore >= 70) return 'BUENO';
+  if (totalScore >= 50) return 'REGULAR';
+  return 'NECESITA_MEJORA';
+}
+
+async function generateProjectAlerts(db: any, projectId: number, scores: any, project: any) {
+  const alerts = [];
+  
+  // Alerta por score bajo
+  if (scores.total_score < 50) {
+    alerts.push({
+      type: 'LOW_SCORE',
+      severity: 'HIGH',
+      title: 'Score Bajo del Proyecto',
+      message: `El proyecto tiene un score de ${scores.total_score}/100, lo que indica necesidad de mejoras.`,
+      action: 'Revisar recomendaciones y implementar mejoras sugeridas'
+    });
+  }
+  
+  // Alerta por inactividad
+  if (scores.timeline_score < 50) {
+    alerts.push({
+      type: 'NO_ACTIVITY',
+      severity: 'MEDIUM',
+      title: 'Proyecto Inactivo',
+      message: 'El proyecto no muestra actividad reciente.',
+      action: 'Actualizar el progreso del proyecto y registrar nuevas actividades'
+    });
+  }
+  
+  // Alerta por oportunidad de mejora
+  if (scores.collaboration_score < 40 && scores.productivity_score > 70) {
+    alerts.push({
+      type: 'IMPROVEMENT_OPPORTUNITY',
+      severity: 'LOW',
+      title: 'Oportunidad de Colaboración',
+      message: 'El proyecto es productivo pero podría beneficiarse de más colaboradores.',
+      action: 'Considerar invitar colaboradores para ampliar el impacto'
+    });
+  }
+  
+  // Insertar alertas en la base de datos
+  for (const alert of alerts) {
+    try {
+      await db.prepare(`
+        INSERT INTO project_alerts (
+          project_id, alert_type, severity, title, message, action_required
+        ) VALUES (?, ?, ?, ?, ?, ?)
+      `).bind(
+        projectId, alert.type, alert.severity, alert.title, alert.message, alert.action
+      ).run();
+    } catch (error) {
+      console.error('Error insertando alerta:', error);
+    }
+  }
+}
+
 export { privateRoutes };

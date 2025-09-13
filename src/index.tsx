@@ -892,6 +892,8 @@ app.get('/dashboard', (c) => {
 
         <script src="https://cdn.jsdelivr.net/npm/axios@1.6.0/dist/axios.min.js"></script>
         <script src="/static/phase1-enhancements.js?v=20240912-2"></script>
+        <script src="/static/file-management.js?v=20240912-3"></script>
+        <script src="/static/advanced-analytics.js?v=20240912-3"></script>
         <script src="/static/dashboard.js?v=20240912-2"></script>
         <script src="/static/enhanced-dashboard.js?v=20240912-2"></script>
         <script src="/static/product-authorship.js?v=20240912-2"></script>
