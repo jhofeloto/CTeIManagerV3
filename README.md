@@ -154,37 +154,41 @@ R2 Bucket Structure:
 2. **Productos**: Consulta de productos científicos disponibles
 3. **Estadísticas**: Ver métricas generales del departamento
 
-## 🔄 Versión Actual: 4.6.0 - SOLUCIÓN HARDCORE HOVER BUG COMPLETADA
+## 🔄 Versión Actual: 5.0.0 - PALETA TONAL REFINADA PREMIUM COMPLETADA
 
-### ✅ Últimas Correcciones Implementadas (v4.6.0 - HARDCORE)
-- **🚀 HOVER BUG DEFINITIVAMENTE ELIMINADO**: Implementada solución hardcore con colores hexadecimales directos
-- **🔥 Colores Hardcoded**: Uso de `#1f2937` y `#f9fafb` directos en lugar de variables CSS problemáticas
-- **⚡ JavaScript Inteligente**: Detección automática de tema dark/light con estilos inline dinámicos
-- **🛡️ Anti-White Máxima Protección**: CSS con especificidad brutal para anular cualquier interferencia
-- **🎯 Zero Tolerancia**: Eliminación total de fondos blancos en modo oscuro
+### ✨ Últimas Mejoras Implementadas (v5.0.0 - PREMIUM UI)
+- **🎨 PALETA TONAL PREMIUM**: Implementada identidad visual sofisticada con verde azulado de marca
+- **🏆 DISEÑO TALLA MUNDIAL**: Reemplazado negro puro por paleta OKLCH tonal profesional
+- **💎 ESTÉTICA PREMIUM**: Fondos con sutil tinte verde azulado (`oklch(0.15 0.02 190)`) para mayor sofisticación
+- **⚡ CONSISTENCIA TOTAL**: Unificación completa de colores con matiz 190° en toda la interfaz
+- **🔧 FUNCIONALIDAD INTACTA**: Mantenida solución hardcore anti-hover con nueva paleta
 
-### 🔧 Solución Técnica Hardcore Aplicada
+### 🎨 Nueva Paleta Tonal Implementada
 
-**CSS Hardcore:**
+**Variables CSS OKLCH Tonales:**
 ```css
-.dark .ctei-project-card,
-.dark .ctei-project-card:hover {
-  background: #1f2937 !important; 
-  background-color: #1f2937 !important;
-  color: #f9fafb !important;
-  border: 1px solid #374151 !important;
+.dark {
+  --background: oklch(0.15 0.02 190);    /* Fondo con tinte verde azulado */
+  --card: oklch(0.20 0.025 190);         /* Tarjetas tonales */
+  --border: oklch(0.25 0.03 190);        /* Bordes coherentes */
+  --accent: oklch(0.28 0.03 190);        /* Acentos hover */
+  --muted: oklch(0.25 0.025 190);        /* Elementos secundarios */
+  --foreground: oklch(0.95 0.02 190);    /* Texto principal */
 }
 ```
 
-**JavaScript Dinámico:**
+**Colores Hardcoded Sincronizados:**
 ```javascript
-const isDark = document.documentElement.classList.contains('dark');
-const bgColor = isDark ? '#1f2937' : 'var(--card)';
-const textColor = isDark ? '#f9fafb' : 'var(--card-foreground)';
+const bgColor = isDark ? '#1e2a37' : 'var(--card)';      // oklch(0.20 0.025 190)
+const textColor = isDark ? '#f8fafb' : 'var(--card-foreground)';  // oklch(0.95 0.02 190)
+const borderColor = isDark ? '#243240' : 'var(--border)';    // oklch(0.25 0.03 190)
+const mutedColor = isDark ? '#a8b2bc' : 'var(--muted-foreground)';  // oklch(0.75 0.02 190)
 ```
 
-**Estado**: ✅ Portal público funcionando PERFECTAMENTE sin bugs visuales  
-**Commit**: `bdd1935 - fix: SOLUCIÓN HARDCORE - Colores hardcoded para eliminar definitivamente hover bug`
+**Estado**: ✅ Portal con diseño premium de talla mundial funcionando PERFECTAMENTE  
+**Commits**: 
+- `6739858 - feat: PALETA TONAL REFINADA - Implementación de identidad visual premium`
+- `bdd1935 - fix: SOLUCIÓN HARDCORE - Base técnica robusta sin bugs hover`
 
 ## 🚀 Despliegue y Configuración
 
