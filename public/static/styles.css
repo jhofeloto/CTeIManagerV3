@@ -692,12 +692,14 @@ label {
   color: var(--foreground) !important;
 }
 
-/* 2. RESTAURAR FONDO CORRECTO DE TARJETAS EN TEMA CLARO */
-/* Regla definitiva - usando :not(.dark) para máxima especificidad */
+/* 2. RESTAURAR FONDO CORRECTO DE TARJETAS EN TEMA CLARO - REFORZADO */
+/* Regla definitiva con máxima especificidad para forzar fondos blancos */
 html:not(.dark) .ctei-card,
 html:not(.dark) .ctei-project-card,
 html:not(.dark) .ctei-product-card,
-html:not(.dark) .card-component {
+html:not(.dark) .card-component,
+html:not(.dark) [class*="card"],
+html:not(.dark) div[onclick*="Details"] {
   background-color: var(--card) !important; /* Blanco puro en tema claro */
   border: 1px solid var(--border) !important;
   box-shadow: var(--shadow-sm) !important;
@@ -726,8 +728,11 @@ html:not(.dark) .ctei-card .ctei-product-project-info {
    CORRECCIONES FINALES DE PULIDO VISUAL
 ======================================== */
 
-/* 1. BOTONES DE CABECERA - Estilo outline consistente */
-.ctei-theme-toggle {
+/* 1. BOTONES DE CABECERA - CORRECCIÓN CRÍTICA PARA TEMA CLARO */
+
+/* Regla base para botones secundarios de cabecera */
+.ctei-theme-toggle,
+.ctei-btn-secondary {
   background-color: transparent !important;
   border: 1px solid var(--border) !important;
   color: var(--foreground) !important;
@@ -736,15 +741,35 @@ html:not(.dark) .ctei-card .ctei-product-project-info {
   transition: all 0.2s ease-in-out;
 }
 
-.ctei-theme-toggle:hover {
+/* CORRECCIÓN CRÍTICA: Íconos visibles en tema claro */
+html:not(.dark) .ctei-theme-toggle,
+html:not(.dark) .ctei-btn-secondary {
+  border: 1px solid var(--border) !important;
+  color: var(--foreground) !important; /* Fuerza texto oscuro */
+}
+
+/* CORRECCIÓN CRÍTICA: Íconos SVG dentro de botones secundarios (TEMA CLARO) */
+html:not(.dark) .ctei-theme-toggle svg,
+html:not(.dark) .ctei-theme-toggle i,
+html:not(.dark) .ctei-btn-secondary svg,
+html:not(.dark) .ctei-btn-secondary i {
+  color: var(--foreground) !important; /* Fuerza color oscuro para íconos */
+  fill: currentColor !important; /* Crucial: hace que el relleno herede el color */
+}
+
+/* Hover states */
+.ctei-theme-toggle:hover,
+.ctei-btn-secondary:hover {
   background-color: var(--accent) !important;
   border-color: var(--primary) !important;
 }
 
-.ctei-theme-toggle svg,
-.ctei-theme-toggle i {
-  color: var(--foreground) !important;
-  font-size: 1rem;
+/* Asegurar que los íconos mantengan el color en hover */
+html:not(.dark) .ctei-theme-toggle:hover svg,
+html:not(.dark) .ctei-theme-toggle:hover i,
+html:not(.dark) .ctei-btn-secondary:hover svg,
+html:not(.dark) .ctei-btn-secondary:hover i {
+  color: var(--primary) !important;
 }
 
 /* 2. CONTROLES DE FILTRO - Integrados con el sistema de diseño */
@@ -798,7 +823,7 @@ button[onclick*="loadMore"]:hover,
   box-shadow: var(--shadow-md) !important;
 }
 
-/* 4. MEJORAS ADICIONALES - Botón secundario consistente */
+/* 4. BOTONES SECUNDARIOS - CONSISTENCIA TOTAL GARANTIZADA */
 .ctei-btn-secondary {
   background-color: transparent !important;
   border: 1px solid var(--border) !important;
@@ -810,11 +835,31 @@ button[onclick*="loadMore"]:hover,
   transition: all 0.2s ease-in-out !important;
 }
 
+/* REFUERZO CRÍTICO: Botones secundarios en tema claro */
+html:not(.dark) .ctei-btn-secondary {
+  background-color: transparent !important;
+  border: 1px solid var(--border) !important;
+  color: var(--foreground) !important; /* Fuerza texto oscuro */
+}
+
+/* Íconos en botones secundarios para tema claro */
+html:not(.dark) .ctei-btn-secondary svg,
+html:not(.dark) .ctei-btn-secondary i {
+  color: var(--foreground) !important;
+  fill: currentColor !important;
+}
+
 .ctei-btn-secondary:hover {
   background-color: var(--accent) !important;
   border-color: var(--primary) !important;
   color: var(--primary) !important;
   transform: translateY(-1px) !important;
+}
+
+/* Íconos en hover para tema claro */
+html:not(.dark) .ctei-btn-secondary:hover svg,
+html:not(.dark) .ctei-btn-secondary:hover i {
+  color: var(--primary) !important;
 }
 
 /* ========================================
