@@ -189,11 +189,11 @@ async function loadProjects(page = 1, search = '', filters = {}) {
             }
             
             projects.forEach((project, index) => {
-                // SOLUCIÓN HARDCORE: Estilos inline directos sin variables CSS problemáticas
+                // SOLUCIÓN HARDCORE: Paleta tonal refinada con identidad de marca
                 const isDark = document.documentElement.classList.contains('dark');
-                const bgColor = isDark ? '#1f2937' : 'var(--card)';
-                const textColor = isDark ? '#f9fafb' : 'var(--card-foreground)';
-                const borderColor = isDark ? '#374151' : 'var(--border)';
+                const bgColor = isDark ? '#1e2a37' : 'var(--card)'; // oklch(0.20 0.025 190)
+                const textColor = isDark ? '#f8fafb' : 'var(--card-foreground)'; // oklch(0.95 0.02 190)
+                const borderColor = isDark ? '#243240' : 'var(--border)'; // oklch(0.25 0.03 190)
                 
                 const cardHTML = '<div class="ctei-project-card" style="background: ' + bgColor + ' !important; background-color: ' + bgColor + ' !important; color: ' + textColor + ' !important; border: 1px solid ' + borderColor + ' !important; display: block; min-height: 200px; padding: 1.5rem; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); transition: all 0.2s ease;">' +
                     '<h4 class="ctei-project-card-title" style="background: transparent !important; color: ' + textColor + ' !important; font-size: 1.125rem; font-weight: 600; margin-bottom: 0.75rem;">' +
@@ -202,7 +202,7 @@ async function loadProjects(page = 1, search = '', filters = {}) {
                     '<p style="background: transparent !important; color: ' + textColor + ' !important; margin-bottom: 1rem; line-height: 1.6;">' +
                         truncateText(project.abstract || 'Sin descripción') +
                     '</p>' +
-                    '<div style="background: transparent !important; display: flex; justify-content: space-between; align-items: center; color: ' + (isDark ? '#9ca3af' : 'var(--muted-foreground)') + ' !important; font-size: 0.875rem; margin-bottom: 1rem;">' +
+                    '<div style="background: transparent !important; display: flex; justify-content: space-between; align-items: center; color: ' + (isDark ? '#a8b2bc' : 'var(--muted-foreground)') + ' !important; font-size: 0.875rem; margin-bottom: 1rem;">' +
                         '<span style="background: transparent !important;"><i class="fas fa-user mr-2"></i>' + project.owner_name + '</span>' +
                         '<span style="background: transparent !important;"><i class="fas fa-calendar mr-2"></i>' + formatDate(project.created_at) + '</span>' +
                     '</div>' +
@@ -261,12 +261,12 @@ async function loadProducts(page = 1, search = '', filters = {}) {
             }
             
             products.forEach((product, index) => {
-                // SOLUCIÓN HARDCORE PRODUCTOS: Estilos inline directos sin variables CSS problemáticas
+                // SOLUCIÓN HARDCORE PRODUCTOS: Paleta tonal refinada con identidad de marca
                 const isDark = document.documentElement.classList.contains('dark');
-                const bgColor = isDark ? '#1f2937' : 'var(--card)';
-                const textColor = isDark ? '#f9fafb' : 'var(--card-foreground)';
-                const borderColor = isDark ? '#374151' : 'var(--border)';
-                const mutedColor = isDark ? '#9ca3af' : 'var(--muted-foreground)';
+                const bgColor = isDark ? '#1e2a37' : 'var(--card)'; // oklch(0.20 0.025 190)
+                const textColor = isDark ? '#f8fafb' : 'var(--card-foreground)'; // oklch(0.95 0.02 190)
+                const borderColor = isDark ? '#243240' : 'var(--border)'; // oklch(0.25 0.03 190)
+                const mutedColor = isDark ? '#a8b2bc' : 'var(--muted-foreground)'; // oklch(0.75 0.02 190)
                 
                 const cardHTML = '<div class="ctei-project-card" style="background: ' + bgColor + ' !important; background-color: ' + bgColor + ' !important; color: ' + textColor + ' !important; border: 1px solid ' + borderColor + ' !important; display: block; min-height: 200px; padding: 1.5rem; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); transition: all 0.2s ease;">' +
                     '<div style="background: transparent !important; display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">' +
