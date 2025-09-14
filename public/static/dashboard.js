@@ -133,6 +133,10 @@ function renderDashboard() {
                         <button onclick="goToPublicPortal()" class="text-foreground hover:text-primary px-3 py-2 rounded-md text-sm font-medium">
                             Portal Público
                         </button>
+                        <!-- Selector de Tema Claro/Oscuro -->
+                        <button id="dashboard-theme-toggle" onclick="toggleDashboardTheme()" class="ctei-btn-secondary" title="Cambiar tema">
+                            <i class="fas fa-moon" id="dashboard-theme-icon"></i>
+                        </button>
                         <button onclick="logout()" class="text-destructive hover:text-destructive-foreground px-3 py-2 rounded-md text-sm font-medium">
                             <i class="fas fa-sign-out-alt mr-1"></i>
                             Salir
@@ -350,6 +354,9 @@ function renderDashboard() {
     
     // Cargar logo personalizado después de renderizar el navbar
     setTimeout(loadDashboardSiteLogo, 100);
+    
+    // Inicializar tema del dashboard
+    setTimeout(initDashboardTheme, 50);
 }
 
 // Cargar datos del dashboard
@@ -1977,7 +1984,7 @@ function renderAlertsList(alerts) {
                     <div class="flex items-center space-x-2 ml-4">
                         ${alert.status === 'ACTIVE' ? `
                             <button onclick="updateAlertStatus(${alert.id}, 'ACKNOWLEDGED')" 
-                                    class="px-3 py-1 bg-blue-500 text-white text-sm rounded-md hover:bg-blue-600 transition-colors">
+                                    class="px-3 py-1 bg-primary text-primary-foreground text-sm rounded-md hover:opacity-90 transition-all">
                                 <i class="fas fa-check mr-1"></i>
                                 Reconocer
                             </button>
@@ -2101,7 +2108,7 @@ function getSeverityBadgeClass(level) {
         1: 'bg-red-100 text-red-800',
         2: 'bg-orange-100 text-orange-800',
         3: 'bg-yellow-100 text-yellow-800',
-        4: 'bg-blue-100 text-blue-800',
+        4: 'bg-primary/10 text-primary',
         5: 'bg-gray-100 text-gray-800'
     };
     return classes[level] || 'bg-gray-100 text-gray-800';
@@ -2110,7 +2117,7 @@ function getSeverityBadgeClass(level) {
 function getStatusBadgeClass(status) {
     const classes = {
         ACTIVE: 'bg-red-100 text-red-800',
-        ACKNOWLEDGED: 'bg-blue-100 text-blue-800',
+        ACKNOWLEDGED: 'bg-primary/10 text-primary',
         IN_PROGRESS: 'bg-yellow-100 text-yellow-800',
         RESOLVED: 'bg-green-100 text-green-800',
         DISMISSED: 'bg-gray-100 text-gray-800'
@@ -2220,7 +2227,7 @@ async function debugMonitoringView() {
                     <div class="p-4 space-y-2 text-sm">
                         <div><strong>Email:</strong> ${DashboardState.user?.email || 'No disponible'}</div>
                         <div><strong>Nombre:</strong> ${DashboardState.user?.full_name || 'No disponible'}</div>
-                        <div><strong>Rol:</strong> <span class="font-mono px-2 py-1 bg-blue-100 rounded">${DashboardState.user?.role || 'No disponible'}</span></div>
+                        <div><strong>Rol:</strong> <span class="font-mono px-2 py-1 bg-accent text-accent-foreground rounded">${DashboardState.user?.role || 'No disponible'}</span></div>
                         <div><strong>Token:</strong> ${DashboardState.token ? '✅ Presente' : '❌ Ausente'}</div>
                         <div><strong>Es Admin:</strong> ${DashboardState.user?.role === 'ADMIN' ? '✅ SÍ' : '❌ NO'}</div>
                     </div>
@@ -2235,10 +2242,10 @@ async function debugMonitoringView() {
                         <button onclick="testMonitoringAPIDebug()" class="w-full bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600">
                             Test API Monitoreo
                         </button>
-                        <button onclick="showView('monitoring')" class="w-full bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
+                        <button onclick="showView('monitoring')" class="w-full bg-primary text-primary-foreground px-4 py-2 rounded hover:opacity-90">
                             Cargar Monitoreo Real
                         </button>
-                        <button onclick="loadMonitoringOverview()" class="w-full bg-purple-500 text-white px-4 py-2 rounded hover:bg-purple-600">
+                        <button onclick="loadMonitoringOverview()" class="w-full bg-secondary text-secondary-foreground px-4 py-2 rounded hover:bg-accent">
                             Test Función loadMonitoringOverview()
                         </button>
                     </div>
@@ -2273,7 +2280,7 @@ async function testMonitoringAPIDebug() {
                 <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                     <div class="bg-white p-3 rounded">
                         <div class="font-semibold">Proyectos</div>
-                        <div class="text-2xl text-blue-600">${response.data.data.system_metrics.total_projects}</div>
+                        <div class="text-2xl text-primary font-bold">${response.data.data.system_metrics.total_projects}</div>
                     </div>
                     <div class="bg-white p-3 rounded">
                         <div class="font-semibold">Productos</div>
@@ -2281,7 +2288,7 @@ async function testMonitoringAPIDebug() {
                     </div>
                     <div class="bg-white p-3 rounded">
                         <div class="font-semibold">Investigadores</div>
-                        <div class="text-2xl text-purple-600">${response.data.data.system_metrics.total_researchers}</div>
+                        <div class="text-2xl text-primary font-bold">${response.data.data.system_metrics.total_researchers}</div>
                     </div>
                     <div class="bg-white p-3 rounded">
                         <div class="font-semibold">Líneas de Acción</div>
@@ -2505,7 +2512,7 @@ function renderSystemMetrics(metrics) {
             value: metrics?.total_projects || 0,
             subtitle: `${metrics?.active_projects || 0} activos`,
             icon: 'fas fa-project-diagram',
-            color: 'bg-blue-500'
+            color: 'bg-primary'
         },
         {
             title: 'Productos CTeI',
@@ -2519,7 +2526,7 @@ function renderSystemMetrics(metrics) {
             value: metrics?.total_researchers || 0,
             subtitle: 'únicos en el sistema',
             icon: 'fas fa-users',
-            color: 'bg-purple-500'
+            color: 'bg-secondary'
         },
         {
             title: 'Progreso Promedio',
@@ -2698,11 +2705,11 @@ function renderActionLineMetrics(actionLines) {
                     <div class="text-xs text-muted-foreground">Activos</div>
                 </div>
                 <div class="text-center">
-                    <div class="text-lg font-bold text-blue-600">${line.product_count || 0}</div>
+                    <div class="text-lg font-bold text-primary">${line.product_count || 0}</div>
                     <div class="text-xs text-muted-foreground">Productos</div>
                 </div>
                 <div class="text-center">
-                    <div class="text-lg font-bold text-purple-600">${line.experience_count || 0}</div>
+                    <div class="text-lg font-bold text-primary">${line.experience_count || 0}</div>
                     <div class="text-xs text-muted-foreground">Experiencias</div>
                 </div>
             </div>
@@ -2777,9 +2784,9 @@ function renderStatusDistributionChart(distribution) {
     const total = distribution.reduce((sum, item) => sum + item.count, 0);
     const colors = {
         'ACTIVE': 'bg-green-500',
-        'COMPLETED': 'bg-blue-500',
+        'COMPLETED': 'bg-primary',
         'DRAFT': 'bg-yellow-500',
-        'REVIEW': 'bg-purple-500',
+        'REVIEW': 'bg-secondary',
         'SUSPENDED': 'bg-red-500'
     };
     
@@ -2816,7 +2823,7 @@ function getSeverityBorderColor(severity) {
         'CRITICAL': 'border-red-500',
         'HIGH': 'border-orange-500',
         'MEDIUM': 'border-yellow-500',
-        'LOW': 'border-blue-500'
+        'LOW': 'border-primary'
     };
     return colors[severity] || 'border-gray-400';
 }
@@ -2826,7 +2833,7 @@ function getSeverityBgColor(severity) {
         'CRITICAL': 'bg-red-500',
         'HIGH': 'bg-orange-500',
         'MEDIUM': 'bg-yellow-500',
-        'LOW': 'bg-blue-500'
+        'LOW': 'bg-primary'
     };
     return colors[severity] || 'bg-gray-400';
 }
@@ -7999,3 +8006,63 @@ function refreshFilesDashboard() {
     const activeTab = document.querySelector('[id^="tab-"].border-primary').id.replace('tab-', '');
     setActiveFileTab(activeTab);
 }
+
+// ========================================
+// 🌓 SISTEMA DE TEMAS CLARO/OSCURO PARA DASHBOARD
+// ========================================
+
+// Estado del tema para dashboard
+let isDashboardDarkMode = localStorage.getItem('dashboard_theme') === 'dark' || 
+    (!localStorage.getItem('dashboard_theme') && window.matchMedia('(prefers-color-scheme: dark)').matches);
+
+// Aplicar tema inicial al dashboard
+function applyDashboardTheme() {
+    const htmlElement = document.getElementById('dashboard-html') || document.documentElement;
+    
+    if (isDashboardDarkMode) {
+        htmlElement.classList.add('dark');
+        updateDashboardThemeIcon('sun');
+        console.log('🌙 Tema oscuro aplicado al dashboard');
+    } else {
+        htmlElement.classList.remove('dark');
+        updateDashboardThemeIcon('moon');
+        console.log('☀️ Tema claro aplicado al dashboard');
+    }
+    
+    localStorage.setItem('dashboard_theme', isDashboardDarkMode ? 'dark' : 'light');
+}
+
+// Actualizar ícono del botón de tema
+function updateDashboardThemeIcon(icon) {
+    const themeIcon = document.getElementById('dashboard-theme-icon');
+    if (themeIcon) {
+        themeIcon.className = icon === 'sun' ? 'fas fa-sun' : 'fas fa-moon';
+    }
+}
+
+// Toggle del tema del dashboard
+function toggleDashboardTheme() {
+    isDashboardDarkMode = !isDashboardDarkMode;
+    applyDashboardTheme();
+    console.log('🎨 Tema del dashboard cambiado a:', isDashboardDarkMode ? 'oscuro' : 'claro');
+    showToast(`Tema cambiado a ${isDashboardDarkMode ? 'oscuro' : 'claro'}`, 'success');
+}
+
+// Inicializar tema cuando se renderiza el dashboard
+function initDashboardTheme() {
+    // Aplicar tema inicial
+    applyDashboardTheme();
+    
+    // Escuchar cambios en las preferencias del sistema
+    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
+        if (!localStorage.getItem('dashboard_theme')) {
+            isDashboardDarkMode = e.matches;
+            applyDashboardTheme();
+            console.log('🎨 Tema del dashboard actualizado por preferencias del sistema:', isDashboardDarkMode ? 'oscuro' : 'claro');
+        }
+    });
+}
+
+// Exportar funciones para uso global
+window.toggleDashboardTheme = toggleDashboardTheme;
+window.applyDashboardTheme = applyDashboardTheme;

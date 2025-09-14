@@ -31,6 +31,163 @@ app.get('/test-password-change.html', async (c) => {
   }
 })
 
+// Página de prueba del dashboard con temas
+app.get('/dashboard-theme-test', async (c) => {
+  return c.html(`<!DOCTYPE html>
+<html lang="es" id="dashboard-html">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎨 Test Temas Dashboard - CTeI Manager</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="/static/styles.css" rel="stylesheet">
+</head>
+<body class="bg-background text-foreground min-h-screen">
+    <!-- Navbar de prueba -->
+    <nav class="bg-card shadow-lg border-b border-border">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <div class="flex items-center">
+                    <div id="dashboard-site-logo" class="text-xl font-bold text-primary">
+                        <i class="fas fa-flask mr-2"></i>
+                        CTeI-Manager
+                    </div>
+                    <span class="ml-4 text-muted-foreground">Test Temas Dashboard</span>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <span class="text-sm text-muted-foreground">Usuario de Prueba (ADMIN)</span>
+                    <!-- Selector de Tema Claro/Oscuro -->
+                    <button id="dashboard-theme-toggle" onclick="toggleDashboardTheme()" class="ctei-btn-secondary" title="Cambiar tema">
+                        <i class="fas fa-moon" id="dashboard-theme-icon"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="p-8">
+        <div class="max-w-6xl mx-auto space-y-6">
+            <h1 class="text-3xl font-bold text-foreground">🎨 Prueba de Temas Dashboard</h1>
+            
+            <!-- Ejemplo de tarjetas -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="ctei-content-card">
+                    <div class="ctei-content-card-header">
+                        <div class="ctei-content-card-title">Tarjeta Primaria</div>
+                        <div class="ctei-content-card-subtitle">Ejemplo de contenido</div>
+                    </div>
+                    <div class="p-4">
+                        <p class="text-muted-foreground">Contenido de la tarjeta con texto muted.</p>
+                        <button class="ctei-btn ctei-btn-primary mt-4">Acción Primaria</button>
+                    </div>
+                </div>
+                
+                <div class="ctei-content-card">
+                    <div class="ctei-content-card-header">
+                        <div class="ctei-content-card-title">Formulario de Prueba</div>
+                    </div>
+                    <div class="p-4 space-y-4">
+                        <div class="ctei-form-group">
+                            <label class="ctei-form-label">Nombre</label>
+                            <input type="text" class="ctei-form-input" placeholder="Escriba aquí...">
+                        </div>
+                        <div class="ctei-form-group">
+                            <label class="ctei-form-label">Descripción</label>
+                            <textarea class="ctei-form-textarea" rows="3" placeholder="Descripción..."></textarea>
+                        </div>
+                        <button class="ctei-btn ctei-btn-secondary">Guardar</button>
+                    </div>
+                </div>
+                
+                <div class="ctei-content-card">
+                    <div class="ctei-content-card-header">
+                        <div class="ctei-content-card-title">Colores del Sistema</div>
+                    </div>
+                    <div class="p-4 space-y-3">
+                        <div class="flex items-center space-x-3">
+                            <div class="w-6 h-6 bg-primary rounded"></div>
+                            <span class="text-sm">Primary</span>
+                        </div>
+                        <div class="flex items-center space-x-3">
+                            <div class="w-6 h-6 bg-secondary rounded"></div>
+                            <span class="text-sm">Secondary</span>
+                        </div>
+                        <div class="flex items-center space-x-3">
+                            <div class="w-6 h-6 bg-accent rounded"></div>
+                            <span class="text-sm">Accent</span>
+                        </div>
+                        <div class="flex items-center space-x-3">
+                            <div class="w-6 h-6 bg-destructive rounded"></div>
+                            <span class="text-sm">Destructive</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Información de debug -->
+            <div class="bg-muted/50 border border-border rounded-lg p-4">
+                <h3 class="font-semibold mb-2">🔍 Debug Info</h3>
+                <div class="text-sm text-muted-foreground space-y-1">
+                    <p><strong>Tema actual:</strong> <span id="current-theme">Cargando...</span></p>
+                    <p><strong>Preferencia del sistema:</strong> <span id="system-preference">Cargando...</span></p>
+                    <p><strong>localStorage theme:</strong> <span id="stored-theme">Cargando...</span></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Importar las funciones de tema desde dashboard.js
+        let isDashboardDarkMode = localStorage.getItem('dashboard_theme') === 'dark' || 
+            (!localStorage.getItem('dashboard_theme') && window.matchMedia('(prefers-color-scheme: dark)').matches);
+
+        function applyDashboardTheme() {
+            const htmlElement = document.getElementById('dashboard-html') || document.documentElement;
+            
+            if (isDashboardDarkMode) {
+                htmlElement.classList.add('dark');
+                updateDashboardThemeIcon('sun');
+                console.log('🌙 Tema oscuro aplicado al dashboard');
+            } else {
+                htmlElement.classList.remove('dark');
+                updateDashboardThemeIcon('moon');
+                console.log('☀️ Tema claro aplicado al dashboard');
+            }
+            
+            localStorage.setItem('dashboard_theme', isDashboardDarkMode ? 'dark' : 'light');
+            updateDebugInfo();
+        }
+
+        function updateDashboardThemeIcon(icon) {
+            const themeIcon = document.getElementById('dashboard-theme-icon');
+            if (themeIcon) {
+                themeIcon.className = icon === 'sun' ? 'fas fa-sun' : 'fas fa-moon';
+            }
+        }
+
+        function toggleDashboardTheme() {
+            isDashboardDarkMode = !isDashboardDarkMode;
+            applyDashboardTheme();
+            console.log('🎨 Tema del dashboard cambiado a:', isDashboardDarkMode ? 'oscuro' : 'claro');
+        }
+
+        function updateDebugInfo() {
+            document.getElementById('current-theme').textContent = isDashboardDarkMode ? 'Oscuro 🌙' : 'Claro ☀️';
+            document.getElementById('system-preference').textContent = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'Oscuro' : 'Claro';
+            document.getElementById('stored-theme').textContent = localStorage.getItem('dashboard_theme') || 'null';
+        }
+
+        // Inicializar al cargar
+        document.addEventListener('DOMContentLoaded', function() {
+            applyDashboardTheme();
+            updateDebugInfo();
+        });
+    </script>
+</body>
+</html>`)
+})
+
 // Página de prueba directa del dashboard de monitoreo
 app.get('/monitoring-test.html', async (c) => {
   return c.html(`<!DOCTYPE html>
@@ -1132,7 +1289,7 @@ app.get('/producto/:id', async (c) => {
 app.get('/dashboard', (c) => {
   return c.html(`
     <!DOCTYPE html>
-    <html lang="es" class="dark">
+    <html lang="es" id="dashboard-html">
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
