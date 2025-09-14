@@ -1395,22 +1395,22 @@ function generateProjectDetailPage(project: any): string {
   ).join('') || '';
   
   const productsList = project.products?.map((p: any) => `
-    <div class="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
+    <div class="bg-accent border border-border rounded-lg p-4 hover:shadow-md transition-all duration-200 hover:bg-muted">
       <div class="flex items-start justify-between">
         <div class="flex-1">
-          <h4 class="font-semibold text-foreground mb-1">
+          <h4 class="font-semibold text-accent-foreground mb-1">
             <a href="/producto/${p.id}" class="hover:text-primary transition-colors">${p.description || 'Sin descripción'}</a>
           </h4>
           <p class="text-sm text-muted-foreground mb-2">${p.product_code || ''}</p>
           <div class="flex items-center space-x-4 text-xs text-muted-foreground">
-            <span class="ctei-tag ctei-tag--info ctei-tag--small">
+            <span class="ctei-tag ctei-tag--primary ctei-tag--small">
               ${p.category_name || 'Sin categoría'}
             </span>
             ${p.publication_date ? `<span><i class="fas fa-calendar mr-1"></i>${new Date(p.publication_date).toLocaleDateString()}</span>` : ''}
             ${p.impact_factor ? `<span><i class="fas fa-star mr-1"></i>IF: ${p.impact_factor}</span>` : ''}
           </div>
         </div>
-        <a href="/producto/${p.id}" class="ctei-btn-secondary text-sm ml-4">Ver Detalle</a>
+        <a href="/producto/${p.id}" class="ctei-btn-primary text-sm ml-4">Ver Detalle</a>
       </div>
     </div>
   `).join('') || '<p class="text-muted-foreground italic">No hay productos publicados aún.</p>';
@@ -1616,7 +1616,7 @@ function generateProjectDetailPage(project: any): string {
                             <div class="flex flex-col space-y-1">
                                 <span class="text-muted-foreground font-medium">Líder del Proyecto</span>
                                 <span class="font-semibold text-foreground">${project.owner_name}</span>
-                                ${project.owner_email ? `<a href="mailto:${project.owner_email}" class="text-primary text-xs hover:underline">Contactar</a>` : ''}
+                                ${project.owner_email ? `<a href="mailto:${project.owner_email}" class="ctei-btn-primary text-xs mt-1">Contactar Líder</a>` : ''}
                             </div>
                             
                             <!-- Código del Proyecto -->

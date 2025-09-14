@@ -1762,6 +1762,59 @@ nav a {
 .dark .hover\:bg-primary\/20:hover {
   background-color: rgba(var(--primary), 0.2) !important;
 }
+
+/* ========================================
+   SCROLLBARS PERSONALIZADAS PARA MODO OSCURO - TALLA MUNDIAL
+======================================== */
+
+/* Scrollbars para navegadores WebKit (Chrome, Safari, Edge) */
+.dark ::-webkit-scrollbar {
+  width: 12px;
+}
+
+.dark ::-webkit-scrollbar-track {
+  background: var(--background);
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background-color: var(--accent);
+  border-radius: 20px;
+  border: 3px solid var(--background);
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+  background-color: var(--muted);
+}
+
+/* Scrollbars para Firefox */
+.dark * {
+  scrollbar-width: thin;
+  scrollbar-color: var(--accent) var(--background);
+}
+
+/* Scrollbars para modo claro también (consistencia) */
+::-webkit-scrollbar {
+  width: 12px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--background);
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: var(--muted);
+  border-radius: 20px;
+  border: 3px solid var(--background);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background-color: var(--accent);
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--muted) var(--background);
+}
   text-decoration: underline;
   opacity: 0.8;
 }

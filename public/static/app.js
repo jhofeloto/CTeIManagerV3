@@ -256,29 +256,29 @@ async function loadProducts(page = 1, search = '', filters = {}) {
             }
             
             products.forEach((product, index) => {
-                // TEST: Usar innerHTML directo en lugar de createElement
-                const cardHTML = '<div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 1.5rem; margin-bottom: 1rem; color: #1a1a1a; display: block; min-height: 200px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); transition: box-shadow 0.2s ease-in-out, transform 0.2s ease-in-out;" onmouseover="this.style.boxShadow=\'0 4px 12px rgba(0,0,0,0.15)\'; this.style.transform=\'translateY(-2px)\';" onmouseout="this.style.boxShadow=\'0 1px 3px rgba(0,0,0,0.1)\'; this.style.transform=\'translateY(0)\';">' +
+                // FIXED: Usar clases CSS y variables para modo oscuro
+                const cardHTML = '<div class="ctei-project-card hover:shadow-lg transition-all duration-200" style="display: block; min-height: 200px;">' +
                     '<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">' +
-                        '<span style="font-family: monospace; font-weight: bold; color: #666;">' +
+                        '<span class="font-mono font-bold text-muted-foreground">' +
                             product.product_code +
                         '</span>' +
-                        '<span style="background: #e2e8f0; color: #374151; padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.75rem;">' +
+                        '<span class="ctei-tag ctei-tag--primary ctei-tag--small">' +
                             product.product_type +
                         '</span>' +
                     '</div>' +
-                    '<p style="color: #333; margin-bottom: 1rem; line-height: 1.5;">' +
+                    '<p class="text-card-foreground mb-4 leading-relaxed">' +
                         truncateText(product.description || 'Sin descripción', 120) +
                     '</p>' +
-                    '<div style="color: #666; font-size: 0.875rem; margin-bottom: 1rem;">' +
-                        '<p>🔬 ' + product.project_title + '</p>' +
-                        '<p>📅 ' + formatDate(product.created_at) + '</p>' +
+                    '<div class="text-muted-foreground text-sm mb-4 space-y-1">' +
+                        '<p><i class="fas fa-project-diagram mr-2"></i>' + (product.project_title || 'Sin proyecto asociado') + '</p>' +
+                        '<p><i class="fas fa-calendar mr-2"></i>' + formatDate(product.created_at) + '</p>' +
                     '</div>' +
-                    '<button onclick="viewProductDetails(' + product.id + ')" class="ctei-btn-primary" style="width: 100%;">' +
+                    '<button onclick="viewProductDetails(' + product.id + ')" class="ctei-btn-primary w-full">' +
                         'Ver Detalles' +
                     '</button>' +
                 '</div>';
                 container.innerHTML += cardHTML;
-                // Producto agregado correctamente
+                // Producto agregado correctamente con estilos optimizados para modo oscuro
             });
             
             AppState.currentProductPage = page;
@@ -301,32 +301,13 @@ async function loadProducts(page = 1, search = '', filters = {}) {
 
 function createProjectCard(project) {
     const card = document.createElement('div');
-    card.className = 'ctei-project-card ctei-fade-in';
+    card.className = 'ctei-project-card ctei-fade-in hover:shadow-lg transition-all duration-200';
     
-    // SOLUCIÓN DEFINITIVA: Estilos inline para asegurar visibilidad
+    // FIXED: Usar solo clases CSS para compatibilidad con modo oscuro
     card.style.cssText = `
-        background: #ffffff;
-        border: 1px solid #e2e8f0;
-        border-radius: 8px;
-        padding: 1.5rem;
-        margin-bottom: 1rem;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-        color: #1a1a1a;
         display: block;
         min-height: 200px;
-        transition: box-shadow 0.2s ease-in-out, transform 0.2s ease-in-out;
     `;
-    
-    // Hover effect
-    card.addEventListener('mouseenter', () => {
-        card.style.boxShadow = '0 4px 12px rgba(0,0,0,0.15)';
-        card.style.transform = 'translateY(-2px)';
-    });
-    
-    card.addEventListener('mouseleave', () => {
-        card.style.boxShadow = '0 1px 3px rgba(0,0,0,0.1)';
-        card.style.transform = 'translateY(0)';
-    });
     
     // Tipos de productos como badges
     const keywordsBadges = project.keywords 
