@@ -154,6 +154,30 @@ R2 Bucket Structure:
 2. **Productos**: Consulta de productos científicos disponibles
 3. **Estadísticas**: Ver métricas generales del departamento
 
+## 🔄 Versión Actual: 4.5.2 - SOLUCIÓN HOVER BUG COMPLETADA
+
+### ✅ Últimas Correcciones Implementadas (v4.5.2)
+- **🐛 HOVER BUG ELIMINADO**: Solucionado completamente el bug donde las tarjetas de proyecto se volvían blancas permanentemente después del hover en modo oscuro
+- **🎨 CSS Variables Optimizadas**: Implementación robusta de `var(--card)` y `var(--card-foreground)` con máxima especificidad CSS
+- **⚡ Eliminación Total Tailwind Hover**: Removidas todas las clases `hover:shadow-lg` que causaban interferencia con el sistema de temas
+- **🛡️ Anti-White Protection**: Reglas CSS agresivas para prevenir cualquier fondo blanco no deseado
+- **🎯 CSS Puro**: Efectos hover implementados exclusivamente con CSS, sin JavaScript event listeners
+
+### 🔧 Solución Técnica Aplicada
+```css
+/* Eliminación total de hover Tailwind */
+.ctei-project-card:hover {
+  background-color: var(--card) !important;
+  color: var(--card-foreground) !important;
+  border-color: var(--border) !important;
+  box-shadow: var(--shadow-md) !important;
+  transform: translateY(-2px) !important;
+}
+```
+
+**Estado**: ✅ Portal público funcionando perfectamente sin bugs visuales  
+**Commit**: `02d658c - fix: ELIMINACIÓN TOTAL de hover Tailwind que causaba fondos blancos persistentes`
+
 ## 🚀 Despliegue y Configuración
 
 ### Desarrollo Local
