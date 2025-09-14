@@ -1202,12 +1202,16 @@ function initializeTheme() {
     const savedTheme = localStorage.getItem('ctei_theme');
     const systemPreference = window.matchMedia('(prefers-color-scheme: dark)').matches;
     
-    // Aplicar tema guardado o preferencia del sistema
-    const isDark = savedTheme === 'dark' || (savedTheme === null && systemPreference);
+    // FORZAR MODO OSCURO POR DEFECTO - Aplicar tema guardado o modo oscuro por defecto
+    const isDark = savedTheme === 'dark' || (savedTheme === null && true); // Cambié systemPreference por true
     
     if (isDark) {
         document.documentElement.classList.add('dark');
         updateThemeIcon(true);
+        // Guardar preferencia si no existe
+        if (savedTheme === null) {
+            localStorage.setItem('ctei_theme', 'dark');
+        }
     } else {
         document.documentElement.classList.remove('dark');
         updateThemeIcon(false);

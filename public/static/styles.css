@@ -2345,3 +2345,68 @@ html.dark .productos-cientificos-item .ctei-btn-primary:hover {
   background: #5ba3b8 !important; /* oklch(0.65 0.08 190) */
   background-color: #5ba3b8 !important;
 }
+
+/* ========================================
+   CORRECCIONES BRUTALES - MÁXIMA AGRESIVIDAD
+======================================== */
+
+/* BOTÓN COMPARTIR - Guerra total contra Tailwind */
+html.dark button.ctei-btn-secondary,
+.dark button.ctei-btn-secondary,
+body.dark button.ctei-btn-secondary,
+html.dark .ctei-btn-secondary,
+.dark .ctei-btn-secondary,
+body.dark .ctei-btn-secondary {
+  background: transparent !important;
+  background-color: transparent !important;
+  background-image: none !important;
+  border: 1px solid #243240 !important;
+  color: #f8fafb !important;
+}
+
+/* Hover brutal para botón compartir */
+html.dark button.ctei-btn-secondary:hover,
+.dark button.ctei-btn-secondary:hover,
+body.dark button.ctei-btn-secondary:hover,
+html.dark .ctei-btn-secondary:hover,
+.dark .ctei-btn-secondary:hover,
+body.dark .ctei-btn-secondary:hover {
+  background: #243240 !important;
+  background-color: #243240 !important;
+  background-image: none !important;
+  border-color: #243240 !important;
+  color: #f8fafb !important;
+}
+
+/* TAGS - Guerra total contra estilos inline */
+html.dark span.ctei-tag,
+.dark span.ctei-tag,
+body.dark span.ctei-tag,
+html.dark .ctei-tag,
+.dark .ctei-tag,
+body.dark .ctei-tag {
+  background: #243240 !important;
+  background-color: #243240 !important;
+  background-image: none !important;
+  color: #f8fafb !important;
+  border: none !important;
+}
+
+/* Especificidad brutal para tags con clases múltiples */
+html.dark span.ctei-tag.ctei-tag--outline.ctei-tag--small,
+.dark span.ctei-tag.ctei-tag--outline.ctei-tag--small,
+body.dark span.ctei-tag.ctei-tag--outline.ctei-tag--small {
+  background: #243240 !important;
+  background-color: #243240 !important;
+  color: #f8fafb !important;
+  border: none !important;
+}
+
+/* Anular cualquier estilo inline */
+html.dark [style*="background-color"],
+.dark [style*="background-color"],
+html.dark [style*="color"],
+.dark [style*="color"] {
+  background-color: unset !important;
+  color: unset !important;
+}

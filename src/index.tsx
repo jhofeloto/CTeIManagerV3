@@ -1403,7 +1403,7 @@ function generateProjectDetailPage(project: any): string {
           </h4>
           <p class="text-sm text-muted-foreground mb-2">${p.product_code || ''}</p>
           <div class="flex items-center space-x-4 text-xs text-muted-foreground">
-            <span class="ctei-tag ctei-tag--outline ctei-tag--small" style="background-color: var(--accent) !important; color: var(--accent-foreground) !important; padding: 0.25rem 0.75rem; border-radius: 1rem; font-size: 0.75rem; font-weight: 600;">
+            <span class="ctei-tag ctei-tag--outline ctei-tag--small">
               ${p.category_name || 'Sin categoría'}
             </span>
             ${p.publication_date ? `<span><i class="fas fa-calendar mr-1"></i>${new Date(p.publication_date).toLocaleDateString()}</span>` : ''}
