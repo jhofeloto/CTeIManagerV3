@@ -2093,6 +2093,102 @@ html.dark .hover\:bg-white:hover {
 }
 
 /* ========================================
+   AJUSTES FINALES - ELIMINACIÓN TOTAL FONDOS BLANCOS
+======================================== */
+
+/* 1. Corrección de Botones Secundarios / Outline en modo oscuro */
+.dark .ctei-btn-secondary,
+.dark .ctei-btn-primary.ctei-btn-secondary, /* Para casos específicos */
+html.dark .ctei-btn-secondary {
+  background-color: transparent !important;
+  border: 1px solid var(--border) !important;
+  color: var(--foreground) !important;
+}
+
+/* Modo oscuro hardcoded para botones secundarios */
+.dark .ctei-btn-secondary {
+  background: transparent !important;
+  background-color: transparent !important;
+  border: 1px solid #243240 !important; /* oklch(0.25 0.03 190) */
+  color: #f8fafb !important; /* oklch(0.95 0.02 190) */
+}
+
+/* Estilo hover para botones secundarios en modo oscuro */
+.dark .ctei-btn-secondary:hover,
+html.dark .ctei-btn-secondary:hover {
+  background-color: var(--accent) !important;
+  border-color: var(--accent) !important;
+  color: var(--accent-foreground) !important;
+}
+
+/* Hover hardcoded para botones secundarios */
+.dark .ctei-btn-secondary:hover {
+  background: #243240 !important; /* oklch(0.28 0.03 190) */
+  background-color: #243240 !important;
+  border-color: #243240 !important;
+  color: #f8fafb !important;
+}
+
+/* 2. Corrección del Componente Tag / Píldora - Consistencia total */
+.dark .ctei-tag,
+.dark .tag-component, /* Para casos genéricos */
+html.dark .ctei-tag {
+  background-color: var(--accent) !important;
+  color: var(--accent-foreground) !important;
+  border: none !important;
+}
+
+/* Tags hardcoded en modo oscuro */
+.dark .ctei-tag {
+  background: #243240 !important; /* oklch(0.28 0.03 190) */
+  background-color: #243240 !important;
+  color: #f8fafb !important; /* oklch(0.95 0.02 190) */
+  border: none !important;
+}
+
+/* 3. Corrección específica para botones de productos científicos */
+.dark .productos-cientificos-item .ctei-btn-primary,
+.dark .ctei-project-card .ctei-btn-primary,
+html.dark .productos-cientificos-item .ctei-btn-primary {
+  background-color: var(--primary) !important;
+  color: var(--primary-foreground) !important;
+  border: none !important;
+}
+
+/* Hardcoded para botones primarios en modo oscuro */
+.dark .productos-cientificos-item .ctei-btn-primary {
+  background: #68a5a5 !important; /* Aproximación del primary en modo oscuro */
+  background-color: #68a5a5 !important;
+  color: #1e2a37 !important; /* Texto oscuro sobre fondo claro del botón */
+  border: none !important;
+}
+
+/* Interceptar CUALQUIER estilo que fuerce fondos blancos */
+.dark .bg-white,
+.dark .hover\:bg-white:hover,
+.dark .border-white,
+.dark [style*="background: white"],
+.dark [style*="background-color: white"],
+.dark [style*="background: #fff"],
+.dark [style*="background-color: #fff"],
+.dark button[style*="background"],
+html.dark .bg-white,
+html.dark .hover\:bg-white:hover {
+  background: #1e2a37 !important; /* oklch(0.20 0.025 190) */
+  background-color: #1e2a37 !important;
+  color: #f8fafb !important; /* oklch(0.95 0.02 190) */
+  border-color: #243240 !important;
+}
+
+/* REGLA BRUTAL: Cualquier elemento blanco en modo oscuro */
+.dark *[class*="white"],
+.dark *[style*="white"],
+html.dark *[class*="white"] {
+  background-color: #1e2a37 !important;
+  color: #f8fafb !important;
+}
+
+/* ========================================
    CORRECCIONES PÁGINA PROYECTO - CONSISTENCIA FINAL
 ======================================== */
 
