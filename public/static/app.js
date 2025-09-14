@@ -1936,3 +1936,64 @@ function testQuickLogin() {
         showToast('Error: Campos de login no encontrados', 'error');
     }
 }
+
+// ========================================
+//  FUNCIONALIDAD DE TEMA OSCURO
+// ========================================
+
+// Estado del tema
+let isDarkMode = localStorage.getItem('theme') === 'dark' || 
+    (!localStorage.getItem('theme') && window.matchMedia('(prefers-color-scheme: dark)').matches);
+
+// Aplicar tema inicial
+function applyTheme() {
+    if (isDarkMode) {
+        document.documentElement.classList.add('dark');
+        updateThemeIcon('sun');
+    } else {
+        document.documentElement.classList.remove('dark');
+        updateThemeIcon('moon');
+    }
+    localStorage.setItem('theme', isDarkMode ? 'dark' : 'light');
+}
+
+// Actualizar icono del botón de tema
+function updateThemeIcon(icon) {
+    const themeIcon = document.getElementById('theme-icon');
+    if (themeIcon) {
+        themeIcon.className = icon === 'sun' ? 'fas fa-sun' : 'fas fa-moon';
+    }
+}
+
+// Toggle del tema
+function toggleTheme() {
+    isDarkMode = !isDarkMode;
+    applyTheme();
+    console.log('🎨 Tema cambiado a:', isDarkMode ? 'oscuro' : 'claro');
+}
+
+// Inicializar tema cuando el DOM esté listo
+document.addEventListener('DOMContentLoaded', function() {
+    // Aplicar tema inicial
+    applyTheme();
+    
+    // Configurar botón de toggle de tema
+    const themeToggle = document.getElementById('theme-toggle');
+    if (themeToggle) {
+        themeToggle.addEventListener('click', toggleTheme);
+        console.log('🎨 Botón de tema configurado');
+    }
+    
+    // Escuchar cambios en las preferencias del sistema
+    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
+        if (!localStorage.getItem('theme')) {
+            isDarkMode = e.matches;
+            applyTheme();
+            console.log('🎨 Tema actualizado por preferencias del sistema:', isDarkMode ? 'oscuro' : 'claro');
+        }
+    });
+});
+
+// Exportar funciones para uso global
+window.toggleTheme = toggleTheme;
+window.applyTheme = applyTheme;
