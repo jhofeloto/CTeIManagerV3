@@ -189,19 +189,19 @@ async function loadProjects(page = 1, search = '', filters = {}) {
             }
             
             projects.forEach((project, index) => {
-                // SOLUCIÓN CSS PURA: Usar solo clases CSS para compatibilidad con temas
-                const cardHTML = '<div class="ctei-project-card hover:shadow-lg transition-all duration-200" style="display: block; min-height: 200px;">' +
-                    '<h4 class="ctei-project-card-title">' +
+                // SOLUCIÓN AGRESIVA: Forzar variables CSS con estilos inline para garantizar tema correcto
+                const cardHTML = '<div class="ctei-project-card hover:shadow-lg transition-all duration-200" style="background-color: var(--card) !important; color: var(--card-foreground) !important; border: 1px solid var(--border) !important; display: block; min-height: 200px; padding: 1.5rem; border-radius: var(--radius); box-shadow: var(--shadow-sm);">' +
+                    '<h4 class="ctei-project-card-title" style="color: var(--card-foreground) !important; font-size: 1.125rem; font-weight: 600; margin-bottom: 0.75rem;">' +
                         project.title +
                     '</h4>' +
-                    '<p class="text-card-foreground mb-4 leading-relaxed">' +
+                    '<p style="color: var(--card-foreground) !important; margin-bottom: 1rem; line-height: 1.6;">' +
                         truncateText(project.abstract || 'Sin descripción') +
                     '</p>' +
-                    '<div class="flex justify-between items-center text-muted-foreground text-sm mb-4">' +
+                    '<div style="display: flex; justify-content: space-between; align-items: center; color: var(--muted-foreground) !important; font-size: 0.875rem; margin-bottom: 1rem;">' +
                         '<span><i class="fas fa-user mr-2"></i>' + project.owner_name + '</span>' +
                         '<span><i class="fas fa-calendar mr-2"></i>' + formatDate(project.created_at) + '</span>' +
                     '</div>' +
-                    '<button onclick="viewProjectDetails(' + project.id + ')" class="ctei-btn-primary w-full">' +
+                    '<button onclick="viewProjectDetails(' + project.id + ')" class="ctei-btn-primary" style="width: 100%; background-color: var(--primary) !important; color: var(--primary-foreground) !important; padding: 0.75rem 1.5rem; border: none; border-radius: var(--radius); font-weight: 600; cursor: pointer;">' +
                         'Ver Detalles' +
                     '</button>' +
                 '</div>';
@@ -256,24 +256,24 @@ async function loadProducts(page = 1, search = '', filters = {}) {
             }
             
             products.forEach((product, index) => {
-                // FIXED: Usar clases CSS y variables para modo oscuro
-                const cardHTML = '<div class="ctei-project-card hover:shadow-lg transition-all duration-200" style="display: block; min-height: 200px;">' +
-                    '<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">' +
-                        '<span class="font-mono font-bold text-muted-foreground">' +
+                // SOLUCIÓN AGRESIVA PRODUCTOS: Forzar variables CSS con estilos inline
+                const cardHTML = '<div class="ctei-project-card hover:shadow-lg transition-all duration-200" style="background-color: var(--card) !important; color: var(--card-foreground) !important; border: 1px solid var(--border) !important; display: block; min-height: 200px; padding: 1.5rem; border-radius: var(--radius); box-shadow: var(--shadow-sm);">' +
+                    '<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">' +
+                        '<span style="font-family: monospace; font-weight: bold; color: var(--muted-foreground) !important;">' +
                             product.product_code +
                         '</span>' +
-                        '<span class="ctei-tag ctei-tag--primary ctei-tag--small">' +
+                        '<span class="ctei-tag ctei-tag--primary ctei-tag--small" style="background-color: var(--primary) !important; color: var(--primary-foreground) !important; padding: 0.25rem 0.5rem; border-radius: calc(var(--radius) * 2); font-size: 0.625rem;">' +
                             product.product_type +
                         '</span>' +
                     '</div>' +
-                    '<p class="text-card-foreground mb-4 leading-relaxed">' +
+                    '<p style="color: var(--card-foreground) !important; margin-bottom: 1rem; line-height: 1.6;">' +
                         truncateText(product.description || 'Sin descripción', 120) +
                     '</p>' +
-                    '<div class="text-muted-foreground text-sm mb-4 space-y-1">' +
-                        '<p><i class="fas fa-project-diagram mr-2"></i>' + (product.project_title || 'Sin proyecto asociado') + '</p>' +
+                    '<div style="color: var(--muted-foreground) !important; font-size: 0.875rem; margin-bottom: 1rem;">' +
+                        '<p style="margin-bottom: 0.25rem;"><i class="fas fa-project-diagram mr-2"></i>' + (product.project_title || 'Sin proyecto asociado') + '</p>' +
                         '<p><i class="fas fa-calendar mr-2"></i>' + formatDate(product.created_at) + '</p>' +
                     '</div>' +
-                    '<button onclick="viewProductDetails(' + product.id + ')" class="ctei-btn-primary w-full">' +
+                    '<button onclick="viewProductDetails(' + product.id + ')" class="ctei-btn-primary" style="width: 100%; background-color: var(--primary) !important; color: var(--primary-foreground) !important; padding: 0.75rem 1.5rem; border: none; border-radius: var(--radius); font-weight: 600; cursor: pointer;">' +
                         'Ver Detalles' +
                     '</button>' +
                 '</div>';

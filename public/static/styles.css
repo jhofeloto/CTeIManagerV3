@@ -1889,6 +1889,70 @@ div.ctei-project-card,
   color: var(--card-foreground) !important;
   border-color: var(--border) !important;
 }
+
+/* ========================================
+   REGLAS ULTRA-AGRESIVAS ANTI-BLANCO
+======================================== */
+
+/* Forzar estilos correctos en TODAS las tarjetas generadas dinámicamente */
+.ctei-project-card,
+.ctei-project-card *,
+[class*="ctei-project-card"],
+[class*="ctei-project-card"] * {
+  background-color: var(--card) !important;
+  color: var(--card-foreground) !important;
+}
+
+/* Títulos y párrafos específicos */
+.ctei-project-card h1,
+.ctei-project-card h2, 
+.ctei-project-card h3,
+.ctei-project-card h4,
+.ctei-project-card h5,
+.ctei-project-card h6,
+.ctei-project-card p,
+.ctei-project-card div,
+.ctei-project-card span {
+  color: var(--card-foreground) !important;
+  background-color: transparent !important;
+}
+
+/* Metadata y elementos secundarios */
+.ctei-project-card .text-muted-foreground,
+.ctei-project-card [style*="color"] {
+  color: var(--muted-foreground) !important;
+}
+
+/* Botones primarios */
+.ctei-project-card .ctei-btn-primary,
+.ctei-project-card button {
+  background-color: var(--primary) !important;
+  color: var(--primary-foreground) !important;
+  border: none !important;
+}
+
+/* Interceptar cualquier estilo inline problemático */
+.ctei-project-card[style*="background: white"],
+.ctei-project-card[style*="background-color: white"],
+.ctei-project-card[style*="background: #fff"],
+.ctei-project-card[style*="background-color: #fff"],
+.ctei-project-card[style*="background: #ffffff"],
+.ctei-project-card[style*="background-color: #ffffff"] {
+  background-color: var(--card) !important;
+  color: var(--card-foreground) !important;
+}
+
+/* MODO OSCURO: Reglas de máxima prioridad */
+.dark .ctei-project-card,
+.dark .ctei-project-card *:not(i):not(button) {
+  background-color: var(--card) !important;
+  color: var(--card-foreground) !important;
+}
+
+.dark .ctei-project-card button {
+  background-color: var(--primary) !important;
+  color: var(--primary-foreground) !important;
+}
   text-decoration: underline;
   opacity: 0.8;
 }
