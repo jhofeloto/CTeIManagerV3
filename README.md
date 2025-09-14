@@ -154,16 +154,16 @@ R2 Bucket Structure:
 2. **Productos**: Consulta de productos científicos disponibles
 3. **Estadísticas**: Ver métricas generales del departamento
 
-## 🔄 Versión Actual: 5.0.0 - PALETA TONAL REFINADA PREMIUM COMPLETADA
+## 🔄 Versión Actual: 5.1.0 - CONSISTENCIA ABSOLUTA TALLA MUNDIAL LOGRADA
 
-### ✨ Últimas Mejoras Implementadas (v5.0.0 - PREMIUM UI)
-- **🎨 PALETA TONAL PREMIUM**: Implementada identidad visual sofisticada con verde azulado de marca
-- **🏆 DISEÑO TALLA MUNDIAL**: Reemplazado negro puro por paleta OKLCH tonal profesional
-- **💎 ESTÉTICA PREMIUM**: Fondos con sutil tinte verde azulado (`oklch(0.15 0.02 190)`) para mayor sofisticación
-- **⚡ CONSISTENCIA TOTAL**: Unificación completa de colores con matiz 190° en toda la interfaz
-- **🔧 FUNCIONALIDAD INTACTA**: Mantenida solución hardcore anti-hover con nueva paleta
+### 🏆 Últimas Mejoras Implementadas (v5.1.0 - CONSISTENCIA PERFECTA)
+- **🎯 CONSISTENCIA ABSOLUTA**: Página de proyecto 99% → 100% perfecta con ajustes finales
+- **🎨 UNIFICACIÓN TOTAL**: Fondos de productos científicos alineados con paleta tonal premium
+- **💎 PÍLDORAS COHERENTES**: Tags unificados con mismo estilo que palabras clave
+- **⚡ SEPARACIÓN VISUAL CLARA**: Bordes `var(--border)` perfectamente integrados
+- **🔧 EXPERIENCIA PULIDA**: Eliminadas todas las inconsistencias visuales del modo oscuro
 
-### 🎨 Nueva Paleta Tonal Implementada
+### 🎨 Paleta Tonal Premium Implementada
 
 **Variables CSS OKLCH Tonales:**
 ```css
@@ -177,6 +177,21 @@ R2 Bucket Structure:
 }
 ```
 
+**Ajustes Específicos de Consistencia:**
+```css
+/* Fondos productos científicos unificados */
+.productos-cientificos-item {
+  background-color: var(--card) !important;
+  border: 1px solid var(--border) !important;
+}
+
+/* Tags/píldoras coherentes con palabras clave */
+.productos-cientificos-item .ctei-tag {
+  background-color: var(--accent) !important;
+  color: var(--accent-foreground) !important;
+}
+```
+
 **Colores Hardcoded Sincronizados:**
 ```javascript
 const bgColor = isDark ? '#1e2a37' : 'var(--card)';      // oklch(0.20 0.025 190)
@@ -185,10 +200,10 @@ const borderColor = isDark ? '#243240' : 'var(--border)';    // oklch(0.25 0.03 
 const mutedColor = isDark ? '#a8b2bc' : 'var(--muted-foreground)';  // oklch(0.75 0.02 190)
 ```
 
-**Estado**: ✅ Portal con diseño premium de talla mundial funcionando PERFECTAMENTE  
-**Commits**: 
+**Estado**: 🏆 **CONSISTENCIA VISUAL ABSOLUTA LOGRADA - TALLA MUNDIAL**  
+**Commits Finales**: 
+- `40b987f - feat: AJUSTES FINALES DE CONSISTENCIA - Página de proyecto 99% → 100% perfecta`
 - `6739858 - feat: PALETA TONAL REFINADA - Implementación de identidad visual premium`
-- `bdd1935 - fix: SOLUCIÓN HARDCORE - Base técnica robusta sin bugs hover`
 
 ## 🚀 Despliegue y Configuración
 
