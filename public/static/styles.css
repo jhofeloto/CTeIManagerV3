@@ -1856,6 +1856,15 @@ div.ctei-project-card,
   border: 1px solid var(--border) !important;
 }
 
+/* SOLUCIÓN CSS PURA: Hover effects sin JavaScript */
+.ctei-project-card:hover {
+  box-shadow: var(--shadow-md) !important;
+  transform: translateY(-2px) !important;
+  background-color: var(--card) !important;
+  color: var(--card-foreground) !important;
+  border-color: var(--border) !important;
+}
+
 /* Evitar que Tailwind sobrescriba nuestros estilos */
 .bg-white {
   background-color: var(--card) !important;
@@ -1871,6 +1880,14 @@ div.ctei-project-card,
 .dark [style*="background-color: #ffffff"] {
   background-color: var(--card) !important;
   color: var(--card-foreground) !important;
+}
+
+/* Asegurar que NUNCA aparezcan fondos blancos en modo oscuro */
+.dark .ctei-project-card:hover,
+.dark .ctei-project-card:focus {
+  background-color: var(--card) !important;
+  color: var(--card-foreground) !important;
+  border-color: var(--border) !important;
 }
   text-decoration: underline;
   opacity: 0.8;

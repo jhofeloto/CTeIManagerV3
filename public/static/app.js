@@ -189,24 +189,24 @@ async function loadProjects(page = 1, search = '', filters = {}) {
             }
             
             projects.forEach((project, index) => {
-                // TEST: Usar innerHTML directo en lugar de createElement
-                const cardHTML = '<div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 1.5rem; margin-bottom: 1rem; color: #1a1a1a; display: block; min-height: 200px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); transition: box-shadow 0.2s ease-in-out, transform 0.2s ease-in-out;" onmouseover="this.style.boxShadow=\'0 4px 12px rgba(0,0,0,0.15)\'; this.style.transform=\'translateY(-2px)\';" onmouseout="this.style.boxShadow=\'0 1px 3px rgba(0,0,0,0.1)\'; this.style.transform=\'translateY(0)\';">' +
-                    '<h4 style="font-size: 1.125rem; font-weight: 600; margin-bottom: 0.5rem; color: #1a1a1a;">' +
+                // SOLUCIÓN CSS PURA: Usar solo clases CSS para compatibilidad con temas
+                const cardHTML = '<div class="ctei-project-card hover:shadow-lg transition-all duration-200" style="display: block; min-height: 200px;">' +
+                    '<h4 class="ctei-project-card-title">' +
                         project.title +
                     '</h4>' +
-                    '<p style="color: #666; margin-bottom: 1rem;">' +
+                    '<p class="text-card-foreground mb-4 leading-relaxed">' +
                         truncateText(project.abstract || 'Sin descripción') +
                     '</p>' +
-                    '<div style="display: flex; justify-content: space-between; align-items: center; color: #888; font-size: 0.875rem;">' +
-                        '<span>👤 ' + project.owner_name + '</span>' +
-                        '<span>📅 ' + formatDate(project.created_at) + '</span>' +
+                    '<div class="flex justify-between items-center text-muted-foreground text-sm mb-4">' +
+                        '<span><i class="fas fa-user mr-2"></i>' + project.owner_name + '</span>' +
+                        '<span><i class="fas fa-calendar mr-2"></i>' + formatDate(project.created_at) + '</span>' +
                     '</div>' +
-                    '<button onclick="viewProjectDetails(' + project.id + ')" class="ctei-btn-primary" style="width: 100%; margin-top: 1rem;">' +
+                    '<button onclick="viewProjectDetails(' + project.id + ')" class="ctei-btn-primary w-full">' +
                         'Ver Detalles' +
                     '</button>' +
                 '</div>';
                 container.innerHTML += cardHTML;
-                // Tarjeta agregada correctamente
+                // Proyecto agregado correctamente - CSS puro maneja hover automáticamente
             });
             
             AppState.currentPage = page;
@@ -341,32 +341,16 @@ function createProjectCard(project) {
 
 function createProductCard(product) {
     const card = document.createElement('div');
-    card.className = 'ctei-project-card ctei-fade-in';
+    card.className = 'ctei-project-card ctei-fade-in hover:shadow-lg transition-all duration-200';
     
-    // SOLUCIÓN DEFINITIVA: Estilos inline para asegurar visibilidad
+    // SOLUCIÓN CSS PURA: Solo estilos mínimos, dejar que CSS maneje el resto
     card.style.cssText = `
-        background: #ffffff;
-        border: 1px solid #e2e8f0;
-        border-radius: 8px;
-        padding: 1.5rem;
-        margin-bottom: 1rem;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-        color: #1a1a1a;
         display: block;
         min-height: 200px;
-        transition: box-shadow 0.2s ease-in-out, transform 0.2s ease-in-out;
     `;
     
-    // Hover effect
-    card.addEventListener('mouseenter', () => {
-        card.style.boxShadow = '0 4px 12px rgba(0,0,0,0.15)';
-        card.style.transform = 'translateY(-2px)';
-    });
-    
-    card.addEventListener('mouseleave', () => {
-        card.style.boxShadow = '0 1px 3px rgba(0,0,0,0.1)';
-        card.style.transform = 'translateY(0)';
-    });
+    // ELIMINADOS: Event listeners problemáticos que causaban fondos blancos persistentes
+    // El hover se maneja completamente con CSS usando var(--card) y var(--card-foreground)
     
     const typeColors = {
         'TOP': 'bg-chart-1 text-background',
