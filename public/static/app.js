@@ -190,7 +190,7 @@ async function loadProjects(page = 1, search = '', filters = {}) {
             
             projects.forEach((project, index) => {
                 // SOLUCIÓN AGRESIVA: Forzar variables CSS con estilos inline para garantizar tema correcto
-                const cardHTML = '<div class="ctei-project-card hover:shadow-lg transition-all duration-200" style="background-color: var(--card) !important; color: var(--card-foreground) !important; border: 1px solid var(--border) !important; display: block; min-height: 200px; padding: 1.5rem; border-radius: var(--radius); box-shadow: var(--shadow-sm);">' +
+                const cardHTML = '<div class="ctei-project-card transition-all duration-200" style="background-color: var(--card) !important; color: var(--card-foreground) !important; border: 1px solid var(--border) !important; display: block; min-height: 200px; padding: 1.5rem; border-radius: var(--radius); box-shadow: var(--shadow-sm);">' +
                     '<h4 class="ctei-project-card-title" style="color: var(--card-foreground) !important; font-size: 1.125rem; font-weight: 600; margin-bottom: 0.75rem;">' +
                         project.title +
                     '</h4>' +
@@ -257,7 +257,7 @@ async function loadProducts(page = 1, search = '', filters = {}) {
             
             products.forEach((product, index) => {
                 // SOLUCIÓN AGRESIVA PRODUCTOS: Forzar variables CSS con estilos inline
-                const cardHTML = '<div class="ctei-project-card hover:shadow-lg transition-all duration-200" style="background-color: var(--card) !important; color: var(--card-foreground) !important; border: 1px solid var(--border) !important; display: block; min-height: 200px; padding: 1.5rem; border-radius: var(--radius); box-shadow: var(--shadow-sm);">' +
+                const cardHTML = '<div class="ctei-project-card transition-all duration-200" style="background-color: var(--card) !important; color: var(--card-foreground) !important; border: 1px solid var(--border) !important; display: block; min-height: 200px; padding: 1.5rem; border-radius: var(--radius); box-shadow: var(--shadow-sm);">' +
                     '<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">' +
                         '<span style="font-family: monospace; font-weight: bold; color: var(--muted-foreground) !important;">' +
                             product.product_code +
@@ -301,7 +301,7 @@ async function loadProducts(page = 1, search = '', filters = {}) {
 
 function createProjectCard(project) {
     const card = document.createElement('div');
-    card.className = 'ctei-project-card ctei-fade-in hover:shadow-lg transition-all duration-200';
+    card.className = 'ctei-project-card ctei-fade-in transition-all duration-200';
     
     // FIXED: Usar solo clases CSS para compatibilidad con modo oscuro
     card.style.cssText = `
@@ -341,7 +341,7 @@ function createProjectCard(project) {
 
 function createProductCard(product) {
     const card = document.createElement('div');
-    card.className = 'ctei-project-card ctei-fade-in hover:shadow-lg transition-all duration-200';
+    card.className = 'ctei-project-card ctei-fade-in transition-all duration-200';
     
     // SOLUCIÓN CSS PURA: Solo estilos mínimos, dejar que CSS maneje el resto
     card.style.cssText = `

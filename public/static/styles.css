@@ -1953,6 +1953,55 @@ div.ctei-project-card,
   background-color: var(--primary) !important;
   color: var(--primary-foreground) !important;
 }
+
+/* ========================================
+   ELIMINACIÓN TOTAL DE HOVER TAILWIND
+======================================== */
+
+/* CRÍTICO: Sobrescribir CUALQUIER hover de Tailwind que cause fondos blancos */
+.ctei-project-card:hover,
+.ctei-project-card.hover\:shadow-lg:hover,
+.ctei-project-card.hover\:bg-white:hover,
+.ctei-project-card.hover\:bg-gray-50:hover,
+.ctei-project-card.hover\:bg-muted:hover {
+  background-color: var(--card) !important;
+  color: var(--card-foreground) !important;
+  border-color: var(--border) !important;
+  box-shadow: var(--shadow-md) !important;
+  transform: translateY(-2px) !important;
+}
+
+/* Modo oscuro: Forzar estilos correctos en hover */
+.dark .ctei-project-card:hover,
+.dark .ctei-project-card:focus,
+.dark .ctei-project-card:active {
+  background-color: var(--card) !important;
+  color: var(--card-foreground) !important;
+  border-color: var(--border) !important;
+  box-shadow: var(--shadow-md) !important;
+}
+
+/* ANULAR específicamente hover:bg-white de Tailwind */
+.hover\:bg-white:hover {
+  background-color: var(--card) !important;
+}
+
+.hover\:bg-gray-50:hover {
+  background-color: var(--card) !important;
+}
+
+.hover\:bg-slate-50:hover {
+  background-color: var(--card) !important;
+}
+
+/* Protección adicional contra clases Tailwind problemáticas */
+.dark .hover\:bg-white:hover,
+.dark .hover\:bg-gray-50:hover, 
+.dark .hover\:bg-slate-50:hover,
+.dark .hover\:bg-gray-100:hover {
+  background-color: var(--card) !important;
+  color: var(--card-foreground) !important;
+}
   text-decoration: underline;
   opacity: 0.8;
 }
