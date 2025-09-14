@@ -674,6 +674,55 @@ body {
 }
 
 /* ========================================
+   CORRECCIONES CRÍTICAS PARA TEMA CLARO ☀️
+======================================== */
+
+/* 1. LEGIBILIDAD DE ETIQUETAS EN FILTROS */
+/* Estilo base para TEMA CLARO - texto oscuro legible */
+.filter-label,
+label {
+  color: var(--foreground) !important;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+/* Anulación EXCLUSIVA para TEMA OSCURO - texto claro */
+.dark label,
+.dark .filter-label {
+  color: var(--foreground) !important;
+}
+
+/* 2. RESTAURAR FONDO CORRECTO DE TARJETAS EN TEMA CLARO */
+/* Regla definitiva - usando :not(.dark) para máxima especificidad */
+html:not(.dark) .ctei-card,
+html:not(.dark) .ctei-project-card,
+html:not(.dark) .ctei-product-card,
+html:not(.dark) .card-component {
+  background-color: var(--card) !important; /* Blanco puro en tema claro */
+  border: 1px solid var(--border) !important;
+  box-shadow: var(--shadow-sm) !important;
+  color: var(--foreground) !important; /* Texto oscuro */
+}
+
+/* Asegurar que los elementos de texto dentro de tarjetas sean legibles */
+html:not(.dark) .ctei-card *,
+html:not(.dark) .ctei-project-card *,
+html:not(.dark) .ctei-product-card * {
+  color: inherit;
+}
+
+html:not(.dark) .ctei-card .ctei-card-title,
+html:not(.dark) .ctei-card .ctei-product-code {
+  color: var(--foreground) !important;
+}
+
+html:not(.dark) .ctei-card .ctei-card-description,
+html:not(.dark) .ctei-card .ctei-card-meta,
+html:not(.dark) .ctei-card .ctei-product-project-info {
+  color: var(--muted-foreground) !important;
+}
+
+/* ========================================
    SISTEMA DE TARJETAS - MANIFIESTO DE TALLA MUNDIAL
 ======================================== */
 
