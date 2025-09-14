@@ -163,7 +163,6 @@ async function loadPublicStats() {
 
 async function loadProjects(page = 1, search = '', filters = {}) {
     const container = document.getElementById('projectsContainer');
-    
     if (page === 1) {
         showSpinner(container);
     }
@@ -180,38 +179,12 @@ async function loadProjects(page = 1, search = '', filters = {}) {
             
             if (page === 1) {
                 container.innerHTML = '';
-                // Estilos limpios del contenedor
-                container.style.cssText = `
-                    display: grid;
-                    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-                    gap: 1.5rem;
-                `;
+                container.className = 'ctei-grid ctei-grid-3';
             }
             
-            projects.forEach((project, index) => {
-                // SOLUCIÓN HARDCORE: Paleta tonal refinada con identidad de marca
-                const isDark = document.documentElement.classList.contains('dark');
-                const bgColor = isDark ? '#1e2a37' : 'var(--card)'; // oklch(0.20 0.025 190)
-                const textColor = isDark ? '#f8fafb' : 'var(--card-foreground)'; // oklch(0.95 0.02 190)
-                const borderColor = isDark ? '#243240' : 'var(--border)'; // oklch(0.25 0.03 190)
-                
-                const cardHTML = '<div class="ctei-project-card" style="background: ' + bgColor + ' !important; background-color: ' + bgColor + ' !important; color: ' + textColor + ' !important; border: 1px solid ' + borderColor + ' !important; display: block; min-height: 200px; padding: 1.5rem; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); transition: all 0.2s ease;">' +
-                    '<h4 class="ctei-project-card-title" style="background: transparent !important; color: ' + textColor + ' !important; font-size: 1.125rem; font-weight: 600; margin-bottom: 0.75rem;">' +
-                        project.title +
-                    '</h4>' +
-                    '<p style="background: transparent !important; color: ' + textColor + ' !important; margin-bottom: 1rem; line-height: 1.6;">' +
-                        truncateText(project.abstract || 'Sin descripción') +
-                    '</p>' +
-                    '<div style="background: transparent !important; display: flex; justify-content: space-between; align-items: center; color: ' + (isDark ? '#a8b2bc' : 'var(--muted-foreground)') + ' !important; font-size: 0.875rem; margin-bottom: 1rem;">' +
-                        '<span style="background: transparent !important;"><i class="fas fa-user mr-2"></i>' + project.owner_name + '</span>' +
-                        '<span style="background: transparent !important;"><i class="fas fa-calendar mr-2"></i>' + formatDate(project.created_at) + '</span>' +
-                    '</div>' +
-                    '<button onclick="viewProjectDetails(' + project.id + ')" class="ctei-btn-primary" style="width: 100%; background-color: var(--primary) !important; color: var(--primary-foreground) !important; padding: 0.75rem 1.5rem; border: none; border-radius: var(--radius); font-weight: 600; cursor: pointer;">' +
-                        'Ver Detalles' +
-                    '</button>' +
-                '</div>';
-                container.innerHTML += cardHTML;
-                // Proyecto agregado correctamente - CSS puro maneja hover automáticamente
+            projects.forEach(project => {
+                const card = createProjectCard(project);
+                container.appendChild(card);
             });
             
             AppState.currentPage = page;
@@ -234,7 +207,6 @@ async function loadProjects(page = 1, search = '', filters = {}) {
 
 async function loadProducts(page = 1, search = '', filters = {}) {
     const container = document.getElementById('productsContainer');
-    
     if (page === 1) {
         showSpinner(container);
     }
@@ -252,44 +224,13 @@ async function loadProducts(page = 1, search = '', filters = {}) {
             
             if (page === 1) {
                 container.innerHTML = '';
-                // Estilos limpios del contenedor
-                container.style.cssText = `
-                    display: grid;
-                    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-                    gap: 1.5rem;
-                `;
+                container.className = 'ctei-grid ctei-grid-3';
+                console.log('🔄 Container productos reinicializado con grid mejorado:', container.className);
             }
             
-            products.forEach((product, index) => {
-                // SOLUCIÓN HARDCORE PRODUCTOS: Paleta tonal refinada con identidad de marca
-                const isDark = document.documentElement.classList.contains('dark');
-                const bgColor = isDark ? '#1e2a37' : 'var(--card)'; // oklch(0.20 0.025 190)
-                const textColor = isDark ? '#f8fafb' : 'var(--card-foreground)'; // oklch(0.95 0.02 190)
-                const borderColor = isDark ? '#243240' : 'var(--border)'; // oklch(0.25 0.03 190)
-                const mutedColor = isDark ? '#a8b2bc' : 'var(--muted-foreground)'; // oklch(0.75 0.02 190)
-                
-                const cardHTML = '<div class="ctei-project-card" style="background: ' + bgColor + ' !important; background-color: ' + bgColor + ' !important; color: ' + textColor + ' !important; border: 1px solid ' + borderColor + ' !important; display: block; min-height: 200px; padding: 1.5rem; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); transition: all 0.2s ease;">' +
-                    '<div style="background: transparent !important; display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">' +
-                        '<span style="background: transparent !important; font-family: monospace; font-weight: bold; color: ' + mutedColor + ' !important;">' +
-                            product.product_code +
-                        '</span>' +
-                        '<span class="ctei-tag ctei-tag--primary ctei-tag--small" style="background-color: var(--primary) !important; color: var(--primary-foreground) !important; padding: 0.25rem 0.5rem; border-radius: 16px; font-size: 0.625rem;">' +
-                            product.product_type +
-                        '</span>' +
-                    '</div>' +
-                    '<p style="background: transparent !important; color: ' + textColor + ' !important; margin-bottom: 1rem; line-height: 1.6;">' +
-                        truncateText(product.description || 'Sin descripción', 120) +
-                    '</p>' +
-                    '<div style="background: transparent !important; color: ' + mutedColor + ' !important; font-size: 0.875rem; margin-bottom: 1rem;">' +
-                        '<p style="background: transparent !important; margin-bottom: 0.25rem;"><i class="fas fa-project-diagram mr-2"></i>' + (product.project_title || 'Sin proyecto asociado') + '</p>' +
-                        '<p style="background: transparent !important;"><i class="fas fa-calendar mr-2"></i>' + formatDate(product.created_at) + '</p>' +
-                    '</div>' +
-                    '<button onclick="viewProductDetails(' + product.id + ')" class="ctei-btn-primary" style="width: 100%; background-color: var(--primary) !important; color: var(--primary-foreground) !important; padding: 0.75rem 1.5rem; border: none; border-radius: var(--radius); font-weight: 600; cursor: pointer;">' +
-                        'Ver Detalles' +
-                    '</button>' +
-                '</div>';
-                container.innerHTML += cardHTML;
-                // Producto agregado correctamente con estilos optimizados para modo oscuro
+            products.forEach(product => {
+                const card = createProductCard(product);
+                container.appendChild(card);
             });
             
             AppState.currentProductPage = page;
@@ -312,83 +253,132 @@ async function loadProducts(page = 1, search = '', filters = {}) {
 
 function createProjectCard(project) {
     const card = document.createElement('div');
-    card.className = 'ctei-project-card ctei-fade-in transition-all duration-200';
+    // REMOVING ALL CSS CLASSES - ONLY INLINE STYLES
+    card.className = '';
     
-    // FIXED: Usar solo clases CSS para compatibilidad con modo oscuro
+    // ESTILOS CORRECTOS PARA MODO OSCURO - VALORES SÓLIDOS
     card.style.cssText = `
         display: block;
+        background-color: #1f2937;
+        color: #f9fafb;
+        border: 1px solid #374151;
+        border-radius: 8px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        padding: 1.5rem;
+        margin-bottom: 1rem;
+        transition: box-shadow 0.2s ease-in-out, transform 0.2s ease-in-out;
         min-height: 200px;
+        cursor: pointer;
     `;
     
-    // Tipos de productos como badges
+    // Agregar efectos hover para proyectos
+    card.addEventListener('mouseenter', function() {
+        this.style.boxShadow = '0 4px 6px rgba(0, 0, 0, 0.1)';
+        this.style.transform = 'translateY(-2px)';
+    });
+    
+    card.addEventListener('mouseleave', function() {
+        this.style.boxShadow = '0 1px 3px rgba(0, 0, 0, 0.1)';
+        this.style.transform = 'translateY(0)';
+    });
+    
+    // Tipos de productos como badges con estilos inline
     const keywordsBadges = project.keywords 
         ? project.keywords.split(',').slice(0, 3).map(keyword => 
-            `<span class="inline-block bg-accent text-accent-foreground text-xs px-2 py-1 rounded-full">${keyword.trim()}</span>`
-          ).join(' ')
+            `<span style="display: inline-block; background-color: #374151; color: #d1d5db; font-size: 0.75rem; padding: 0.25rem 0.5rem; border-radius: 9999px; margin-right: 0.5rem;">${keyword.trim()}</span>`
+          ).join('')
         : '';
     
     card.innerHTML = `
-        <div class="mb-4">
-            <h4 class="ctei-project-card-title">${project.title}</h4>
-            <p class="ctei-project-card-metadata mb-3">${truncateText(project.abstract)}</p>
-            <div class="flex flex-wrap gap-2 mb-3">
+        <div style="margin-bottom: 1rem;">
+            <h4 style="font-weight: 600; font-size: 1.125rem; line-height: 1.4; color: #f9fafb; margin-bottom: 0.75rem;">${project.title}</h4>
+            <p style="color: #d1d5db; font-size: 0.875rem; margin-bottom: 0.75rem;">${truncateText(project.abstract)}</p>
+            <div style="display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 0.75rem;">
                 ${keywordsBadges}
             </div>
-            <div class="flex items-center justify-between ctei-project-card-metadata">
-                <span><i class="fas fa-user mr-1"></i>${project.owner_name}</span>
-                <span><i class="fas fa-calendar mr-1"></i>${formatDate(project.created_at)}</span>
+            <div style="display: flex; align-items: center; justify-content: space-between; color: #9ca3af; font-size: 0.875rem;">
+                <span><i class="fas fa-user" style="margin-right: 0.25rem;"></i>${project.owner_name}</span>
+                <span><i class="fas fa-calendar" style="margin-right: 0.25rem;"></i>${formatDate(project.created_at)}</span>
             </div>
         </div>
         <button 
             onclick="viewProjectDetails(${project.id})"
-            class="ctei-btn-primary w-full"
+            style="width: 100%; background-color: #3b82f6; color: white; font-weight: 500; padding: 0.75rem 1rem; border-radius: 0.375rem; border: none; cursor: pointer; transition: background-color 0.2s ease-in-out;"
+            onmouseover="this.style.backgroundColor='#2563eb'"
+            onmouseout="this.style.backgroundColor='#3b82f6'"
         >
             Ver Detalles
         </button>
     `;
+    
+
     
     return card;
 }
 
 function createProductCard(product) {
     const card = document.createElement('div');
-    card.className = 'ctei-project-card ctei-fade-in transition-all duration-200';
+    card.className = '';
     
-    // SOLUCIÓN CSS PURA: Solo estilos mínimos, dejar que CSS maneje el resto
+    // ESTILOS CORRECTOS PARA MODO OSCURO - VALORES SÓLIDOS
     card.style.cssText = `
         display: block;
+        background-color: #1f2937;
+        color: #f9fafb;
+        border: 1px solid #374151;
+        border-radius: 8px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        padding: 1.5rem;
+        margin-bottom: 1rem;
+        transition: box-shadow 0.2s ease-in-out, transform 0.2s ease-in-out;
         min-height: 200px;
+        cursor: pointer;
     `;
+    
+    // Agregar efectos hover para productos
+    card.addEventListener('mouseenter', function() {
+        this.style.boxShadow = '0 4px 6px rgba(0, 0, 0, 0.1)';
+        this.style.transform = 'translateY(-2px)';
+    });
+    
+    card.addEventListener('mouseleave', function() {
+        this.style.boxShadow = '0 1px 3px rgba(0, 0, 0, 0.1)';
+        this.style.transform = 'translateY(0)';
+    });
     
     // ELIMINADOS: Event listeners problemáticos que causaban fondos blancos persistentes
     // El hover se maneja completamente con CSS usando var(--card) y var(--card-foreground)
     
+    // Colores de tipo con estilos inline
     const typeColors = {
-        'TOP': 'bg-chart-1 text-background',
-        'A': 'bg-chart-2 text-background',
-        'B': 'bg-chart-3 text-background',
-        'ASC': 'bg-chart-4 text-background',
-        'DPC': 'bg-chart-5 text-background',
-        'FRH_A': 'bg-primary text-primary-foreground',
-        'FRH_B': 'bg-accent text-accent-foreground'
+        'TOP': '#ef4444', // rojo
+        'A': '#22c55e',   // verde
+        'B': '#3b82f6',   // azul
+        'ASC': '#f59e0b', // amarillo
+        'DPC': '#8b5cf6', // púrpura
+        'FRH_A': '#06b6d4', // cyan
+        'FRH_B': '#84cc16'  // lima
     };
-    
-    // Crear etiqueta de tipo con tooltip
-    const typeLabel = createTechLabelWithTooltip(product.product_type, `px-2 py-1 text-xs font-semibold rounded ${typeColors[product.product_type] || 'bg-muted text-muted-foreground'}`);
+    const typeColor = typeColors[product.product_type] || '#6b7280';
     
     card.innerHTML = `
-        <div class="mb-4">
-            <div class="flex items-center justify-between mb-2">
-                <span class="text-sm font-mono text-muted-foreground">${product.product_code}</span>
-                ${typeLabel}
+        <div style="margin-bottom: 1rem;">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.5rem;">
+                <span style="font-family: monospace; font-size: 0.875rem; color: #9ca3af;">${product.product_code}</span>
+                <span style="background-color: ${typeColor}; color: white; padding: 0.25rem 0.5rem; font-size: 0.75rem; font-weight: 600; border-radius: 0.375rem;">${product.product_type}</span>
             </div>
-            <p class="text-sm text-foreground mb-3">${truncateText(product.description, 120)}</p>
-            <div class="text-sm text-muted-foreground">
-                <p><i class="fas fa-project-diagram mr-1"></i>${product.project_title}</p>
-                <p class="mt-1"><i class="fas fa-calendar mr-1"></i>${formatDate(product.created_at)}</p>
+            <p style="font-size: 0.875rem; color: #f9fafb; margin-bottom: 0.75rem;">${truncateText(product.description, 120)}</p>
+            <div style="font-size: 0.875rem; color: #9ca3af;">
+                <p><i class="fas fa-project-diagram" style="margin-right: 0.25rem;"></i>${product.project_title}</p>
+                <p style="margin-top: 0.25rem;"><i class="fas fa-calendar" style="margin-right: 0.25rem;"></i>${formatDate(product.created_at)}</p>
             </div>
         </div>
-        <button onclick="viewProductDetails(${product.id})" class="ctei-btn-primary w-full">
+        <button 
+            onclick="viewProductDetails(${product.id})" 
+            style="width: 100%; background-color: #10b981; color: white; font-weight: 500; padding: 0.75rem 1rem; border-radius: 0.375rem; border: none; cursor: pointer; transition: background-color 0.2s ease-in-out;"
+            onmouseover="this.style.backgroundColor='#059669'"
+            onmouseout="this.style.backgroundColor='#10b981'"
+        >
             Ver Detalles
         </button>
     `;

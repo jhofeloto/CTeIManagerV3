@@ -515,7 +515,7 @@ app.route('/api/admin', adminRoutes)
 app.get('/', (c) => {
   return c.html(`
     <!DOCTYPE html>
-    <html lang="es">
+    <html lang="es" class="dark">
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -853,7 +853,7 @@ app.get('/', (c) => {
             <!-- Productos recientes -->
             <section id="products" class="ctei-section">
                 <h3 class="text-2xl font-bold mb-6" style="font-family: var(--font-sans); letter-spacing: var(--tracking-tight); color: var(--foreground);">Productos de CTeI Recientes</h3>
-                <div id="productsContainer" class="ctei-grid ctei-grid-2">
+                <div id="productsContainer" class="ctei-grid ctei-grid-3">
                     <!-- Los productos se cargarán dinámicamente -->
                 </div>
                 <div class="text-center mt-8">
@@ -1132,7 +1132,7 @@ app.get('/producto/:id', async (c) => {
 app.get('/dashboard', (c) => {
   return c.html(`
     <!DOCTYPE html>
-    <html lang="es">
+    <html lang="es" class="dark">
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -1184,7 +1184,7 @@ app.get('*', (c) => {
 app.get('/dashboard-simple', (c) => {
   return c.html(`
     <!DOCTYPE html>
-    <html lang="es">
+    <html lang="es" class="dark">
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -1417,7 +1417,7 @@ function generateProjectDetailPage(project: any): string {
 
   return `
     <!DOCTYPE html>
-    <html lang="es">
+    <html lang="es" class="dark">
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -1854,7 +1854,7 @@ function generateProductDetailPage(product: any): string {
 
   return `
     <!DOCTYPE html>
-    <html lang="es">
+    <html lang="es" class="dark">
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -2319,7 +2319,7 @@ function generateProductDetailPage(product: any): string {
 function generateErrorPage(title: string, message: string): string {
   return `
     <!DOCTYPE html>
-    <html lang="es">
+    <html lang="es" class="dark">
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">

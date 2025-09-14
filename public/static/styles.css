@@ -634,28 +634,38 @@ body {
   padding-bottom: 4rem;
 }
 
-/* Grid responsive para cards */
+/* Grid responsive para cards - VERSIÓN MEJORADA */
 .ctei-grid {
-  display: grid;
-  gap: 1.5rem;
-  /* Asegurar visibilidad del contenedor */
-  min-height: 50px;
+  display: grid !important;
+  gap: 1.5rem !important;
+  width: 100% !important;
+  /* Asegurar visibilidad completa del contenedor */
+  min-height: 200px !important;
+  box-sizing: border-box !important;
 }
 
 .ctei-grid-1 {
-  grid-template-columns: 1fr;
+  grid-template-columns: 1fr !important;
 }
 
 .ctei-grid-2 {
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)) !important;
 }
 
 .ctei-grid-3 {
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  /* Mejorado: Usar CSS más directo y compatible */
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)) !important;
 }
 
 .ctei-grid-4 {
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)) !important;
+}
+
+/* Asegurar que los hijos del grid sean visibles */
+.ctei-grid > * {
+  display: block !important;
+  opacity: 1 !important;
+  visibility: visible !important;
 }
 
 /* ========================================
@@ -1481,9 +1491,16 @@ body {
 }
 
 .ctei-tag--outline {
-  background-color: transparent;
-  color: var(--foreground);
-  border-color: var(--border);
+  background-color: var(--muted);
+  color: var(--muted-foreground);
+  border: 1px solid var(--border);
+}
+
+/* Modo oscuro para tags outline */
+.dark .ctei-tag--outline {
+  background-color: var(--accent);
+  color: var(--accent-foreground);
+  border: 1px solid var(--border);
 }
 
 /* Efectos hover para tags interactivos */
@@ -1904,16 +1921,132 @@ div.ctei-project-card,
 }
 
 /* ========================================
-   REGLAS ULTRA-AGRESIVAS ANTI-BLANCO
+   COMPONENTE TARJETAS DE PROYECTO - VERSIÓN ESTABLE
 ======================================== */
+
+/* CARD DE PROYECTO - Arquitectura con tokens */
+.ctei-project-card {
+  /* Variables CSS sin fallbacks problemáticos */
+  background-color: var(--card);
+  color: var(--card-foreground);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-sm);
+  padding: 1.5rem;
+  transition: box-shadow 0.2s ease-in-out, transform 0.2s ease-in-out;
+  /* Asegurar visibilidad */
+  display: block;
+  min-height: 200px;
+}
+
+.ctei-project-card:hover {
+  box-shadow: var(--shadow-md);
+  transform: translateY(-2px);
+}
+
+.ctei-project-card-title {
+  font-family: var(--font-sans);
+  font-weight: 600;
+  font-size: 1.125rem;
+  line-height: 1.4;
+  letter-spacing: var(--tracking-tight);
+  color: var(--card-foreground);
+  margin-bottom: 0.75rem;
+}
+
+.ctei-project-card-metadata {
+  color: var(--muted-foreground);
+  font-size: 0.875rem;
+  letter-spacing: var(--tracking-normal);
+}
+
+.ctei-project-card-link {
+  color: var(--primary);
+  text-decoration: none;
+  font-weight: 500;
+  transition: color 0.2s ease-in-out;
+}
+
+.ctei-project-card-link:hover {
+  opacity: 0.8;
+  text-decoration: underline;
+}
+
+/* Grid responsive para cards */
+.ctei-grid {
+  display: grid;
+  gap: 1.5rem;
+  /* Asegurar visibilidad del contenedor */
+  min-height: 50px;
+}
+
+.ctei-grid-1 {
+  grid-template-columns: 1fr;
+}
+
+.ctei-grid-2 {
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+}
+
+.ctei-grid-3 {
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+}
+
+.ctei-grid-4 {
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+}
+
+/* Mejoras de contraste para modo oscuro */
+.dark .ctei-project-card {
+  /* Fondo más claro para mejor legibilidad */
+  background-color: var(--card) !important;
+  border-color: var(--border) !important;
+  color: var(--card-foreground) !important;
+  /* Sombra más sutil en modo oscuro */
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3), 0 1px 2px -1px rgba(0, 0, 0, 0.3);
+}
+
+/* Forzar estilos correctos para todas las tarjetas */
+.ctei-project-card {
+  background-color: var(--card) !important;
+  border-color: var(--border) !important;
+  color: var(--card-foreground) !important;
+}
+
+.dark .ctei-project-card:hover {
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.4), 0 2px 4px -1px rgba(0, 0, 0, 0.4);
+}
+
+/* Mejores contrastes para texto en modo oscuro */
+.dark .ctei-project-card-title,
+.dark .ctei-project-card-metadata {
+  color: var(--card-foreground);
+}
+
+.dark .ctei-project-card-metadata {
+  color: var(--muted-foreground);
+  /* Mejor contraste para metadata */
+  opacity: 0.9;
+}
+
+/* Reglas de máxima prioridad para evitar fondos blancos */
+.dark .ctei-project-card,
+.dark .ctei-project-card *:not(i):not(button) {
+  background-color: var(--card) !important;
+  color: var(--card-foreground) !important;
+}
+
+.dark .ctei-project-card button {
+  background-color: var(--primary) !important;
+  color: var(--primary-foreground) !important;
+}
 
 /* Forzar estilos correctos en TODAS las tarjetas generadas dinámicamente */
 .ctei-project-card,
 .ctei-project-card *,
 [class*="ctei-project-card"],
 [class*="ctei-project-card"] * {
-  background-color: var(--card) !important;
-  color: var(--card-foreground) !important;
+  background-color: transparent !important;
 }
 
 /* Títulos y párrafos específicos */
