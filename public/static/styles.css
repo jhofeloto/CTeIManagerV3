@@ -2519,3 +2519,78 @@ html.dark .ctei-project-card .ctei-tag {
   background: #243240 !important;
   color: var(--accent-foreground) !important;
 }
+
+/* ========================================
+   SOLUCIÓN ULTRA-AGRESIVA - FORZADO ABSOLUTO
+   Aplicar estilos independientemente del estado dark
+======================================== */
+
+/* FORZADO ABSOLUTO - Botones secundarios SIEMPRE en modo oscuro */
+.ctei-btn-secondary,
+button.ctei-btn-secondary,
+[class*="ctei-btn-secondary"],
+*[class*="btn-secondary"] {
+  background: transparent !important;
+  background-color: transparent !important;
+  background-image: none !important;
+  border: 1px solid #243240 !important;
+  color: #f8fafb !important;
+  box-shadow: none !important;
+}
+
+.ctei-btn-secondary:hover,
+button.ctei-btn-secondary:hover,
+[class*="ctei-btn-secondary"]:hover {
+  background: #243240 !important;
+  background-color: #243240 !important;
+  border-color: #243240 !important;
+  color: #f8fafb !important;
+}
+
+/* FORZADO ABSOLUTO - Tags SIEMPRE en modo oscuro */
+.ctei-tag,
+span.ctei-tag,
+[class*="ctei-tag"],
+*[class*="tag"] {
+  background: #243240 !important;
+  background-color: #243240 !important;
+  background-image: none !important;
+  color: #f8fafb !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+/* APLICACIÓN ESPECÍFICA por selector de atributo */
+[class="ctei-btn-secondary"] {
+  background-color: transparent !important;
+  border: 1px solid #243240 !important;
+  color: #f8fafb !important;
+}
+
+[class*="ctei-tag ctei-tag--outline ctei-tag--small"] {
+  background: #243240 !important;
+  background-color: #243240 !important;
+  color: #f8fafb !important;
+  border: none !important;
+}
+
+/* ANULACIÓN DE TAILWIND CSS específica */
+.bg-white,
+.bg-gray-100,
+.bg-gray-200,
+.text-gray-900,
+.text-black {
+  background-color: #243240 !important;
+  color: #f8fafb !important;
+}
+
+/* FORZADO por ID y posición específica */
+body [class*="ctei-btn-secondary"],
+body [class*="ctei-tag"] {
+  background-color: transparent !important;
+  color: #f8fafb !important;
+}
+
+body [class*="ctei-tag"] {
+  background-color: #243240 !important;
+}
