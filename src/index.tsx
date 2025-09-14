@@ -1395,15 +1395,15 @@ function generateProjectDetailPage(project: any): string {
   ).join('') || '';
   
   const productsList = project.products?.map((p: any) => `
-    <div class="bg-accent border border-border rounded-lg p-4 hover:shadow-md transition-all duration-200 hover:bg-muted">
+    <div class="productos-cientificos-item border border-border rounded-lg p-4 hover:shadow-md transition-all duration-200" style="background-color: var(--card) !important;">
       <div class="flex items-start justify-between">
         <div class="flex-1">
-          <h4 class="font-semibold text-accent-foreground mb-1">
+          <h4 class="font-semibold mb-1" style="color: var(--card-foreground);">
             <a href="/producto/${p.id}" class="hover:text-primary transition-colors">${p.description || 'Sin descripción'}</a>
           </h4>
           <p class="text-sm text-muted-foreground mb-2">${p.product_code || ''}</p>
           <div class="flex items-center space-x-4 text-xs text-muted-foreground">
-            <span class="ctei-tag ctei-tag--primary ctei-tag--small">
+            <span class="ctei-tag ctei-tag--outline ctei-tag--small" style="background-color: var(--accent) !important; color: var(--accent-foreground) !important; padding: 0.25rem 0.75rem; border-radius: 1rem; font-size: 0.75rem; font-weight: 600;">
               ${p.category_name || 'Sin categoría'}
             </span>
             ${p.publication_date ? `<span><i class="fas fa-calendar mr-1"></i>${new Date(p.publication_date).toLocaleDateString()}</span>` : ''}

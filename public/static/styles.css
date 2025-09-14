@@ -2056,3 +2056,75 @@ html.dark .hover\:bg-white:hover {
   background-color: #1e2a37 !important;
   color: #f8fafb !important; /* oklch(0.95 0.02 190) */
 }
+
+/* ========================================
+   AJUSTES ESPECÍFICOS PÁGINA DE PROYECTO - PRODUCTOS CIENTÍFICOS
+======================================== */
+
+/* 1. Unificar fondos de los listados internos de productos científicos */
+.productos-cientificos-item,
+.dark .productos-cientificos-item {
+  background-color: var(--card) !important;
+  border: 1px solid var(--border) !important;
+  color: var(--card-foreground) !important;
+}
+
+/* Modo oscuro específico para productos científicos */
+.dark .productos-cientificos-item {
+  background: #1e2a37 !important; /* oklch(0.20 0.025 190) */
+  background-color: #1e2a37 !important;
+  border-color: #243240 !important; /* oklch(0.25 0.03 190) */
+  color: #f8fafb !important; /* oklch(0.95 0.02 190) */
+}
+
+/* 2. Unificar componentes de tags/píldoras - misma coherencia que palabras clave */
+.productos-cientificos-item .ctei-tag,
+.dark .productos-cientificos-item .ctei-tag {
+  background-color: var(--accent) !important;
+  color: var(--accent-foreground) !important;
+  border: 1px solid var(--border) !important;
+}
+
+/* Modo oscuro específico para tags de productos */
+.dark .productos-cientificos-item .ctei-tag {
+  background-color: #243240 !important; /* var(--accent) en modo oscuro */
+  color: #f8fafb !important; /* var(--accent-foreground) en modo oscuro */
+  border-color: #243240 !important;
+}
+
+/* ========================================
+   CORRECCIONES PÁGINA PROYECTO - CONSISTENCIA FINAL
+======================================== */
+
+/* 1. Unificar fondos de los listados internos de productos científicos */
+.dark .productos-cientificos-item,
+html.dark .productos-cientificos-item {
+  background-color: var(--card) !important; /* Hereda el color de la tarjeta principal */
+  border: 1px solid var(--border) !important;
+  color: var(--card-foreground) !important;
+}
+
+.dark .productos-cientificos-item h4,
+.dark .productos-cientificos-item p,
+.dark .productos-cientificos-item div,
+html.dark .productos-cientificos-item h4,
+html.dark .productos-cientificos-item p,
+html.dark .productos-cientificos-item div {
+  background: transparent !important;
+  color: inherit !important;
+}
+
+/* 2. Unificar componente "Tag" o "Píldora" - mismo estilo que palabras clave */
+.dark .ctei-tag,
+html.dark .ctei-tag {
+  background-color: var(--accent) !important; /* Fondo sólido oscuro */
+  color: var(--accent-foreground) !important; /* Texto claro */
+  border: 1px solid var(--border) !important;
+}
+
+/* Asegurar que los tags en productos usen la nueva paleta tonal */
+.dark .productos-cientificos-item .ctei-tag,
+html.dark .productos-cientificos-item .ctei-tag {
+  background-color: var(--accent) !important;
+  color: var(--accent-foreground) !important;
+}
