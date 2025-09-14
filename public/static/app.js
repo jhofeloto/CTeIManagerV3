@@ -253,60 +253,29 @@ async function loadProducts(page = 1, search = '', filters = {}) {
 
 function createProjectCard(project) {
     const card = document.createElement('div');
-    // REMOVING ALL CSS CLASSES - ONLY INLINE STYLES
-    card.className = '';
+    // USAR CLASES CSS DEL MANIFIESTO - NO MÁS ESTILOS INLINE
+    card.className = 'ctei-card';
     
-    // ESTILOS CORRECTOS PARA MODO OSCURO - VALORES SÓLIDOS
-    card.style.cssText = `
-        display: block;
-        background-color: #1f2937;
-        color: #f9fafb;
-        border: 1px solid #374151;
-        border-radius: 8px;
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-        padding: 1.5rem;
-        margin-bottom: 1rem;
-        transition: box-shadow 0.2s ease-in-out, transform 0.2s ease-in-out;
-        min-height: 200px;
-        cursor: pointer;
-    `;
-    
-    // Agregar efectos hover para proyectos
-    card.addEventListener('mouseenter', function() {
-        this.style.boxShadow = '0 4px 6px rgba(0, 0, 0, 0.1)';
-        this.style.transform = 'translateY(-2px)';
-    });
-    
-    card.addEventListener('mouseleave', function() {
-        this.style.boxShadow = '0 1px 3px rgba(0, 0, 0, 0.1)';
-        this.style.transform = 'translateY(0)';
-    });
-    
-    // Tipos de productos como badges con estilos inline
+    // Keywords como badges usando clases CSS
     const keywordsBadges = project.keywords 
         ? project.keywords.split(',').slice(0, 3).map(keyword => 
-            `<span style="display: inline-block; background-color: #374151; color: #d1d5db; font-size: 0.75rem; padding: 0.25rem 0.5rem; border-radius: 9999px; margin-right: 0.5rem;">${keyword.trim()}</span>`
+            `<span class="ctei-card-badge">${keyword.trim()}</span>`
           ).join('')
         : '';
     
     card.innerHTML = `
-        <div style="margin-bottom: 1rem;">
-            <h4 style="font-weight: 600; font-size: 1.125rem; line-height: 1.4; color: #f9fafb; margin-bottom: 0.75rem;">${project.title}</h4>
-            <p style="color: #d1d5db; font-size: 0.875rem; margin-bottom: 0.75rem;">${truncateText(project.abstract)}</p>
-            <div style="display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 0.75rem;">
+        <div>
+            <h4 class="ctei-card-title">${project.title}</h4>
+            <p class="ctei-card-description">${truncateText(project.abstract)}</p>
+            <div style="display: flex; flex-wrap: wrap; margin-bottom: 0.75rem;">
                 ${keywordsBadges}
             </div>
-            <div style="display: flex; align-items: center; justify-content: space-between; color: #9ca3af; font-size: 0.875rem;">
+            <div class="ctei-card-meta">
                 <span><i class="fas fa-user" style="margin-right: 0.25rem;"></i>${project.owner_name}</span>
                 <span><i class="fas fa-calendar" style="margin-right: 0.25rem;"></i>${formatDate(project.created_at)}</span>
             </div>
         </div>
-        <button 
-            onclick="viewProjectDetails(${project.id})"
-            style="width: 100%; background-color: #3b82f6; color: white; font-weight: 500; padding: 0.75rem 1rem; border-radius: 0.375rem; border: none; cursor: pointer; transition: background-color 0.2s ease-in-out;"
-            onmouseover="this.style.backgroundColor='#2563eb'"
-            onmouseout="this.style.backgroundColor='#3b82f6'"
-        >
+        <button onclick="viewProjectDetails(${project.id})" class="ctei-btn-primary">
             Ver Detalles
         </button>
     `;
@@ -318,67 +287,22 @@ function createProjectCard(project) {
 
 function createProductCard(product) {
     const card = document.createElement('div');
-    card.className = '';
-    
-    // ESTILOS CORRECTOS PARA MODO OSCURO - VALORES SÓLIDOS
-    card.style.cssText = `
-        display: block;
-        background-color: #1f2937;
-        color: #f9fafb;
-        border: 1px solid #374151;
-        border-radius: 8px;
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-        padding: 1.5rem;
-        margin-bottom: 1rem;
-        transition: box-shadow 0.2s ease-in-out, transform 0.2s ease-in-out;
-        min-height: 200px;
-        cursor: pointer;
-    `;
-    
-    // Agregar efectos hover para productos
-    card.addEventListener('mouseenter', function() {
-        this.style.boxShadow = '0 4px 6px rgba(0, 0, 0, 0.1)';
-        this.style.transform = 'translateY(-2px)';
-    });
-    
-    card.addEventListener('mouseleave', function() {
-        this.style.boxShadow = '0 1px 3px rgba(0, 0, 0, 0.1)';
-        this.style.transform = 'translateY(0)';
-    });
-    
-    // ELIMINADOS: Event listeners problemáticos que causaban fondos blancos persistentes
-    // El hover se maneja completamente con CSS usando var(--card) y var(--card-foreground)
-    
-    // Colores de tipo con estilos inline
-    const typeColors = {
-        'TOP': '#ef4444', // rojo
-        'A': '#22c55e',   // verde
-        'B': '#3b82f6',   // azul
-        'ASC': '#f59e0b', // amarillo
-        'DPC': '#8b5cf6', // púrpura
-        'FRH_A': '#06b6d4', // cyan
-        'FRH_B': '#84cc16'  // lima
-    };
-    const typeColor = typeColors[product.product_type] || '#6b7280';
+    // USAR CLASES CSS DEL MANIFIESTO - UN SISTEMA, DOS PERSONALIDADES
+    card.className = 'ctei-card';
     
     card.innerHTML = `
-        <div style="margin-bottom: 1rem;">
-            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.5rem;">
-                <span style="font-family: monospace; font-size: 0.875rem; color: #9ca3af;">${product.product_code}</span>
-                <span style="background-color: ${typeColor}; color: white; padding: 0.25rem 0.5rem; font-size: 0.75rem; font-weight: 600; border-radius: 0.375rem;">${product.product_type}</span>
+        <div>
+            <div class="ctei-product-header">
+                <span class="ctei-product-code">${product.product_code}</span>
+                <span class="ctei-product-type">${product.product_type}</span>
             </div>
-            <p style="font-size: 0.875rem; color: #f9fafb; margin-bottom: 0.75rem;">${truncateText(product.description, 120)}</p>
-            <div style="font-size: 0.875rem; color: #9ca3af;">
+            <p class="ctei-card-description">${truncateText(product.description, 120)}</p>
+            <div class="ctei-product-project-info">
                 <p><i class="fas fa-project-diagram" style="margin-right: 0.25rem;"></i>${product.project_title}</p>
-                <p style="margin-top: 0.25rem;"><i class="fas fa-calendar" style="margin-right: 0.25rem;"></i>${formatDate(product.created_at)}</p>
+                <p><i class="fas fa-calendar" style="margin-right: 0.25rem;"></i>${formatDate(product.created_at)}</p>
             </div>
         </div>
-        <button 
-            onclick="viewProductDetails(${product.id})" 
-            style="width: 100%; background-color: #10b981; color: white; font-weight: 500; padding: 0.75rem 1rem; border-radius: 0.375rem; border: none; cursor: pointer; transition: background-color 0.2s ease-in-out;"
-            onmouseover="this.style.backgroundColor='#059669'"
-            onmouseout="this.style.backgroundColor='#10b981'"
-        >
+        <button onclick="viewProductDetails(${product.id})" class="ctei-btn-primary">
             Ver Detalles
         </button>
     `;

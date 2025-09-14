@@ -3,36 +3,41 @@
    Filosofía: "Tokens, no valores" - Jerarquía visual clara
 ======================================== */
 
-/* Variables CSS del sistema de diseño */
+/* Variables CSS del sistema de diseño - MANIFIESTO DE TALLA MUNDIAL */
 :root {
-  /* Colores base */
-  --background: oklch(0.9911 0 0);
-  --foreground: oklch(0.2046 0 0);
-  --card: oklch(0.9911 0 0);
-  --card-foreground: oklch(0.2046 0 0);
-  --popover: oklch(0.9911 0 0);
-  --popover-foreground: oklch(0.4386 0 0);
+  /* TEMA CLARO ☀️ - Luminosidad y Enfoque */
+  /* Fondo: Blanco roto o gris muy claro (evita el blanco puro) */
+  --background: oklch(0.98 0.01 240);
+  --foreground: oklch(0.2 0.02 240);
   
-  /* Colores primarios (teal CODECTI CHOCÓ) */
+  /* Tarjetas: Blanco puro que "flota" sobre el fondo */
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.2 0.02 240);
+  
+  /* Popovers */
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.2 0.02 240);
+  
+  /* COLOR PRIMARIO ÚNICO - Verde azulado (teal) de marca */
   --primary: oklch(0.55 0.18 192);
   --primary-foreground: oklch(0.98 0.02 192);
   
   /* Colores secundarios */
-  --secondary: oklch(0.9940 0 0);
-  --secondary-foreground: oklch(0.2046 0 0);
-  --muted: oklch(0.9461 0 0);
-  --muted-foreground: oklch(0.2435 0 0);
-  --accent: oklch(0.9461 0 0);
-  --accent-foreground: oklch(0.2435 0 0);
+  --secondary: oklch(0.96 0.01 240);
+  --secondary-foreground: oklch(0.2 0.02 240);
+  --muted: oklch(0.94 0.01 240);
+  --muted-foreground: oklch(0.45 0.02 240);
+  --accent: oklch(0.94 0.01 240);
+  --accent-foreground: oklch(0.25 0.02 240);
   
-  /* Colores de estado */
-  --destructive: oklch(0.5523 0.1927 32.7272);
-  --destructive-foreground: oklch(0.9934 0.0032 17.2118);
+  /* Estados destructivos */
+  --destructive: oklch(0.55 0.19 32);
+  --destructive-foreground: oklch(0.99 0.01 32);
   
-  /* Elementos UI */
-  --border: oklch(0.9037 0 0);
-  --input: oklch(0.9731 0 0);
-  --ring: oklch(0.8348 0.1302 160.9080);
+  /* Bordes y elementos UI - Gris claro y sutil */
+  --border: oklch(0.9 0.01 240);
+  --input: oklch(0.97 0.01 240);
+  --ring: oklch(0.55 0.18 192);
   
   /* Colores de gráficos */
   --chart-1: oklch(0.8348 0.1302 160.9080);
@@ -80,44 +85,44 @@
   --spacing: 0.25rem;
 }
 
-/* Modo oscuro - Paleta tonal refinada con identidad de marca */
+/* TEMA OSCURO 🌙 - Inmersión y Prestigio */
 .dark {
-  /* Paso 1: Fondo muy oscuro con sutil tinte verde azulado de la marca */
+  /* Fondo: Gris carbón con tinte verde azulado de marca */
   --background: oklch(0.15 0.02 190);
-  --foreground: oklch(0.95 0.02 190);
+  --foreground: oklch(0.95 0.01 240);
   
-  /* Paso 2: Tarjetas ligeramente más claras con el mismo tinte tonal */
+  /* Tarjetas: Gris ligeramente más claro que el fondo con el mismo tinte */
   --card: oklch(0.20 0.025 190);
-  --card-foreground: oklch(0.95 0.02 190);
+  --card-foreground: oklch(0.95 0.01 240);
   
-  /* Popovers y overlays siguiendo la paleta tonal */
+  /* Popovers */
   --popover: oklch(0.22 0.025 190);
-  --popover-foreground: oklch(0.90 0.02 190);
+  --popover-foreground: oklch(0.90 0.01 240);
   
-  /* Color primario teal optimizado para la nueva paleta */
-  --primary: oklch(0.68 0.20 192);
-  --primary-foreground: oklch(0.15 0.02 190);
+  /* MISMO COLOR PRIMARIO - Verde azulado (teal) resalta vívidamente */
+  --primary: oklch(0.55 0.18 192);
+  --primary-foreground: oklch(0.98 0.02 192);
   
-  /* Elementos secundarios siguiendo la paleta tonal */
+  /* Elementos secundarios */
   --secondary: oklch(0.22 0.025 190);
-  --secondary-foreground: oklch(0.95 0.02 190);
+  --secondary-foreground: oklch(0.95 0.01 240);
   
-  /* Elementos muted con el tinte de marca */
+  /* Elementos muted */
   --muted: oklch(0.25 0.025 190);
-  --muted-foreground: oklch(0.75 0.02 190);
+  --muted-foreground: oklch(0.75 0.01 240);
   
-  /* Paso 4: Acento para hover con el mismo tinte tonal */
+  /* Acento para hover */
   --accent: oklch(0.28 0.03 190);
-  --accent-foreground: oklch(0.95 0.02 190);
+  --accent-foreground: oklch(0.95 0.01 240);
   
-  /* Estados destructivos mantienen su rojo */
-  --destructive: oklch(0.55 0.25 25);
-  --destructive-foreground: oklch(0.95 0.02 25);
+  /* Estados destructivos */
+  --destructive: oklch(0.55 0.19 32);
+  --destructive-foreground: oklch(0.99 0.01 32);
   
-  /* Paso 3: Bordes ajustados para coincidir con la paleta */
+  /* Bordes: Gris oscuro y sutil, más claro que el fondo de tarjeta */
   --border: oklch(0.25 0.03 190);
   --input: oklch(0.22 0.025 190);
-  --ring: oklch(0.68 0.20 192);
+  --ring: oklch(0.55 0.18 192);
   
   /* Gráficos con colores más vibrantes */
   --chart-1: oklch(0.75 0.18 192);
@@ -666,6 +671,143 @@ body {
   display: block !important;
   opacity: 1 !important;
   visibility: visible !important;
+}
+
+/* ========================================
+   SISTEMA DE TARJETAS - MANIFIESTO DE TALLA MUNDIAL
+======================================== */
+
+/* Componente Base de Tarjeta - TEMA CLARO (por defecto) */
+.ctei-card {
+  /* Estructura y espaciado universal */
+  display: block;
+  padding: 1.5rem;
+  margin-bottom: 1rem;
+  border-radius: calc(var(--radius) + 2px);
+  min-height: 200px;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+  
+  /* TEMA CLARO: Blanco puro que "flota" sobre fondo gris */
+  background-color: var(--card);
+  color: var(--card-foreground);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-sm);
+}
+
+/* Hover para tema claro */
+.ctei-card:hover {
+  box-shadow: var(--shadow-md);
+  transform: translateY(-2px);
+}
+
+/* Override EXCLUSIVO para TEMA OSCURO */
+.dark .ctei-card {
+  /* TEMA OSCURO: Separación tonal armoniosa, sin sombras */
+  background-color: var(--card);
+  color: var(--card-foreground);
+  border: 1px solid var(--border);
+  box-shadow: none; /* Las sombras no son necesarias en el tema oscuro */
+}
+
+/* Hover para tema oscuro */
+.dark .ctei-card:hover {
+  background-color: var(--accent);
+  box-shadow: none;
+  transform: translateY(-2px);
+}
+
+/* Elementos internos de la tarjeta */
+.ctei-card-title {
+  font-weight: 600;
+  font-size: 1.125rem;
+  line-height: 1.4;
+  color: var(--card-foreground);
+  margin-bottom: 0.75rem;
+}
+
+.ctei-card-description {
+  color: var(--muted-foreground);
+  font-size: 0.875rem;
+  margin-bottom: 0.75rem;
+  line-height: 1.5;
+}
+
+.ctei-card-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  color: var(--muted-foreground);
+  font-size: 0.875rem;
+  margin-top: 1rem;
+}
+
+.ctei-card-badge {
+  display: inline-block;
+  background-color: var(--accent);
+  color: var(--accent-foreground);
+  font-size: 0.75rem;
+  padding: 0.25rem 0.5rem;
+  border-radius: 9999px;
+  margin-right: 0.5rem;
+  margin-bottom: 0.25rem;
+}
+
+/* Elementos específicos para productos */
+.ctei-product-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+}
+
+.ctei-product-code {
+  font-family: monospace;
+  font-size: 0.875rem;
+  color: var(--muted-foreground);
+}
+
+.ctei-product-type {
+  background-color: var(--primary);
+  color: var(--primary-foreground);
+  padding: 0.25rem 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  border-radius: calc(var(--radius) - 2px);
+}
+
+.ctei-product-project-info {
+  font-size: 0.875rem;
+  color: var(--muted-foreground);
+  margin-top: 0.75rem;
+}
+
+.ctei-product-project-info p {
+  margin: 0;
+  margin-top: 0.25rem;
+}
+
+.ctei-product-project-info:first-child {
+  margin-top: 0;
+}
+
+/* Botón primario usando tokens del sistema */
+.ctei-btn-primary {
+  width: 100%;
+  background-color: var(--primary);
+  color: var(--primary-foreground);
+  font-weight: 500;
+  padding: 0.75rem 1rem;
+  border-radius: var(--radius);
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+  font-family: var(--font-sans);
+}
+
+.ctei-btn-primary:hover {
+  opacity: 0.9;
+  transform: translateY(-1px);
 }
 
 /* ========================================
