@@ -1482,7 +1482,7 @@ function generateProjectDetailPage(project: any): string {
                             <i class="fas fa-moon" id="theme-icon"></i>
                         </button>
                         
-                        <a href="/" class="ctei-btn-secondary">
+                        <a href="/" class="ctei-btn-secondary" style="background: transparent !important; background-color: transparent !important; border: 1px solid #243240 !important; color: #f8fafb !important;">
                             <i class="fas fa-home mr-2"></i>Inicio
                         </a>
                     </div>
@@ -1913,7 +1913,7 @@ function generateProductDetailPage(product: any): string {
                             <i class="fas fa-moon" id="theme-icon"></i>
                         </button>
                         
-                        <a href="/" class="ctei-btn-secondary">
+                        <a href="/" class="ctei-btn-secondary" style="background: transparent !important; background-color: transparent !important; border: 1px solid #243240 !important; color: #f8fafb !important;">
                             <i class="fas fa-home mr-2"></i>Inicio
                         </a>
                     </div>
@@ -1988,7 +1988,7 @@ function generateProductDetailPage(product: any): string {
                             <i class="fas fa-link mr-2"></i>Enlace Externo
                         </a>
                     ` : ''}
-                    <button class="ctei-btn-secondary" onclick="navigator.share ? navigator.share({title: 'Producto CTeI', url: window.location.href}) : navigator.clipboard.writeText(window.location.href)">
+                    <button class="ctei-btn-secondary" style="background: transparent !important; background-color: transparent !important; border: 1px solid #243240 !important; color: #f8fafb !important;" onclick="navigator.share ? navigator.share({title: 'Producto CTeI', url: window.location.href}) : navigator.clipboard.writeText(window.location.href)">
                         <i class="fas fa-share mr-2"></i>Compartir
                     </button>
                 </div>
@@ -2342,7 +2342,7 @@ function generateErrorPage(title: string, message: string): string {
                         </a>
                     </div>
                     <div class="flex items-center">
-                        <a href="/" class="ctei-btn-secondary">
+                        <a href="/" class="ctei-btn-secondary" style="background: transparent !important; background-color: transparent !important; border: 1px solid #243240 !important; color: #f8fafb !important;">
                             <i class="fas fa-home mr-2"></i>Inicio
                         </a>
                     </div>
