@@ -2224,3 +2224,124 @@ html.dark .productos-cientificos-item .ctei-tag {
   background-color: var(--accent) !important;
   color: var(--accent-foreground) !important;
 }
+
+/* ========================================
+   REGLAS DEFINITIVAS - PÁGINA DE PROYECTOS ESPECÍFICA
+======================================== */
+
+/* --- REGLA PARA BOTONES SECUNDARIOS EN MODO OSCURO --- */
+
+/* Estado por defecto - Aplicación directa según instrucciones */
+.dark .ctei-btn-secondary {
+  background-color: transparent !important; /* Fuerza el fondo transparente */
+  border: 1px solid var(--border) !important;
+  color: var(--foreground) !important; /* Fuerza el texto claro */
+}
+
+/* Cobertura adicional para HTML.dark */
+html.dark .ctei-btn-secondary {
+  background-color: transparent !important;
+  border: 1px solid var(--border) !important;
+  color: var(--foreground) !important;
+}
+
+/* Estado al pasar el cursor (hover) */
+.dark .ctei-btn-secondary:hover {
+  background-color: var(--accent) !important;
+  border-color: var(--accent) !important;
+  color: var(--accent-foreground) !important;
+}
+
+html.dark .ctei-btn-secondary:hover {
+  background-color: var(--accent) !important;
+  border-color: var(--accent) !important;
+  color: var(--accent-foreground) !important;
+}
+
+/* Hardcoded fallback para botones secundarios en modo oscuro */
+.dark .ctei-btn-secondary {
+  background: transparent !important;
+  background-color: transparent !important;
+  border: 1px solid #243240 !important; /* oklch(0.25 0.03 190) */
+  color: #f8fafb !important; /* oklch(0.95 0.02 190) */
+}
+
+.dark .ctei-btn-secondary:hover {
+  background: #243240 !important; /* oklch(0.28 0.03 190) */
+  background-color: #243240 !important;
+  border-color: #243240 !important;
+  color: #f8fafb !important;
+}
+
+/* --- REGLA PARA TAGS/PÍLDORAS EN MODO OSCURO --- */
+
+/* Aplicación directa según instrucciones - Todas las píldoras mismo estilo base */
+.dark .ctei-tag {
+  background-color: var(--accent) !important;
+  color: var(--accent-foreground) !important; /* Fuerza el texto claro */
+  border: none !important;
+}
+
+html.dark .ctei-tag {
+  background-color: var(--accent) !important;
+  color: var(--accent-foreground) !important;
+  border: none !important;
+}
+
+/* Hardcoded fallback para tags en modo oscuro */
+.dark .ctei-tag {
+  background: #243240 !important; /* oklch(0.28 0.03 190) */
+  background-color: #243240 !important;
+  color: #f8fafb !important; /* oklch(0.95 0.02 190) */
+  border: none !important;
+}
+
+/* Específicamente para la página de proyecto - máxima especificidad */
+.dark .ctei-tag.ctei-tag--outline,
+.dark .ctei-tag.ctei-tag--small,
+html.dark .ctei-tag.ctei-tag--outline,
+html.dark .ctei-tag.ctei-tag--small {
+  background-color: var(--accent) !important;
+  color: var(--accent-foreground) !important;
+  border: none !important;
+}
+
+/* Asegurar que palabras clave y tags "Sin categoría" tengan mismo estilo */
+.dark .ctei-tag.ctei-tag--outline.ctei-tag--small {
+  background: #243240 !important;
+  background-color: #243240 !important;
+  color: #f8fafb !important;
+  border: none !important;
+}
+
+/* --- CORRECCIÓN ESPECÍFICA PARA BOTONES "VER DETALLE" --- */
+
+/* Los botones "Ver Detalle" en productos científicos - eliminar fondo blanco */
+.dark .productos-cientificos-item .ctei-btn-primary,
+.dark .ctei-project-card .ctei-btn-primary,
+html.dark .productos-cientificos-item .ctei-btn-primary,
+html.dark .ctei-project-card .ctei-btn-primary {
+  background-color: var(--primary) !important;
+  color: var(--primary-foreground) !important;
+  border: none !important;
+}
+
+/* Hardcoded fallback para botones primarios en listas */
+.dark .productos-cientificos-item .ctei-btn-primary {
+  background: #4a90a4 !important; /* oklch(0.60 0.08 190) */
+  background-color: #4a90a4 !important;
+  color: #f8fafb !important;
+  border: none !important;
+}
+
+/* Hover para botones primarios en modo oscuro */
+.dark .productos-cientificos-item .ctei-btn-primary:hover,
+html.dark .productos-cientificos-item .ctei-btn-primary:hover {
+  background-color: var(--primary) !important;
+  opacity: 0.9 !important;
+}
+
+.dark .productos-cientificos-item .ctei-btn-primary:hover {
+  background: #5ba3b8 !important; /* oklch(0.65 0.08 190) */
+  background-color: #5ba3b8 !important;
+}
