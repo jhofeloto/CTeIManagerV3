@@ -1403,7 +1403,7 @@ function generateProjectDetailPage(project: any): string {
           </h4>
           <p class="text-sm text-muted-foreground mb-2">${p.product_code || ''}</p>
           <div class="flex items-center space-x-4 text-xs text-muted-foreground">
-            <span class="ctei-tag ctei-tag--outline ctei-tag--small" style="background: #243240 !important; background-color: #243240 !important; color: #f8fafb !important; border: none !important;">
+            <span class="ctei-tag ctei-tag--outline ctei-tag--small">
               ${p.category_name || 'Sin categoría'}
             </span>
             ${p.publication_date ? `<span><i class="fas fa-calendar mr-1"></i>${new Date(p.publication_date).toLocaleDateString()}</span>` : ''}
@@ -1482,7 +1482,7 @@ function generateProjectDetailPage(project: any): string {
                             <i class="fas fa-moon" id="theme-icon"></i>
                         </button>
                         
-                        <a href="/" class="ctei-btn-secondary" style="background: transparent !important; background-color: transparent !important; border: 1px solid #243240 !important; color: #f8fafb !important;">
+                        <a href="/" class="ctei-btn-secondary">
                             <i class="fas fa-home mr-2"></i>Inicio
                         </a>
                     </div>
@@ -1548,7 +1548,7 @@ function generateProjectDetailPage(project: any): string {
                                 <i class="fas fa-envelope mr-2"></i>Contactar Líder
                             </a>
                         ` : ''}
-                        <button class="ctei-btn-secondary" style="background: transparent !important; background-color: transparent !important; border: 1px solid #243240 !important; color: #f8fafb !important;" onclick="navigator.share ? navigator.share({title: 'Proyecto CTeI', url: window.location.href}) : navigator.clipboard.writeText(window.location.href)">
+                        <button class="ctei-btn-secondary" onclick="navigator.share ? navigator.share({title: 'Proyecto CTeI', url: window.location.href}) : navigator.clipboard.writeText(window.location.href)">
                             <i class="fas fa-share mr-2"></i>Compartir
                         </button>
                     </div>
@@ -1913,7 +1913,7 @@ function generateProductDetailPage(product: any): string {
                             <i class="fas fa-moon" id="theme-icon"></i>
                         </button>
                         
-                        <a href="/" class="ctei-btn-secondary" style="background: transparent !important; background-color: transparent !important; border: 1px solid #243240 !important; color: #f8fafb !important;">
+                        <a href="/" class="ctei-btn-secondary">
                             <i class="fas fa-home mr-2"></i>Inicio
                         </a>
                     </div>
@@ -1988,7 +1988,7 @@ function generateProductDetailPage(product: any): string {
                             <i class="fas fa-link mr-2"></i>Enlace Externo
                         </a>
                     ` : ''}
-                    <button class="ctei-btn-secondary" style="background: transparent !important; background-color: transparent !important; border: 1px solid #243240 !important; color: #f8fafb !important;" onclick="navigator.share ? navigator.share({title: 'Producto CTeI', url: window.location.href}) : navigator.clipboard.writeText(window.location.href)">
+                    <button class="ctei-btn-secondary" onclick="navigator.share ? navigator.share({title: 'Producto CTeI', url: window.location.href}) : navigator.clipboard.writeText(window.location.href)">
                         <i class="fas fa-share mr-2"></i>Compartir
                     </button>
                 </div>
@@ -2342,7 +2342,7 @@ function generateErrorPage(title: string, message: string): string {
                         </a>
                     </div>
                     <div class="flex items-center">
-                        <a href="/" class="ctei-btn-secondary" style="background: transparent !important; background-color: transparent !important; border: 1px solid #243240 !important; color: #f8fafb !important;">
+                        <a href="/" class="ctei-btn-secondary">
                             <i class="fas fa-home mr-2"></i>Inicio
                         </a>
                     </div>

@@ -290,11 +290,18 @@ body {
   box-shadow: var(--shadow-xs);
 }
 
-/* BOTÓN SECUNDARIO */
+/* ========================================
+   COMPONENTE BOTÓN SECUNDARIO - VERSIÓN REFACTORIZADA
+   Usa exclusivamente variables del sistema de diseño
+======================================== */
+
 .ctei-btn-secondary {
-  background-color: var(--secondary);
-  color: var(--secondary-foreground);
+  /* MODO CLARO: Fondo de tarjeta con borde */
+  background-color: var(--card);
+  color: var(--foreground);
   border: 1px solid var(--border);
+  
+  /* Propiedades estructurales */
   border-radius: var(--radius);
   font-family: var(--font-sans);
   font-weight: 500;
@@ -306,11 +313,14 @@ body {
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
+  text-decoration: none;
+  box-shadow: none;
 }
 
 .ctei-btn-secondary:hover {
   background-color: var(--accent);
   color: var(--accent-foreground);
+  border-color: var(--accent);
   box-shadow: var(--shadow-sm);
   transform: translateY(-1px);
 }
@@ -318,6 +328,23 @@ body {
 .ctei-btn-secondary:focus {
   outline: none;
   box-shadow: 0 0 0 2px var(--ring);
+}
+
+.ctei-btn-secondary:active {
+  transform: translateY(0);
+}
+
+/* MODO OSCURO: Fondo transparente con borde tonal */
+.dark .ctei-btn-secondary {
+  background-color: transparent;
+  color: var(--foreground);
+  border-color: var(--border);
+}
+
+.dark .ctei-btn-secondary:hover {
+  background-color: var(--accent);
+  color: var(--accent-foreground);
+  border-color: var(--accent);
 }
 
 /* CARD DE PROYECTO - Arquitectura con tokens */
@@ -690,16 +717,7 @@ body {
   opacity: 0.9;
 }
 
-/* Botón Secundario - Para acciones secundarias */
-.ctei-btn-secondary {
-  background-color: transparent;
-  color: var(--foreground);
-  border-color: var(--border);
-}
-
-.ctei-btn-secondary:hover:not(:disabled) {
-  background-color: var(--accent);
-}
+/* Definición eliminada - ahora centralizada arriba */
 
 /* Botón Destructivo - Solo para eliminar */
 .ctei-btn-destructive {
@@ -1725,12 +1743,7 @@ nav a {
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
 }
 
-.dark .ctei-btn-secondary {
-  background-color: var(--secondary);
-  color: var(--secondary-foreground);
-  border-color: var(--border);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
-}
+/* Definición eliminada - ahora centralizada arriba */
 
 /* Hero banners más contrastados en modo oscuro */
 .dark .bg-gradient-to-r {
@@ -2093,41 +2106,10 @@ html.dark .hover\:bg-white:hover {
 }
 
 /* ========================================
-   AJUSTES FINALES - ELIMINACIÓN TOTAL FONDOS BLANCOS
+   REGLAS LEGACY ELIMINADAS - COMPONENTE REFACTORIZADO
+   Todas las reglas de guerra CSS ya no son necesarias
+   El componente ahora usa variables del sistema correctamente
 ======================================== */
-
-/* 1. Corrección de Botones Secundarios / Outline en modo oscuro */
-.dark .ctei-btn-secondary,
-.dark .ctei-btn-primary.ctei-btn-secondary, /* Para casos específicos */
-html.dark .ctei-btn-secondary {
-  background-color: transparent !important;
-  border: 1px solid var(--border) !important;
-  color: var(--foreground) !important;
-}
-
-/* Modo oscuro hardcoded para botones secundarios */
-.dark .ctei-btn-secondary {
-  background: transparent !important;
-  background-color: transparent !important;
-  border: 1px solid #243240 !important; /* oklch(0.25 0.03 190) */
-  color: #f8fafb !important; /* oklch(0.95 0.02 190) */
-}
-
-/* Estilo hover para botones secundarios en modo oscuro */
-.dark .ctei-btn-secondary:hover,
-html.dark .ctei-btn-secondary:hover {
-  background-color: var(--accent) !important;
-  border-color: var(--accent) !important;
-  color: var(--accent-foreground) !important;
-}
-
-/* Hover hardcoded para botones secundarios */
-.dark .ctei-btn-secondary:hover {
-  background: #243240 !important; /* oklch(0.28 0.03 190) */
-  background-color: #243240 !important;
-  border-color: #243240 !important;
-  color: #f8fafb !important;
-}
 
 /* 2. Corrección del Componente Tag / Píldora - Consistencia total */
 .dark .ctei-tag,
@@ -2231,47 +2213,7 @@ html.dark .productos-cientificos-item .ctei-tag {
 
 /* --- REGLA PARA BOTONES SECUNDARIOS EN MODO OSCURO --- */
 
-/* Estado por defecto - Aplicación directa según instrucciones */
-.dark .ctei-btn-secondary {
-  background-color: transparent !important; /* Fuerza el fondo transparente */
-  border: 1px solid var(--border) !important;
-  color: var(--foreground) !important; /* Fuerza el texto claro */
-}
-
-/* Cobertura adicional para HTML.dark */
-html.dark .ctei-btn-secondary {
-  background-color: transparent !important;
-  border: 1px solid var(--border) !important;
-  color: var(--foreground) !important;
-}
-
-/* Estado al pasar el cursor (hover) */
-.dark .ctei-btn-secondary:hover {
-  background-color: var(--accent) !important;
-  border-color: var(--accent) !important;
-  color: var(--accent-foreground) !important;
-}
-
-html.dark .ctei-btn-secondary:hover {
-  background-color: var(--accent) !important;
-  border-color: var(--accent) !important;
-  color: var(--accent-foreground) !important;
-}
-
-/* Hardcoded fallback para botones secundarios en modo oscuro */
-.dark .ctei-btn-secondary {
-  background: transparent !important;
-  background-color: transparent !important;
-  border: 1px solid #243240 !important; /* oklch(0.25 0.03 190) */
-  color: #f8fafb !important; /* oklch(0.95 0.02 190) */
-}
-
-.dark .ctei-btn-secondary:hover {
-  background: #243240 !important; /* oklch(0.28 0.03 190) */
-  background-color: #243240 !important;
-  border-color: #243240 !important;
-  color: #f8fafb !important;
-}
+/* Reglas duplicadas eliminadas - componente centralizado */
 
 /* --- REGLA PARA TAGS/PÍLDORAS EN MODO OSCURO --- */
 
@@ -2350,33 +2292,7 @@ html.dark .productos-cientificos-item .ctei-btn-primary:hover {
    CORRECCIONES BRUTALES - MÁXIMA AGRESIVIDAD
 ======================================== */
 
-/* BOTÓN COMPARTIR - Guerra total contra Tailwind */
-html.dark button.ctei-btn-secondary,
-.dark button.ctei-btn-secondary,
-body.dark button.ctei-btn-secondary,
-html.dark .ctei-btn-secondary,
-.dark .ctei-btn-secondary,
-body.dark .ctei-btn-secondary {
-  background: transparent !important;
-  background-color: transparent !important;
-  background-image: none !important;
-  border: 1px solid #243240 !important;
-  color: #f8fafb !important;
-}
-
-/* Hover brutal para botón compartir */
-html.dark button.ctei-btn-secondary:hover,
-.dark button.ctei-btn-secondary:hover,
-body.dark button.ctei-btn-secondary:hover,
-html.dark .ctei-btn-secondary:hover,
-.dark .ctei-btn-secondary:hover,
-body.dark .ctei-btn-secondary:hover {
-  background: #243240 !important;
-  background-color: #243240 !important;
-  background-image: none !important;
-  border-color: #243240 !important;
-  color: #f8fafb !important;
-}
+/* Reglas brutales eliminadas - componente refactorizado */
 
 /* TAGS - Guerra total contra estilos inline */
 html.dark span.ctei-tag,
@@ -2416,52 +2332,7 @@ html.dark [style*="color"],
    Basado en diagnóstico de conflictos CSS locales
 ======================================== */
 
-/* --- REGLA DE FORZADO PARA BOTONES SECUNDARIOS EN MODO OSCURO --- */
-/* Máxima especificidad para ganar contra reglas locales */
-html.dark .ctei-btn-secondary,
-html.dark .btn-secondary,
-html.dark .btn-outline,
-html.dark button.ctei-btn-secondary,
-html.dark button.btn-secondary,
-html.dark button.btn-outline,
-body.dark .ctei-btn-secondary,
-body.dark .btn-secondary,
-body.dark .btn-outline {
-  background-color: transparent !important;
-  background: transparent !important;
-  background-image: none !important;
-  border: 1px solid var(--border) !important;
-  color: var(--foreground) !important;
-}
-
-/* Hardcoded fallback con especificidad máxima */
-html.dark .ctei-btn-secondary,
-html.dark button.ctei-btn-secondary {
-  background-color: transparent !important;
-  border: 1px solid #243240 !important; /* oklch(0.25 0.03 190) */
-  color: #f8fafb !important; /* oklch(0.95 0.02 190) */
-}
-
-/* Hover state con especificidad máxima */
-html.dark .ctei-btn-secondary:hover,
-html.dark .btn-secondary:hover,
-html.dark .btn-outline:hover,
-html.dark button.ctei-btn-secondary:hover,
-html.dark button.btn-secondary:hover,
-html.dark button.btn-outline:hover {
-  background-color: var(--accent) !important;
-  border-color: var(--accent) !important;
-  color: var(--accent-foreground) !important;
-}
-
-/* Hardcoded hover fallback */
-html.dark .ctei-btn-secondary:hover,
-html.dark button.ctei-btn-secondary:hover {
-  background: #243240 !important;
-  background-color: #243240 !important;
-  border-color: #243240 !important;
-  color: #f8fafb !important;
-}
+/* Reglas de especificidad extrema eliminadas - componente limpio */
 
 /* --- REGLA DE FORZADO PARA TAGS/PÍLDORAS EN MODO OSCURO --- */
 /* Máxima especificidad para unificar todas las píldoras */
@@ -2502,50 +2373,14 @@ html.dark span.ctei-tag {
   border: none !important;
 }
 
-/* ANULACIÓN BRUTAL de cualquier regla conflictiva específica */
-html.dark div.project-details .ctei-btn-secondary,
-html.dark section .ctei-btn-secondary,
-html.dark .ctei-project-card .ctei-btn-secondary,
-html.dark .productos-cientificos-item .ctei-tag {
-  background-color: transparent !important;
-  background: transparent !important;
-  color: var(--foreground) !important;
-}
-
-html.dark div.project-details .ctei-tag,
-html.dark section .ctei-tag,
-html.dark .ctei-project-card .ctei-tag {
-  background-color: var(--accent) !important;
-  background: #243240 !important;
-  color: var(--accent-foreground) !important;
-}
+/* Anulación brutal eliminada - componente refactorizado */
 
 /* ========================================
    SOLUCIÓN ULTRA-AGRESIVA - FORZADO ABSOLUTO
    Aplicar estilos independientemente del estado dark
 ======================================== */
 
-/* FORZADO ABSOLUTO - Botones secundarios SIEMPRE en modo oscuro */
-.ctei-btn-secondary,
-button.ctei-btn-secondary,
-[class*="ctei-btn-secondary"],
-*[class*="btn-secondary"] {
-  background: transparent !important;
-  background-color: transparent !important;
-  background-image: none !important;
-  border: 1px solid #243240 !important;
-  color: #f8fafb !important;
-  box-shadow: none !important;
-}
-
-.ctei-btn-secondary:hover,
-button.ctei-btn-secondary:hover,
-[class*="ctei-btn-secondary"]:hover {
-  background: #243240 !important;
-  background-color: #243240 !important;
-  border-color: #243240 !important;
-  color: #f8fafb !important;
-}
+/* Forzado absoluto eliminado - componente usa variables correctamente */
 
 /* FORZADO ABSOLUTO - Tags SIEMPRE en modo oscuro */
 .ctei-tag,
