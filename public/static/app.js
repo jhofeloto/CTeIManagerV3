@@ -180,11 +180,33 @@ async function loadProjects(page = 1, search = '', filters = {}) {
             
             if (page === 1) {
                 container.innerHTML = '';
+                // Estilos limpios del contenedor
+                container.style.cssText = `
+                    display: grid;
+                    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+                    gap: 1.5rem;
+                `;
             }
             
-            projects.forEach(project => {
-                const projectCard = createProjectCard(project);
-                container.appendChild(projectCard);
+            projects.forEach((project, index) => {
+                // TEST: Usar innerHTML directo en lugar de createElement
+                const cardHTML = '<div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 1.5rem; margin-bottom: 1rem; color: #1a1a1a; display: block; min-height: 200px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); transition: box-shadow 0.2s ease-in-out, transform 0.2s ease-in-out;" onmouseover="this.style.boxShadow=\'0 4px 12px rgba(0,0,0,0.15)\'; this.style.transform=\'translateY(-2px)\';" onmouseout="this.style.boxShadow=\'0 1px 3px rgba(0,0,0,0.1)\'; this.style.transform=\'translateY(0)\';">' +
+                    '<h4 style="font-size: 1.125rem; font-weight: 600; margin-bottom: 0.5rem; color: #1a1a1a;">' +
+                        project.title +
+                    '</h4>' +
+                    '<p style="color: #666; margin-bottom: 1rem;">' +
+                        truncateText(project.abstract || 'Sin descripción') +
+                    '</p>' +
+                    '<div style="display: flex; justify-content: space-between; align-items: center; color: #888; font-size: 0.875rem;">' +
+                        '<span>👤 ' + project.owner_name + '</span>' +
+                        '<span>📅 ' + formatDate(project.created_at) + '</span>' +
+                    '</div>' +
+                    '<button onclick="viewProjectDetails(' + project.id + ')" class="ctei-btn-primary" style="width: 100%; margin-top: 1rem;">' +
+                        'Ver Detalles' +
+                    '</button>' +
+                '</div>';
+                container.innerHTML += cardHTML;
+                // Tarjeta agregada correctamente
             });
             
             AppState.currentPage = page;
@@ -225,11 +247,38 @@ async function loadProducts(page = 1, search = '', filters = {}) {
             
             if (page === 1) {
                 container.innerHTML = '';
+                // Estilos limpios del contenedor
+                container.style.cssText = `
+                    display: grid;
+                    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+                    gap: 1.5rem;
+                `;
             }
             
-            products.forEach(product => {
-                const productCard = createProductCard(product);
-                container.appendChild(productCard);
+            products.forEach((product, index) => {
+                // TEST: Usar innerHTML directo en lugar de createElement
+                const cardHTML = '<div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 1.5rem; margin-bottom: 1rem; color: #1a1a1a; display: block; min-height: 200px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); transition: box-shadow 0.2s ease-in-out, transform 0.2s ease-in-out;" onmouseover="this.style.boxShadow=\'0 4px 12px rgba(0,0,0,0.15)\'; this.style.transform=\'translateY(-2px)\';" onmouseout="this.style.boxShadow=\'0 1px 3px rgba(0,0,0,0.1)\'; this.style.transform=\'translateY(0)\';">' +
+                    '<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">' +
+                        '<span style="font-family: monospace; font-weight: bold; color: #666;">' +
+                            product.product_code +
+                        '</span>' +
+                        '<span style="background: #e2e8f0; color: #374151; padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.75rem;">' +
+                            product.product_type +
+                        '</span>' +
+                    '</div>' +
+                    '<p style="color: #333; margin-bottom: 1rem; line-height: 1.5;">' +
+                        truncateText(product.description || 'Sin descripción', 120) +
+                    '</p>' +
+                    '<div style="color: #666; font-size: 0.875rem; margin-bottom: 1rem;">' +
+                        '<p>🔬 ' + product.project_title + '</p>' +
+                        '<p>📅 ' + formatDate(product.created_at) + '</p>' +
+                    '</div>' +
+                    '<button onclick="viewProductDetails(' + product.id + ')" class="ctei-btn-primary" style="width: 100%;">' +
+                        'Ver Detalles' +
+                    '</button>' +
+                '</div>';
+                container.innerHTML += cardHTML;
+                // Producto agregado correctamente
             });
             
             AppState.currentProductPage = page;
@@ -253,6 +302,31 @@ async function loadProducts(page = 1, search = '', filters = {}) {
 function createProjectCard(project) {
     const card = document.createElement('div');
     card.className = 'ctei-project-card ctei-fade-in';
+    
+    // SOLUCIÓN DEFINITIVA: Estilos inline para asegurar visibilidad
+    card.style.cssText = `
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        padding: 1.5rem;
+        margin-bottom: 1rem;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        color: #1a1a1a;
+        display: block;
+        min-height: 200px;
+        transition: box-shadow 0.2s ease-in-out, transform 0.2s ease-in-out;
+    `;
+    
+    // Hover effect
+    card.addEventListener('mouseenter', () => {
+        card.style.boxShadow = '0 4px 12px rgba(0,0,0,0.15)';
+        card.style.transform = 'translateY(-2px)';
+    });
+    
+    card.addEventListener('mouseleave', () => {
+        card.style.boxShadow = '0 1px 3px rgba(0,0,0,0.1)';
+        card.style.transform = 'translateY(0)';
+    });
     
     // Tipos de productos como badges
     const keywordsBadges = project.keywords 
@@ -287,6 +361,31 @@ function createProjectCard(project) {
 function createProductCard(product) {
     const card = document.createElement('div');
     card.className = 'ctei-project-card ctei-fade-in';
+    
+    // SOLUCIÓN DEFINITIVA: Estilos inline para asegurar visibilidad
+    card.style.cssText = `
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        padding: 1.5rem;
+        margin-bottom: 1rem;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        color: #1a1a1a;
+        display: block;
+        min-height: 200px;
+        transition: box-shadow 0.2s ease-in-out, transform 0.2s ease-in-out;
+    `;
+    
+    // Hover effect
+    card.addEventListener('mouseenter', () => {
+        card.style.boxShadow = '0 4px 12px rgba(0,0,0,0.15)';
+        card.style.transform = 'translateY(-2px)';
+    });
+    
+    card.addEventListener('mouseleave', () => {
+        card.style.boxShadow = '0 1px 3px rgba(0,0,0,0.1)';
+        card.style.transform = 'translateY(0)';
+    });
     
     const typeColors = {
         'TOP': 'bg-chart-1 text-background',

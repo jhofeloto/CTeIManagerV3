@@ -998,7 +998,7 @@ app.get('/', (c) => {
         document.addEventListener('DOMContentLoaded', loadSiteConfig);
         </script>
         
-        <script src="/static/app.js?v=20240912-2"></script>
+        <script src="/static/app.js?v=20240914-production"></script>
     </body>
     </html>
   `)
@@ -1358,6 +1358,24 @@ app.get('/dashboard-simple', (c) => {
 // ========================================
 // 🎨 FUNCIONES PARA GENERAR PÁGINAS DEDICADAS
 // ========================================
+
+/**
+ * Función helper para crear etiquetas de tipo de producto
+ */
+function createProductTypeLabel(productType: string): string {
+  const typeLabels: Record<string, string> = {
+    'TOP': 'Producto Tipo Top',
+    'A': 'Producto Tipo A', 
+    'B': 'Producto Tipo B',
+    'ASC': 'Apropiación Social del Conocimiento',
+    'DPC': 'Desarrollo de Procesos y Capacidades',
+    'FRH_A': 'Formación Recursos Humanos A',
+    'FRH_B': 'Formación Recursos Humanos B'
+  };
+  
+  const displayName = typeLabels[productType] || productType;
+  return `<span class="ctei-tag ctei-tag--primary">${displayName}</span>`;
+}
 
 /**
  * Genera la página HTML completa para un proyecto específico
@@ -1796,15 +1814,43 @@ function generateProductDetailPage(product: any): string {
   const safeCategoryName = (product.category_name || 'Sin categoría').replace(/'/g, '&#39;').replace(/"/g, '&quot;');
   const safeProjectTitle = (product.project_title || '').replace(/'/g, '&#39;').replace(/"/g, '&quot;');
   
+  // Crear etiqueta de tipo con estilo consistente
+  const typeLabel = createProductTypeLabel(product.product_type);
+  
+  // Lista de autores con estilo consistente
   const authorsList = product.authors?.map((a: any) => `
-    <div class="flex items-center justify-between p-3 bg-muted/50 rounded">
-        <div>
-            <p class="font-medium text-foreground">${a.full_name || 'Sin nombre'}</p>
-            <p class="text-sm text-muted">${a.author_role || 'Autor'} ${a.contribution_type ? `• ${a.contribution_type}` : ''}</p>
+    <div class="ctei-project-card mb-4 p-4">
+        <div class="flex items-center justify-between">
+            <div>
+                <h4 class="ctei-project-card-title text-lg mb-1">${a.full_name || 'Sin nombre'}</h4>
+                <p class="ctei-project-card-metadata">${a.author_role || 'Autor'} ${a.contribution_type ? `• ${a.contribution_type}` : ''}</p>
+            </div>
+            ${a.email ? `<a href="mailto:${a.email}" class="ctei-btn-primary">Contactar</a>` : ''}
         </div>
-        ${a.email ? `<a href="mailto:${a.email}" class="text-primary hover:underline text-sm">Contactar</a>` : ''}
     </div>
-  `).join('') || '<p class="text-muted italic">Información de autores no disponible.</p>';
+  `).join('') || '<div class="ctei-project-card p-6 text-center"><p class="text-muted-foreground italic">Información de autores no disponible.</p></div>';
+  
+  // Información del proyecto asociado con estilo consistente
+  const projectInfo = product.project ? `
+    <div class="ctei-project-card p-6">
+        <h4 class="ctei-project-card-title mb-3">
+            <i class="fas fa-project-diagram mr-2"></i>
+            ${product.project.title}
+        </h4>
+        <p class="ctei-project-card-metadata mb-4">
+            ${product.project.abstract || 'Sin descripción del proyecto'}
+        </p>
+        <div class="flex items-center justify-between">
+            <div>
+                <p class="text-sm text-muted-foreground"><i class="fas fa-user mr-1"></i>${product.project.owner_name}</p>
+                <p class="text-sm text-muted-foreground"><i class="fas fa-building mr-1"></i>${product.project.institution || 'Sin institución'}</p>
+            </div>
+            <a href="/proyecto/${product.project.id}" class="ctei-btn-primary">
+                Ver Proyecto
+            </a>
+        </div>
+    </div>
+  ` : '<div class="ctei-project-card p-6 text-center"><p class="text-muted-foreground italic">Sin proyecto asociado</p></div>';
 
   return `
     <!DOCTYPE html>
@@ -1912,10 +1958,11 @@ function generateProductDetailPage(product: any): string {
         <section class="relative bg-gradient-to-r from-accent/10 to-primary/10 py-16">
             <div class="absolute inset-0 scientific-pattern opacity-10"></div>
             <div class="relative max-w-6xl mx-auto px-4 text-center">
-                <div class="mb-4">
+                <div class="mb-4 space-x-2">
                     <span class="ctei-badge ctei-badge-primary">
                         <i class="fas fa-cube mr-2"></i>${safeCategoryName}
                     </span>
+                    ${product.product_type ? typeLabel : ''}
                 </div>
                 
                 <h1 class="text-4xl md:text-5xl font-bold text-foreground mb-6 leading-tight">
@@ -2012,7 +2059,7 @@ function generateProductDetailPage(product: any): string {
                         <h2 class="text-2xl font-bold mb-6 text-foreground">
                             <i class="fas fa-project-diagram mr-2 text-primary"></i>Proyecto Asociado
                         </h2>
-                        <div class="bg-gradient-to-r from-primary/5 to-accent/5 p-6 rounded-lg border">
+                        <div class="bg-muted/30 p-6 rounded-lg border border-border">
                             <h3 class="text-lg font-semibold mb-2">
                                 <a href="/proyecto/${product.project_id}" class="hover:text-primary transition-colors">
                                     ${product.project_title}
@@ -2110,6 +2157,8 @@ function generateProductDetailPage(product: any): string {
                                 </div>
                             </div>
                             ` : ''}
+                        </div>
+                    </div>
 
                     <!-- Enlaces Externos -->
                     ${(product.doi || product.url || product.file_url) ? `
@@ -2119,20 +2168,20 @@ function generateProductDetailPage(product: any): string {
                         </h3>
                         <div class="space-y-2">
                             ${product.doi ? `
-                                <a href="https://doi.org/${product.doi}" target="_blank" class="flex items-center p-3 bg-chart-2/10 hover:bg-chart-2/20 rounded transition-colors border border-chart-2/20">
-                                    <i class="fas fa-fingerprint mr-3 text-chart-2"></i>
+                                <a href="https://doi.org/${product.doi}" target="_blank" class="flex items-center p-3 bg-primary/10 hover:bg-primary/20 rounded transition-colors border border-primary/20">
+                                    <i class="fas fa-fingerprint mr-3 text-primary"></i>
                                     <span class="text-foreground font-medium">Ver en DOI</span>
                                 </a>
                             ` : ''}
                             ${product.url ? `
-                                <a href="${product.url}" target="_blank" class="flex items-center p-3 bg-chart-1/10 hover:bg-chart-1/20 rounded transition-colors border border-chart-1/20">
-                                    <i class="fas fa-globe mr-3 text-chart-1"></i>
+                                <a href="${product.url}" target="_blank" class="flex items-center p-3 bg-primary/10 hover:bg-primary/20 rounded transition-colors border border-primary/20">
+                                    <i class="fas fa-globe mr-3 text-primary"></i>
                                     <span class="text-foreground font-medium">Sitio Web</span>
                                 </a>
                             ` : ''}
                             ${product.file_url ? `
-                                <a href="${product.file_url}" target="_blank" class="flex items-center p-3 bg-chart-3/10 hover:bg-chart-3/20 rounded transition-colors border border-chart-3/20">
-                                    <i class="fas fa-download mr-3 text-chart-3"></i>
+                                <a href="${product.file_url}" target="_blank" class="flex items-center p-3 bg-primary/10 hover:bg-primary/20 rounded transition-colors border border-primary/20">
+                                    <i class="fas fa-download mr-3 text-primary"></i>
                                     <span class="text-foreground font-medium">Descargar Archivo</span>
                                 </a>
                             ` : ''}
@@ -2178,25 +2227,25 @@ function generateProductDetailPage(product: any): string {
                         if (container) {
                             container.innerHTML = data.data.products
                                 .slice(0, 3)
-                                .map(p => \`
-                                    <div class="ctei-project-card hover:shadow-lg transition-shadow">
-                                        <div class="mb-3">
-                                            <span class="ctei-badge ctei-badge-primary">
-                                                \${p.category_name || 'Sin categoría'}
-                                            </span>
-                                        </div>
-                                        <h3 class="font-bold mb-2">
-                                            <a href="/producto/\${p.id}" class="hover:text-primary transition-colors">
-                                                \${p.description || 'Sin descripción'}
-                                            </a>
-                                        </h3>
-                                        <p class="text-muted text-sm mb-3">\${p.product_code || ''}</p>
-                                        <div class="flex justify-between items-center">
-                                            <span class="text-xs text-muted">\${p.project_title || 'Sin proyecto'}</span>
-                                            <a href="/producto/\${p.id}" class="ctei-btn-secondary text-sm">Ver Producto</a>
-                                        </div>
-                                    </div>
-                                \`).join('');
+                                .map(p => 
+                                    '<div class="ctei-project-card hover:shadow-lg transition-shadow">' +
+                                        '<div class="mb-3">' +
+                                            '<span class="ctei-badge ctei-badge-primary">' +
+                                                (p.category_name || 'Sin categoría') +
+                                            '</span>' +
+                                        '</div>' +
+                                        '<h3 class="font-bold mb-2">' +
+                                            '<a href="/producto/' + p.id + '" class="hover:text-primary transition-colors">' +
+                                                (p.description || 'Sin descripción') +
+                                            '</a>' +
+                                        '</h3>' +
+                                        '<p class="text-muted text-sm mb-3">' + (p.product_code || '') + '</p>' +
+                                        '<div class="flex justify-between items-center">' +
+                                            '<span class="text-xs text-muted">' + (p.project_title || 'Sin proyecto') + '</span>' +
+                                            '<a href="/producto/' + p.id + '" class="ctei-btn-secondary text-sm">Ver Producto</a>' +
+                                        '</div>' +
+                                    '</div>'
+                                ).join('');
                         }
                     }
                 } catch (error) {

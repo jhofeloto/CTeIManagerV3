@@ -301,13 +301,17 @@ body {
 
 /* CARD DE PROYECTO - Arquitectura con tokens */
 .ctei-project-card {
-  background-color: var(--card);
-  color: var(--card-foreground);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  box-shadow: var(--shadow-sm);
+  /* Fallback colors para evitar invisibilidad */
+  background-color: var(--card, #ffffff);
+  color: var(--card-foreground, #1a1a1a);
+  border: 1px solid var(--border, #e2e8f0);
+  border-radius: var(--radius, 8px);
+  box-shadow: var(--shadow-sm, 0 1px 3px rgba(0, 0, 0, 0.1));
   padding: 1.5rem;
   transition: box-shadow 0.2s ease-in-out, transform 0.2s ease-in-out;
+  /* Asegurar visibilidad */
+  display: block;
+  min-height: 200px;
 }
 
 .ctei-project-card:hover {
@@ -586,6 +590,8 @@ body {
 .ctei-grid {
   display: grid;
   gap: 1.5rem;
+  /* Asegurar visibilidad del contenedor */
+  min-height: 50px;
 }
 
 .ctei-grid-1 {
