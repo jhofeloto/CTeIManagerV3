@@ -189,17 +189,22 @@ async function loadProjects(page = 1, search = '', filters = {}) {
             }
             
             projects.forEach((project, index) => {
-                // SOLUCIÓN AGRESIVA: Forzar variables CSS con estilos inline para garantizar tema correcto
-                const cardHTML = '<div class="ctei-project-card transition-all duration-200" style="background-color: var(--card) !important; color: var(--card-foreground) !important; border: 1px solid var(--border) !important; display: block; min-height: 200px; padding: 1.5rem; border-radius: var(--radius); box-shadow: var(--shadow-sm);">' +
-                    '<h4 class="ctei-project-card-title" style="color: var(--card-foreground) !important; font-size: 1.125rem; font-weight: 600; margin-bottom: 0.75rem;">' +
+                // SOLUCIÓN HARDCORE: Estilos inline directos sin variables CSS problemáticas
+                const isDark = document.documentElement.classList.contains('dark');
+                const bgColor = isDark ? '#1f2937' : 'var(--card)';
+                const textColor = isDark ? '#f9fafb' : 'var(--card-foreground)';
+                const borderColor = isDark ? '#374151' : 'var(--border)';
+                
+                const cardHTML = '<div class="ctei-project-card" style="background: ' + bgColor + ' !important; background-color: ' + bgColor + ' !important; color: ' + textColor + ' !important; border: 1px solid ' + borderColor + ' !important; display: block; min-height: 200px; padding: 1.5rem; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); transition: all 0.2s ease;">' +
+                    '<h4 class="ctei-project-card-title" style="background: transparent !important; color: ' + textColor + ' !important; font-size: 1.125rem; font-weight: 600; margin-bottom: 0.75rem;">' +
                         project.title +
                     '</h4>' +
-                    '<p style="color: var(--card-foreground) !important; margin-bottom: 1rem; line-height: 1.6;">' +
+                    '<p style="background: transparent !important; color: ' + textColor + ' !important; margin-bottom: 1rem; line-height: 1.6;">' +
                         truncateText(project.abstract || 'Sin descripción') +
                     '</p>' +
-                    '<div style="display: flex; justify-content: space-between; align-items: center; color: var(--muted-foreground) !important; font-size: 0.875rem; margin-bottom: 1rem;">' +
-                        '<span><i class="fas fa-user mr-2"></i>' + project.owner_name + '</span>' +
-                        '<span><i class="fas fa-calendar mr-2"></i>' + formatDate(project.created_at) + '</span>' +
+                    '<div style="background: transparent !important; display: flex; justify-content: space-between; align-items: center; color: ' + (isDark ? '#9ca3af' : 'var(--muted-foreground)') + ' !important; font-size: 0.875rem; margin-bottom: 1rem;">' +
+                        '<span style="background: transparent !important;"><i class="fas fa-user mr-2"></i>' + project.owner_name + '</span>' +
+                        '<span style="background: transparent !important;"><i class="fas fa-calendar mr-2"></i>' + formatDate(project.created_at) + '</span>' +
                     '</div>' +
                     '<button onclick="viewProjectDetails(' + project.id + ')" class="ctei-btn-primary" style="width: 100%; background-color: var(--primary) !important; color: var(--primary-foreground) !important; padding: 0.75rem 1.5rem; border: none; border-radius: var(--radius); font-weight: 600; cursor: pointer;">' +
                         'Ver Detalles' +
@@ -256,22 +261,28 @@ async function loadProducts(page = 1, search = '', filters = {}) {
             }
             
             products.forEach((product, index) => {
-                // SOLUCIÓN AGRESIVA PRODUCTOS: Forzar variables CSS con estilos inline
-                const cardHTML = '<div class="ctei-project-card transition-all duration-200" style="background-color: var(--card) !important; color: var(--card-foreground) !important; border: 1px solid var(--border) !important; display: block; min-height: 200px; padding: 1.5rem; border-radius: var(--radius); box-shadow: var(--shadow-sm);">' +
-                    '<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">' +
-                        '<span style="font-family: monospace; font-weight: bold; color: var(--muted-foreground) !important;">' +
+                // SOLUCIÓN HARDCORE PRODUCTOS: Estilos inline directos sin variables CSS problemáticas
+                const isDark = document.documentElement.classList.contains('dark');
+                const bgColor = isDark ? '#1f2937' : 'var(--card)';
+                const textColor = isDark ? '#f9fafb' : 'var(--card-foreground)';
+                const borderColor = isDark ? '#374151' : 'var(--border)';
+                const mutedColor = isDark ? '#9ca3af' : 'var(--muted-foreground)';
+                
+                const cardHTML = '<div class="ctei-project-card" style="background: ' + bgColor + ' !important; background-color: ' + bgColor + ' !important; color: ' + textColor + ' !important; border: 1px solid ' + borderColor + ' !important; display: block; min-height: 200px; padding: 1.5rem; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); transition: all 0.2s ease;">' +
+                    '<div style="background: transparent !important; display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">' +
+                        '<span style="background: transparent !important; font-family: monospace; font-weight: bold; color: ' + mutedColor + ' !important;">' +
                             product.product_code +
                         '</span>' +
-                        '<span class="ctei-tag ctei-tag--primary ctei-tag--small" style="background-color: var(--primary) !important; color: var(--primary-foreground) !important; padding: 0.25rem 0.5rem; border-radius: calc(var(--radius) * 2); font-size: 0.625rem;">' +
+                        '<span class="ctei-tag ctei-tag--primary ctei-tag--small" style="background-color: var(--primary) !important; color: var(--primary-foreground) !important; padding: 0.25rem 0.5rem; border-radius: 16px; font-size: 0.625rem;">' +
                             product.product_type +
                         '</span>' +
                     '</div>' +
-                    '<p style="color: var(--card-foreground) !important; margin-bottom: 1rem; line-height: 1.6;">' +
+                    '<p style="background: transparent !important; color: ' + textColor + ' !important; margin-bottom: 1rem; line-height: 1.6;">' +
                         truncateText(product.description || 'Sin descripción', 120) +
                     '</p>' +
-                    '<div style="color: var(--muted-foreground) !important; font-size: 0.875rem; margin-bottom: 1rem;">' +
-                        '<p style="margin-bottom: 0.25rem;"><i class="fas fa-project-diagram mr-2"></i>' + (product.project_title || 'Sin proyecto asociado') + '</p>' +
-                        '<p><i class="fas fa-calendar mr-2"></i>' + formatDate(product.created_at) + '</p>' +
+                    '<div style="background: transparent !important; color: ' + mutedColor + ' !important; font-size: 0.875rem; margin-bottom: 1rem;">' +
+                        '<p style="background: transparent !important; margin-bottom: 0.25rem;"><i class="fas fa-project-diagram mr-2"></i>' + (product.project_title || 'Sin proyecto asociado') + '</p>' +
+                        '<p style="background: transparent !important;"><i class="fas fa-calendar mr-2"></i>' + formatDate(product.created_at) + '</p>' +
                     '</div>' +
                     '<button onclick="viewProductDetails(' + product.id + ')" class="ctei-btn-primary" style="width: 100%; background-color: var(--primary) !important; color: var(--primary-foreground) !important; padding: 0.75rem 1.5rem; border: none; border-radius: var(--radius); font-weight: 600; cursor: pointer;">' +
                         'Ver Detalles' +

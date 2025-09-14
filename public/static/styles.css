@@ -1955,10 +1955,11 @@ div.ctei-project-card,
 }
 
 /* ========================================
-   ELIMINACIÓN TOTAL DE HOVER TAILWIND
+   ELIMINACIÓN TOTAL DE HOVER TAILWIND - HARDCORE MODE
 ======================================== */
 
 /* CRÍTICO: Sobrescribir CUALQUIER hover de Tailwind que cause fondos blancos */
+.ctei-project-card,
 .ctei-project-card:hover,
 .ctei-project-card.hover\:shadow-lg:hover,
 .ctei-project-card.hover\:bg-white:hover,
@@ -2002,6 +2003,56 @@ div.ctei-project-card,
   background-color: var(--card) !important;
   color: var(--card-foreground) !important;
 }
-  text-decoration: underline;
-  opacity: 0.8;
+
+/* ========================================
+   SOLUCIÓN DEFINITIVA HARDCORE - COLORES HARDCODED
+======================================== */
+
+/* MODO OSCURO: Fuerza absoluta con colores específicos */
+.dark .ctei-project-card,
+.dark .ctei-project-card:hover,
+html.dark .ctei-project-card,
+html.dark .ctei-project-card:hover {
+  background: #1f2937 !important; 
+  background-color: #1f2937 !important;
+  color: #f9fafb !important;
+  border: 1px solid #374151 !important;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.3) !important;
+  transition: all 0.2s ease !important;
+}
+
+.dark .ctei-project-card:hover,
+html.dark .ctei-project-card:hover {
+  transform: translateY(-2px) !important;
+  box-shadow: 0 8px 25px rgba(0,0,0,0.4) !important;
+}
+
+/* Contenido interno */
+.dark .ctei-project-card h4,
+.dark .ctei-project-card p,
+.dark .ctei-project-card div,
+.dark .ctei-project-card span:not(.ctei-btn-primary),
+html.dark .ctei-project-card h4,
+html.dark .ctei-project-card p,
+html.dark .ctei-project-card div,
+html.dark .ctei-project-card span:not(.ctei-btn-primary) {
+  background: transparent !important;
+  background-color: transparent !important;
+  color: #f9fafb !important;
+}
+
+/* Texto secundario */
+.dark .ctei-project-card [style*="muted-foreground"],
+html.dark .ctei-project-card [style*="muted-foreground"] {
+  color: #9ca3af !important;
+}
+
+/* Anti-blanco total */
+.dark .bg-white,
+.dark .hover\:bg-white:hover,
+html.dark .bg-white,
+html.dark .hover\:bg-white:hover {
+  background: #1f2937 !important;
+  background-color: #1f2937 !important;
+  color: #f9fafb !important;
 }
