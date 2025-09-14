@@ -2410,3 +2410,112 @@ html.dark [style*="color"],
   background-color: unset !important;
   color: unset !important;
 }
+
+/* ========================================
+   SOLUCIÓN DEFINITIVA - GUERRA DE ESPECIFICIDAD
+   Basado en diagnóstico de conflictos CSS locales
+======================================== */
+
+/* --- REGLA DE FORZADO PARA BOTONES SECUNDARIOS EN MODO OSCURO --- */
+/* Máxima especificidad para ganar contra reglas locales */
+html.dark .ctei-btn-secondary,
+html.dark .btn-secondary,
+html.dark .btn-outline,
+html.dark button.ctei-btn-secondary,
+html.dark button.btn-secondary,
+html.dark button.btn-outline,
+body.dark .ctei-btn-secondary,
+body.dark .btn-secondary,
+body.dark .btn-outline {
+  background-color: transparent !important;
+  background: transparent !important;
+  background-image: none !important;
+  border: 1px solid var(--border) !important;
+  color: var(--foreground) !important;
+}
+
+/* Hardcoded fallback con especificidad máxima */
+html.dark .ctei-btn-secondary,
+html.dark button.ctei-btn-secondary {
+  background-color: transparent !important;
+  border: 1px solid #243240 !important; /* oklch(0.25 0.03 190) */
+  color: #f8fafb !important; /* oklch(0.95 0.02 190) */
+}
+
+/* Hover state con especificidad máxima */
+html.dark .ctei-btn-secondary:hover,
+html.dark .btn-secondary:hover,
+html.dark .btn-outline:hover,
+html.dark button.ctei-btn-secondary:hover,
+html.dark button.btn-secondary:hover,
+html.dark button.btn-outline:hover {
+  background-color: var(--accent) !important;
+  border-color: var(--accent) !important;
+  color: var(--accent-foreground) !important;
+}
+
+/* Hardcoded hover fallback */
+html.dark .ctei-btn-secondary:hover,
+html.dark button.ctei-btn-secondary:hover {
+  background: #243240 !important;
+  background-color: #243240 !important;
+  border-color: #243240 !important;
+  color: #f8fafb !important;
+}
+
+/* --- REGLA DE FORZADO PARA TAGS/PÍLDORAS EN MODO OSCURO --- */
+/* Máxima especificidad para unificar todas las píldoras */
+html.dark .ctei-tag,
+html.dark .tag-component,
+html.dark .tag,
+html.dark span.ctei-tag,
+html.dark span.tag-component,
+html.dark span.tag,
+body.dark .ctei-tag,
+body.dark .tag-component,
+body.dark .tag {
+  background-color: var(--accent) !important;
+  background: var(--accent) !important;
+  background-image: none !important;
+  color: var(--accent-foreground) !important;
+  border: none !important;
+}
+
+/* Especificidad extrema para tags con clases múltiples */
+html.dark .ctei-tag.ctei-tag--outline,
+html.dark .ctei-tag.ctei-tag--small,
+html.dark .ctei-tag.ctei-tag--outline.ctei-tag--small,
+html.dark span.ctei-tag.ctei-tag--outline,
+html.dark span.ctei-tag.ctei-tag--small,
+html.dark span.ctei-tag.ctei-tag--outline.ctei-tag--small {
+  background-color: var(--accent) !important;
+  color: var(--accent-foreground) !important;
+  border: none !important;
+}
+
+/* Hardcoded fallback para tags con especificidad máxima */
+html.dark .ctei-tag,
+html.dark span.ctei-tag {
+  background: #243240 !important; /* oklch(0.28 0.03 190) */
+  background-color: #243240 !important;
+  color: #f8fafb !important; /* oklch(0.95 0.02 190) */
+  border: none !important;
+}
+
+/* ANULACIÓN BRUTAL de cualquier regla conflictiva específica */
+html.dark div.project-details .ctei-btn-secondary,
+html.dark section .ctei-btn-secondary,
+html.dark .ctei-project-card .ctei-btn-secondary,
+html.dark .productos-cientificos-item .ctei-tag {
+  background-color: transparent !important;
+  background: transparent !important;
+  color: var(--foreground) !important;
+}
+
+html.dark div.project-details .ctei-tag,
+html.dark section .ctei-tag,
+html.dark .ctei-project-card .ctei-tag {
+  background-color: var(--accent) !important;
+  background: #243240 !important;
+  color: var(--accent-foreground) !important;
+}
