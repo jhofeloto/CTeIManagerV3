@@ -1623,7 +1623,7 @@ function generateProjectDetailPage(project: any): string {
                             ${project.project_code ? `
                             <div class="flex flex-col space-y-1">
                                 <span class="text-muted-foreground font-medium">Código</span>
-                                <code class="font-mono text-xs bg-muted/50 px-2 py-1 rounded">${project.project_code}</code>
+                                <code class="font-mono text-xs bg-accent px-2 py-1 rounded border border-border">${project.project_code}</code>
                             </div>
                             ` : ''}
                             
@@ -2008,37 +2008,37 @@ function generateProductDetailPage(product: any): string {
                         
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                             ${product.journal ? `
-                            <div class="bg-muted/30 p-4 rounded-lg">
-                                <h4 class="font-semibold text-foreground mb-2">
+                            <div class="bg-accent p-4 rounded-lg border border-border">
+                                <h4 class="font-semibold text-accent-foreground mb-2">
                                     <i class="fas fa-journal-whills mr-2 text-primary"></i>Revista/Editorial
                                 </h4>
-                                <p class="text-muted">${product.journal}</p>
+                                <p class="text-muted-foreground">${product.journal}</p>
                             </div>
                             ` : ''}
                             
                             ${product.impact_factor ? `
-                            <div class="bg-muted/30 p-4 rounded-lg">
-                                <h4 class="font-semibold text-foreground mb-2">
+                            <div class="bg-accent p-4 rounded-lg border border-border">
+                                <h4 class="font-semibold text-accent-foreground mb-2">
                                     <i class="fas fa-star mr-2 text-primary"></i>Factor de Impacto
                                 </h4>
-                                <p class="text-muted font-mono text-lg">${product.impact_factor}</p>
+                                <p class="text-muted-foreground font-mono text-lg">${product.impact_factor}</p>
                             </div>
                             ` : ''}
                             
                             ${product.citation_count ? `
-                            <div class="bg-muted/30 p-4 rounded-lg">
-                                <h4 class="font-semibold text-foreground mb-2">
+                            <div class="bg-accent p-4 rounded-lg border border-border">
+                                <h4 class="font-semibold text-accent-foreground mb-2">
                                     <i class="fas fa-quote-right mr-2 text-primary"></i>Citas
                                 </h4>
-                                <p class="text-muted font-mono text-lg">${product.citation_count}</p>
+                                <p class="text-muted-foreground font-mono text-lg">${product.citation_count}</p>
                             </div>
                             ` : ''}
                             
-                            <div class="bg-muted/30 p-4 rounded-lg">
-                                <h4 class="font-semibold text-foreground mb-2">
+                            <div class="bg-accent p-4 rounded-lg border border-border">
+                                <h4 class="font-semibold text-accent-foreground mb-2">
                                     <i class="fas fa-weight-hanging mr-2 text-primary"></i>Peso de Impacto
                                 </h4>
-                                <p class="text-muted">${product.impact_weight || 'No especificado'}</p>
+                                <p class="text-muted-foreground">${product.impact_weight || 'No especificado'}</p>
                             </div>
                         </div>
                     </section>
@@ -2059,16 +2059,16 @@ function generateProductDetailPage(product: any): string {
                         <h2 class="text-2xl font-bold mb-6 text-foreground">
                             <i class="fas fa-project-diagram mr-2 text-primary"></i>Proyecto Asociado
                         </h2>
-                        <div class="bg-muted/30 p-6 rounded-lg border border-border">
-                            <h3 class="text-lg font-semibold mb-2">
+                        <div class="bg-accent p-6 rounded-lg border border-border">
+                            <h3 class="text-lg font-semibold mb-2 text-accent-foreground">
                                 <a href="/proyecto/${product.project_id}" class="hover:text-primary transition-colors">
                                     ${product.project_title}
                                 </a>
                             </h3>
                             ${product.project_abstract ? `
-                                <p class="text-muted mb-4">${product.project_abstract.substring(0, 200)}...</p>
+                                <p class="text-muted-foreground mb-4">${product.project_abstract.substring(0, 200)}...</p>
                             ` : ''}
-                            <a href="/proyecto/${product.project_id}" class="ctei-btn-secondary">
+                            <a href="/proyecto/${product.project_id}" class="ctei-btn-primary">
                                 <i class="fas fa-arrow-right mr-2"></i>Ver Proyecto Completo
                             </a>
                         </div>
@@ -2096,7 +2096,7 @@ function generateProductDetailPage(product: any): string {
                             <!-- Código del Producto -->
                             <div class="flex flex-col space-y-1">
                                 <span class="text-muted-foreground font-medium">Código</span>
-                                <code class="font-mono text-xs bg-muted/50 px-2 py-1 rounded">${product.product_code}</code>
+                                <code class="font-mono text-xs bg-accent px-2 py-1 rounded border border-border">${product.product_code}</code>
                             </div>
                             
                             <!-- Grupo de Categoría -->
