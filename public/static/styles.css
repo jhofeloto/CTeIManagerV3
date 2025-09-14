@@ -723,6 +723,101 @@ html:not(.dark) .ctei-card .ctei-product-project-info {
 }
 
 /* ========================================
+   CORRECCIONES FINALES DE PULIDO VISUAL
+======================================== */
+
+/* 1. BOTONES DE CABECERA - Estilo outline consistente */
+.ctei-theme-toggle {
+  background-color: transparent !important;
+  border: 1px solid var(--border) !important;
+  color: var(--foreground) !important;
+  padding: 0.5rem !important;
+  border-radius: var(--radius) !important;
+  transition: all 0.2s ease-in-out;
+}
+
+.ctei-theme-toggle:hover {
+  background-color: var(--accent) !important;
+  border-color: var(--primary) !important;
+}
+
+.ctei-theme-toggle svg,
+.ctei-theme-toggle i {
+  color: var(--foreground) !important;
+  font-size: 1rem;
+}
+
+/* 2. CONTROLES DE FILTRO - Integrados con el sistema de diseño */
+select {
+  background-color: var(--card) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: var(--radius) !important;
+  color: var(--foreground) !important;
+  padding: 0.75rem 1rem !important;
+  font-size: 1rem !important;
+  font-family: var(--font-sans) !important;
+  -webkit-appearance: none !important;
+  -moz-appearance: none !important;
+  appearance: none !important;
+  /* Flecha personalizada para el desplegable */
+  background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3E%3Cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3E%3C/svg%3E") !important;
+  background-repeat: no-repeat !important;
+  background-position: right 1rem center !important;
+  background-size: 1rem !important;
+}
+
+select:focus {
+  border-color: var(--primary) !important;
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary) 20%, transparent) !important;
+  outline: none !important;
+}
+
+/* Tema oscuro para selects */
+.dark select {
+  background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3E%3Cpath stroke='%9ca3af' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3E%3C/svg%3E") !important;
+}
+
+/* 3. BOTONES "VER MÁS" - Color primario teal con estilo outline */
+button[onclick*="loadMore"],
+.view-more-button {
+  background-color: transparent !important;
+  border: 1px solid var(--primary) !important;
+  border-radius: var(--radius) !important;
+  color: var(--primary) !important;
+  padding: 0.75rem 1.5rem !important;
+  font-weight: 600 !important;
+  font-family: var(--font-sans) !important;
+  transition: all 0.2s ease-in-out !important;
+}
+
+button[onclick*="loadMore"]:hover,
+.view-more-button:hover {
+  background-color: var(--primary) !important;
+  color: var(--primary-foreground) !important;
+  transform: translateY(-1px) !important;
+  box-shadow: var(--shadow-md) !important;
+}
+
+/* 4. MEJORAS ADICIONALES - Botón secundario consistente */
+.ctei-btn-secondary {
+  background-color: transparent !important;
+  border: 1px solid var(--border) !important;
+  color: var(--foreground) !important;
+  padding: 0.5rem 1rem !important;
+  border-radius: var(--radius) !important;
+  font-family: var(--font-sans) !important;
+  font-weight: 500 !important;
+  transition: all 0.2s ease-in-out !important;
+}
+
+.ctei-btn-secondary:hover {
+  background-color: var(--accent) !important;
+  border-color: var(--primary) !important;
+  color: var(--primary) !important;
+  transform: translateY(-1px) !important;
+}
+
+/* ========================================
    SISTEMA DE TARJETAS - MANIFIESTO DE TALLA MUNDIAL
 ======================================== */
 
