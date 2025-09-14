@@ -154,29 +154,37 @@ R2 Bucket Structure:
 2. **Productos**: Consulta de productos científicos disponibles
 3. **Estadísticas**: Ver métricas generales del departamento
 
-## 🔄 Versión Actual: 4.5.2 - SOLUCIÓN HOVER BUG COMPLETADA
+## 🔄 Versión Actual: 4.6.0 - SOLUCIÓN HARDCORE HOVER BUG COMPLETADA
 
-### ✅ Últimas Correcciones Implementadas (v4.5.2)
-- **🐛 HOVER BUG ELIMINADO**: Solucionado completamente el bug donde las tarjetas de proyecto se volvían blancas permanentemente después del hover en modo oscuro
-- **🎨 CSS Variables Optimizadas**: Implementación robusta de `var(--card)` y `var(--card-foreground)` con máxima especificidad CSS
-- **⚡ Eliminación Total Tailwind Hover**: Removidas todas las clases `hover:shadow-lg` que causaban interferencia con el sistema de temas
-- **🛡️ Anti-White Protection**: Reglas CSS agresivas para prevenir cualquier fondo blanco no deseado
-- **🎯 CSS Puro**: Efectos hover implementados exclusivamente con CSS, sin JavaScript event listeners
+### ✅ Últimas Correcciones Implementadas (v4.6.0 - HARDCORE)
+- **🚀 HOVER BUG DEFINITIVAMENTE ELIMINADO**: Implementada solución hardcore con colores hexadecimales directos
+- **🔥 Colores Hardcoded**: Uso de `#1f2937` y `#f9fafb` directos en lugar de variables CSS problemáticas
+- **⚡ JavaScript Inteligente**: Detección automática de tema dark/light con estilos inline dinámicos
+- **🛡️ Anti-White Máxima Protección**: CSS con especificidad brutal para anular cualquier interferencia
+- **🎯 Zero Tolerancia**: Eliminación total de fondos blancos en modo oscuro
 
-### 🔧 Solución Técnica Aplicada
+### 🔧 Solución Técnica Hardcore Aplicada
+
+**CSS Hardcore:**
 ```css
-/* Eliminación total de hover Tailwind */
-.ctei-project-card:hover {
-  background-color: var(--card) !important;
-  color: var(--card-foreground) !important;
-  border-color: var(--border) !important;
-  box-shadow: var(--shadow-md) !important;
-  transform: translateY(-2px) !important;
+.dark .ctei-project-card,
+.dark .ctei-project-card:hover {
+  background: #1f2937 !important; 
+  background-color: #1f2937 !important;
+  color: #f9fafb !important;
+  border: 1px solid #374151 !important;
 }
 ```
 
-**Estado**: ✅ Portal público funcionando perfectamente sin bugs visuales  
-**Commit**: `02d658c - fix: ELIMINACIÓN TOTAL de hover Tailwind que causaba fondos blancos persistentes`
+**JavaScript Dinámico:**
+```javascript
+const isDark = document.documentElement.classList.contains('dark');
+const bgColor = isDark ? '#1f2937' : 'var(--card)';
+const textColor = isDark ? '#f9fafb' : 'var(--card-foreground)';
+```
+
+**Estado**: ✅ Portal público funcionando PERFECTAMENTE sin bugs visuales  
+**Commit**: `bdd1935 - fix: SOLUCIÓN HARDCORE - Colores hardcoded para eliminar definitivamente hover bug`
 
 ## 🚀 Despliegue y Configuración
 
