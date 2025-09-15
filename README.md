@@ -6,10 +6,27 @@
 
 ## 🌐 URLs del Sistema
 
-- **Producción**: https://3000-ikn1warb4441jlaxw6wn4-6532622b.e2b.dev
-- **GitHub**: https://github.com/username/webapp
-- **API Base**: https://3000-ikn1warb4441jlaxw6wn4-6532622b.e2b.dev/api
-- **🎨 Prueba de Temas**: https://3000-ikn1warb4441jlaxw6wn4-6532622b.e2b.dev/dashboard-theme-test
+### 🟢 **PRODUCCIÓN**
+- **Portal Principal**: https://ctei-manager.pages.dev
+- **Dashboard**: https://ctei-manager.pages.dev/dashboard
+- **API Base**: https://ctei-manager.pages.dev/api
+- **Base de Datos**: `ctei-manager-production` (Cloudflare D1)
+
+### 🟡 **TESTING / DESARROLLO**
+- **Portal de Testing**: https://ctei-manager-testing.pages.dev
+- **Dashboard Testing**: https://ctei-manager-testing.pages.dev/dashboard
+- **API Testing**: https://ctei-manager-testing.pages.dev/api
+- **Base de Datos**: `ctei-manager-testing` (Cloudflare D1)
+
+### 📊 **DATOS PRE-POBLADOS EN TESTING**
+- ✅ **5 proyectos CTeI realistas** con instituciones colombianas
+- ✅ **12 productos científicos** distribuidos (artículos, software, datasets, etc.)
+- ✅ **3 usuarios de prueba** con roles diferenciados
+- ✅ **Datos consistentes** para pruebas de funcionalidad
+
+### 🔗 **REPOSITORIO Y RECURSOS**
+- **GitHub**: https://github.com/jhofeloto/CodectiChocoV2
+- **🎨 Prueba de Temas**: /dashboard-theme-test (ambos ambientes)
 
 ## ✨ Características Principales Implementadas
 
@@ -668,70 +685,181 @@ f8b3d2e - 📝 FEAT: Página de edición de proyectos dedicada - Transformación
 
 ## 🚀 Despliegue y Configuración
 
-### Desarrollo Local
+### 📋 **Pre-requisitos**
+```bash
+# Instalar Wrangler CLI
+npm install -g wrangler
+
+# Autenticar con Cloudflare
+wrangler login
+```
+
+### 🛠️ **Setup Local de Desarrollo**
 ```bash
 # Clonar repositorio
-git clone <repository-url>
-cd ctei-manager
+git clone https://github.com/jhofeloto/CodectiChocoV2.git
+cd CodectiChocoV2
 
 # Instalar dependencias
 npm install
 
 # Configurar base de datos local
-npm run db:migrate:local
-npm run db:seed
+wrangler d1 migrations apply ctei-manager-production --local
 
-# Iniciar desarrollo
+# Build inicial
 npm run build
-pm2 start ecosystem.config.cjs
 
-# Probar temas (opcional)
-# Visitar: http://localhost:3000/dashboard-theme-test
+# Iniciar desarrollo local
+npm run dev
+# o usando PM2
+pm2 start ecosystem.config.cjs
 ```
 
-### Despliegue en Producción
+### 🧪 **Deploy a Ambiente de TESTING**
 ```bash
-# Configurar Cloudflare
-wrangler login
-wrangler pages project create ctei-manager
+# Configurar para testing
+cp wrangler.testing.jsonc wrangler.jsonc
+
+# Crear base de datos de testing (si no existe)
+wrangler d1 create ctei-manager-testing
+
+# Aplicar migraciones a testing
+wrangler d1 migrations apply ctei-manager-testing --remote
+
+# Poblar con datos realistas
+wrangler d1 execute ctei-manager-testing --remote --file=ctei_realistic_data_fixed.sql
+
+# Build y deploy
+npm run build
+wrangler pages deploy dist --project-name ctei-manager-testing
+```
+
+### 🚀 **Deploy a Ambiente de PRODUCCIÓN**
+```bash
+# Configurar para producción
+cp wrangler.production.jsonc wrangler.jsonc
+
+# Crear base de datos de producción (si no existe)
+wrangler d1 create ctei-manager-production
 
 # Aplicar migraciones a producción
-wrangler d1 migrations apply ctei-manager-production
+wrangler d1 migrations apply ctei-manager-production --remote
 
-# Desplegar
+# Build y deploy
 npm run build
 wrangler pages deploy dist --project-name ctei-manager
 ```
 
-## 🛠️ Configuración de Desarrollo
+### ⚡ **Scripts de Deploy Rápido**
 
-### Variables de Entorno
+#### **Solo Testing:**
 ```bash
-# .dev.vars (desarrollo local)
-NODE_ENV=development
-API_BASE_URL=http://localhost:3000/api
+cd ~/CodectiChocoV2-testing && git pull origin main && cp wrangler.testing.jsonc wrangler.jsonc && npm run build && wrangler pages deploy dist --project-name ctei-manager-testing
 ```
 
-### Scripts Disponibles
+#### **Solo Producción:**
+```bash
+cd ~/CodectiChocoV2-testing && cp wrangler.production.jsonc wrangler.jsonc && npm run build && wrangler pages deploy dist --project-name ctei-manager
+```
+
+#### **Testing + Producción:**
+```bash
+cd ~/CodectiChocoV2-testing && git pull origin main && cp wrangler.testing.jsonc wrangler.jsonc && npm run build && wrangler pages deploy dist --project-name ctei-manager-testing && cp wrangler.production.jsonc wrangler.jsonc && npm run build && wrangler pages deploy dist --project-name ctei-manager
+```
+
+## 🛠️ Configuración de Desarrollo
+
+### 📁 **Estructura de Configuraciones**
+```
+CodectiChocoV2/
+├── wrangler.jsonc              ← Config activa (se sobrescribe)
+├── wrangler.production.jsonc   ← Config de producción
+├── wrangler.testing.jsonc      ← Config de testing
+├── ctei_realistic_data_fixed.sql ← Datos para poblar testing
+└── ecosystem.config.cjs        ← Configuración PM2 para desarrollo
+```
+
+### 🎯 **Gestión de Ambientes**
+
+#### **Cambiar a Testing:**
+```bash
+cp wrangler.testing.jsonc wrangler.jsonc
+```
+
+#### **Cambiar a Producción:**
+```bash
+cp wrangler.production.jsonc wrangler.jsonc
+```
+
+### 🗄️ **Gestión de Base de Datos**
+
+#### **Resetear Testing (si necesario):**
+```bash
+# Limpiar datos de testing
+wrangler d1 execute ctei-manager-testing --remote --command="DELETE FROM products; DELETE FROM projects;"
+
+# Repoblar con datos realistas
+wrangler d1 execute ctei-manager-testing --remote --file=ctei_realistic_data_fixed.sql
+```
+
+#### **Aplicar Migraciones:**
+```bash
+# A testing
+cp wrangler.testing.jsonc wrangler.jsonc
+wrangler d1 migrations apply ctei-manager-testing --remote
+
+# A producción
+cp wrangler.production.jsonc wrangler.jsonc
+wrangler d1 migrations apply ctei-manager-production --remote
+```
+
+### 📋 **Scripts Disponibles**
 ```json
 {
   "dev": "wrangler pages dev dist --ip 0.0.0.0 --port 3000",
   "build": "vite build", 
   "deploy": "npm run build && wrangler pages deploy dist",
   "db:migrate:local": "wrangler d1 migrations apply ctei-manager-production --local",
-  "db:seed": "wrangler d1 execute ctei-manager-production --local --file=./seed.sql"
+  "db:migrate:testing": "wrangler d1 migrations apply ctei-manager-testing --remote",
+  "db:migrate:prod": "wrangler d1 migrations apply ctei-manager-production --remote",
+  "db:seed:testing": "wrangler d1 execute ctei-manager-testing --remote --file=ctei_realistic_data_fixed.sql"
 }
+```
+
+### 🔧 **Variables de Entorno**
+```bash
+# .dev.vars (desarrollo local)
+NODE_ENV=development
+PORT=3000
+
+# Producción se configura a través de Cloudflare Pages
+# Testing usa base de datos independiente
 ```
 
 ---
 
+## 🎯 **Información del Sistema**
+
 **Última Actualización**: 15 de Septiembre, 2025  
-**Versión**: 6.1.2 - Corrección Completa: Productos Asociados Visibles  
-**Estado**: ✅ Producción - Sistema Completo con Funcionalidades 100% Operativas  
-**Portal**: 🌐 https://3000-ikn1warb4441jlaxw6wn4-6532622b.e2b.dev 🚀 **PÁGINA DE EDICIÓN DEDICADA**  
-**Dashboard**: 📋 /dashboard ✅ **TRANSFORMACIÓN UX COMPLETA**  
-**Edición**: 📝 /dashboard/proyectos/:id/editar ✅ **FUNCIONALIDADES CORREGIDAS**  
-**Prueba de Temas**: 🎨 /dashboard-theme-test ✅ **SELECTOR FUNCIONAL**  
-**GitHub**: 🔗 https://github.com/username/webapp ✅ **FUNCIONALIDADES VALIDADAS**  
-**Desarrollado con**: Hono + Cloudflare Workers/Pages + TypeScript + Arquitectura Consistente  
-**Cumplimiento**: ✅ **7/7 Componentes + Funcionalidades Críticas Verificadas** 🎯 **Sistema 100% Funcional**
+**Versión**: 6.2.0 - Ambientes de Testing y Producción Operativos  
+**Estado**: ✅ Doble Ambiente - Sistema Completo con Datos Realistas  
+
+### 🌐 **Enlaces Principales**
+- **🟢 Producción**: https://ctei-manager.pages.dev
+- **🟡 Testing**: https://ctei-manager-testing.pages.dev  
+- **📋 Dashboard**: /dashboard (ambos ambientes)
+- **📝 Edición**: /dashboard/proyectos/:id/editar
+- **🎨 Prueba de Temas**: /dashboard-theme-test  
+- **🔗 GitHub**: https://github.com/jhofeloto/CodectiChocoV2
+
+### 🏗️ **Arquitectura**
+**Desarrollado con**: Hono + Cloudflare Workers/Pages + TypeScript + D1 Database  
+**Almacenamiento**: Cloudflare R2 Storage para archivos  
+**Autenticación**: JWT con roles granulares  
+**Temas**: Sistema unificado Luminous/Tonal  
+
+### ✅ **Estado de Cumplimiento**
+**Cumplimiento de Requerimientos**: ✅ **7/7 Componentes Completados**  
+**Funcionalidades Críticas**: ✅ **100% Operativas y Validadas**  
+**Ambientes**: ✅ **Testing con datos realistas + Producción estable**  
+**Sistema**: 🎯 **100% Funcional y Desplegado**
