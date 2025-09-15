@@ -3286,8 +3286,12 @@ app.get('/dashboard/proyectos/:id/editar', async (c) => {
                     initializeKeywords();
                     initializeProductSearch();
                     
-                    // PASO 5: Ocultar loading y mostrar interfaz
-                    console.log('Paso 5: Inicialización completa');
+                    // PASO 5: Cargar productos asociados (AHORA con autenticación configurada)
+                    console.log('Paso 5: Cargando productos asociados...');
+                    await loadAssociatedProducts();
+                    
+                    // PASO 6: Ocultar loading y mostrar interfaz
+                    console.log('Paso 6: Inicialización completa');
                     hideLoading();
                     
                 } catch (error) {
@@ -3908,7 +3912,7 @@ app.get('/dashboard/proyectos/:id/editar', async (c) => {
             // Cargar productos del proyecto
             async function loadAssociatedProducts() {
                 try {
-                    const response = await axios.get(\`\${API_BASE}/projects/\${PROJECT_ID}/products\`);
+                    const response = await axios.get(\`\${API_BASE}/private/projects/\${PROJECT_ID}/products\`);
                     
                     if (response.data.success) {
                         associatedProducts = response.data.data.products || [];
@@ -4409,8 +4413,8 @@ app.get('/dashboard/proyectos/:id/editar', async (c) => {
                 }
             }
             
-            // Cargar productos asociados al inicio
-            loadAssociatedProducts();
+            // Los productos asociados se cargan ahora en el paso 5 del flujo de inicialización
+            // después de configurar la autenticación
         </script>
     </body>
     </html>

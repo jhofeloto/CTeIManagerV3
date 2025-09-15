@@ -192,7 +192,8 @@ Durante las pruebas de la página de edición de proyectos (`/dashboard/proyecto
 1. **🔒 Visibilidad de Proyectos (Público/Privado)**: Los radio buttons no guardaban el estado ✅ **RESUELTO**
 2. **🧪 Asociación de Productos**: La funcionalidad para asociar productos existentes no funcionaba ✅ **RESUELTO**
 3. **🖥️ Visualización de Productos**: Los productos se mostraban como "undefined" ✅ **RESUELTO**
-4. **🎨 UX de Notificaciones**: Alertas del navegador poco profesionales ✅ **MEJORADO**
+4. **👀 Productos Asociados**: Los productos asociados no se mostraban en la vista ✅ **RESUELTO**
+5. **🎨 UX de Notificaciones**: Alertas del navegador poco profesionales ✅ **MEJORADO**
 
 #### 🛠️ **Soluciones Implementadas**
 
@@ -269,6 +270,7 @@ SELECT id, description, product_code, project_id FROM products WHERE project_id 
 | **Visibilidad Público/Privado** | ❌ No funcional | ✅ Completamente operativa | 4/4 pruebas exitosas |
 | **Asociación de Productos** | ❌ Endpoint inexistente | ✅ Endpoint completo con validaciones | 6/6 pruebas exitosas |
 | **Visualización de Productos** | ❌ Mostraba "undefined" | ✅ Mapeo corregido | Datos reales visibles |
+| **Productos Asociados** | ❌ No se mostraban en vista | ✅ Flujo de autenticación corregido | Lista visible |
 | **Notificaciones UX** | ❌ Alertas del navegador | ✅ Sistema toast elegante | Iconos y animaciones |
 | **Consistencia Arquitectónica** | ⚠️ Parcial | ✅ Totalmente consistente | Revisión de código completa |
 | **Manejo de Errores** | ⚠️ Básico | ✅ Robusto con validaciones | Prevención de duplicados |
@@ -306,6 +308,22 @@ confirm('¿Desea asociar el producto?')
 // DESPUÉS (elegante):
 showToast('✅ Producto asociado correctamente', 'success')
 showToast('❌ Error al asociar el producto', 'error', 5000)
+```
+
+**4. Corrección de Flujo de Autenticación:**
+```javascript
+// ANTES (problema de timing):
+// loadAssociatedProducts() se ejecutaba ANTES de configurar autenticación
+loadAssociatedProducts(); // ❌ Sin token configurado
+
+// DESPUÉS (flujo correcto):
+document.addEventListener('DOMContentLoaded', async () => {
+  checkAuthentication();           // 1. Configurar token
+  await loadProject();            // 2. Cargar proyecto  
+  initializeComponents();         // 3. Inicializar UI
+  await loadAssociatedProducts(); // 4. ✅ Cargar productos CON autenticación
+  hideLoading();                  // 5. Mostrar interfaz
+});
 ```
 
 ### 🏆 Logros de Implementación Previa (v6.0.0 - PÁGINA DE EDICIÓN DEDICADA)
@@ -708,7 +726,7 @@ API_BASE_URL=http://localhost:3000/api
 ---
 
 **Última Actualización**: 15 de Septiembre, 2025  
-**Versión**: 6.1.1 - Corrección Total de Funcionalidades + UX Mejorado  
+**Versión**: 6.1.2 - Corrección Completa: Productos Asociados Visibles  
 **Estado**: ✅ Producción - Sistema Completo con Funcionalidades 100% Operativas  
 **Portal**: 🌐 https://3000-ikn1warb4441jlaxw6wn4-6532622b.e2b.dev 🚀 **PÁGINA DE EDICIÓN DEDICADA**  
 **Dashboard**: 📋 /dashboard ✅ **TRANSFORMACIÓN UX COMPLETA**  
