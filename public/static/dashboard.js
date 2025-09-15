@@ -5504,21 +5504,125 @@ document.addEventListener('click', function(event) {
     }
 });
 
-// Funciones placeholder para acciones de proyectos
-function duplicateProject(projectId) {
-    showToast('Función de duplicar proyecto pendiente de implementar');
+// Funciones de acciones de proyectos
+async function duplicateProject(projectId) {
+    try {
+        // Buscar el proyecto en el estado local
+        const project = DashboardState.projects.find(p => p.id === projectId);
+        if (!project) {
+            showToast('Proyecto no encontrado', 'error');
+            return;
+        }
+
+        // Confirmar duplicación
+        const confirmDuplicate = confirm(`¿Deseas crear una copia del proyecto "${project.title}"?\n\nSe creará un nuevo proyecto con los mismos datos pero con título modificado.`);
+        if (!confirmDuplicate) return;
+
+        // Mostrar estado de carga
+        showToast('Creando copia del proyecto...', 'info');
+
+        // Preparar datos del nuevo proyecto
+        const newProjectData = {
+            title: `${project.title} (Copia)`,
+            abstract: project.abstract,
+            keywords: project.keywords,
+            introduction: project.introduction,
+            methodology: project.methodology,
+            project_code: `${project.project_code}_COPY_${Date.now()}`, // Código único
+            action_line_id: project.action_line_id,
+            start_date: new Date().toISOString().split('T')[0], // Fecha actual
+            end_date: project.end_date,
+            budget: project.budget,
+            status: 'DRAFT' // Nuevo proyecto en borrador
+        };
+
+        // Crear el proyecto duplicado
+        const response = await axios.post(`${API_BASE}/private/projects`, newProjectData);
+
+        if (response.data.success) {
+            showToast(`Proyecto duplicado exitosamente como "${newProjectData.title}"`, 'success');
+            
+            // Recargar los datos del dashboard
+            await loadDashboardData();
+            
+            // Re-renderizar la vista si estamos en la sección de proyectos
+            if (DashboardState.currentView === 'projects') {
+                const projectsGrid = document.getElementById('projectsGrid');
+                if (projectsGrid) {
+                    projectsGrid.innerHTML = renderProjectsGrid();
+                }
+            }
+            
+            console.log('✅ Proyecto duplicado:', response.data.data.project);
+        } else {
+            throw new Error(response.data.error || 'Error al duplicar proyecto');
+        }
+
+    } catch (error) {
+        console.error('Error duplicando proyecto:', error);
+        const errorMessage = error.response?.data?.error || error.message || 'Error desconocido';
+        showToast(`Error al duplicar proyecto: ${errorMessage}`, 'error');
+    }
 }
 
-function deleteProject(projectId) {
-    const project = DashboardState.projects.find(p => p.id === projectId);
-    if (!project) {
-        showToast('Proyecto no encontrado', 'error');
-        return;
-    }
-    
-    const confirmDelete = confirm(`¿Estás seguro de que deseas eliminar el proyecto "${project.title}"?\n\nEsta acción no se puede deshacer.`);
-    if (confirmDelete) {
-        showToast('Función de eliminar proyecto pendiente de implementar');
+async function deleteProject(projectId) {
+    try {
+        // Buscar el proyecto en el estado local
+        const project = DashboardState.projects.find(p => p.id === projectId);
+        if (!project) {
+            showToast('Proyecto no encontrado', 'error');
+            return;
+        }
+
+        // Confirmar eliminación con advertencias
+        const confirmDelete = confirm(`⚠️ ELIMINAR PROYECTO\n\n¿Estás seguro de que deseas eliminar el proyecto "${project.title}"?\n\n🚨 ADVERTENCIA:\n• Esta acción NO se puede deshacer\n• Se eliminarán TODOS los productos asociados\n• Se eliminarán TODOS los colaboradores\n• Se eliminarán TODOS los archivos del proyecto\n\n¿Continuar con la eliminación?`);
+        
+        if (!confirmDelete) return;
+
+        // Confirmación adicional para proyectos activos o con productos
+        if (project.status === 'ACTIVE' || project.products_count > 0) {
+            const doubleConfirm = confirm(`⚠️ CONFIRMACIÓN ADICIONAL\n\nEste proyecto está ACTIVO y tiene ${project.products_count || 0} producto(s) asociado(s).\n\nEscribe "ELIMINAR" para confirmar:`);
+            
+            if (!doubleConfirm) return;
+        }
+
+        // Mostrar estado de carga
+        showToast('Eliminando proyecto...', 'info');
+
+        // Eliminar el proyecto usando el endpoint
+        const response = await axios.delete(`${API_BASE}/private/projects/${projectId}`);
+
+        if (response.data.success) {
+            showToast('Proyecto eliminado exitosamente', 'success');
+            
+            // Remover del estado local
+            DashboardState.projects = DashboardState.projects.filter(p => p.id !== projectId);
+            
+            // Re-renderizar la vista si estamos en la sección de proyectos
+            if (DashboardState.currentView === 'projects') {
+                const projectsGrid = document.getElementById('projectsGrid');
+                if (projectsGrid) {
+                    projectsGrid.innerHTML = renderProjectsGrid();
+                }
+            }
+            
+            console.log('✅ Proyecto eliminado:', projectId);
+        } else {
+            throw new Error(response.data.error || 'Error al eliminar proyecto');
+        }
+
+    } catch (error) {
+        console.error('Error eliminando proyecto:', error);
+        const errorMessage = error.response?.data?.error || error.message || 'Error desconocido';
+        
+        // Manejar errores específicos
+        if (error.response?.status === 403) {
+            showToast('No tienes permisos para eliminar este proyecto', 'error');
+        } else if (error.response?.status === 404) {
+            showToast('Proyecto no encontrado', 'error');
+        } else {
+            showToast(`Error al eliminar proyecto: ${errorMessage}`, 'error');
+        }
     }
 }
 
