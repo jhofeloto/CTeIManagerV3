@@ -1877,6 +1877,69 @@ app.get('/dashboard/proyectos/:id/editar', async (c) => {
             let keywords = [];
             let associatedProducts = [];
             
+            // Configuración de autenticación
+            let authToken = localStorage.getItem('auth_token');
+            
+            // Configurar axios con token de autenticación
+            if (authToken) {
+                axios.defaults.headers.common['Authorization'] = \`Bearer \${authToken}\`;
+            }
+            
+            // Verificar autenticación
+            function checkAuthentication() {
+                if (!authToken) {
+                    showAuthError();
+                    return false;
+                }
+                return true;
+            }
+            
+            // Mostrar error de autenticación
+            function showAuthError() {
+                hideLoading();
+                
+                const mainContent = document.querySelector('.content-columns');
+                if (mainContent) {
+                    mainContent.innerHTML = \`
+                        <div class="error-state-container" style="grid-column: 1 / -1; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 60vh; text-align: center;">
+                            <div class="error-state-content" style="max-width: 500px; padding: 2rem;">
+                                <div class="error-icon" style="margin-bottom: 1.5rem;">
+                                    <i class="fas fa-lock" style="font-size: 4rem; color: hsl(var(--destructive)); opacity: 0.8;"></i>
+                                </div>
+                                
+                                <h2 style="font-size: 1.5rem; font-weight: 600; color: hsl(var(--foreground)); margin-bottom: 1rem;">
+                                    Acceso Restringido
+                                </h2>
+                                
+                                <p style="color: hsl(var(--muted-foreground)); margin-bottom: 2rem; line-height: 1.6;">
+                                    Necesitas iniciar sesión para editar proyectos. Por favor, autentícate primero.
+                                </p>
+                                
+                                <div style="display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;">
+                                    <a 
+                                        href="/login" 
+                                        class="btn-primary btn"
+                                        style="min-width: 120px; text-decoration: none;"
+                                    >
+                                        <i class="fas fa-sign-in-alt mr-2"></i>
+                                        Iniciar Sesión
+                                    </a>
+                                    
+                                    <a 
+                                        href="/dashboard" 
+                                        class="btn-outline btn"
+                                        style="min-width: 120px; text-decoration: none;"
+                                    >
+                                        <i class="fas fa-arrow-left mr-2"></i>
+                                        Volver al Dashboard
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    \`;
+                }
+            }
+            
             // Elementos DOM
             const form = document.getElementById('edit-project-form');
             const saveBtn = document.getElementById('save-btn');
@@ -1888,6 +1951,11 @@ app.get('/dashboard/proyectos/:id/editar', async (c) => {
             // Inicialización
             document.addEventListener('DOMContentLoaded', async () => {
                 try {
+                    // Verificar autenticación primero
+                    if (!checkAuthentication()) {
+                        return; // showAuthError() ya se llamó en checkAuthentication()
+                    }
+                    
                     await loadProject();
                     initializeForm();
                     initializeKeywords();
@@ -2187,9 +2255,81 @@ app.get('/dashboard/proyectos/:id/editar', async (c) => {
             }
             
             function showError(message) {
-                // Implementar toast de error
                 console.error('ERROR:', message);
-                alert('Error: ' + message); // Temporal
+                showErrorState(message);
+            }
+            
+            // Mostrar estado de error integrado en la interfaz
+            function showErrorState(message) {
+                hideLoading();
+                
+                // Reemplazar el contenido principal con el estado de error
+                const mainContent = document.querySelector('.content-columns');
+                if (mainContent) {
+                    mainContent.innerHTML = \`
+                        <div class="error-state-container" style="grid-column: 1 / -1; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 60vh; text-align: center;">
+                            <div class="error-state-content" style="max-width: 500px; padding: 2rem;">
+                                <!-- Ícono de Error -->
+                                <div class="error-icon" style="margin-bottom: 1.5rem;">
+                                    <i class="fas fa-exclamation-triangle" style="font-size: 4rem; color: hsl(var(--destructive)); opacity: 0.8;"></i>
+                                </div>
+                                
+                                <!-- Título del Error -->
+                                <h2 style="font-size: 1.5rem; font-weight: 600; color: hsl(var(--foreground)); margin-bottom: 1rem;">
+                                    No se pudo cargar el proyecto
+                                </h2>
+                                
+                                <!-- Mensaje Descriptivo -->
+                                <p style="color: hsl(var(--muted-foreground)); margin-bottom: 2rem; line-height: 1.6;">
+                                    \${message || 'Ocurrió un error al intentar obtener la información del proyecto. Por favor, revisa tu conexión a internet e inténtalo de nuevo.'}
+                                </p>
+                                
+                                <!-- Botones de Acción -->
+                                <div style="display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;">
+                                    <button 
+                                        onclick="retryLoadProject()" 
+                                        class="btn-primary btn"
+                                        style="min-width: 120px;"
+                                    >
+                                        <i class="fas fa-redo mr-2"></i>
+                                        Reintentar
+                                    </button>
+                                    
+                                    <a 
+                                        href="/dashboard" 
+                                        class="btn-outline btn"
+                                        style="min-width: 120px; text-decoration: none;"
+                                    >
+                                        <i class="fas fa-arrow-left mr-2"></i>
+                                        Volver al Dashboard
+                                    </a>
+                                </div>
+                                
+                                <!-- Información Adicional (Colapsible) -->
+                                <details style="margin-top: 2rem; text-align: left;">
+                                    <summary style="cursor: pointer; color: hsl(var(--muted-foreground)); font-size: 0.875rem;">
+                                        <i class="fas fa-info-circle mr-1"></i>
+                                        Información técnica
+                                    </summary>
+                                    <div style="margin-top: 1rem; padding: 1rem; background: hsl(var(--muted)); border-radius: calc(var(--radius)); font-family: monospace; font-size: 0.75rem; color: hsl(var(--muted-foreground));">
+                                        <strong>Proyecto ID:</strong> \${PROJECT_ID}<br>
+                                        <strong>URL de la API:</strong> \${API_BASE}/private/projects/\${PROJECT_ID}<br>
+                                        <strong>Error:</strong> \${message}
+                                    </div>
+                                </details>
+                            </div>
+                        </div>
+                    \`;
+                }
+            }
+            
+            // Función para reintentar la carga
+            function retryLoadProject() {
+                // Mostrar loading nuevamente
+                const mainContent = document.querySelector('.content-columns');
+                if (mainContent) {
+                    location.reload(); // Recargar la página completa para reiniciar el estado
+                }
             }
             
             // Cargar productos asociados al inicio

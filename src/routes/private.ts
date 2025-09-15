@@ -193,6 +193,58 @@ privateRoutes.post('/projects', requireRole('INVESTIGATOR', 'ADMIN'), async (c) 
   }
 });
 
+// Obtener proyecto individual para edición
+privateRoutes.get('/projects/:id', requireRole('INVESTIGATOR', 'ADMIN'), async (c) => {
+  try {
+    const user = c.get('user')!;
+    const projectId = parseInt(c.req.param('id'));
+
+    // Verificar acceso al proyecto (excepto admins)
+    if (user.role !== 'ADMIN') {
+      const project = await c.env.DB.prepare(
+        'SELECT owner_id FROM projects WHERE id = ?'
+      ).bind(projectId).first<{ owner_id: number }>();
+
+      if (!project || project.owner_id !== user.userId) {
+        return c.json<APIResponse>({ 
+          success: false, 
+          error: 'No tienes permiso para acceder a este proyecto' 
+        }, 403);
+      }
+    }
+
+    // Obtener datos completos del proyecto
+    const project = await c.env.DB.prepare(`
+      SELECT 
+        p.*,
+        u.full_name as owner_name,
+        u.email as owner_email
+      FROM projects p
+      JOIN users u ON p.owner_id = u.id
+      WHERE p.id = ?
+    `).bind(projectId).first();
+
+    if (!project) {
+      return c.json<APIResponse>({ 
+        success: false, 
+        error: 'Proyecto no encontrado' 
+      }, 404);
+    }
+
+    return c.json<APIResponse>({
+      success: true,
+      data: project
+    });
+
+  } catch (error) {
+    console.error('Error obteniendo proyecto:', error);
+    return c.json<APIResponse>({ 
+      success: false, 
+      error: 'Error interno del servidor' 
+    }, 500);
+  }
+});
+
 // Actualizar proyecto
 privateRoutes.put('/projects/:id', requireRole('INVESTIGATOR', 'ADMIN'), async (c) => {
   try {
