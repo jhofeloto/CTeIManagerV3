@@ -554,7 +554,7 @@ app.get('/edit/:id', async (c) => {
     </div>
 
     <script>
-        const PROJECT_ID = '${projectId}';
+        const PROJECT_ID = '` + projectId + `';
         const TEST_TOKEN = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjIsImVtYWlsIjoiY2FybG9zLnJvZHJpZ3VlekBjdGVpLmVkdS5jbyIsInJvbGUiOiJJTlZFU1RJR0FUT1IiLCJleHAiOjE3NTc5ODYxNjl9.e2MHisoqWo3Q5g7M-91cbiJF6zR3OGKMjXIBnAdGCwI';
 
         function updateStatus(message) {
@@ -3078,6 +3078,187 @@ app.get('/dashboard/proyectos/:id/editar', async (c) => {
             </div>
         </div>
         
+        <!-- Panel Deslizante (Drawer) para crear producto - Técnica de Dos Capas -->
+        <div id="create-product-drawer-overlay" class="drawer-overlay fixed inset-0 z-50 hidden">
+            <!-- Scrim que oscurece el fondo -->
+            <div class="drawer-scrim absolute inset-0" onclick="closeCreateProductDrawer()"></div>
+            
+            <!-- CAPA EXTERIOR: Panel de Cristal (Glassmorphism) -->
+            <div id="create-product-drawer" class="drawer-panel-glass fixed right-0 top-0 h-full w-full max-w-2xl transform translate-x-full transition-transform duration-300 ease-in-out">
+                
+                <!-- CAPA INTERIOR: Contenedor Sólido (Papel) -->
+                <div class="form-container-solid w-full h-full flex flex-col">
+                    
+                    <!-- Cabecera del Formulario -->
+                    <div class="form-header flex-shrink-0">
+                        <div class="flex justify-between items-center mb-4">
+                            <div>
+                                <h2 class="text-xl font-bold text-foreground">
+                                    <i class="fas fa-plus mr-2 text-primary"></i>
+                                    Crear Nuevo Producto Científico
+                                </h2>
+                                <p class="text-sm text-muted-foreground mt-1">
+                                    Añadir un producto científico al proyecto actual
+                                </p>
+                            </div>
+                            <button type="button" onclick="closeCreateProductDrawer()" class="drawer-close-btn">
+                                <i class="fas fa-times text-xl"></i>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Contenido del Formulario con Scroll -->
+                    <div class="form-body flex-1 overflow-y-auto">
+                    <form id="create-product-form" class="p-6">
+                        <div class="grid grid-cols-1 gap-6">
+                        <!-- Información básica -->
+                        <div class="md:col-span-2">
+                            <label for="product-description" class="block text-sm font-medium text-foreground mb-2">
+                                <i class="fas fa-align-left mr-1"></i>
+                                Descripción del Producto *
+                            </label>
+                            <textarea 
+                                id="product-description" 
+                                name="description"
+                                rows="3" 
+                                required
+                                class="ctei-form-input w-full"
+                                placeholder="Ej: Artículo de investigación sobre algoritmos de machine learning aplicados a..."
+                            ></textarea>
+                        </div>
+                        
+                        <div>
+                            <label for="product-code" class="block text-sm font-medium text-foreground mb-2">
+                                <i class="fas fa-barcode mr-1"></i>
+                                Código del Producto *
+                            </label>
+                            <input 
+                                type="text" 
+                                id="product-code"
+                                name="product_code"
+                                required
+                                class="ctei-form-input w-full"
+                                placeholder="Ej: ART-ML-001"
+                            >
+                        </div>
+                        
+                        <div>
+                            <label for="product-type" class="block text-sm font-medium text-foreground mb-2">
+                                <i class="fas fa-tags mr-1"></i>
+                                Tipo de Producto *
+                            </label>
+                            <select 
+                                id="product-type"
+                                name="product_type"
+                                required
+                                class="ctei-form-select w-full"
+                            >
+                                <option value="">Seleccione un tipo...</option>
+                                <!-- Las opciones se cargarán dinámicamente -->
+                            </select>
+                        </div>
+                        
+                        <!-- Información de publicación -->
+                        <div>
+                            <label for="product-doi" class="block text-sm font-medium text-foreground mb-2">
+                                <i class="fas fa-link mr-1"></i>
+                                DOI
+                            </label>
+                            <input 
+                                type="text" 
+                                id="product-doi"
+                                name="doi"
+                                class="ctei-form-input w-full"
+                                placeholder="10.1000/journal.2024.001"
+                            >
+                        </div>
+                        
+                        <div>
+                            <label for="product-url" class="block text-sm font-medium text-foreground mb-2">
+                                <i class="fas fa-globe mr-1"></i>
+                                URL
+                            </label>
+                            <input 
+                                type="url" 
+                                id="product-url"
+                                name="url"
+                                class="ctei-form-input w-full"
+                                placeholder="https://revista.ejemplo.com/articulo"
+                            >
+                        </div>
+                        
+                        <div>
+                            <label for="product-journal" class="block text-sm font-medium text-foreground mb-2">
+                                <i class="fas fa-book mr-1"></i>
+                                Revista/Editorial
+                            </label>
+                            <input 
+                                type="text" 
+                                id="product-journal"
+                                name="journal"
+                                class="ctei-form-input w-full"
+                                placeholder="Nature, Science, IEEE, etc."
+                            >
+                        </div>
+                        
+                        <div>
+                            <label for="product-publication-date" class="block text-sm font-medium text-foreground mb-2">
+                                <i class="fas fa-calendar mr-1"></i>
+                                Fecha de Publicación
+                            </label>
+                            <input 
+                                type="date" 
+                                id="product-publication-date"
+                                name="publication_date"
+                                class="ctei-form-input w-full"
+                            >
+                        </div>
+                        
+                        <div>
+                            <label for="product-impact-factor" class="block text-sm font-medium text-foreground mb-2">
+                                <i class="fas fa-star mr-1"></i>
+                                Factor de Impacto
+                            </label>
+                            <input 
+                                type="number" 
+                                id="product-impact-factor"
+                                name="impact_factor"
+                                step="0.001"
+                                min="0"
+                                class="ctei-form-input w-full"
+                                placeholder="2.5"
+                            >
+                        </div>
+                    </div>
+                    
+                    </form>
+                    </div>
+                    
+                    <!-- Pie del Formulario -->
+                    <div class="form-footer flex-shrink-0">
+                        <div class="flex justify-end gap-4 pt-4 border-t border-border">
+                            <button 
+                                type="button" 
+                                onclick="closeCreateProductDrawer()"
+                                class="drawer-btn-cancel"
+                            >
+                                Cancelar
+                            </button>
+                            <button 
+                                type="submit" 
+                                form="create-product-form"
+                                class="drawer-btn-primary"
+                            >
+                                <i class="fas fa-plus mr-2"></i>
+                                Crear Producto
+                            </button>
+                        </div>
+                    </div>
+                    
+                </div> <!-- Cierre form-container-solid -->
+            </div> <!-- Cierre drawer-panel-glass -->
+        </div> <!-- Cierre drawer-overlay -->
+        
         <!-- Loading overlay -->
         <div id="loading-overlay" class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
             <div class="bg-card p-6 rounded-lg flex items-center gap-4">
@@ -3089,7 +3270,7 @@ app.get('/dashboard/proyectos/:id/editar', async (c) => {
         <script>
             // Variables globales
             const API_BASE = '/api';
-            const PROJECT_ID = '${projectId}';
+            const PROJECT_ID = '` + projectId + `';
             let currentProject = null;
             let hasUnsavedChanges = false;
             let keywords = [];
@@ -3505,8 +3686,47 @@ app.get('/dashboard/proyectos/:id/editar', async (c) => {
                 // Inicializar estado del botón de guardar (deshabilitado por defecto)
                 resetSaveButton();
                 
+                // Configurar botones de productos
+                configureProductButtons();
+                
                 // Inicializar editores de texto enriquecido
                 initializeRichTextEditors();
+            }
+            
+            // Configurar botones de productos
+            function configureProductButtons() {
+                // Botón crear producto - Usar drawer
+                const createProductBtn = document.getElementById('create-product-btn');
+                if (createProductBtn) {
+                    createProductBtn.addEventListener('click', () => {
+                        openCreateProductDrawer();
+                    });
+                }
+                
+                // Botón mostrar todos los productos
+                const showAllProductsBtn = document.getElementById('show-all-products-btn');
+                if (showAllProductsBtn) {
+                    showAllProductsBtn.addEventListener('click', () => {
+                        // Abrir modal para asociar productos existentes
+                        openAssociateProductsModal();
+                    });
+                }
+                
+                // Configurar formulario de creación de producto
+                const createProductForm = document.getElementById('create-product-form');
+                if (createProductForm) {
+                    createProductForm.addEventListener('submit', handleCreateProductSubmit);
+                }
+                
+                // Cerrar drawer con ESC
+                document.addEventListener('keydown', (e) => {
+                    if (e.key === 'Escape') {
+                        const overlay = document.getElementById('create-product-drawer-overlay');
+                        if (overlay && !overlay.classList.contains('hidden')) {
+                            closeCreateProductDrawer();
+                        }
+                    }
+                });
             }
             
             // Inicializar editores de texto enriquecido
@@ -3733,8 +3953,7 @@ app.get('/dashboard/proyectos/:id/editar', async (c) => {
                 
                 // Botón crear nuevo producto
                 createBtn.addEventListener('click', () => {
-                    // Redirigir a página de creación de producto con project_id
-                    window.location.href = \`/dashboard/productos/nuevo?project_id=\${PROJECT_ID}\`;
+                    openCreateProductModal();
                 });
                 
                 // Botón ver todos los productos
@@ -4070,6 +4289,147 @@ app.get('/dashboard/proyectos/:id/editar', async (c) => {
                     }, 300);
                 }
             }
+            
+            // ===== FUNCIONES DEL MODAL DE CREACIÓN DE PRODUCTO =====
+            
+            // Variables para el modal
+            let productCategories = [];
+            
+            // Abrir drawer de creación de producto con efecto glassmorphism
+            function openCreateProductDrawer() {
+                const overlay = document.getElementById('create-product-drawer-overlay');
+                const drawer = document.getElementById('create-product-drawer');
+                
+                // Mostrar overlay
+                overlay.classList.remove('hidden');
+                
+                // Activar transición de entrada después de que el overlay esté visible
+                setTimeout(() => {
+                    drawer.classList.add('open');
+                }, 10);
+                
+                // Cargar categorías si no se han cargado
+                if (productCategories.length === 0) {
+                    loadProductCategories();
+                }
+                
+                // Limpiar formulario
+                document.getElementById('create-product-form').reset();
+                
+                // Enfocar el primer campo dentro del contenedor sólido
+                setTimeout(() => {
+                    const solidContainer = drawer.querySelector('.form-container-solid');
+                    const firstInput = solidContainer.querySelector('input, textarea, select');
+                    if (firstInput) firstInput.focus();
+                }, 350);
+            }
+            
+            // Cerrar drawer con efecto glassmorphism
+            function closeCreateProductDrawer() {
+                const overlay = document.getElementById('create-product-drawer-overlay');
+                const drawer = document.getElementById('create-product-drawer');
+                
+                // Animación de salida
+                drawer.classList.remove('open');
+                
+                // Ocultar overlay después de la transición
+                setTimeout(() => {
+                    overlay.classList.add('hidden');
+                }, 300);
+            }
+            
+            // Funciones globales (accesibles desde onclick)
+            window.openCreateProductDrawer = openCreateProductDrawer;
+            window.closeCreateProductDrawer = closeCreateProductDrawer;
+            
+            // Legacy - mantener compatibilidad
+            window.openCreateProductModal = openCreateProductDrawer;
+            window.closeCreateProductModal = closeCreateProductDrawer;
+            
+            // Cargar categorías de productos
+            async function loadProductCategories() {
+                try {
+                    const response = await axios.get(\`\${API_BASE}/admin/product-categories\`);
+                    
+                    if (response.data.success) {
+                        productCategories = response.data.data.categories || [];
+                        populateProductTypeSelect();
+                    }
+                } catch (error) {
+                    console.error('Error cargando categorías de productos:', error);
+                    showToast('Error cargando tipos de producto', 'error');
+                }
+            }
+            
+            // Poblar el select de tipos de producto
+            function populateProductTypeSelect() {
+                const select = document.getElementById('product-type');
+                
+                // Limpiar opciones existentes (excepto la primera)
+                while (select.children.length > 1) {
+                    select.removeChild(select.lastChild);
+                }
+                
+                // Agregar opciones de categorías
+                productCategories.forEach(category => {
+                    const option = document.createElement('option');
+                    option.value = category.code;
+                    option.textContent = \`\${category.name} (\${category.code})\`;
+                    select.appendChild(option);
+                });
+            }
+            
+            // Manejar envío del formulario
+            async function handleCreateProductSubmit(event) {
+                event.preventDefault();
+                
+                const formData = new FormData(event.target);
+                const productData = {
+                    product_code: formData.get('product_code'),
+                    product_type: formData.get('product_type'),
+                    description: formData.get('description'),
+                    doi: formData.get('doi') || undefined,
+                    url: formData.get('url') || undefined,
+                    journal: formData.get('journal') || undefined,
+                    publication_date: formData.get('publication_date') || undefined,
+                    impact_factor: formData.get('impact_factor') ? parseFloat(formData.get('impact_factor')) : undefined
+                };
+                
+                try {
+                    console.log('Creando producto:', productData);
+                    
+                    const response = await axios.post(
+                        \`\${API_BASE}/private/projects/\${PROJECT_ID}/products\`,
+                        productData
+                    );
+                    
+                    if (response.data.success) {
+                        showToast('✅ Producto creado y asociado correctamente', 'success');
+                        closeCreateProductDrawer();
+                        
+                        // Recargar productos asociados para mostrar el nuevo producto
+                        await loadAssociatedProducts();
+                        
+                        // Marcar como cambio no guardado
+                        handleFormChange();
+                    } else {
+                        throw new Error(response.data.error || 'Error al crear el producto');
+                    }
+                } catch (error) {
+                    console.error('Error creando producto:', error);
+                    const errorMsg = error.response?.data?.error || error.message || 'Error al crear el producto';
+                    showToast(\`❌ \${errorMsg}\`, 'error', 5000);
+                }
+            }
+            
+            // Abrir modal/página para asociar productos existentes
+            function openAssociateProductsModal() {
+                // Por ahora, redireccionar a la página de productos con el parámetro project_id
+                // TODO: En el futuro, esto podría ser un modal con lista de productos disponibles
+                window.location.href = \`/dashboard/productos?project_id=\${PROJECT_ID}\`;
+            }
+            
+            // Configurar event listener para el formulario (se llama desde initializeForm)
             
             function showError(message) {
                 console.error('ERROR:', message);

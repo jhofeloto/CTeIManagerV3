@@ -1808,10 +1808,363 @@ html:not(.dark) .ctei-btn-secondary:hover i {
 }
 
 /* ========================================
-   MODALES MEJORADOS - MEJOR CONTRASTE Y LEGIBILIDAD  
+   DRAWER CON TÉCNICA DE DOS CAPAS - GLASSMORPHISM + PAPEL SÓLIDO
 ======================================== */
 
-/* Overlay de modal con mejor contraste */
+/* Overlay del Drawer - Contenedor principal */
+.drawer-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 98; /* Base layer para todo el drawer system */
+  display: flex;
+  justify-content: flex-end;
+  align-items: stretch;
+}
+
+/* Scrim con transparencia - Solo en el área fuera del formulario */
+.drawer-scrim {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5); /* Fondo semi-transparente para crear contexto */
+  backdrop-filter: blur(4px); /* Efecto de desenfoque sutil */
+  z-index: 99; /* Por encima de la página pero debajo del panel */
+}
+
+/* ========================================
+   CAPA EXTERIOR - EL "CRISTAL" (GLASSMORPHISM)
+======================================== */
+.drawer-panel-glass {
+  position: fixed;
+  top: 0;
+  right: 0;
+  width: 100%;
+  height: 100%;
+  max-width: 48rem; /* Equivalente a max-w-2xl */
+  padding: 2rem; /* Espacio para que se vea el efecto cristal en los bordes */
+  z-index: 100;
+  
+  /* EFECTO GLASSMORPHISM */
+  background-color: rgba(255, 255, 255, 0.7); /* Blanco con 70% de opacidad */
+  backdrop-filter: blur(10px); /* Desenfoque del fondo */
+  border-left: 1px solid rgba(255, 255, 255, 0.8);
+  
+  /* Transición suave */
+  transition: transform 0.3s cubic-bezier(0.4, 0.0, 0.2, 1);
+}
+
+/* Estado visible del panel cristal */
+.drawer-panel-glass.open {
+  transform: translateX(0) !important;
+}
+
+/* ========================================
+   CAPA INTERIOR - LA "HOJA DE PAPEL" (100% SÓLIDA)
+======================================== */
+.form-container-solid {
+  /* FONDO 100% SÓLIDO Y OPACO */
+  background-color: var(--card); /* Blanco completamente opaco */
+  color: var(--card-foreground); /* Texto oscuro */
+  
+  /* ESTRUCTURA VISUAL */
+  border-radius: var(--radius);
+  width: 100%;
+  height: 100%;
+  
+  /* SOMBRA PARA DARLE RELIEVE SOBRE EL CRISTAL */
+  box-shadow: var(--shadow-lg); /* Sombra prominente */
+  border: 1px solid var(--border);
+  
+  /* LAYOUT FLEX PARA ORGANIZAR CONTENIDO */
+  display: flex;
+  flex-direction: column;
+  
+  /* ASEGURAR MÁXIMA OPACIDAD */
+  opacity: 1 !important;
+}
+
+/* ========================================
+   COMPONENTES DEL FORMULARIO SÓLIDO
+======================================== */
+
+/* Cabecera del formulario */
+.form-header {
+  background-color: var(--card);
+  padding: 2rem;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+/* Cuerpo del formulario con scroll */
+.form-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 2rem;
+  background-color: var(--card);
+}
+
+/* Pie del formulario */
+.form-footer {
+  background-color: var(--card);
+  padding: 2rem;
+  flex-shrink: 0;
+}
+
+/* Botón de cierre mejorado */
+.drawer-close-btn {
+  background-color: var(--secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0.75rem;
+  color: var(--secondary-foreground);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.drawer-close-btn:hover {
+  background-color: var(--accent);
+  color: var(--accent-foreground);
+  border-color: var(--primary);
+}
+
+/* ========================================
+   MODALES MEJORADOS - OVERLAY OPACO PROFESIONAL (LEGACY)
+======================================== */
+
+/* Overlay opaco (Scrim) - Elimina distracciones completamente */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5); /* Negro con 50% de opacidad */
+  backdrop-filter: blur(4px); /* Sutil desenfoque mantiene contexto visual */
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}
+
+/* Contenido de modal completamente opaco y enfocado */
+.modal-content {
+  background-color: var(--card); /* Fondo sólido usando tokens del sistema */
+  color: var(--card-foreground);
+  border-radius: calc(var(--radius) + 2px); /* Bordes ligeramente más redondeados */
+  box-shadow: var(--shadow-xl); /* Sombra prominente para elevar visualmente */
+  border: 1px solid var(--border);
+  position: relative;
+  /* Eliminar cualquier transparencia */
+  opacity: 1;
+  /* Añadir más elevación y profundidad */
+  transform: translateZ(0); /* Activar aceleración de hardware */
+  /* Mejorar espaciado y respiración */
+  padding: 0; /* Reset padding para control granular */
+}
+
+/* Header del modal con mejor espaciado */
+.modal-content .sticky {
+  padding: 2rem 2rem 1.5rem 2rem !important; /* Más espaciado arriba y lateral */
+  border-bottom: 1px solid var(--border);
+  background-color: var(--card) !important;
+}
+
+/* Formulario con respiración mejorada */
+.modal-content form {
+  padding: 2rem !important; /* Espaciado generoso interno */
+}
+
+/* Campos del formulario con MÁXIMA DIFERENCIACIÓN */
+.modal-content .grid > div,
+.drawer-content .grid > div {
+  margin-bottom: 2rem !important; /* Espaciado generoso entre campos */
+  padding: 0.5rem 0; /* Padding adicional para respiración */
+}
+
+/* CAMPOS INPUT CON MÁXIMO CONTRASTE - SIN TRANSPARENCIAS */
+.drawer-content input[type="text"],
+.drawer-content input[type="email"], 
+.drawer-content input[type="date"],
+.drawer-content select,
+.drawer-content textarea {
+  background-color: #ffffff !important; /* Fondo blanco puro sin tokens */
+  border: 3px solid #cbd5e1 !important; /* Borde grueso y visible */
+  border-radius: 8px !important; /* Bordes más redondeados para distinguir */
+  color: #0f172a !important; /* Texto muy oscuro para máximo contraste */
+  padding: 1rem !important; /* Padding generoso */
+  font-size: 0.875rem !important;
+  font-weight: 500 !important; /* Texto más pronunciado */
+  margin-bottom: 2rem !important; /* Separación clara entre campos */
+  transition: all 0.2s ease !important;
+}
+
+/* Estado FOCUS con máximo contraste */
+.drawer-content input[type="text"]:focus,
+.drawer-content input[type="email"]:focus,
+.drawer-content input[type="date"]:focus,
+.drawer-content select:focus,
+.drawer-content textarea:focus {
+  border-color: #0ea5e9 !important; /* Azul sólido para focus */
+  box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.2) !important; /* Ring visible */
+  transform: translateY(-1px) !important; /* Elevación sutil */
+  background-color: #ffffff !important; /* Mantener fondo blanco */
+}
+
+/* LABELS con máximo contraste */
+.drawer-content label {
+  color: #0f172a !important; /* Negro casi puro */
+  font-weight: 600 !important; /* Más grueso */
+  font-size: 0.875rem !important;
+  margin-bottom: 0.75rem !important; /* Más separación del campo */
+  display: block !important;
+}
+
+/* Área de botones con mejor espaciado */
+.modal-content .flex.justify-end {
+  padding-top: 2rem !important; /* Más separación de los campos */
+  margin-top: 1rem !important;
+  border-top: 1px solid var(--border);
+}
+
+/* Botones del Drawer - Jerarquía Premium */
+.drawer-btn-cancel {
+  background-color: transparent;
+  border: 1px solid var(--border);
+  color: var(--foreground);
+  padding: 0.75rem 1.5rem;
+  border-radius: var(--radius);
+  font-size: 0.875rem;
+  font-weight: 500;
+  font-family: var(--font-sans);
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.drawer-btn-cancel:hover {
+  background-color: var(--accent);
+  border-color: var(--border);
+  color: var(--accent-foreground);
+}
+
+.drawer-btn-primary {
+  background-color: var(--primary);
+  color: var(--primary-foreground);
+  border: 1px solid var(--primary);
+  padding: 0.75rem 1.5rem;
+  border-radius: var(--radius);
+  font-size: 0.875rem;
+  font-weight: 600;
+  font-family: var(--font-sans);
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.drawer-btn-primary:hover {
+  background-color: var(--primary);
+  opacity: 0.9;
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
+}
+
+/* Inputs del drawer - Máxima diferenciación y claridad */
+.drawer-content input, 
+.drawer-content textarea, 
+.drawer-content select {
+  background-color: #ffffff; /* Blanco puro para máximo contraste */
+  color: var(--foreground); /* Texto oscuro */
+  border: 2px solid var(--border); /* Borde más grueso para claridad */
+  border-radius: var(--radius);
+  padding: 0.875rem 1rem; /* Más padding para mejor visibilidad */
+  font-size: 0.875rem;
+  font-family: var(--font-sans);
+  font-weight: 500; /* Texto más pesado para legibilidad */
+  transition: all 0.2s ease-in-out;
+  width: 100%;
+  /* Sombra más marcada para diferenciación */
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06);
+}
+
+.drawer-content input:focus, 
+.drawer-content textarea:focus, 
+.drawer-content select:focus {
+  border-color: var(--primary); /* Borde primario en focus */
+  box-shadow: 0 0 0 3px var(--ring); /* Ring más visible */
+  outline: none;
+  background-color: #ffffff; /* Mantener fondo blanco puro en focus */
+  transform: translateY(-1px); /* Ligera elevación en focus */
+}
+
+.drawer-content input::placeholder, 
+.drawer-content textarea::placeholder {
+  color: var(--muted-foreground);
+  font-style: italic; /* Diferenciación visual del placeholder */
+  font-weight: 400; /* Más liviano que el texto real */
+}
+
+.drawer-content label {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 600; /* Más pesado para mayor claridad */
+  color: var(--foreground); /* Texto oscuro para máximo contraste */
+  margin-bottom: 0.75rem; /* Más espacio para claridad */
+  letter-spacing: 0.025em; /* Mejor legibilidad */
+}
+
+/* Legacy - Mantener compatibilidad con modal */
+.modal-btn-cancel {
+  background-color: transparent !important;
+  border: 1px solid var(--border) !important;
+  color: var(--foreground) !important;
+  padding: 0.75rem 1.5rem !important;
+  border-radius: var(--radius) !important;
+  font-size: 0.875rem !important;
+  font-weight: 500 !important;
+  font-family: var(--font-sans) !important;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out !important;
+}
+
+.modal-btn-cancel:hover {
+  background-color: var(--accent) !important;
+  border-color: var(--border) !important;
+  color: var(--accent-foreground) !important;
+}
+
+.modal-btn-primary {
+  background-color: var(--primary) !important;
+  color: var(--primary-foreground) !important;
+  border: 1px solid var(--primary) !important;
+  padding: 0.75rem 1.5rem !important;
+  border-radius: var(--radius) !important;
+  font-size: 0.875rem !important;
+  font-weight: 600 !important;
+  font-family: var(--font-sans) !important;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out !important;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.modal-btn-primary:hover {
+  background-color: var(--primary) !important;
+  opacity: 0.9 !important;
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
+}
+
+/* Legacy - Mantenido para compatibilidad */
 .ctei-modal-overlay {
   position: fixed;
   inset: 0;
@@ -1824,10 +2177,11 @@ html:not(.dark) .ctei-btn-secondary:hover i {
   padding: 1rem;
 }
 
-/* Contenido de modal con mejor contraste */
+/* Asegurar que el modal sea completamente opaco y enfocado */
+.modal-content,
 .ctei-modal-content {
-  background-color: var(--card);
-  color: var(--card-foreground);
+  background-color: var(--card) !important; /* Forzar opacidad completa */
+  color: var(--card-foreground) !important;
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-xl);
   border: 1px solid var(--border);
@@ -1835,31 +2189,70 @@ html:not(.dark) .ctei-btn-secondary:hover i {
   max-height: 90vh;
   overflow: hidden;
   position: relative;
+  /* Eliminar cualquier efecto de transparencia */
+  backdrop-filter: none !important;
+  filter: none !important;
+  opacity: 1 !important;
 }
 
-/* Asegurar que el texto en modales sea legible */
-.ctei-modal-content h1,
-.ctei-modal-content h2,
-.ctei-modal-content h3,
-.ctei-modal-content h4,
-.ctei-modal-content h5,
-.ctei-modal-content h6 {
-  color: var(--foreground);
+/* Asegurar que todo el texto en modales sea perfectamente legible */
+.modal-content h1, .modal-content h2, .modal-content h3, 
+.modal-content h4, .modal-content h5, .modal-content h6,
+.ctei-modal-content h1, .ctei-modal-content h2, .ctei-modal-content h3,
+.ctei-modal-content h4, .ctei-modal-content h5, .ctei-modal-content h6 {
+  color: var(--foreground) !important;
   font-family: var(--font-sans);
+  opacity: 1 !important;
 }
 
-.ctei-modal-content p,
-.ctei-modal-content div,
-.ctei-modal-content span {
-  color: var(--foreground);
+.modal-content p, .modal-content div, .modal-content span, .modal-content label,
+.ctei-modal-content p, .ctei-modal-content div, .ctei-modal-content span, .ctei-modal-content label {
+  color: var(--foreground) !important;
+  opacity: 1 !important;
 }
 
+.modal-content .text-muted-foreground,
 .ctei-modal-content .text-muted-foreground {
-  color: var(--muted-foreground);
+  color: var(--muted-foreground) !important;
 }
 
+.modal-content .text-primary,
 .ctei-modal-content .text-primary {
-  color: var(--primary);
+  color: var(--primary) !important;
+}
+
+/* Inputs del modal idénticos a los de la página principal */
+.modal-content input, .modal-content textarea, .modal-content select {
+  background-color: var(--card) !important; /* Fondo blanco como página principal */
+  color: var(--foreground) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: var(--radius) !important;
+  padding: 0.75rem 1rem !important;
+  font-size: 0.875rem !important;
+  font-family: var(--font-sans) !important;
+  transition: all 0.2s ease-in-out !important;
+  opacity: 1 !important;
+  /* Mismo estilo visual que inputs principales */
+  box-shadow: var(--shadow-sm) !important;
+}
+
+.modal-content input:focus, .modal-content textarea:focus, .modal-content select:focus {
+  border-color: var(--primary) !important;
+  box-shadow: 0 0 0 2px var(--ring), var(--shadow-sm) !important;
+  outline: none !important;
+}
+
+.modal-content input::placeholder, .modal-content textarea::placeholder {
+  color: var(--muted-foreground) !important;
+}
+
+/* Labels del modal con estilo consistente */
+.modal-content label {
+  display: block !important;
+  font-size: 0.875rem !important;
+  font-weight: 500 !important;
+  color: var(--foreground) !important;
+  margin-bottom: 0.5rem !important;
 }
 
 /* Botón de cierre mejorado */

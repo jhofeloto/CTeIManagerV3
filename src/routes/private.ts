@@ -44,12 +44,10 @@ privateRoutes.get('/profile', async (c) => {
 
 // ===== RUTAS DE PROYECTOS =====
 
-// Obtener proyectos del usuario (CON MONITOREO)
+// Obtener proyectos del usuario (SIMPLIFICADO)
 privateRoutes.get('/projects', async (c) => {
   try {
     const user = c.get('user')!;
-    const actionLine = c.req.query('action_line');
-    const riskLevel = c.req.query('risk_level');
     const status = c.req.query('status');
     
     let query: string;
@@ -57,50 +55,34 @@ privateRoutes.get('/projects', async (c) => {
     let whereConditions: string[] = [];
 
     if (user.role === 'ADMIN') {
-      // Admins pueden ver todos los proyectos - consulta simplificada
+      // Admins pueden ver todos los proyectos - consulta con columnas existentes
       query = `
         SELECT 
           p.id, p.title, p.abstract, p.keywords, p.introduction, 
           p.methodology, p.owner_id, p.is_public, p.created_at, p.updated_at,
           p.status, p.start_date, p.end_date, p.institution, p.funding_source, 
           p.budget, p.project_code,
-          p.action_line_id, p.progress_percentage, p.risk_level,
-          p.next_milestone_date, p.next_milestone_description,
-          al.name as action_line_name, al.color_code as action_line_color,
           u.full_name as owner_name, u.email as owner_email
         FROM projects p 
-        JOIN users u ON p.owner_id = u.id 
-        LEFT JOIN action_lines al ON p.action_line_id = al.id
+        JOIN users u ON p.owner_id = u.id
       `;
     } else {
-      // Investigadores ven solo sus proyectos (simplificado)
+      // Investigadores ven solo sus proyectos
       query = `
         SELECT 
           p.id, p.title, p.abstract, p.keywords, p.introduction, 
           p.methodology, p.owner_id, p.is_public, p.created_at, p.updated_at,
           p.status, p.start_date, p.end_date, p.institution, p.funding_source, 
           p.budget, p.project_code,
-          p.action_line_id, p.progress_percentage, p.risk_level,
-          p.next_milestone_date, p.next_milestone_description,
-          al.name as action_line_name, al.color_code as action_line_color,
           u.full_name as owner_name, u.email as owner_email
         FROM projects p 
-        JOIN users u ON p.owner_id = u.id 
-        LEFT JOIN action_lines al ON p.action_line_id = al.id
+        JOIN users u ON p.owner_id = u.id
       `;
       whereConditions.push('p.owner_id = ?');
       params.push(user.userId);
     }
 
-    // Aplicar filtros adicionales
-    if (actionLine) {
-      whereConditions.push('p.action_line_id = ?');
-      params.push(parseInt(actionLine));
-    }
-    if (riskLevel) {
-      whereConditions.push('p.risk_level = ?');
-      params.push(riskLevel);
-    }
+    // Aplicar filtro de status si existe
     if (status) {
       whereConditions.push('p.status = ?');
       params.push(status);
