@@ -1331,6 +1331,875 @@ app.get('/dashboard', (c) => {
   `)
 })
 
+// Página de edición de proyecto (requiere autenticación en el frontend)
+app.get('/dashboard/proyectos/:id/editar', async (c) => {
+  const projectId = c.req.param('id');
+  
+  return c.html(`
+    <!DOCTYPE html>
+    <html lang="es" id="dashboard-html">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Editar Proyecto - CTeI-Manager</title>
+        <script src="https://cdn.tailwindcss.com"></script>
+        <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
+        <link href="/static/styles.css" rel="stylesheet">
+        <script src="https://cdn.jsdelivr.net/npm/axios@1.6.0/dist/axios.min.js"></script>
+        <script>
+          tailwind.config = {
+            theme: {
+              extend: {
+                colors: {
+                  border: "hsl(var(--border))",
+                  input: "hsl(var(--input))",
+                  ring: "hsl(var(--ring))",
+                  background: "hsl(var(--background))",
+                  foreground: "hsl(var(--foreground))",
+                  primary: {
+                    DEFAULT: "hsl(var(--primary))",
+                    foreground: "hsl(var(--primary-foreground))",
+                  },
+                  secondary: {
+                    DEFAULT: "hsl(var(--secondary))",
+                    foreground: "hsl(var(--secondary-foreground))",
+                  },
+                  destructive: {
+                    DEFAULT: "hsl(var(--destructive))",
+                    foreground: "hsl(var(--destructive-foreground))",
+                  },
+                  muted: {
+                    DEFAULT: "hsl(var(--muted))",
+                    foreground: "hsl(var(--muted-foreground))",
+                  },
+                  accent: {
+                    DEFAULT: "hsl(var(--accent))",
+                    foreground: "hsl(var(--accent-foreground))",
+                  },
+                  popover: {
+                    DEFAULT: "hsl(var(--popover))",
+                    foreground: "hsl(var(--popover-foreground))",
+                  },
+                  card: {
+                    DEFAULT: "hsl(var(--card))",
+                    foreground: "hsl(var(--card-foreground))",
+                  },
+                }
+              }
+            }
+          }
+        </script>
+        <style>
+            /* Sistema de temas en tiempo real */
+            :root {
+                --background: 0 0% 100%;
+                --foreground: 222.2 84% 4.9%;
+                --card: 0 0% 100%;
+                --card-foreground: 222.2 84% 4.9%;
+                --popover: 0 0% 100%;
+                --popover-foreground: 222.2 84% 4.9%;
+                --primary: 179 100% 29%;
+                --primary-foreground: 210 40% 98%;
+                --secondary: 210 40% 96%;
+                --secondary-foreground: 222.2 84% 4.9%;
+                --muted: 210 40% 96%;
+                --muted-foreground: 215.4 16.3% 46.9%;
+                --accent: 210 40% 96%;
+                --accent-foreground: 222.2 84% 4.9%;
+                --destructive: 0 84.2% 60.2%;
+                --destructive-foreground: 210 40% 98%;
+                --border: 214.3 31.8% 91.4%;
+                --input: 214.3 31.8% 91.4%;
+                --ring: 179 100% 29%;
+                --radius: 0.5rem;
+            }
+
+            .dark {
+                --background: 222.2 84% 4.9%;
+                --foreground: 210 40% 98%;
+                --card: 222.2 84% 4.9%;
+                --card-foreground: 210 40% 98%;
+                --popover: 222.2 84% 4.9%;
+                --popover-foreground: 210 40% 98%;
+                --primary: 179 100% 29%;
+                --primary-foreground: 210 40% 98%;
+                --secondary: 217.2 32.6% 17.5%;
+                --secondary-foreground: 210 40% 98%;
+                --muted: 217.2 32.6% 17.5%;
+                --muted-foreground: 215 20.2% 65.1%;
+                --accent: 217.2 32.6% 17.5%;
+                --accent-foreground: 210 40% 98%;
+                --destructive: 0 62.8% 30.6%;
+                --destructive-foreground: 210 40% 98%;
+                --border: 217.2 32.6% 17.5%;
+                --input: 217.2 32.6% 17.5%;
+                --ring: 179 100% 29%;
+            }
+
+            /* Estilos específicos para la página de edición */
+            .edit-page-container {
+                min-height: 100vh;
+            }
+            
+            .sticky-header {
+                position: sticky;
+                top: 0;
+                z-index: 40;
+                border-bottom: 1px solid hsl(var(--border));
+                background: hsl(var(--background));
+            }
+            
+            .content-columns {
+                display: grid;
+                grid-template-columns: 1fr 350px;
+                gap: 2rem;
+                padding: 2rem;
+                max-width: 1400px;
+                margin: 0 auto;
+            }
+            
+            .main-column {
+                min-width: 0; /* Permite que flexbox maneje el overflow */
+            }
+            
+            .sidebar-column {
+                min-width: 350px;
+            }
+            
+            .panel {
+                background: hsl(var(--card));
+                border: 1px solid hsl(var(--border));
+                border-radius: calc(var(--radius) * 1.5);
+                padding: 1.5rem;
+                margin-bottom: 1.5rem;
+            }
+            
+            .panel-title {
+                font-size: 1rem;
+                font-weight: 600;
+                color: hsl(var(--foreground));
+                margin-bottom: 1rem;
+                display: flex;
+                align-items: center;
+                gap: 0.5rem;
+            }
+            
+            .form-field {
+                margin-bottom: 1.5rem;
+            }
+            
+            .form-label {
+                display: block;
+                font-size: 0.875rem;
+                font-weight: 500;
+                color: hsl(var(--foreground));
+                margin-bottom: 0.5rem;
+            }
+            
+            .form-input, .form-textarea, .form-select {
+                width: 100%;
+                padding: 0.75rem;
+                border: 1px solid hsl(var(--border));
+                border-radius: calc(var(--radius));
+                background: hsl(var(--background));
+                color: hsl(var(--foreground));
+                font-size: 0.875rem;
+                transition: all 0.2s;
+            }
+            
+            .form-input:focus, .form-textarea:focus, .form-select:focus {
+                outline: none;
+                border-color: hsl(var(--ring));
+                box-shadow: 0 0 0 2px hsl(var(--ring) / 0.2);
+            }
+            
+            .form-textarea {
+                resize: vertical;
+                min-height: 120px;
+            }
+            
+            .btn {
+                padding: 0.75rem 1.5rem;
+                border-radius: calc(var(--radius));
+                font-weight: 500;
+                font-size: 0.875rem;
+                border: none;
+                cursor: pointer;
+                display: inline-flex;
+                align-items: center;
+                gap: 0.5rem;
+                transition: all 0.2s;
+                text-decoration: none;
+            }
+            
+            .btn-primary {
+                background: hsl(var(--primary));
+                color: hsl(var(--primary-foreground));
+            }
+            
+            .btn-primary:hover {
+                opacity: 0.9;
+            }
+            
+            .btn-primary:disabled {
+                opacity: 0.5;
+                cursor: not-allowed;
+            }
+            
+            .btn-secondary {
+                background: hsl(var(--secondary));
+                color: hsl(var(--secondary-foreground));
+                border: 1px solid hsl(var(--border));
+            }
+            
+            .btn-secondary:hover {
+                background: hsl(var(--accent));
+            }
+            
+            .btn-outline {
+                background: transparent;
+                color: hsl(var(--foreground));
+                border: 1px solid hsl(var(--border));
+            }
+            
+            .btn-outline:hover {
+                background: hsl(var(--accent));
+            }
+            
+            .tags-container {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 0.5rem;
+                margin-top: 0.5rem;
+            }
+            
+            .tag {
+                background: hsl(var(--primary));
+                color: hsl(var(--primary-foreground));
+                padding: 0.25rem 0.75rem;
+                border-radius: calc(var(--radius));
+                font-size: 0.75rem;
+                display: flex;
+                align-items: center;
+                gap: 0.25rem;
+            }
+            
+            .tag-remove {
+                cursor: pointer;
+                opacity: 0.7;
+            }
+            
+            .tag-remove:hover {
+                opacity: 1;
+            }
+            
+            .products-list {
+                max-height: 200px;
+                overflow-y: auto;
+                border: 1px solid hsl(var(--border));
+                border-radius: calc(var(--radius));
+                margin-bottom: 1rem;
+            }
+            
+            .product-item {
+                padding: 0.75rem;
+                border-bottom: 1px solid hsl(var(--border));
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+            }
+            
+            .product-item:last-child {
+                border-bottom: none;
+            }
+            
+            .search-results {
+                max-height: 150px;
+                overflow-y: auto;
+                border: 1px solid hsl(var(--border));
+                border-top: none;
+                border-radius: 0 0 calc(var(--radius)) calc(var(--radius));
+                background: hsl(var(--popover));
+                position: absolute;
+                width: 100%;
+                z-index: 10;
+            }
+            
+            .search-result-item {
+                padding: 0.75rem;
+                cursor: pointer;
+                border-bottom: 1px solid hsl(var(--border));
+                transition: background-color 0.2s;
+            }
+            
+            .search-result-item:hover {
+                background: hsl(var(--accent));
+            }
+            
+            .search-result-item:last-child {
+                border-bottom: none;
+            }
+            
+            /* Responsive */
+            @media (max-width: 1024px) {
+                .content-columns {
+                    grid-template-columns: 1fr;
+                    padding: 1rem;
+                }
+                
+                .sidebar-column {
+                    min-width: auto;
+                }
+            }
+        </style>
+    </head>
+    <body class="edit-page-container dark">
+        <!-- Cabecera de acciones persistente -->
+        <div class="sticky-header">
+            <div class="flex justify-between items-center py-4 px-6">
+                <div class="flex items-center gap-4">
+                    <a href="/dashboard" class="btn-outline btn">
+                        <i class="fas fa-arrow-left"></i>
+                        Volver al Dashboard
+                    </a>
+                    <h1 id="page-title" class="text-xl font-semibold text-foreground">
+                        Cargando proyecto...
+                    </h1>
+                </div>
+                
+                <div class="flex items-center gap-3">
+                    <a id="view-public-btn" href="#" target="_blank" class="btn-outline btn" style="display: none;">
+                        <i class="fas fa-external-link-alt"></i>
+                        Ver Página Pública
+                    </a>
+                    
+                    <button type="button" id="cancel-btn" class="btn-secondary btn">
+                        <i class="fas fa-times"></i>
+                        Cancelar
+                    </button>
+                    
+                    <button type="submit" form="edit-project-form" id="save-btn" class="btn-primary btn" disabled>
+                        <i class="fas fa-save"></i>
+                        Guardar Cambios
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Contenido principal en dos columnas -->
+        <div class="content-columns">
+            <!-- Columna principal: Contenido del proyecto -->
+            <div class="main-column">
+                <form id="edit-project-form">
+                    <!-- Título del proyecto -->
+                    <div class="panel">
+                        <div class="form-field">
+                            <label for="project-title" class="form-label">
+                                <i class="fas fa-heading text-primary mr-2"></i>
+                                Título del Proyecto *
+                            </label>
+                            <input 
+                                type="text" 
+                                id="project-title"
+                                name="title"
+                                class="form-input"
+                                placeholder="Ingrese el título del proyecto"
+                                required
+                            >
+                        </div>
+                    </div>
+                    
+                    <!-- Resumen -->
+                    <div class="panel">
+                        <div class="form-field">
+                            <label for="project-abstract" class="form-label">
+                                <i class="fas fa-align-left text-primary mr-2"></i>
+                                Resumen *
+                            </label>
+                            <textarea 
+                                id="project-abstract"
+                                name="abstract"
+                                class="form-textarea"
+                                placeholder="Descripción breve del proyecto..."
+                                required
+                                rows="6"
+                            ></textarea>
+                            <div class="text-xs text-muted-foreground mt-1">
+                                <i class="fas fa-info-circle mr-1"></i>
+                                Proporcione una descripción concisa que resuma los objetivos principales del proyecto.
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Introducción -->
+                    <div class="panel">
+                        <div class="form-field">
+                            <label for="project-introduction" class="form-label">
+                                <i class="fas fa-book-open text-primary mr-2"></i>
+                                Introducción
+                            </label>
+                            <textarea 
+                                id="project-introduction"
+                                name="introduction"
+                                class="form-textarea"
+                                placeholder="Contexto y antecedentes del proyecto..."
+                                rows="8"
+                            ></textarea>
+                            <div class="text-xs text-muted-foreground mt-1">
+                                <i class="fas fa-lightbulb mr-1"></i>
+                                Explique el contexto, antecedentes y justificación del proyecto.
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Metodología -->
+                    <div class="panel">
+                        <div class="form-field">
+                            <label for="project-methodology" class="form-label">
+                                <i class="fas fa-cogs text-primary mr-2"></i>
+                                Metodología
+                            </label>
+                            <textarea 
+                                id="project-methodology"
+                                name="methodology"
+                                class="form-textarea"
+                                placeholder="Describa los métodos y enfoques utilizados..."
+                                rows="8"
+                            ></textarea>
+                            <div class="text-xs text-muted-foreground mt-1">
+                                <i class="fas fa-route mr-1"></i>
+                                Detalle los métodos, herramientas y procesos utilizados en el proyecto.
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            
+            <!-- Barra lateral: Metadatos y asociaciones -->
+            <div class="sidebar-column">
+                <!-- Panel de Estado -->
+                <div class="panel">
+                    <div class="panel-title">
+                        <i class="fas fa-flag text-primary"></i>
+                        Estado del Proyecto
+                    </div>
+                    
+                    <div class="form-field">
+                        <label for="project-status" class="form-label">Estado</label>
+                        <select id="project-status" name="status" class="form-select">
+                            <option value="DRAFT">Borrador</option>
+                            <option value="ACTIVE">Activo</option>
+                            <option value="REVIEW">En Revisión</option>
+                            <option value="COMPLETED">Completado</option>
+                            <option value="SUSPENDED">Suspendido</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-field">
+                        <label class="form-label">Visibilidad</label>
+                        <div class="flex items-center gap-3">
+                            <label class="flex items-center gap-2">
+                                <input type="radio" name="visibility" value="public" id="visibility-public">
+                                <span class="text-sm">Público</span>
+                            </label>
+                            <label class="flex items-center gap-2">
+                                <input type="radio" name="visibility" value="private" id="visibility-private" checked>
+                                <span class="text-sm">Privado</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Panel de Clasificación -->
+                <div class="panel">
+                    <div class="panel-title">
+                        <i class="fas fa-tags text-primary"></i>
+                        Clasificación
+                    </div>
+                    
+                    <div class="form-field">
+                        <label for="keywords-input" class="form-label">Palabras Clave</label>
+                        <input 
+                            type="text" 
+                            id="keywords-input"
+                            class="form-input"
+                            placeholder="Escriba y presione Enter"
+                        >
+                        <div id="keywords-container" class="tags-container"></div>
+                        <div class="text-xs text-muted-foreground mt-1">
+                            <i class="fas fa-keyboard mr-1"></i>
+                            Presione Enter para agregar cada palabra clave.
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Panel de Productos Científicos del Proyecto -->
+                <div class="panel">
+                    <div class="panel-title">
+                        <i class="fas fa-flask text-primary"></i>
+                        Productos Científicos del Proyecto
+                    </div>
+                    
+                    <div id="associated-products" class="products-list">
+                        <div class="text-center text-muted-foreground py-4">
+                            <i class="fas fa-box-open mb-2 block text-lg"></i>
+                            No hay productos científicos en este proyecto
+                        </div>
+                    </div>
+                    
+                    <button type="button" id="create-product-btn" class="btn-primary btn w-full">
+                        <i class="fas fa-plus"></i>
+                        Crear Nuevo Producto Científico
+                    </button>
+                    
+                    <div class="text-xs text-muted-foreground mt-2">
+                        <i class="fas fa-info-circle mr-1"></i>
+                        Los productos científicos incluyen artículos, libros, patentes, software, etc.
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Loading overlay -->
+        <div id="loading-overlay" class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
+            <div class="bg-card p-6 rounded-lg flex items-center gap-4">
+                <i class="fas fa-spinner fa-spin text-primary text-xl"></i>
+                <span class="text-foreground">Cargando proyecto...</span>
+            </div>
+        </div>
+        
+        <script>
+            // Variables globales
+            const API_BASE = '/api';
+            const PROJECT_ID = '${projectId}';
+            let currentProject = null;
+            let hasUnsavedChanges = false;
+            let keywords = [];
+            let associatedProducts = [];
+            
+            // Elementos DOM
+            const form = document.getElementById('edit-project-form');
+            const saveBtn = document.getElementById('save-btn');
+            const cancelBtn = document.getElementById('cancel-btn');
+            const viewPublicBtn = document.getElementById('view-public-btn');
+            const pageTitle = document.getElementById('page-title');
+            const loadingOverlay = document.getElementById('loading-overlay');
+            
+            // Inicialización
+            document.addEventListener('DOMContentLoaded', async () => {
+                try {
+                    await loadProject();
+                    initializeForm();
+                    initializeKeywords();
+                    initializeProductSearch();
+                    hideLoading();
+                } catch (error) {
+                    console.error('Error al inicializar:', error);
+                    showError('Error al cargar el proyecto');
+                }
+            });
+            
+            // Cargar datos del proyecto
+            async function loadProject() {
+                try {
+                    const response = await axios.get(\`\${API_BASE}/private/projects/\${PROJECT_ID}\`);
+                    
+                    if (response.data.success) {
+                        currentProject = response.data.data;
+                        populateForm();
+                        updatePageTitle();
+                        updatePublicLink();
+                    } else {
+                        throw new Error(response.data.message || 'Error al cargar el proyecto');
+                    }
+                } catch (error) {
+                    console.error('Error cargando proyecto:', error);
+                    throw error;
+                }
+            }
+            
+            // Poblar formulario con datos del proyecto
+            function populateForm() {
+                if (!currentProject) return;
+                
+                document.getElementById('project-title').value = currentProject.title || '';
+                document.getElementById('project-abstract').value = currentProject.abstract || '';
+                document.getElementById('project-introduction').value = currentProject.introduction || '';
+                document.getElementById('project-methodology').value = currentProject.methodology || '';
+                document.getElementById('project-status').value = currentProject.status || 'DRAFT';
+                
+                // Visibilidad (simulada - implementar según schema de BD)
+                const isPublic = currentProject.is_public;
+                document.getElementById('visibility-public').checked = isPublic;
+                document.getElementById('visibility-private').checked = !isPublic;
+                
+                // Keywords
+                if (currentProject.keywords) {
+                    keywords = currentProject.keywords.split(',').map(k => k.trim()).filter(k => k);
+                    renderKeywords();
+                }
+            }
+            
+            // Actualizar título de la página
+            function updatePageTitle() {
+                if (currentProject && currentProject.title) {
+                    pageTitle.textContent = \`Editando Proyecto: \${currentProject.title}\`;
+                }
+            }
+            
+            // Actualizar enlace público
+            function updatePublicLink() {
+                if (currentProject) {
+                    const publicUrl = \`/proyecto/\${currentProject.id}\`;
+                    viewPublicBtn.href = publicUrl;
+                    viewPublicBtn.style.display = 'inline-flex';
+                }
+            }
+            
+            // Inicializar formulario
+            function initializeForm() {
+                // Detectar cambios en el formulario
+                form.addEventListener('input', handleFormChange);
+                form.addEventListener('change', handleFormChange);
+                
+                // Manejar envío del formulario
+                form.addEventListener('submit', handleFormSubmit);
+                
+                // Botón cancelar
+                cancelBtn.addEventListener('click', handleCancel);
+                
+                // Prevenir salida accidental
+                window.addEventListener('beforeunload', handleBeforeUnload);
+            }
+            
+            // Manejar cambios en el formulario
+            function handleFormChange() {
+                hasUnsavedChanges = true;
+                saveBtn.disabled = false;
+            }
+            
+            // Manejar envío del formulario
+            async function handleFormSubmit(event) {
+                event.preventDefault();
+                
+                if (!hasUnsavedChanges) return;
+                
+                try {
+                    saveBtn.disabled = true;
+                    saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Guardando...';
+                    
+                    const formData = new FormData(form);
+                    const projectData = {
+                        title: formData.get('title'),
+                        abstract: formData.get('abstract'),
+                        introduction: formData.get('introduction') || null,
+                        methodology: formData.get('methodology') || null,
+                        status: formData.get('status'),
+                        keywords: keywords.join(', ') || null,
+                        // is_public: formData.get('visibility') === 'public' // Implementar según schema
+                    };
+                    
+                    const response = await axios.put(\`\${API_BASE}/private/projects/\${PROJECT_ID}\`, projectData);
+                    
+                    if (response.data.success) {
+                        hasUnsavedChanges = false;
+                        showSuccess('Proyecto actualizado exitosamente');
+                        
+                        // Actualizar datos locales
+                        currentProject = { ...currentProject, ...projectData };
+                        updatePageTitle();
+                        
+                        saveBtn.disabled = true;
+                        saveBtn.innerHTML = '<i class="fas fa-save"></i> Guardar Cambios';
+                    } else {
+                        throw new Error(response.data.message || 'Error al actualizar el proyecto');
+                    }
+                } catch (error) {
+                    console.error('Error al guardar:', error);
+                    showError('Error al guardar el proyecto');
+                    saveBtn.disabled = false;
+                    saveBtn.innerHTML = '<i class="fas fa-save"></i> Guardar Cambios';
+                }
+            }
+            
+            // Manejar cancelación
+            function handleCancel() {
+                if (hasUnsavedChanges) {
+                    if (confirm('¿Está seguro de que desea cancelar? Los cambios no guardados se perderán.')) {
+                        window.location.href = '/dashboard';
+                    }
+                } else {
+                    window.location.href = '/dashboard';
+                }
+            }
+            
+            // Prevenir salida accidental
+            function handleBeforeUnload(event) {
+                if (hasUnsavedChanges) {
+                    event.preventDefault();
+                    event.returnValue = '';
+                }
+            }
+            
+            // Inicializar sistema de keywords
+            function initializeKeywords() {
+                const keywordsInput = document.getElementById('keywords-input');
+                
+                keywordsInput.addEventListener('keypress', (event) => {
+                    if (event.key === 'Enter') {
+                        event.preventDefault();
+                        const keyword = keywordsInput.value.trim();
+                        
+                        if (keyword && !keywords.includes(keyword)) {
+                            keywords.push(keyword);
+                            renderKeywords();
+                            keywordsInput.value = '';
+                            handleFormChange();
+                        }
+                    }
+                });
+            }
+            
+            // Renderizar keywords
+            function renderKeywords() {
+                const container = document.getElementById('keywords-container');
+                
+                container.innerHTML = keywords.map(keyword => \`
+                    <div class="tag">
+                        <span>\${keyword}</span>
+                        <i class="fas fa-times tag-remove" onclick="removeKeyword('\${keyword}')"></i>
+                    </div>
+                \`).join('');
+            }
+            
+            // Remover keyword
+            function removeKeyword(keyword) {
+                keywords = keywords.filter(k => k !== keyword);
+                renderKeywords();
+                handleFormChange();
+            }
+            
+            // Inicializar gestión de productos
+            function initializeProductSearch() {
+                const createBtn = document.getElementById('create-product-btn');
+                
+                createBtn.addEventListener('click', () => {
+                    // Redirigir a página de creación de producto con project_id
+                    window.location.href = \`/dashboard/productos/nuevo?project_id=\${PROJECT_ID}\`;
+                });
+            }
+            
+            // Cargar productos del proyecto
+            async function loadAssociatedProducts() {
+                try {
+                    const response = await axios.get(\`\${API_BASE}/projects/\${PROJECT_ID}/products\`);
+                    
+                    if (response.data.success) {
+                        associatedProducts = response.data.data.products || [];
+                        renderAssociatedProducts();
+                    }
+                } catch (error) {
+                    console.error('Error cargando productos del proyecto:', error);
+                    associatedProducts = [];
+                    renderAssociatedProducts();
+                }
+            }
+            
+            // Renderizar productos del proyecto
+            function renderAssociatedProducts() {
+                const container = document.getElementById('associated-products');
+                
+                if (associatedProducts.length === 0) {
+                    container.innerHTML = \`
+                        <div class="text-center text-muted-foreground py-4">
+                            <i class="fas fa-box-open mb-2 block text-lg"></i>
+                            No hay productos científicos en este proyecto
+                        </div>
+                    \`;
+                } else {
+                    container.innerHTML = associatedProducts.map(product => \`
+                        <div class="product-item">
+                            <div>
+                                <div class="font-medium">\${product.description}</div>
+                                <div class="text-xs text-muted-foreground">
+                                    <span class="mr-3">Código: \${product.product_code}</span>
+                                    <span>\${product.product_type || 'Producto'}</span>
+                                </div>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <button 
+                                    type="button" 
+                                    onclick="editProduct(\${product.id})"
+                                    class="text-primary hover:text-primary-foreground text-sm"
+                                    title="Editar producto"
+                                >
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button 
+                                    type="button" 
+                                    onclick="removeProduct(\${product.id})"
+                                    class="text-destructive hover:text-destructive-foreground text-sm"
+                                    title="Eliminar producto"
+                                >
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                    \`).join('');
+                }
+            }
+            
+            // Editar producto
+            function editProduct(productId) {
+                window.location.href = \`/dashboard/productos/\${productId}/editar\`;
+            }
+            
+            // Eliminar producto
+            async function removeProduct(productId) {
+                if (!confirm('¿Está seguro de que desea eliminar este producto? Esta acción no se puede deshacer.')) {
+                    return;
+                }
+                
+                try {
+                    const response = await axios.delete(\`\${API_BASE}/private/products/\${productId}\`);
+                    
+                    if (response.data.success) {
+                        showSuccess('Producto eliminado exitosamente');
+                        loadAssociatedProducts();
+                    } else {
+                        throw new Error(response.data.message);
+                    }
+                } catch (error) {
+                    console.error('Error eliminando producto:', error);
+                    showError('Error al eliminar el producto');
+                }
+            }
+            
+            // Funciones de utilidad
+            function hideLoading() {
+                loadingOverlay.style.display = 'none';
+            }
+            
+            function showSuccess(message) {
+                // Implementar toast de éxito
+                console.log('SUCCESS:', message);
+                // TODO: Implementar sistema de notificaciones
+            }
+            
+            function showError(message) {
+                // Implementar toast de error
+                console.error('ERROR:', message);
+                alert('Error: ' + message); // Temporal
+            }
+            
+            // Cargar productos asociados al inicio
+            loadAssociatedProducts();
+        </script>
+    </body>
+    </html>
+  `);
+})
+
 // Ruta de fallback para SPA routing
 app.get('*', (c) => {
   // Redireccionar a la página principal

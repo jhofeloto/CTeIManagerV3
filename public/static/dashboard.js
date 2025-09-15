@@ -404,16 +404,14 @@ async function loadDashboardData() {
 function showView(view) {
     DashboardState.currentView = view;
     
-    // Actualizar navegación activa
+    // Actualizar navegación activa con sistema unificado
     document.querySelectorAll('.nav-item').forEach(item => {
-        item.classList.remove('bg-primary', 'text-primary-foreground');
-        item.classList.add('text-foreground');
+        item.classList.remove('active');
     });
     
     const activeItem = document.querySelector(`[onclick="showView('${view}')"]`);
     if (activeItem) {
-        activeItem.classList.add('bg-primary', 'text-primary-foreground');
-        activeItem.classList.remove('text-foreground');
+        activeItem.classList.add('active');
     }
     
     // Renderizar vista correspondiente
@@ -1434,14 +1432,8 @@ function viewProject(projectId) {
 }
 
 function editProject(projectId) {
-    // Buscar el proyecto en el estado
-    const project = DashboardState.projects.find(p => p.id === projectId);
-    if (!project) {
-        showToast('Proyecto no encontrado', 'error');
-        return;
-    }
-    
-    showEditProjectModal(project);
+    // Redirigir a la nueva página de edición dedicada
+    window.location.href = `/dashboard/proyectos/${projectId}/editar`;
 }
 
 // Modal de edición de proyecto
@@ -4489,10 +4481,10 @@ async function loadAdminProducts(page = 1) {
                                 <div class="flex-1">
                                     <div class="flex items-center gap-2 mb-2">
                                         <h3 class="font-semibold text-lg">${product.product_code || 'Sin código'}</h3>
-                                        <span class="px-2 py-1 text-xs rounded-full ${product.is_public ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700'}">
+                                        <span class="ctei-status-badge ${product.is_public ? 'public' : 'private'}">
                                             ${product.is_public ? 'PÚBLICO' : 'PRIVADO'}
                                         </span>
-                                        ${product.category_name ? `<span class="px-2 py-1 text-xs rounded-full bg-blue-100 text-blue-700">${product.category_name}</span>` : ''}
+                                        ${product.category_name ? `<span class="ctei-status-badge active">${product.category_name}</span>` : ''}
                                     </div>
                                     <p class="text-muted-foreground mb-2">${product.description}</p>
                                     <div class="text-sm text-muted-foreground">
@@ -4506,7 +4498,7 @@ async function loadAdminProducts(page = 1) {
                                 <div class="flex flex-col space-y-2 ml-4">
                                     <button 
                                         onclick="toggleAdminProductVisibility(${product.id}, ${!product.is_public})"
-                                        class="px-3 py-1 rounded text-sm ${product.is_public ? 'bg-orange-100 text-orange-700' : 'bg-green-100 text-green-700'} hover:opacity-90"
+                                        class="ctei-btn ctei-btn-secondary"
                                         title="${product.is_public ? 'Ocultar producto' : 'Publicar producto'}"
                                     >
                                         <i class="fas fa-${product.is_public ? 'eye-slash' : 'eye'} mr-1"></i>
@@ -4514,7 +4506,7 @@ async function loadAdminProducts(page = 1) {
                                     </button>
                                     <button 
                                         onclick="deleteAdminProduct(${product.id}, '${product.product_code || 'Sin código'}', '${product.project_title}')"
-                                        class="px-3 py-1 rounded text-sm bg-red-100 text-red-700 hover:bg-red-200"
+                                        class="ctei-btn ctei-btn-secondary" style="background-color: var(--destructive); color: var(--destructive-foreground);"
                                         title="Eliminar producto"
                                     >
                                         <i class="fas fa-trash"></i>
@@ -6437,7 +6429,7 @@ function renderScoringStatistics(stats) {
     
     container.innerHTML = `
         <div class="ctei-metric-card">
-            <div class="ctei-metric-icon bg-blue-100 text-blue-600">
+            <div class="ctei-metric-icon primary">
                 <i class="fas fa-clipboard-list"></i>
             </div>
             <div class="ctei-metric-content">

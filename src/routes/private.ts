@@ -580,6 +580,59 @@ privateRoutes.get('/projects/:projectId/products', async (c) => {
   }
 });
 
+// Buscar productos para asociar a proyecto  
+privateRoutes.get('/private/products/search', async (c) => {
+  try {
+    const user = c.get('user')!;
+    const query = c.req.query('q') || '';
+
+    if (query.length < 2) {
+      return c.json<APIResponse>({
+        success: true,
+        data: []
+      });
+    }
+
+    // Buscar productos que el usuario puede ver
+    const products = await c.env.DB.prepare(`
+      SELECT pr.id, pr.product_code, pr.description as title, pr.product_type as type, pr.project_id
+      FROM products pr
+      JOIN projects p ON pr.project_id = p.id
+      LEFT JOIN project_collaborators pc ON p.id = pc.project_id AND pc.user_id = ?
+      WHERE (
+        p.owner_id = ? OR 
+        pc.user_id = ? OR 
+        pr.is_public = 1 OR
+        ? = 'ADMIN'
+      ) AND (
+        pr.product_code LIKE ? OR 
+        pr.description LIKE ?
+      )
+      ORDER BY pr.created_at DESC
+      LIMIT 20
+    `).bind(
+      user.userId, 
+      user.userId, 
+      user.userId, 
+      user.role,
+      `%${query}%`, 
+      `%${query}%`
+    ).all();
+
+    return c.json<APIResponse>({
+      success: true,
+      data: products.results
+    });
+
+  } catch (error) {
+    console.error('Error buscando productos:', error);
+    return c.json<APIResponse>({ 
+      success: false, 
+      error: 'Error interno del servidor' 
+    }, 500);
+  }
+});
+
 // Añadir colaborador a proyecto
 privateRoutes.post('/projects/:projectId/collaborators', requireRole('INVESTIGATOR', 'ADMIN'), async (c) => {
   try {

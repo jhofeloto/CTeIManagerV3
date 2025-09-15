@@ -1165,7 +1165,8 @@ html:not(.dark) .ctei-btn-secondary:hover i {
   color: var(--muted-foreground);
 }
 
-/* ===== PÍLDORAS DE ESTADO ===== */
+/* ===== PÍLDORAS DE ESTADO UNIFICADAS ===== */
+/* Sistema de tokens para estados - Paleta unificada teal/gris */
 .ctei-status-badge {
   padding: 0.25rem 0.75rem;
   border-radius: var(--radius-xl);
@@ -1173,31 +1174,106 @@ html:not(.dark) .ctei-btn-secondary:hover i {
   font-weight: 500;
   text-transform: uppercase;
   letter-spacing: 0.05em;
+  border: 1px solid transparent;
 }
 
+/* Estados positivos/activos: Color primario (teal) */
 .ctei-status-badge.active {
-  background-color: var(--chart-2);
-  color: var(--background);
+  background-color: var(--accent);
+  color: var(--accent-foreground);
+  border-color: var(--border);
 }
 
 .ctei-status-badge.public {
-  background-color: var(--chart-3);
-  color: var(--background);
-}
-
-.ctei-status-badge.private {
-  background-color: var(--muted);
-  color: var(--muted-foreground);
-}
-
-.ctei-status-badge.draft {
-  background-color: var(--chart-4);
-  color: var(--background);
+  background-color: var(--accent);
+  color: var(--accent-foreground);
+  border-color: var(--border);
 }
 
 .ctei-status-badge.completed {
-  background-color: var(--chart-1);
-  color: var(--background);
+  background-color: var(--primary);
+  color: var(--primary-foreground);
+}
+
+/* Estados neutros/privados: Color muted (gris) */
+.ctei-status-badge.private {
+  background-color: var(--muted);
+  color: var(--muted-foreground);
+  border-color: var(--border);
+}
+
+.ctei-status-badge.draft {
+  background-color: var(--muted);
+  color: var(--muted-foreground);
+  border-color: var(--border);
+}
+
+/* Estado destructivo: Color de advertencia */
+.ctei-status-badge.destructive {
+  background-color: var(--destructive);
+  color: var(--destructive-foreground);
+}
+
+/* ===== MENÚ DE ACCIONES (TRES PUNTOS) - COLORES UNIFICADOS ===== */
+.ctei-actions-item {
+  color: var(--foreground);
+  padding: 0.75rem 1rem;
+  display: flex;
+  align-items: center;
+  border-radius: var(--radius);
+  transition: all 0.2s ease;
+  cursor: pointer;
+  background: none;
+  border: none;
+  width: 100%;
+  text-align: left;
+}
+
+.ctei-actions-item:hover {
+  background-color: var(--accent);
+  color: var(--accent-foreground);
+}
+
+/* Acción destructiva específica */
+.ctei-actions-item.destructive {
+  color: var(--destructive);
+}
+
+.ctei-actions-item.destructive:hover {
+  background-color: var(--destructive);
+  color: var(--destructive-foreground);
+}
+
+/* ===== SIDEBAR DASHBOARD - ELEMENTO ACTIVO LIGERO ===== */
+/* Navegación del dashboard con estilo refinado para tema claro */
+.nav-item {
+  color: var(--muted-foreground);
+  background: transparent;
+  border: none;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.nav-item:hover {
+  color: var(--foreground);
+  background-color: var(--accent);
+}
+
+/* Estado activo: ligero y elegante para tema claro */
+.nav-item.active {
+  color: var(--primary);
+  background-color: var(--accent);
+  font-weight: 600;
+  border-left: 3px solid var(--primary);
+  padding-left: calc(0.75rem - 3px); /* Compensar el borde */
+}
+
+/* Tema oscuro: estado activo más visible */
+.dark .nav-item.active {
+  color: var(--primary);
+  background-color: var(--accent);
+  font-weight: 600;
+  border-left: 3px solid var(--primary);
 }
 
 /* ===== MÉTRICAS (KPI CARDS) ===== */
