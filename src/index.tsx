@@ -1896,48 +1896,9 @@ app.get('/dashboard/proyectos/:id/editar', async (c) => {
             
             // Mostrar error de autenticación
             function showAuthError() {
-                hideLoading();
-                
-                const mainContent = document.querySelector('.content-columns');
-                if (mainContent) {
-                    mainContent.innerHTML = \`
-                        <div class="error-state-container" style="grid-column: 1 / -1; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 60vh; text-align: center;">
-                            <div class="error-state-content" style="max-width: 500px; padding: 2rem;">
-                                <div class="error-icon" style="margin-bottom: 1.5rem;">
-                                    <i class="fas fa-lock" style="font-size: 4rem; color: hsl(var(--destructive)); opacity: 0.8;"></i>
-                                </div>
-                                
-                                <h2 style="font-size: 1.5rem; font-weight: 600; color: hsl(var(--foreground)); margin-bottom: 1rem;">
-                                    Acceso Restringido
-                                </h2>
-                                
-                                <p style="color: hsl(var(--muted-foreground)); margin-bottom: 2rem; line-height: 1.6;">
-                                    Necesitas iniciar sesión para editar proyectos. Por favor, autentícate primero.
-                                </p>
-                                
-                                <div style="display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;">
-                                    <a 
-                                        href="/login" 
-                                        class="btn-primary btn"
-                                        style="min-width: 120px; text-decoration: none;"
-                                    >
-                                        <i class="fas fa-sign-in-alt mr-2"></i>
-                                        Iniciar Sesión
-                                    </a>
-                                    
-                                    <a 
-                                        href="/dashboard" 
-                                        class="btn-outline btn"
-                                        style="min-width: 120px; text-decoration: none;"
-                                    >
-                                        <i class="fas fa-arrow-left mr-2"></i>
-                                        Volver al Dashboard
-                                    </a>
-                                </div>
-                            </div>
-                        </div>
-                    \`;
-                }
+                updatePageTitle(); // Actualizar título aunque no haya proyecto
+                showSpecificError('auth', 'Sesión Requerida', 
+                    'Para editar proyectos necesitas iniciar sesión primero. Por favor, autentícate con tu cuenta de CTeI-Manager.');
             }
             
             // Elementos DOM
@@ -1963,7 +1924,8 @@ app.get('/dashboard/proyectos/:id/editar', async (c) => {
                     hideLoading();
                 } catch (error) {
                     console.error('Error al inicializar:', error);
-                    showError('Error al cargar el proyecto');
+                    hideLoading(); // CRÍTICO: Siempre ocultar loading en caso de error
+                    // El error específico ya fue manejado en loadProject()
                 }
             });
             
@@ -1982,6 +1944,41 @@ app.get('/dashboard/proyectos/:id/editar', async (c) => {
                     }
                 } catch (error) {
                     console.error('Error cargando proyecto:', error);
+                    
+                    // Manejo específico según código de estado HTTP
+                    if (error.response) {
+                        const status = error.response.status;
+                        const message = error.response.data?.error || error.message;
+                        
+                        switch (status) {
+                            case 401:
+                                showSpecificError('auth', 'Token de autenticación inválido o expirado', 
+                                    'Tu sesión ha expirado o el token de autenticación no es válido. Por favor, inicia sesión nuevamente.');
+                                break;
+                            case 403:
+                                showSpecificError('permission', 'No tienes permisos para editar este proyecto', 
+                                    'Este proyecto pertenece a otro usuario y no tienes los permisos necesarios para editarlo. Solo el propietario o un administrador pueden realizar cambios.');
+                                break;
+                            case 404:
+                                showSpecificError('notfound', 'Proyecto no encontrado', 
+                                    'El proyecto que intentas editar no existe o ha sido eliminado. Es posible que hayas seguido un enlace obsoleto.');
+                                break;
+                            case 500:
+                                showSpecificError('server', 'Error interno del servidor', 
+                                    'Ocurrió un problema en el servidor. Por favor, intenta nuevamente en unos momentos. Si el problema persiste, contacta al soporte técnico.');
+                                break;
+                            default:
+                                showSpecificError('unknown', 'Error de conexión', 
+                                    \`Ocurrió un error inesperado (código \${status}). Por favor, verifica tu conexión a internet e intenta nuevamente.\`);
+                        }
+                    } else if (error.request) {
+                        showSpecificError('network', 'Error de conexión', 
+                            'No se pudo conectar con el servidor. Verifica tu conexión a internet e intenta nuevamente.');
+                    } else {
+                        showSpecificError('unknown', 'Error inesperado', 
+                            'Ocurrió un error inesperado al cargar el proyecto. Por favor, intenta nuevamente.');
+                    }
+                    
                     throw error;
                 }
             }
@@ -2012,6 +2009,8 @@ app.get('/dashboard/proyectos/:id/editar', async (c) => {
             function updatePageTitle() {
                 if (currentProject && currentProject.title) {
                     pageTitle.textContent = \`Editando Proyecto: \${currentProject.title}\`;
+                } else {
+                    pageTitle.textContent = \`Error al cargar proyecto (ID: \${PROJECT_ID})\`;
                 }
             }
             
@@ -2257,6 +2256,162 @@ app.get('/dashboard/proyectos/:id/editar', async (c) => {
             function showError(message) {
                 console.error('ERROR:', message);
                 showErrorState(message);
+            }
+            
+            // Mostrar error específico según tipo y código de estado
+            function showSpecificError(type, title, description) {
+                hideLoading();
+                
+                // Configuración específica según tipo de error
+                const errorConfig = {
+                    auth: {
+                        icon: 'fas fa-lock',
+                        color: 'hsl(var(--destructive))',
+                        primaryAction: {
+                            text: 'Iniciar Sesión',
+                            href: '/login',
+                            icon: 'fas fa-sign-in-alt'
+                        }
+                    },
+                    permission: {
+                        icon: 'fas fa-user-shield',
+                        color: 'hsl(var(--destructive))',
+                        primaryAction: {
+                            text: 'Contactar Propietario',
+                            href: '#',
+                            icon: 'fas fa-envelope',
+                            onclick: 'showContactOwnerInfo()'
+                        }
+                    },
+                    notfound: {
+                        icon: 'fas fa-search',
+                        color: 'hsl(var(--muted-foreground))',
+                        primaryAction: {
+                            text: 'Ver Todos los Proyectos',
+                            href: '/dashboard',
+                            icon: 'fas fa-list'
+                        }
+                    },
+                    server: {
+                        icon: 'fas fa-server',
+                        color: 'hsl(var(--destructive))',
+                        primaryAction: {
+                            text: 'Reintentar',
+                            href: '#',
+                            icon: 'fas fa-redo',
+                            onclick: 'retryLoadProject()'
+                        }
+                    },
+                    network: {
+                        icon: 'fas fa-wifi',
+                        color: 'hsl(var(--destructive))',
+                        primaryAction: {
+                            text: 'Reintentar',
+                            href: '#',
+                            icon: 'fas fa-redo', 
+                            onclick: 'retryLoadProject()'
+                        }
+                    },
+                    unknown: {
+                        icon: 'fas fa-exclamation-triangle',
+                        color: 'hsl(var(--destructive))',
+                        primaryAction: {
+                            text: 'Reintentar',
+                            href: '#',
+                            icon: 'fas fa-redo',
+                            onclick: 'retryLoadProject()'
+                        }
+                    }
+                };
+                
+                const config = errorConfig[type] || errorConfig.unknown;
+                
+                // Reemplazar el contenido principal con el estado de error específico
+                const mainContent = document.querySelector('.content-columns');
+                if (mainContent) {
+                    mainContent.innerHTML = \`
+                        <div class="error-state-container" style="grid-column: 1 / -1; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 60vh; text-align: center;">
+                            <div class="error-state-content" style="max-width: 600px; padding: 2rem;">
+                                <!-- Ícono de Error Específico -->
+                                <div class="error-icon" style="margin-bottom: 1.5rem;">
+                                    <i class="\${config.icon}" style="font-size: 4rem; color: \${config.color}; opacity: 0.8;"></i>
+                                </div>
+                                
+                                <!-- Título del Error -->
+                                <h2 style="font-size: 1.5rem; font-weight: 600; color: hsl(var(--foreground)); margin-bottom: 1rem;">
+                                    \${title}
+                                </h2>
+                                
+                                <!-- Descripción Detallada -->
+                                <p style="color: hsl(var(--muted-foreground)); margin-bottom: 2rem; line-height: 1.6; font-size: 0.95rem;">
+                                    \${description}
+                                </p>
+                                
+                                <!-- Botones de Acción -->
+                                <div style="display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;">
+                                    <a 
+                                        href="\${config.primaryAction.href}" 
+                                        \${config.primaryAction.onclick ? 'onclick="' + config.primaryAction.onclick + '"' : ''}
+                                        class="btn-primary btn"
+                                        style="min-width: 140px; text-decoration: none;"
+                                    >
+                                        <i class="\${config.primaryAction.icon} mr-2"></i>
+                                        \${config.primaryAction.text}
+                                    </a>
+                                    
+                                    <a 
+                                        href="/dashboard" 
+                                        class="btn-outline btn"
+                                        style="min-width: 140px; text-decoration: none;"
+                                    >
+                                        <i class="fas fa-arrow-left mr-2"></i>
+                                        Volver al Dashboard
+                                    </a>
+                                </div>
+                                
+                                \${type === 'permission' && currentProject ? \`
+                                    <div style="margin-top: 2rem; padding: 1rem; background: hsl(var(--muted)); border-radius: calc(var(--radius)); text-align: left;">
+                                        <h4 style="font-size: 0.875rem; font-weight: 600; margin-bottom: 0.5rem; color: hsl(var(--foreground));">
+                                            <i class="fas fa-info-circle mr-1"></i>
+                                            Información del Proyecto
+                                        </h4>
+                                        <div style="font-size: 0.75rem; color: hsl(var(--muted-foreground));">
+                                            <strong>Propietario:</strong> \${currentProject?.owner_name || 'No disponible'}<br>
+                                            <strong>Email:</strong> \${currentProject?.owner_email || 'No disponible'}
+                                        </div>
+                                    </div>
+                                \` : ''}
+                                
+                                <!-- Información Técnica (Colapsible) -->
+                                <details style="margin-top: 2rem; text-align: left;">
+                                    <summary style="cursor: pointer; color: hsl(var(--muted-foreground)); font-size: 0.875rem;">
+                                        <i class="fas fa-code mr-1"></i>
+                                        Información técnica para soporte
+                                    </summary>
+                                    <div style="margin-top: 1rem; padding: 1rem; background: hsl(var(--muted)); border-radius: calc(var(--radius)); font-family: monospace; font-size: 0.75rem; color: hsl(var(--muted-foreground));">
+                                        <strong>Tipo de Error:</strong> \${type}<br>
+                                        <strong>Proyecto ID:</strong> \${PROJECT_ID}<br>
+                                        <strong>URL de la API:</strong> \${API_BASE}/private/projects/\${PROJECT_ID}<br>
+                                        <strong>Token Presente:</strong> \${authToken ? 'Sí' : 'No'}<br>
+                                        <strong>Título:</strong> \${title}<br>
+                                        <strong>Timestamp:</strong> \${new Date().toISOString()}
+                                    </div>
+                                </details>
+                            </div>
+                        </div>
+                    \`;
+                }
+            }
+            
+            // Función para mostrar información de contacto del propietario
+            function showContactOwnerInfo() {
+                if (currentProject && currentProject.owner_email) {
+                    const subject = encodeURIComponent(\`Solicitud de acceso al proyecto: \${currentProject.title}\`);
+                    const body = encodeURIComponent(\`Hola \${currentProject.owner_name},\\n\\nMe gustaría solicitar acceso de edición al proyecto "\${currentProject.title}".\\n\\nGracias.\`);
+                    window.open(\`mailto:\${currentProject.owner_email}?subject=\${subject}&body=\${body}\`, '_blank');
+                } else {
+                    alert('La información de contacto del propietario no está disponible.');
+                }
             }
             
             // Mostrar estado de error integrado en la interfaz
