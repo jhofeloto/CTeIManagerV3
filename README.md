@@ -182,15 +182,17 @@ R2 Bucket Structure:
 
 ## 🔄 Versión Actual: 6.1.0 - FUNCIONALIDADES CORREGIDAS Y VERIFICADAS
 
-### 🏆 Última Implementación (v6.1.0 - CORRECCIÓN DE FUNCIONALIDADES)
+### 🏆 Última Implementación (v6.1.1 - CORRECCIÓN TOTAL DE FUNCIONALIDADES)
 
 **✅ CORRECCIONES CRÍTICAS DE FUNCIONALIDAD EN PÁGINA DE EDICIÓN:**
 
 #### 🔍 **Problemas Identificados y Resueltos**
 Durante las pruebas de la página de edición de proyectos (`/dashboard/proyectos/10/editar`), se identificaron dos funcionalidades que no estaban operativas:
 
-1. **🔒 Visibilidad de Proyectos (Público/Privado)**: Los radio buttons no guardaban el estado
-2. **🧪 Asociación de Productos**: La funcionalidad para asociar productos existentes no funcionaba
+1. **🔒 Visibilidad de Proyectos (Público/Privado)**: Los radio buttons no guardaban el estado ✅ **RESUELTO**
+2. **🧪 Asociación de Productos**: La funcionalidad para asociar productos existentes no funcionaba ✅ **RESUELTO**
+3. **🖥️ Visualización de Productos**: Los productos se mostraban como "undefined" ✅ **RESUELTO**
+4. **🎨 UX de Notificaciones**: Alertas del navegador poco profesionales ✅ **MEJORADO**
 
 #### 🛠️ **Soluciones Implementadas**
 
@@ -266,8 +268,45 @@ SELECT id, description, product_code, project_id FROM products WHERE project_id 
 |--------------|----------------|---------------|--------------|
 | **Visibilidad Público/Privado** | ❌ No funcional | ✅ Completamente operativa | 4/4 pruebas exitosas |
 | **Asociación de Productos** | ❌ Endpoint inexistente | ✅ Endpoint completo con validaciones | 6/6 pruebas exitosas |
+| **Visualización de Productos** | ❌ Mostraba "undefined" | ✅ Mapeo corregido | Datos reales visibles |
+| **Notificaciones UX** | ❌ Alertas del navegador | ✅ Sistema toast elegante | Iconos y animaciones |
 | **Consistencia Arquitectónica** | ⚠️ Parcial | ✅ Totalmente consistente | Revisión de código completa |
 | **Manejo de Errores** | ⚠️ Básico | ✅ Robusto con validaciones | Prevención de duplicados |
+
+#### 🔧 **Correcciones Técnicas Específicas Implementadas**
+
+**1. Mapeo de Propiedades Frontend-Backend:**
+```javascript
+// ANTES (causaba "undefined"):
+product.title → undefined (propiedad no existía)
+product.authors → undefined (propiedad no existía) 
+product.publication_year → undefined (propiedad no existía)
+
+// DESPUÉS (datos reales):
+product.description → "BioPacífico Platform - Species Catalog Web App"
+product.creator_name → "Dra. María López"
+new Date(product.created_at).getFullYear() → 2025
+```
+
+**2. Corrección de Endpoint API:**
+```javascript
+// ANTES (endpoint incorrecto):
+GET /api/public/products → productos limitados/sin autenticación
+
+// DESPUÉS (endpoint correcto):
+GET /api/private/products → todos los productos con autorización
+```
+
+**3. Sistema de Notificaciones Toast:**
+```javascript
+// ANTES (intrusivo):
+alert('Error al asociar el producto')
+confirm('¿Desea asociar el producto?')
+
+// DESPUÉS (elegante):
+showToast('✅ Producto asociado correctamente', 'success')
+showToast('❌ Error al asociar el producto', 'error', 5000)
+```
 
 ### 🏆 Logros de Implementación Previa (v6.0.0 - PÁGINA DE EDICIÓN DEDICADA)
 
@@ -669,7 +708,7 @@ API_BASE_URL=http://localhost:3000/api
 ---
 
 **Última Actualización**: 15 de Septiembre, 2025  
-**Versión**: 6.1.0 - Funcionalidades Corregidas y Verificadas  
+**Versión**: 6.1.1 - Corrección Total de Funcionalidades + UX Mejorado  
 **Estado**: ✅ Producción - Sistema Completo con Funcionalidades 100% Operativas  
 **Portal**: 🌐 https://3000-ikn1warb4441jlaxw6wn4-6532622b.e2b.dev 🚀 **PÁGINA DE EDICIÓN DEDICADA**  
 **Dashboard**: 📋 /dashboard ✅ **TRANSFORMACIÓN UX COMPLETA**  

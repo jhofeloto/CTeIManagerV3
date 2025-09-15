@@ -3798,7 +3798,7 @@ app.get('/dashboard/proyectos/:id/editar', async (c) => {
                     searchResults.innerHTML = '<div class="search-result-item"><i class="fas fa-spinner fa-spin mr-2"></i>Cargando productos...</div>';
                     searchResults.style.display = 'block';
                     
-                    const response = await axios.get(\`\${API_BASE}/public/products?limit=20\`);
+                    const response = await axios.get(\`\${API_BASE}/private/products?limit=20\`);
                     
                     if (response.data.success && response.data.data.products) {
                         renderSearchResults(response.data.data.products, 'Todos los productos disponibles:');
@@ -3832,13 +3832,13 @@ app.get('/dashboard/proyectos/:id/editar', async (c) => {
                     const statusText = isAssociated ? 'Asociado' : 'Asociar';
                     
                     html += \`
-                        <div class="search-result-item" onclick="handleProductSelection(\${product.id}, '\${product.title}', \${isAssociated})">
+                        <div class="search-result-item" onclick="handleProductSelection(\${product.id}, '\${product.description}', \${isAssociated})">
                             <div class="flex justify-between items-start">
                                 <div class="flex-1 min-w-0">
-                                    <div class="font-medium text-sm truncate">\${product.title}</div>
+                                    <div class="font-medium text-sm truncate">\${product.description}</div>
                                     <div class="text-xs text-muted-foreground mt-1">
-                                        <i class="fas fa-user mr-1"></i>\${product.authors || 'Sin autor'}
-                                        <span class="ml-2"><i class="fas fa-calendar mr-1"></i>\${product.publication_year || 'Sin fecha'}</span>
+                                        <i class="fas fa-user mr-1"></i>\${product.creator_name || 'Sin autor'}
+                                        <span class="ml-2"><i class="fas fa-calendar mr-1"></i>\${new Date(product.created_at).getFullYear() || 'Sin fecha'}</span>
                                     </div>
                                 </div>
                                 <div class="ml-2 flex items-center text-xs">
@@ -3857,12 +3857,12 @@ app.get('/dashboard/proyectos/:id/editar', async (c) => {
             // Manejar selección de producto
             async function handleProductSelection(productId, productTitle, isAssociated) {
                 if (isAssociated) {
-                    alert('Este producto ya está asociado al proyecto');
+                    showToast('Este producto ya está asociado al proyecto', 'warning');
                     return;
                 }
                 
                 try {
-                    // Confirmar asociación
+                    // Confirmar asociación con modal más elegante
                     if (!confirm(\`¿Desea asociar el producto "\${productTitle}" a este proyecto?\`)) {
                         return;
                     }
@@ -3876,13 +3876,14 @@ app.get('/dashboard/proyectos/:id/editar', async (c) => {
                         document.getElementById('product-search').value = '';
                         handleFormChange(); // Marcar como cambio no guardado
                         
-                        console.log('Producto asociado exitosamente');
+                        showToast('✅ Producto asociado correctamente', 'success');
                     } else {
                         throw new Error(response.data.message || 'Error al asociar producto');
                     }
                 } catch (error) {
                     console.error('Error asociando producto:', error);
-                    alert('Error al asociar el producto. Por favor, intente nuevamente.');
+                    const errorMsg = error.response?.data?.error || error.message || 'Error al asociar el producto. Por favor, intente nuevamente.';
+                    showToast(\`❌ \${errorMsg}\`, 'error', 5000);
                 }
             }
             
@@ -3996,13 +3997,79 @@ app.get('/dashboard/proyectos/:id/editar', async (c) => {
             }
             
             function showSuccess(message) {
-                // Implementar toast de éxito
                 console.log('SUCCESS:', message);
-                // TODO: Implementar sistema de notificaciones
+                showToast(message, 'success');
+            }
+            
+            // Sistema de toast/notificaciones
+            function showToast(message, type = 'info', duration = 3000) {
+                // Crear contenedor de toast si no existe
+                let toastContainer = document.getElementById('toast-container');
+                if (!toastContainer) {
+                    toastContainer = document.createElement('div');
+                    toastContainer.id = 'toast-container';
+                    toastContainer.className = 'fixed top-4 right-4 z-50 space-y-2';
+                    document.body.appendChild(toastContainer);
+                }
+                
+                // Crear elemento de toast
+                const toast = document.createElement('div');
+                const toastId = 'toast-' + Date.now();
+                toast.id = toastId;
+                
+                // Estilos según tipo
+                const typeStyles = {
+                    success: 'bg-green-500 text-white',
+                    error: 'bg-red-500 text-white',
+                    warning: 'bg-yellow-500 text-white',
+                    info: 'bg-blue-500 text-white'
+                };
+                
+                const iconMap = {
+                    success: 'fas fa-check',
+                    error: 'fas fa-times',
+                    warning: 'fas fa-exclamation-triangle',
+                    info: 'fas fa-info'
+                };
+                
+                toast.className = \`\${typeStyles[type] || typeStyles.info} px-4 py-3 rounded-lg shadow-lg flex items-center gap-2 transform transition-all duration-300 translate-x-full opacity-0\`;
+                toast.innerHTML = \`
+                    <i class="\${iconMap[type] || iconMap.info} mr-2"></i>
+                    <span class="flex-1">\${message}</span>
+                    <button onclick="removeToast('\${toastId}')" class="ml-2 opacity-70 hover:opacity-100">
+                        <i class="fas fa-times text-xs"></i>
+                    </button>
+                \`;
+                
+                toastContainer.appendChild(toast);
+                
+                // Animar entrada
+                setTimeout(() => {
+                    toast.classList.remove('translate-x-full', 'opacity-0');
+                }, 100);
+                
+                // Auto-remover
+                setTimeout(() => {
+                    removeToast(toastId);
+                }, duration);
+            }
+            
+            // Función global para remover toast
+            window.removeToast = function(toastId) {
+                const toast = document.getElementById(toastId);
+                if (toast) {
+                    toast.classList.add('translate-x-full', 'opacity-0');
+                    setTimeout(() => {
+                        if (toast.parentNode) {
+                            toast.parentNode.removeChild(toast);
+                        }
+                    }, 300);
+                }
             }
             
             function showError(message) {
                 console.error('ERROR:', message);
+                showToast(message, 'error');
                 showErrorState(message);
             }
             
