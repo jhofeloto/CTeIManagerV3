@@ -5,25 +5,5 @@
   "pages_build_output_dir": "./dist",
   "compatibility_flags": [
     "nodejs_compat"
-  ],
-  "d1_databases": [
-    {
-      "binding": "DB",
-      "database_name": "ctei-manager-production",
-      "database_id": "00000000-0000-0000-0000-000000000000"
-    }
-  ],
-  "kv_namespaces": [
-    {
-      "binding": "KV",
-      "id": "ctei_manager_kv",
-      "preview_id": "ctei_manager_kv_preview"
-    }
-  ],
-  "r2_buckets": [
-    {
-      "binding": "R2",
-      "bucket_name": "ctei-manager-assets"
-    }
   ]
 }
