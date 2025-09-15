@@ -1,9 +1,16 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "ctei-manager",
+  "name": "ctei-manager-dev",
   "compatibility_date": "2025-09-11",
   "pages_build_output_dir": "./dist",
   "compatibility_flags": [
     "nodejs_compat"
+  ],
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "ctei-manager-dev",
+      "database_id": "local-dev"
+    }
   ]
 }

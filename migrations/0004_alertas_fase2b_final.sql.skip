@@ -82,24 +82,24 @@ INSERT INTO alerts_v2 (alert_type_id, entity_type, entity_id, title, message, se
 SELECT 
   at.id,
   'USER',
-  u.id,
-  'Investigador ' || u.full_name || ' está sobrecargado',
-  'El investigador tiene ' || project_count || ' proyectos activos, lo que excede el límite recomendado de 3 proyectos.',
+  user_projects.id,
+  'Investigador ' || user_projects.full_name || ' está sobrecargado',
+  'El investigador tiene ' || user_projects.project_count || ' proyectos activos, lo que excede el límite recomendado de 3 proyectos.',
   3,
-  65 + (project_count * 5), -- Prioridad basada en número de proyectos
-  '{"project_count": ' || project_count || ', "threshold": 3, "excess": ' || (project_count - 3) || '}',
+  65 + (user_projects.project_count * 5), -- Prioridad basada en número de proyectos
+  '{"project_count": ' || user_projects.project_count || ', "threshold": 3, "excess": ' || (user_projects.project_count - 3) || '}',
   '["productivity_per_project", "quality_risk", "burnout_probability"]',
   '["redistribute_projects", "assign_support_staff", "extend_deadlines", "provide_additional_resources"]'
 FROM (
   SELECT 
-    u.id,
-    u.full_name,
-    COUNT(p.id) as project_count
-  FROM users u
-  JOIN projects p ON u.id = p.owner_id
-  WHERE u.role IN ('INVESTIGATOR', 'ADMIN') AND p.status = 'ACTIVE'
-  GROUP BY u.id, u.full_name
-  HAVING COUNT(p.id) > 3
+    users.id,
+    users.full_name,
+    COUNT(projects.id) as project_count
+  FROM users
+  JOIN projects ON users.id = projects.owner_id
+  WHERE users.role IN ('INVESTIGATOR', 'ADMIN') AND projects.status = 'ACTIVE'
+  GROUP BY users.id, users.full_name
+  HAVING COUNT(projects.id) > 3
 ) user_projects
 JOIN alert_types at ON at.code = 'RESEARCHER_OVERLOAD';
 
