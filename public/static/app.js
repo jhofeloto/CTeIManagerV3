@@ -10,7 +10,7 @@ const AppState = {
     searchQuery: '',
     isAuthenticated: false,
     user: null,
-    token: localStorage.getItem('ctei_token') || null
+    token: localStorage.getItem('auth_token') || null
 };
 
 // API Base URL
@@ -124,7 +124,7 @@ async function handleRegister(event) {
             const { token } = response.data.data;
             
             // Guardar token
-            localStorage.setItem('ctei_token', token);
+            localStorage.setItem('auth_token', token);
             AppState.token = token;
             AppState.isAuthenticated = true;
             
@@ -1311,7 +1311,7 @@ function processTextWithTechLabels(text) {
 
 // Verificar el estado de autenticación del usuario
 async function checkAuthenticationStatus() {
-    const token = localStorage.getItem('ctei_token');
+    const token = localStorage.getItem('auth_token');
     
     if (!token) {
         showUnauthenticatedButtons();
@@ -1339,14 +1339,14 @@ async function checkAuthenticationStatus() {
             }
         } else {
             // Token inválido, limpiar y mostrar botones de login
-            localStorage.removeItem('ctei_token');
+            localStorage.removeItem('auth_token');
             delete axios.defaults.headers.common['Authorization'];
             showUnauthenticatedButtons();
         }
         
     } catch (error) {
         // Error en la verificación, asumir no autenticado
-        localStorage.removeItem('ctei_token');
+        localStorage.removeItem('auth_token');
         delete axios.defaults.headers.common['Authorization'];
         showUnauthenticatedButtons();
     }
@@ -1391,7 +1391,7 @@ function showAuthenticatedButtons(user) {
 // Función de logout
 function logout() {
     // Limpiar token y datos de sesión
-    localStorage.removeItem('ctei_token');
+    localStorage.removeItem('auth_token');
     delete axios.defaults.headers.common['Authorization'];
     
     // Mostrar mensaje de confirmación
@@ -1647,7 +1647,7 @@ async function handleLoginSubmit(event) {
             
             // Guardar token
             try {
-                localStorage.setItem('ctei_token', token);
+                localStorage.setItem('auth_token', token);
                 axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
             } catch (storageError) {
                 console.warn('Error guardando token:', storageError);
@@ -1793,7 +1793,7 @@ async function testDirectLogin() {
             const { token, user } = response.data.data;
             
             // Guardar token
-            localStorage.setItem('ctei_token', token);
+            localStorage.setItem('auth_token', token);
             axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
             
             alert(`¡Test Login Exitoso!\nUsuario: ${user.full_name}\nRol: ${user.role}\n\n¿Ir al dashboard?`);

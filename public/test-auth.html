@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test - Configurar Autenticación</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 p-8">
+    <div class="max-w-2xl mx-auto bg-white p-6 rounded shadow">
+        <h1 class="text-2xl font-bold mb-4">🔧 Test - Configurar Token de Autenticación</h1>
+        
+        <div class="mb-4">
+            <label class="block font-medium mb-2">Token Actual en localStorage:</label>
+            <div class="p-3 bg-gray-100 rounded font-mono text-sm" id="current-token">
+                Cargando...
+            </div>
+        </div>
+        
+        <div class="mb-4">
+            <button 
+                onclick="loginAndSetToken()" 
+                class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 mr-2"
+            >
+                🔑 Login Automático (Admin)
+            </button>
+            
+            <button 
+                onclick="clearToken()" 
+                class="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 mr-2"
+            >
+                🗑️ Limpiar Token
+            </button>
+            
+            <button 
+                onclick="checkToken()" 
+                class="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600"
+            >
+                🔍 Verificar Token
+            </button>
+        </div>
+        
+        <div class="mb-4">
+            <h3 class="font-medium mb-2">Enlaces de Prueba:</h3>
+            <a 
+                href="/dashboard" 
+                class="text-blue-600 hover:underline block mb-1"
+            >
+                📊 Dashboard Principal
+            </a>
+            <a 
+                href="/dashboard/proyectos/1/editar" 
+                class="text-blue-600 hover:underline block"
+            >
+                📝 Página de Edición (Proyecto ID 1)
+            </a>
+        </div>
+        
+        <div class="p-4 bg-yellow-50 rounded">
+            <h4 class="font-medium mb-2">📋 Instrucciones:</h4>
+            <ol class="text-sm space-y-1">
+                <li>1. Haz clic en "Login Automático" para obtener un token válido</li>
+                <li>2. Ve a la página de edición usando el enlace de arriba</li>
+                <li>3. Abre las herramientas de desarrollador (F12) → pestaña "Network"</li>
+                <li>4. Recarga la página y verifica que las solicitudes tengan la cabecera "Authorization"</li>
+            </ol>
+        </div>
+        
+        <div class="mt-4 p-3 bg-gray-100 rounded">
+            <div class="text-sm text-gray-600" id="status">
+                Listo para probar...
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // Mostrar token actual al cargar
+        document.addEventListener('DOMContentLoaded', checkToken);
+        
+        function checkToken() {
+            const token = localStorage.getItem('auth_token');
+            const currentTokenDiv = document.getElementById('current-token');
+            const statusDiv = document.getElementById('status');
+            
+            if (token) {
+                currentTokenDiv.textContent = token.substring(0, 50) + '...';
+                statusDiv.textContent = '✅ Token presente en localStorage';
+                statusDiv.className = 'text-sm text-green-600';
+            } else {
+                currentTokenDiv.textContent = 'No hay token en localStorage';
+                statusDiv.textContent = '❌ No hay token - necesitas hacer login';
+                statusDiv.className = 'text-sm text-red-600';
+            }
+        }
+        
+        async function loginAndSetToken() {
+            const statusDiv = document.getElementById('status');
+            statusDiv.textContent = '⏳ Haciendo login...';
+            statusDiv.className = 'text-sm text-blue-600';
+            
+            try {
+                const response = await fetch('/api/auth/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        email: 'admin@ctei.edu.co',
+                        password: 'test123'
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    localStorage.setItem('auth_token', data.data.token);
+                    statusDiv.textContent = '✅ Login exitoso - Token guardado';
+                    statusDiv.className = 'text-sm text-green-600';
+                    checkToken();
+                } else {
+                    throw new Error(data.error || 'Error de login');
+                }
+            } catch (error) {
+                statusDiv.textContent = '❌ Error en login: ' + error.message;
+                statusDiv.className = 'text-sm text-red-600';
+            }
+        }
+        
+        function clearToken() {
+            localStorage.removeItem('auth_token');
+            document.getElementById('status').textContent = '🗑️ Token eliminado';
+            document.getElementById('status').className = 'text-sm text-gray-600';
+            checkToken();
+        }
+    </script>
+</body>
+</html>

@@ -31,6 +31,1104 @@ app.get('/test-password-change.html', async (c) => {
   }
 })
 
+// Página de diagnóstico de autenticación
+app.get('/set-token.html', async (c) => {
+  return c.html(`<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Set Token - Diagnóstico</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 p-8">
+    <div class="max-w-2xl mx-auto bg-white p-6 rounded-lg shadow">
+        <h1 class="text-2xl font-bold mb-4">🔧 Establecer Token de Autenticación</h1>
+        
+        <div class="mb-6">
+            <label for="token" class="block text-sm font-medium text-gray-700 mb-2">Token JWT:</label>
+            <textarea id="token" rows="4" class="w-full p-3 border border-gray-300 rounded-md" 
+                      placeholder="Pegar token JWT aquí..."></textarea>
+        </div>
+        
+        <div class="flex gap-4 mb-6">
+            <button onclick="setToken()" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
+                💾 Establecer Token
+            </button>
+            <button onclick="clearToken()" class="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700">
+                🗑️ Limpiar Token
+            </button>
+            <button onclick="checkToken()" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">
+                🔍 Verificar Token
+            </button>
+        </div>
+        
+        <div id="result" class="p-4 rounded-md hidden"></div>
+        
+        <div class="mt-6">
+            <h2 class="text-lg font-semibold mb-2">🚀 Acciones Rápidas:</h2>
+            <div class="space-y-2">
+                <button onclick="setTestToken()" class="w-full bg-purple-600 text-white px-4 py-2 rounded hover:bg-purple-700">
+                    🧪 Establecer Token de Prueba (Carlos Rodríguez)
+                </button>
+                <button onclick="goToEdit()" class="w-full bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700">
+                    📝 Ir a Página de Edición (Proyecto ID: 1)
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Token de prueba válido para Carlos Rodríguez
+        const TEST_TOKEN = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjIsImVtYWlsIjoiY2FybG9zLnJvZHJpZ3VlekBjdGVpLmVkdS5jbyIsInJvbGUiOiJJTlZFU1RJR0FUT1IiLCJleHAiOjE3NTc5ODYxNjl9.e2MHisoqWo3Q5g7M-91cbiJF6zR3OGKMjXIBnAdGCwI';
+
+        function setToken() {
+            const token = document.getElementById('token').value.trim();
+            
+            if (!token) {
+                showResult('error', 'Por favor, ingresa un token válido');
+                return;
+            }
+            
+            localStorage.setItem('auth_token', token);
+            showResult('success', 'Token establecido correctamente en localStorage');
+            console.log('Token establecido:', token);
+        }
+
+        function clearToken() {
+            localStorage.removeItem('auth_token');
+            document.getElementById('token').value = '';
+            showResult('info', 'Token eliminado de localStorage');
+            console.log('Token eliminado');
+        }
+
+        function checkToken() {
+            const token = localStorage.getItem('auth_token');
+            
+            if (!token) {
+                showResult('error', 'No hay token en localStorage');
+                return;
+            }
+            
+            try {
+                const parts = token.split('.');
+                if (parts.length !== 3) {
+                    showResult('error', 'Token JWT inválido (formato incorrecto)');
+                    return;
+                }
+                
+                const payload = JSON.parse(atob(parts[1]));
+                const expTime = new Date(payload.exp * 1000);
+                const now = new Date();
+                
+                const info = '<strong>Token encontrado:</strong><br>' +
+                    'Usuario ID: ' + payload.userId + '<br>' +
+                    'Email: ' + payload.email + '<br>' +
+                    'Rol: ' + payload.role + '<br>' +
+                    'Expira: ' + expTime.toLocaleString() + '<br>' +
+                    'Estado: ' + (expTime > now ? '✅ Válido' : '❌ Expirado');
+                
+                showResult(expTime > now ? 'success' : 'error', info);
+                
+            } catch (e) {
+                showResult('error', 'Error decodificando token: ' + e.message);
+            }
+        }
+
+        function setTestToken() {
+            document.getElementById('token').value = TEST_TOKEN;
+            localStorage.setItem('auth_token', TEST_TOKEN);
+            showResult('success', 'Token de prueba establecido (Carlos Rodríguez - INVESTIGATOR)');
+        }
+
+        function goToEdit() {
+            window.location.href = '/edit/1';
+        }
+
+        function showResult(type, message) {
+            const result = document.getElementById('result');
+            result.className = 'p-4 rounded-md ' + (type === 'success' ? 'bg-green-100 text-green-800' : 
+                                                 type === 'error' ? 'bg-red-100 text-red-800' : 
+                                                 'bg-blue-100 text-blue-800');
+            result.innerHTML = message;
+            result.classList.remove('hidden');
+        }
+    </script>
+</body>
+</html>`);
+})
+
+// Página de debug del flujo de autenticación  
+app.get('/debug-auth-flow.html', async (c) => {
+  return c.html(`<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug Auth Flow</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios@1.6.0/dist/axios.min.js"></script>
+</head>
+<body class="bg-gray-100 p-8">
+    <div class="max-w-4xl mx-auto bg-white p-6 rounded-lg shadow">
+        <h1 class="text-2xl font-bold mb-4">🔧 Diagnóstico Completo de Autenticación</h1>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <!-- Panel de Control -->
+            <div class="bg-gray-50 p-4 rounded">
+                <h2 class="text-lg font-semibold mb-4">Panel de Control</h2>
+                <div class="space-y-3">
+                    <button onclick="step1_setToken()" class="w-full bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
+                        1️⃣ Establecer Token
+                    </button>
+                    <button onclick="step2_configureAxios()" class="w-full bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">
+                        2️⃣ Configurar Axios
+                    </button>
+                    <button onclick="step3_testAPI()" class="w-full bg-purple-600 text-white px-4 py-2 rounded hover:bg-purple-700">
+                        3️⃣ Probar API
+                    </button>
+                    <button onclick="step4_fullTest()" class="w-full bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700">
+                        🚀 Test Completo
+                    </button>
+                    <button onclick="clearAll()" class="w-full bg-gray-600 text-white px-4 py-2 rounded hover:bg-gray-700">
+                        🗑️ Limpiar Todo
+                    </button>
+                </div>
+            </div>
+
+            <!-- Resultados -->
+            <div>
+                <h2 class="text-lg font-semibold mb-4">Resultados</h2>
+                <div id="results" class="bg-black text-green-400 p-4 rounded font-mono text-sm h-96 overflow-y-auto">
+                    Esperando comandos...<br>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = '/api';
+        const TEST_TOKEN = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjIsImVtYWlsIjoiY2FybG9zLnJvZHJpZ3VlekBjdGVpLmVkdS5jbyIsInJvbGUiOiJJTlZFU1RJR0FUT1IiLCJleHAiOjE3NTc5ODYxNjl9.e2MHisoqWo3Q5g7M-91cbiJF6zR3OGKMjXIBnAdGCwI';
+        let authToken = null;
+
+        function log(message) {
+            const results = document.getElementById('results');
+            const timestamp = new Date().toLocaleTimeString();
+            results.innerHTML += timestamp + ' > ' + message + '<br>';
+            results.scrollTop = results.scrollHeight;
+            console.log(message);
+        }
+
+        function step1_setToken() {
+            log('🔍 PASO 1: ESTABLECIENDO TOKEN');
+            localStorage.removeItem('auth_token');
+            log('✓ localStorage limpio');
+            localStorage.setItem('auth_token', TEST_TOKEN);
+            log('✓ Token establecido en localStorage');
+            const storedToken = localStorage.getItem('auth_token');
+            log('✓ Token verificado: ' + (storedToken ? 'PRESENTE' : 'AUSENTE'));
+            log('✓ Longitud: ' + (storedToken ? storedToken.length : 0));
+            authToken = storedToken;
+            log('✓ Variable global authToken actualizada');
+            try {
+                const parts = storedToken.split('.');
+                const payload = JSON.parse(atob(parts[1]));
+                log('✓ Token decodificado - Usuario: ' + payload.email + ' (' + payload.role + ')');
+                log('✓ Expira: ' + new Date(payload.exp * 1000).toLocaleString());
+            } catch (e) {
+                log('❌ Error decodificando token: ' + e.message);
+            }
+        }
+
+        function step2_configureAxios() {
+            log('🔍 PASO 2: CONFIGURANDO AXIOS');
+            if (!authToken) {
+                log('❌ ERROR: No hay token disponible. Ejecuta Paso 1 primero.');
+                return;
+            }
+            axios.defaults.headers.common['Authorization'] = 'Bearer ' + authToken;
+            log('✓ Cabecera Authorization configurada');
+            const authHeader = axios.defaults.headers.common['Authorization'];
+            log('✓ Verificación: ' + (authHeader ? 'CONFIGURADO' : 'NO CONFIGURADO'));
+            log('✓ Cabecera actual: ' + (authHeader || 'NINGUNA'));
+            
+            axios.interceptors.request.use(
+                function(config) {
+                    log('📤 INTERCEPTOR: Solicitud saliente a ' + config.url);
+                    log('📤 Auth header: ' + (config.headers.Authorization ? 'PRESENTE' : 'AUSENTE'));
+                    return config;
+                },
+                function(error) {
+                    log('❌ INTERCEPTOR: Error en solicitud: ' + error.message);
+                    return Promise.reject(error);
+                }
+            );
+            
+            axios.interceptors.response.use(
+                function(response) {
+                    log('📥 INTERCEPTOR: Respuesta recibida - Status: ' + response.status);
+                    return response;
+                },
+                function(error) {
+                    log('❌ INTERCEPTOR: Error en respuesta: ' + (error.response ? error.response.status : error.message));
+                    return Promise.reject(error);
+                }
+            );
+            
+            log('✓ Interceptores configurados');
+        }
+
+        function step3_testAPI() {
+            log('🔍 PASO 3: PROBANDO API');
+            if (!authToken) {
+                log('❌ ERROR: No hay token disponible. Ejecuta Paso 1 primero.');
+                return;
+            }
+            log('🚀 Enviando solicitud a: ' + API_BASE + '/private/projects/1');
+            
+            axios.get(API_BASE + '/private/projects/1')
+                .then(function(response) {
+                    log('✅ ÉXITO: Respuesta recibida');
+                    log('✅ Status: ' + response.status + ' ' + response.statusText);
+                    log('✅ Success: ' + response.data.success);
+                    if (response.data.success && response.data.data) {
+                        log('✅ Proyecto cargado: ' + response.data.data.title);
+                        log('✅ Propietario: ' + response.data.data.owner_name);
+                    }
+                })
+                .catch(function(error) {
+                    log('❌ ERROR: Fallo en API');
+                    if (error.response) {
+                        log('❌ Status: ' + error.response.status);
+                        log('❌ Error: ' + (error.response.data ? error.response.data.error : 'Desconocido'));
+                    } else {
+                        log('❌ Error de red: ' + error.message);
+                    }
+                });
+        }
+
+        function step4_fullTest() {
+            log('🚀 INICIANDO TEST COMPLETO...');
+            log('='.repeat(50));
+            step1_setToken();
+            setTimeout(function() {
+                step2_configureAxios();
+                setTimeout(function() {
+                    step3_testAPI();
+                }, 500);
+            }, 500);
+        }
+
+        function clearAll() {
+            log('🗑️ LIMPIANDO TODO...');
+            localStorage.removeItem('auth_token');
+            authToken = null;
+            delete axios.defaults.headers.common['Authorization'];
+            axios.interceptors.request.clear();
+            axios.interceptors.response.clear();
+            setTimeout(function() {
+                document.getElementById('results').innerHTML = 'Sistema limpio. Listo para nueva prueba.<br>';
+            }, 1000);
+            log('✓ Todo limpiado');
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            log('🔧 Sistema de diagnóstico cargado');
+            log('🔧 Axios disponible: ' + (typeof axios !== 'undefined' ? 'SÍ' : 'NO'));
+            log('🔧 localStorage disponible: ' + (typeof localStorage !== 'undefined' ? 'SÍ' : 'NO'));
+            log('');
+            log('Instrucciones:');
+            log('1. Ejecuta "1️⃣ Establecer Token" para configurar autenticación');
+            log('2. Ejecuta "2️⃣ Configurar Axios" para configurar cliente HTTP');
+            log('3. Ejecuta "3️⃣ Probar API" para hacer solicitud');
+            log('4. O usa "🚀 Test Completo" para ejecutar todo automáticamente');
+            log('');
+        });
+    </script>
+</body>
+</html>`);
+})
+
+// Test automático de autenticación
+app.get('/auto-test-auth.html', async (c) => {
+  return c.html(`<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Auto Test Auth</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios@1.6.0/dist/axios.min.js"></script>
+</head>
+<body class="bg-gray-100 p-8">
+    <div class="max-w-4xl mx-auto bg-white p-6 rounded-lg shadow">
+        <h1 class="text-2xl font-bold mb-4">🚀 Test Automático de Autenticación</h1>
+        
+        <div class="bg-black text-green-400 p-4 rounded font-mono text-sm h-96 overflow-y-auto" id="results">
+            Iniciando test automático...<br>
+        </div>
+        
+        <div class="mt-4">
+            <button onclick="goToEditPage()" class="bg-blue-600 text-white px-6 py-3 rounded hover:bg-blue-700">
+                📝 Ir a Página de Edición Ahora
+            </button>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = '/api';
+        const TEST_TOKEN = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjIsImVtYWlsIjoiY2FybG9zLnJvZHJpZ3VlekBjdGVpLmVkdS5jbyIsInJvbGUiOiJJTlZFU1RJR0FUT1IiLCJleHAiOjE3NTc5ODYxNjl9.e2MHisoqWo3Q5g7M-91cbiJF6zR3OGKMjXIBnAdGCwI';
+        let authToken = null;
+
+        function log(message) {
+            const results = document.getElementById('results');
+            const timestamp = new Date().toLocaleTimeString();
+            results.innerHTML += timestamp + ' > ' + message + '<br>';
+            results.scrollTop = results.scrollHeight;
+            console.log(message);
+        }
+
+        function runAutomaticTest() {
+            log('🚀 INICIANDO TEST AUTOMÁTICO COMPLETO');
+            log('='.repeat(60));
+            
+            // PASO 1: Establecer token
+            log('');
+            log('🔍 PASO 1: ESTABLECIENDO TOKEN EN localStorage');
+            localStorage.removeItem('auth_token');
+            localStorage.setItem('auth_token', TEST_TOKEN);
+            const storedToken = localStorage.getItem('auth_token');
+            authToken = storedToken;
+            log('✓ Token establecido y verificado: ' + (storedToken ? 'PRESENTE (' + storedToken.length + ' chars)' : 'AUSENTE'));
+            
+            // Decodificar token
+            try {
+                const parts = storedToken.split('.');
+                const payload = JSON.parse(atob(parts[1]));
+                log('✓ Usuario decodificado: ' + payload.email + ' (' + payload.role + ')');
+                const expTime = new Date(payload.exp * 1000);
+                const now = new Date();
+                log('✓ Token expira: ' + expTime.toLocaleString() + ' (válido: ' + (expTime > now ? 'SÍ' : 'NO') + ')');
+            } catch (e) {
+                log('❌ Error decodificando token: ' + e.message);
+                return;
+            }
+            
+            // PASO 2: Configurar Axios
+            setTimeout(() => {
+                log('');
+                log('🔍 PASO 2: CONFIGURANDO AXIOS CON TOKEN');
+                axios.defaults.headers.common['Authorization'] = 'Bearer ' + authToken;
+                const authHeader = axios.defaults.headers.common['Authorization'];
+                log('✓ Cabecera Authorization: ' + (authHeader ? 'CONFIGURADA' : 'NO CONFIGURADA'));
+                log('✓ Valor de cabecera: ' + (authHeader || 'NINGUNA'));
+                
+                // Configurar interceptores
+                axios.interceptors.request.use(
+                    function(config) {
+                        log('📤 REQUEST INTERCEPTOR: ' + config.method.toUpperCase() + ' ' + config.url);
+                        log('📤 Auth header presente: ' + (config.headers.Authorization ? 'SÍ' : 'NO'));
+                        if (config.headers.Authorization) {
+                            log('📤 Auth value: ' + config.headers.Authorization.substring(0, 20) + '...');
+                        }
+                        return config;
+                    },
+                    function(error) {
+                        log('❌ REQUEST ERROR: ' + error.message);
+                        return Promise.reject(error);
+                    }
+                );
+                
+                axios.interceptors.response.use(
+                    function(response) {
+                        log('📥 RESPONSE SUCCESS: Status ' + response.status + ' from ' + response.config.url);
+                        return response;
+                    },
+                    function(error) {
+                        log('❌ RESPONSE ERROR: Status ' + (error.response ? error.response.status : 'N/A') + ' - ' + error.message);
+                        return Promise.reject(error);
+                    }
+                );
+                
+                log('✓ Interceptores de axios configurados');
+                
+                // PASO 3: Probar API
+                setTimeout(() => {
+                    log('');
+                    log('🔍 PASO 3: PROBANDO ENDPOINT DE API');
+                    log('🚀 Haciendo solicitud GET a: ' + API_BASE + '/private/projects/1');
+                    
+                    axios.get(API_BASE + '/private/projects/1')
+                        .then(function(response) {
+                            log('');
+                            log('✅ ¡ÉXITO COMPLETO! API RESPONDIÓ CORRECTAMENTE');
+                            log('✅ Status HTTP: ' + response.status + ' ' + response.statusText);
+                            log('✅ Response success: ' + response.data.success);
+                            
+                            if (response.data.success && response.data.data) {
+                                log('✅ Proyecto cargado exitosamente:');
+                                log('   - ID: ' + response.data.data.id);
+                                log('   - Título: ' + response.data.data.title);
+                                log('   - Propietario: ' + response.data.data.owner_name);
+                                log('   - Email: ' + response.data.data.owner_email);
+                                log('');
+                                log('🎉 DIAGNÓSTICO: TOKEN Y CONFIGURACIÓN FUNCIONAN CORRECTAMENTE');
+                                log('🎉 El problema NO está en el token ni en axios.defaults');
+                                log('');
+                                log('💡 PRÓXIMO PASO: Verificar que la página de edición use axios.defaults');
+                                log('💡 O verificar si está usando una instancia diferente de axios');
+                            }
+                        })
+                        .catch(function(error) {
+                            log('');
+                            log('❌ ERROR EN API - AQUÍ ESTÁ EL PROBLEMA:');
+                            if (error.response) {
+                                log('❌ Status HTTP: ' + error.response.status);
+                                log('❌ Mensaje: ' + (error.response.data ? JSON.stringify(error.response.data) : 'Sin mensaje'));
+                                
+                                if (error.response.status === 401) {
+                                    log('❌ DIAGNÓSTICO: Token no enviado o inválido');
+                                    log('❌ Verificar que axios.defaults.headers.common esté configurado');
+                                } else if (error.response.status === 403) {
+                                    log('❌ DIAGNÓSTICO: Token válido pero sin permisos');
+                                } else {
+                                    log('❌ DIAGNÓSTICO: Error diferente - revisar backend');
+                                }
+                            } else {
+                                log('❌ Error de red: ' + error.message);
+                                log('❌ DIAGNÓSTICO: Problema de conectividad o CORS');
+                            }
+                        });
+                }, 1000);
+            }, 1000);
+        }
+
+        function goToEditPage() {
+            log('');
+            log('🚀 NAVEGANDO A PÁGINA DE EDICIÓN...');
+            log('✓ Token ya está configurado en localStorage');
+            log('✓ Axios ya está configurado con cabeceras');
+            
+            // Pequeño delay para que se vean los logs
+            setTimeout(() => {
+                window.location.href = '/edit/1';
+            }, 1000);
+        }
+
+        // Ejecutar automáticamente al cargar
+        document.addEventListener('DOMContentLoaded', function() {
+            log('🔧 Sistema de test automático cargado');
+            log('🔧 Dependencias verificadas:');
+            log('   - Axios: ' + (typeof axios !== 'undefined' ? '✓ Disponible' : '❌ No disponible'));
+            log('   - localStorage: ' + (typeof localStorage !== 'undefined' ? '✓ Disponible' : '❌ No disponible'));
+            log('');
+            
+            // Iniciar test automático después de 2 segundos
+            setTimeout(runAutomaticTest, 2000);
+        });
+    </script>
+</body>
+</html>`);
+})
+
+// Ruta de acceso directo a edición que establece token y redirije
+app.get('/edit/:id', async (c) => {
+  const projectId = c.req.param('id');
+  
+  return c.html(`<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Configurando acceso...</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 flex items-center justify-center min-h-screen">
+    <div class="bg-white p-6 rounded-lg shadow max-w-md">
+        <div class="text-center">
+            <i class="fas fa-spinner fa-spin text-blue-600 text-3xl mb-4"></i>
+            <h1 class="text-xl font-bold mb-2">Configurando acceso al proyecto</h1>
+            <p class="text-gray-600 mb-4">Estableciendo autenticación...</p>
+            <div id="status" class="text-sm text-gray-500"></div>
+        </div>
+    </div>
+
+    <script>
+        const PROJECT_ID = '${projectId}';
+        const TEST_TOKEN = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjIsImVtYWlsIjoiY2FybG9zLnJvZHJpZ3VlekBjdGVpLmVkdS5jbyIsInJvbGUiOiJJTlZFU1RJR0FUT1IiLCJleHAiOjE3NTc5ODYxNjl9.e2MHisoqWo3Q5g7M-91cbiJF6zR3OGKMjXIBnAdGCwI';
+
+        function updateStatus(message) {
+            document.getElementById('status').textContent = message;
+            console.log(message);
+        }
+
+        // Configurar token y redirigir
+        document.addEventListener('DOMContentLoaded', function() {
+            updateStatus('Verificando localStorage...');
+            
+            setTimeout(() => {
+                // Establecer token
+                updateStatus('Estableciendo token de autenticación...');
+                localStorage.setItem('auth_token', TEST_TOKEN);
+                
+                setTimeout(() => {
+                    // Verificar token
+                    const storedToken = localStorage.getItem('auth_token');
+                    updateStatus('Token verificado: ' + (storedToken ? 'OK' : 'ERROR'));
+                    
+                    setTimeout(() => {
+                        updateStatus('Redirigiendo a la página de edición...');
+                        
+                        setTimeout(() => {
+                            // Redirigir a la página real de edición
+                            window.location.href = '/dashboard/proyectos/' + PROJECT_ID + '/editar';
+                        }, 500);
+                    }, 500);
+                }, 500);
+            }, 1000);
+        });
+    </script>
+</body>
+</html>`);
+})
+
+// Test completo de login y verificación de token
+app.get('/test-complete-login.html', async (c) => {
+  return c.html(`<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Login Completo</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios@1.6.0/dist/axios.min.js"></script>
+</head>
+<body class="bg-gray-100 p-8">
+    <div class="max-w-4xl mx-auto space-y-6">
+        <div class="bg-white p-6 rounded-lg shadow">
+            <h1 class="text-2xl font-bold mb-4">🧪 Test Completo de Login</h1>
+            
+            <!-- Formulario de Login -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                    <h2 class="text-lg font-semibold mb-4">Formulario de Login</h2>
+                    <form id="loginForm" class="space-y-4">
+                        <div>
+                            <label for="email" class="block text-sm font-medium mb-1">Email:</label>
+                            <input type="email" id="email" value="carlos.rodriguez@ctei.edu.co" 
+                                   class="w-full px-3 py-2 border border-gray-300 rounded">
+                        </div>
+                        <div>
+                            <label for="password" class="block text-sm font-medium mb-1">Contraseña:</label>
+                            <input type="password" id="password" value="password123"
+                                   class="w-full px-3 py-2 border border-gray-300 rounded">
+                        </div>
+                        <button type="submit" class="w-full bg-blue-600 text-white py-2 px-4 rounded hover:bg-blue-700">
+                            🚀 Hacer Login Completo
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Panel de Diagnóstico -->
+                <div>
+                    <h2 class="text-lg font-semibold mb-4">Diagnóstico en Tiempo Real</h2>
+                    <div id="diagnostics" class="bg-black text-green-400 p-4 rounded font-mono text-sm h-64 overflow-y-auto">
+                        Esperando login...<br>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Acciones Post-Login -->
+        <div class="bg-white p-6 rounded-lg shadow">
+            <h2 class="text-lg font-semibold mb-4">Acciones Post-Login</h2>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <button onclick="checkToken()" class="bg-green-600 text-white py-2 px-4 rounded hover:bg-green-700">
+                    🔍 Verificar Token
+                </button>
+                <button onclick="testAPI()" class="bg-purple-600 text-white py-2 px-4 rounded hover:bg-purple-700">
+                    📡 Probar API
+                </button>
+                <button onclick="goToEdit()" class="bg-indigo-600 text-white py-2 px-4 rounded hover:bg-indigo-700">
+                    📝 Ir a Editar Proyecto
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = '/api';
+
+        function log(message) {
+            const diagnostics = document.getElementById('diagnostics');
+            const timestamp = new Date().toLocaleTimeString();
+            diagnostics.innerHTML += timestamp + ' > ' + message + '<br>';
+            diagnostics.scrollTop = diagnostics.scrollHeight;
+            console.log(message);
+        }
+
+        // Event listener para el formulario
+        document.getElementById('loginForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            
+            log('🚀 === INICIANDO LOGIN COMPLETO ===');
+            log('📧 Email: ' + email);
+            log('🔑 Password: ***' + password.length + ' chars***');
+            
+            try {
+                log('🌐 Enviando solicitud POST a: ' + API_BASE + '/auth/login');
+                
+                const response = await axios.post(API_BASE + '/auth/login', {
+                    email: email,
+                    password: password
+                });
+                
+                log('📦 Status: ' + response.status);
+                log('📦 Response success: ' + response.data.success);
+                
+                if (response.data && response.data.success) {
+                    const user = response.data.data.user;
+                    const token = response.data.data.token;
+                    
+                    log('✅ LOGIN EXITOSO para ' + user.full_name);
+                    log('🎫 Token recibido: ' + token.substring(0, 30) + '...');
+                    
+                    // ESTA ES LA LÍNEA CRÍTICA - GUARDAR TOKEN
+                    log('💾 Guardando token en localStorage con clave "auth_token"...');
+                    localStorage.setItem('auth_token', token);
+                    
+                    // Verificar que se guardó
+                    const storedToken = localStorage.getItem('auth_token');
+                    log('✅ Token verificado en localStorage: ' + (storedToken ? 'PRESENTE' : 'AUSENTE'));
+                    
+                    // Configurar axios
+                    axios.defaults.headers.common['Authorization'] = 'Bearer ' + token;
+                    log('✅ Cabeceras de axios configuradas');
+                    
+                    log('🎉 LOGIN COMPLETO Y TOKEN GUARDADO EXITOSAMENTE');
+                    log('🎯 Ahora puedes probar las acciones post-login');
+                    
+                } else {
+                    const errorMsg = (response.data && response.data.error) || 'Error desconocido';
+                    log('❌ Login fallido: ' + errorMsg);
+                }
+                
+            } catch (error) {
+                log('❌ ERROR en login: ' + error.message);
+                if (error.response) {
+                    log('❌ Status: ' + error.response.status);
+                    log('❌ Data: ' + JSON.stringify(error.response.data));
+                }
+            }
+        });
+
+        function checkToken() {
+            log('');
+            log('🔍 === VERIFICANDO TOKEN ===');
+            
+            const token = localStorage.getItem('auth_token');
+            log('Token en localStorage: ' + (token ? 'PRESENTE (' + token.length + ' chars)' : 'AUSENTE'));
+            
+            const authHeader = axios.defaults.headers.common['Authorization'];
+            log('Axios Authorization header: ' + (authHeader ? 'CONFIGURADO' : 'NO CONFIGURADO'));
+            
+            if (token) {
+                try {
+                    const parts = token.split('.');
+                    const payload = JSON.parse(atob(parts[1]));
+                    log('Usuario: ' + payload.email + ' (' + payload.role + ')');
+                    log('Expira: ' + new Date(payload.exp * 1000).toLocaleString());
+                } catch (e) {
+                    log('Error decodificando token: ' + e.message);
+                }
+            }
+        }
+
+        function testAPI() {
+            log('');
+            log('📡 === PROBANDO API PRIVADA ===');
+            
+            const token = localStorage.getItem('auth_token');
+            if (!token) {
+                log('❌ No hay token - haz login primero');
+                return;
+            }
+            
+            log('🚀 Enviando GET a /api/private/projects/1');
+            
+            axios.get('/api/private/projects/1')
+                .then(function(response) {
+                    log('✅ API respondió exitosamente: Status ' + response.status);
+                    log('✅ Success: ' + response.data.success);
+                    if (response.data.data) {
+                        log('✅ Proyecto: ' + response.data.data.title);
+                        log('✅ Propietario: ' + response.data.data.owner_name);
+                    }
+                })
+                .catch(function(error) {
+                    log('❌ ERROR en API: Status ' + (error.response ? error.response.status : 'N/A'));
+                    log('❌ Mensaje: ' + (error.response ? JSON.stringify(error.response.data) : error.message));
+                });
+        }
+
+        function goToEdit() {
+            log('');
+            log('🚀 NAVEGANDO A PÁGINA DE EDICIÓN...');
+            
+            const token = localStorage.getItem('auth_token');
+            if (!token) {
+                log('❌ No hay token - haz login primero');
+                return;
+            }
+            
+            log('✅ Token presente - navegando...');
+            setTimeout(() => {
+                window.location.href = '/dashboard/proyectos/1/editar';
+            }, 1000);
+        }
+
+        // Log inicial
+        log('🔧 Sistema cargado');
+        log('📝 Credenciales precargadas para prueba rápida');
+        log('🎯 Presiona "Hacer Login Completo" para comenzar');
+    </script>
+</body>
+</html>`);
+})
+
+// Página de test automático de login con depuración
+app.get('/debug-login-auto.html', async (c) => {
+  return c.html(`<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug Login Auto</title>
+    <script src="https://cdn.jsdelivr.net/npm/axios@1.6.0/dist/axios.min.js"></script>
+    <style>
+        body { font-family: monospace; background: #000; color: #00ff00; padding: 20px; }
+        .container { max-width: 800px; margin: 0 auto; }
+        .log { margin: 2px 0; }
+        .error { color: #ff4444; }
+        .success { color: #44ff44; }
+        .warning { color: #ffaa44; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 DEBUG LOGIN AUTOMÁTICO</h1>
+        <div id="logs"></div>
+    </div>
+
+    <script>
+        const API_BASE = '/api';
+        
+        function log(message, type = 'normal') {
+            const logs = document.getElementById('logs');
+            const timestamp = new Date().toLocaleTimeString();
+            const className = type === 'error' ? 'log error' : type === 'success' ? 'log success' : type === 'warning' ? 'log warning' : 'log';
+            logs.innerHTML += '<div class="' + className + '">' + timestamp + ' > ' + message + '</div>';
+            logs.scrollTop = logs.scrollHeight;
+            console.log(message);
+        }
+
+        // Función de login automática con debugger
+        async function executeLoginWithDebugger() {
+            log('🚀 === INICIANDO LOGIN AUTOMÁTICO CON DEPURACIÓN ===');
+            
+            const email = 'carlos.rodriguez@ctei.edu.co';
+            const password = 'password123';
+            
+            log('📧 Email: ' + email);
+            log('🔑 Password: ***' + password.length + ' chars***');
+            log('🌐 API Base: ' + API_BASE);
+            log('📦 Axios disponible: ' + (typeof axios !== 'undefined' ? 'SÍ' : 'NO'));
+            
+            try {
+                log('🌐 Enviando solicitud POST a: ' + API_BASE + '/auth/login');
+                
+                const response = await axios.post(API_BASE + '/auth/login', {
+                    email: email,
+                    password: password
+                });
+                
+                log('📦 Status: ' + response.status);
+                log('📦 Response: ' + JSON.stringify(response.data));
+                
+                if (response.data && response.data.success) {
+                    // ===== PUNTO DE RUPTURA PARA DEPURACIÓN =====
+                    log('🔍 === PUNTO DE RUPTURA ALCANZADO ===', 'warning');
+                    debugger; // <-- EL CÓDIGO SE DETENDRÁ AQUÍ
+                    
+                    const user = response.data.data.user;
+                    const token = response.data.data.token;
+                    
+                    log('✅ LOGIN EXITOSO para ' + user.full_name, 'success');
+                    log('🎫 Token generado: ' + token.substring(0, 30) + '...', 'success');
+                    
+                    // INVESTIGACIÓN DETALLADA DEL TOKEN
+                    log('🔍 === INVESTIGACIÓN DETALLADA ===', 'warning');
+                    log('🔍 typeof token: ' + typeof token);
+                    log('🔍 token.length: ' + (token ? token.length : 'N/A'));
+                    log('🔍 token es string: ' + (typeof token === 'string' ? 'SÍ' : 'NO'));
+                    log('🔍 token truthy: ' + (token ? 'SÍ' : 'NO'));
+                    log('🔍 response.data estructura: ' + JSON.stringify(Object.keys(response.data)));
+                    log('🔍 response.data.data estructura: ' + JSON.stringify(Object.keys(response.data.data)));
+                    
+                    // INVESTIGACIÓN DE LOCALSTORAGE
+                    log('🔍 === INVESTIGACIÓN DE LOCALSTORAGE ===', 'warning');
+                    log('🔍 localStorage disponible: ' + (typeof localStorage !== 'undefined' ? 'SÍ' : 'NO'));
+                    log('🔍 localStorage.setItem función: ' + (typeof localStorage.setItem === 'function' ? 'SÍ' : 'NO'));
+                    
+                    // Limpiar localStorage primero
+                    try {
+                        localStorage.clear();
+                        log('🧹 localStorage limpiado');
+                    } catch (e) {
+                        log('❌ Error limpiando localStorage: ' + e.message, 'error');
+                    }
+                    
+                    // Guardar token y redirigir
+                    try {
+                        log('🔍 DEPURACIÓN: Intentando guardar token...');
+                        log('🔍 Token variable: ' + (token ? 'PRESENTE (' + token.length + ' chars)' : 'AUSENTE'));
+                        log('🔍 localStorage disponible: ' + (typeof localStorage !== 'undefined' ? 'SÍ' : 'NO'));
+                        
+                        // LÍNEA CRÍTICA
+                        log('🎯 === EJECUTANDO localStorage.setItem() ===', 'warning');
+                        localStorage.setItem('auth_token', token);
+                        log('💾 localStorage.setItem() ejecutado SIN ERRORES', 'success');
+                        
+                        // Verificar inmediatamente si se guardó
+                        const verificacion = localStorage.getItem('auth_token');
+                        log('🔍 VERIFICACIÓN INMEDIATA: Token en localStorage: ' + (verificacion ? 'PRESENTE (' + verificacion.length + ' chars)' : 'AUSENTE'), verificacion ? 'success' : 'error');
+                        
+                        // Comparar tokens
+                        if (verificacion && token) {
+                            log('🔍 Los tokens coinciden: ' + (verificacion === token ? 'SÍ' : 'NO'), verificacion === token ? 'success' : 'error');
+                        }
+                        
+                        // Verificar todas las claves en localStorage
+                        log('🔍 Todas las claves en localStorage: ' + Object.keys(localStorage).join(', '));
+                        
+                        log('✅ === DEPURACIÓN COMPLETA - REVISAR RESULTADOS ===', 'success');
+                        
+                    } catch (storageError) {
+                        log('❌ ERROR CRÍTICO guardando token: ' + storageError.message, 'error');
+                        log('❌ Stack: ' + storageError.stack, 'error');
+                    }
+                    
+                } else {
+                    const errorMsg = (response.data && response.data.error) || 'Error desconocido';
+                    log('❌ Login fallido: ' + errorMsg, 'error');
+                }
+                
+            } catch (error) {
+                log('❌ ERROR EN LOGIN: ' + error.message, 'error');
+                
+                if (error.response) {
+                    log('📄 Status: ' + error.response.status, 'error');
+                    log('📄 Data: ' + JSON.stringify(error.response.data || {}), 'error');
+                } else {
+                    log('📄 No response - Error de red o CORS', 'error');
+                }
+            }
+        }
+
+        // Ejecutar automáticamente después de 3 segundos
+        document.addEventListener('DOMContentLoaded', function() {
+            log('🔧 Sistema de debug cargado');
+            log('⏰ Iniciando login automático en 3 segundos...');
+            
+            setTimeout(() => {
+                executeLoginWithDebugger();
+            }, 3000);
+        });
+    </script>
+</body>
+</html>`);
+})
+
+// Test completo: Login → Token → Redirect en una sola página
+app.get('/test-full-flow.html', async (c) => {
+  return c.html(`<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Full Flow</title>
+    <script src="https://cdn.jsdelivr.net/npm/axios@1.6.0/dist/axios.min.js"></script>
+    <style>
+        body { font-family: monospace; background: #000; color: #00ff00; padding: 20px; }
+        .container { max-width: 1000px; margin: 0 auto; }
+        .success { color: #44ff44; }
+        .error { color: #ff4444; }
+        .warning { color: #ffaa44; }
+        .section { border: 1px solid #333; margin: 10px 0; padding: 10px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 TEST FLUJO COMPLETO: Login → Token → Redirect</h1>
+        
+        <div class="section">
+            <h2>PASO 1: Login</h2>
+            <div id="loginLogs"></div>
+        </div>
+        
+        <div class="section">
+            <h2>PASO 2: Verificación Token</h2>
+            <div id="tokenLogs"></div>
+        </div>
+        
+        <div class="section">
+            <h2>PASO 3: Test API con Token</h2>
+            <div id="apiLogs"></div>
+        </div>
+        
+        <div class="section">
+            <h2>PASO 4: Navegación</h2>
+            <div id="navLogs"></div>
+            <button onclick="goToEdit()" id="editBtn" style="display:none; background:#007cba; color:white; padding:10px; border:none; cursor:pointer;">
+                🚀 IR A PÁGINA DE EDICIÓN
+            </button>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = '/api';
+        
+        function log(message, containerId, type = 'normal') {
+            const container = document.getElementById(containerId);
+            const className = type === 'error' ? 'error' : type === 'success' ? 'success' : type === 'warning' ? 'warning' : '';
+            container.innerHTML += '<div class="' + className + '">' + new Date().toLocaleTimeString() + ' > ' + message + '</div>';
+            console.log(message);
+        }
+
+        async function executeFullFlow() {
+            // PASO 1: LOGIN
+            log('🚀 INICIANDO LOGIN...', 'loginLogs');
+            
+            try {
+                const response = await axios.post(API_BASE + '/auth/login', {
+                    email: 'carlos.rodriguez@ctei.edu.co',
+                    password: 'password123'
+                });
+                
+                log('✅ Respuesta del servidor: Status ' + response.status, 'loginLogs', 'success');
+                
+                if (response.data && response.data.success) {
+                    const token = response.data.data.token;
+                    log('✅ Token recibido: ' + token.substring(0, 30) + '...', 'loginLogs', 'success');
+                    
+                    // Limpiar localStorage
+                    localStorage.clear();
+                    log('🧹 localStorage limpiado', 'loginLogs');
+                    
+                    // Guardar token
+                    localStorage.setItem('auth_token', token);
+                    log('💾 Token guardado con clave "auth_token"', 'loginLogs', 'success');
+                    
+                    // PASO 2: VERIFICACIÓN INMEDIATA
+                    setTimeout(() => verifyToken(), 1000);
+                } else {
+                    log('❌ Login falló: ' + (response.data.error || 'Error desconocido'), 'loginLogs', 'error');
+                }
+                
+            } catch (error) {
+                log('❌ Error en login: ' + error.message, 'loginLogs', 'error');
+            }
+        }
+
+        function verifyToken() {
+            log('🔍 VERIFICANDO TOKEN EN LOCALSTORAGE...', 'tokenLogs');
+            
+            const token = localStorage.getItem('auth_token');
+            log('Token presente: ' + (token ? 'SÍ (' + token.length + ' chars)' : 'NO'), 'tokenLogs', token ? 'success' : 'error');
+            
+            if (token) {
+                // Configurar axios
+                axios.defaults.headers.common['Authorization'] = 'Bearer ' + token;
+                log('✅ Cabeceras de axios configuradas', 'tokenLogs', 'success');
+                
+                // Verificar estructura del token
+                try {
+                    const parts = token.split('.');
+                    const payload = JSON.parse(atob(parts[1]));
+                    log('✅ Token decodificado - Usuario: ' + payload.email, 'tokenLogs', 'success');
+                    log('✅ Rol: ' + payload.role, 'tokenLogs', 'success');
+                    log('✅ Expira: ' + new Date(payload.exp * 1000).toLocaleString(), 'tokenLogs', 'success');
+                } catch (e) {
+                    log('⚠️ Error decodificando token: ' + e.message, 'tokenLogs', 'warning');
+                }
+                
+                // PASO 3: TEST API
+                setTimeout(() => testAPI(), 1000);
+            } else {
+                log('❌ No se puede continuar sin token', 'tokenLogs', 'error');
+            }
+        }
+
+        async function testAPI() {
+            log('📡 PROBANDO API CON TOKEN...', 'apiLogs');
+            
+            try {
+                log('🚀 Enviando GET a /api/private/projects/1', 'apiLogs');
+                
+                const response = await axios.get('/api/private/projects/1');
+                
+                log('✅ API respondió: Status ' + response.status, 'apiLogs', 'success');
+                log('✅ Success: ' + response.data.success, 'apiLogs', 'success');
+                
+                if (response.data.success && response.data.data) {
+                    log('✅ Proyecto cargado: ' + response.data.data.title, 'apiLogs', 'success');
+                    log('✅ Propietario: ' + response.data.data.owner_name, 'apiLogs', 'success');
+                    
+                    // ÉXITO TOTAL
+                    log('🎉 ¡FLUJO COMPLETO EXITOSO!', 'navLogs', 'success');
+                    log('✅ Login funcionó', 'navLogs', 'success');
+                    log('✅ Token se guardó', 'navLogs', 'success');
+                    log('✅ API respondió correctamente', 'navLogs', 'success');
+                    log('✅ Listo para navegar a página de edición', 'navLogs', 'success');
+                    
+                    document.getElementById('editBtn').style.display = 'block';
+                } else {
+                    log('❌ API devolvió error: ' + JSON.stringify(response.data), 'apiLogs', 'error');
+                }
+                
+            } catch (error) {
+                log('❌ Error en API: ' + error.message, 'apiLogs', 'error');
+                if (error.response) {
+                    log('❌ Status: ' + error.response.status, 'apiLogs', 'error');
+                    log('❌ Data: ' + JSON.stringify(error.response.data), 'apiLogs', 'error');
+                }
+                
+                log('🔍 DIAGNÓSTICO: El problema está aquí ↑', 'navLogs', 'warning');
+            }
+        }
+
+        function goToEdit() {
+            log('🚀 NAVEGANDO A PÁGINA DE EDICIÓN...', 'navLogs');
+            log('✅ Token en localStorage antes de navegar: ' + (localStorage.getItem('auth_token') ? 'PRESENTE' : 'AUSENTE'), 'navLogs');
+            
+            setTimeout(() => {
+                window.location.href = '/dashboard/proyectos/1/editar';
+            }, 2000);
+        }
+
+        // Iniciar flujo automáticamente
+        document.addEventListener('DOMContentLoaded', function() {
+            log('🔧 Sistema cargado - Iniciando flujo en 2 segundos...', 'loginLogs');
+            setTimeout(executeFullFlow, 2000);
+        });
+    </script>
+</body>
+</html>`);
+})
+
 // Página de prueba del dashboard con temas
 app.get('/dashboard-theme-test', async (c) => {
   return c.html(`<!DOCTYPE html>
@@ -253,7 +1351,7 @@ app.get('/monitoring-test.html', async (c) => {
                 
                 if (response.data.success) {
                     adminToken = response.data.data.token;
-                    localStorage.setItem('ctei_token', adminToken);
+                    localStorage.setItem('auth_token', adminToken);
                     axios.defaults.headers.common['Authorization'] = \`Bearer \${adminToken}\`;
                     
                     alert('✅ Login exitoso! Token guardado. Ir al dashboard?');
@@ -323,7 +1421,7 @@ app.get('/monitoring-test.html', async (c) => {
         }
         
         // Auto-load token si existe
-        const existingToken = localStorage.getItem('ctei_token');
+        const existingToken = localStorage.getItem('auth_token');
         if (existingToken) {
             adminToken = existingToken;
             axios.defaults.headers.common['Authorization'] = \`Bearer \${existingToken}\`;
@@ -460,6 +1558,9 @@ app.get('/login-clean.html', async (c) => {
                 log('📦 Response: ' + JSON.stringify(response.data));
                 
                 if (response.data && response.data.success) {
+                    // ===== PUNTO DE RUPTURA PARA DEPURACIÓN =====
+                    debugger; // <-- EL CÓDIGO SE DETENDRÁ AQUÍ
+                    
                     const user = response.data.data.user;
                     const token = response.data.data.token;
                     
@@ -474,8 +1575,16 @@ app.get('/login-clean.html', async (c) => {
                     
                     // Guardar token y redirigir
                     try {
-                        localStorage.setItem('ctei_token', token);
-                        log('💾 Token guardado en localStorage');
+                        log('🔍 DEPURACIÓN: Intentando guardar token...');
+                        log('🔍 Token variable: ' + (token ? 'PRESENTE (' + token.length + ' chars)' : 'AUSENTE'));
+                        log('🔍 localStorage disponible: ' + (typeof localStorage !== 'undefined' ? 'SÍ' : 'NO'));
+                        
+                        localStorage.setItem('auth_token', token);
+                        log('💾 localStorage.setItem() ejecutado');
+                        
+                        // Verificar inmediatamente si se guardó
+                        const verificacion = localStorage.getItem('auth_token');
+                        log('🔍 VERIFICACIÓN INMEDIATA: Token en localStorage: ' + (verificacion ? 'PRESENTE (' + verificacion.length + ' chars)' : 'AUSENTE'));
                         
                         log('🔄 Redirigiendo al dashboard...');
                         setTimeout(function() {
@@ -613,7 +1722,7 @@ app.get('/test-login-debug.html', async (c) => {
                     });
                     
                     // Guardar en localStorage para redirigir al dashboard
-                    localStorage.setItem('ctei_token', token);
+                    localStorage.setItem('auth_token', token);
                     
                     log(\`✅ Token guardado en localStorage\`);
                     
@@ -1346,6 +2455,9 @@ app.get('/dashboard/proyectos/:id/editar', async (c) => {
         <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
         <link href="/static/styles.css" rel="stylesheet">
         <script src="https://cdn.jsdelivr.net/npm/axios@1.6.0/dist/axios.min.js"></script>
+        <!-- Quill Rich Text Editor -->
+        <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
+        <script src="https://cdn.quilljs.com/1.3.6/quill.min.js"></script>
         <script>
           tailwind.config = {
             theme: {
@@ -1438,6 +2550,8 @@ app.get('/dashboard/proyectos/:id/editar', async (c) => {
 
             /* Estilos específicos para la página de edición */
             .edit-page-container {
+                background: hsl(var(--background)); /* Blanco roto o gris muy claro para tema claro */
+                color: hsl(var(--foreground)); /* Gris carbón oscuro para tema claro */
                 min-height: 100vh;
             }
             
@@ -1447,6 +2561,7 @@ app.get('/dashboard/proyectos/:id/editar', async (c) => {
                 z-index: 40;
                 border-bottom: 1px solid hsl(var(--border));
                 background: hsl(var(--background));
+                box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1); /* Sombra suave para el tema claro */
             }
             
             .content-columns {
@@ -1472,6 +2587,7 @@ app.get('/dashboard/proyectos/:id/editar', async (c) => {
                 border-radius: calc(var(--radius) * 1.5);
                 padding: 1.5rem;
                 margin-bottom: 1.5rem;
+                box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1); /* var(--shadow-sm) */
             }
             
             .panel-title {
@@ -1544,16 +2660,20 @@ app.get('/dashboard/proyectos/:id/editar', async (c) => {
             .btn-primary:disabled {
                 opacity: 0.5;
                 cursor: not-allowed;
+                background: hsl(var(--muted));
+                color: hsl(var(--muted-foreground));
+                border: 1px solid hsl(var(--border));
             }
             
             .btn-secondary {
-                background: hsl(var(--secondary));
-                color: hsl(var(--secondary-foreground));
+                background: transparent;
+                color: hsl(var(--foreground));
                 border: 1px solid hsl(var(--border));
             }
             
             .btn-secondary:hover {
                 background: hsl(var(--accent));
+                color: hsl(var(--accent-foreground));
             }
             
             .btn-outline {
@@ -1566,6 +2686,76 @@ app.get('/dashboard/proyectos/:id/editar', async (c) => {
                 background: hsl(var(--accent));
             }
             
+            .btn-disabled {
+                pointer-events: none;
+            }
+            
+            /* Rich text editor integration */
+            .rich-text-editor {
+                border: 1px solid hsl(var(--border));
+                border-radius: calc(var(--radius));
+                background: hsl(var(--background));
+            }
+            
+            .ql-toolbar {
+                border-top: 1px solid hsl(var(--border));
+                border-left: 1px solid hsl(var(--border));
+                border-right: 1px solid hsl(var(--border));
+                border-bottom: none;
+                border-radius: calc(var(--radius)) calc(var(--radius)) 0 0;
+                background: hsl(var(--muted));
+            }
+            
+            .ql-toolbar .ql-formats {
+                margin-right: 15px;
+            }
+            
+            .ql-container {
+                border-top: none;
+                border-left: 1px solid hsl(var(--border));
+                border-right: 1px solid hsl(var(--border));
+                border-bottom: 1px solid hsl(var(--border));
+                border-radius: 0 0 calc(var(--radius)) calc(var(--radius));
+                background: hsl(var(--background));
+                color: hsl(var(--foreground));
+                font-size: 0.875rem;
+            }
+            
+            .ql-editor {
+                color: hsl(var(--foreground));
+                min-height: 120px;
+                padding: 0.75rem;
+            }
+            
+            .ql-editor.ql-blank::before {
+                color: hsl(var(--muted-foreground));
+                font-style: italic;
+            }
+            
+            .ql-toolbar .ql-stroke {
+                stroke: hsl(var(--muted-foreground)); /* Iconos más sutiles para el tema claro */
+            }
+            
+            .ql-toolbar .ql-fill {
+                fill: hsl(var(--muted-foreground)); /* Iconos más sutiles para el tema claro */
+            }
+            
+            .ql-toolbar button:hover .ql-stroke {
+                stroke: hsl(var(--primary));
+            }
+            
+            .ql-toolbar button:hover .ql-fill {
+                fill: hsl(var(--primary));
+            }
+            
+            .ql-toolbar button.ql-active .ql-stroke {
+                stroke: hsl(var(--primary));
+            }
+            
+            .ql-toolbar button.ql-active .ql-fill {
+                fill: hsl(var(--primary));
+            }
+            
             .tags-container {
                 display: flex;
                 flex-wrap: wrap;
@@ -1574,14 +2764,15 @@ app.get('/dashboard/proyectos/:id/editar', async (c) => {
             }
             
             .tag {
-                background: hsl(var(--primary));
-                color: hsl(var(--primary-foreground));
+                background: hsl(var(--accent));
+                color: hsl(var(--accent-foreground));
                 padding: 0.25rem 0.75rem;
                 border-radius: calc(var(--radius));
                 font-size: 0.75rem;
                 display: flex;
                 align-items: center;
                 gap: 0.25rem;
+                border: 1px solid hsl(var(--border));
             }
             
             .tag-remove {
@@ -1653,13 +2844,13 @@ app.get('/dashboard/proyectos/:id/editar', async (c) => {
             }
         </style>
     </head>
-    <body class="edit-page-container dark">
+    <body class="edit-page-container">
         <!-- Cabecera de acciones persistente -->
         <div class="sticky-header">
             <div class="flex justify-between items-center py-4 px-6">
                 <div class="flex items-center gap-4">
-                    <a href="/dashboard" class="btn-outline btn">
-                        <i class="fas fa-arrow-left"></i>
+                    <a href="/dashboard" class="text-muted-foreground hover:text-foreground transition-colors text-sm font-medium">
+                        <i class="fas fa-arrow-left mr-2"></i>
                         Volver al Dashboard
                     </a>
                     <h1 id="page-title" class="text-xl font-semibold text-foreground">
@@ -1738,16 +2929,16 @@ app.get('/dashboard/proyectos/:id/editar', async (c) => {
                                 <i class="fas fa-book-open text-primary mr-2"></i>
                                 Introducción
                             </label>
+                            <!-- Rich Text Editor para Introducción -->
+                            <div id="introduction-editor" class="rich-text-editor"></div>
                             <textarea 
                                 id="project-introduction"
                                 name="introduction"
-                                class="form-textarea"
-                                placeholder="Contexto y antecedentes del proyecto..."
-                                rows="8"
+                                style="display: none;"
                             ></textarea>
                             <div class="text-xs text-muted-foreground mt-1">
                                 <i class="fas fa-lightbulb mr-1"></i>
-                                Explique el contexto, antecedentes y justificación del proyecto.
+                                Explique el contexto, antecedentes y justificación del proyecto. Use formato enriquecido para estructurar mejor el contenido.
                             </div>
                         </div>
                     </div>
@@ -1759,16 +2950,16 @@ app.get('/dashboard/proyectos/:id/editar', async (c) => {
                                 <i class="fas fa-cogs text-primary mr-2"></i>
                                 Metodología
                             </label>
+                            <!-- Rich Text Editor para Metodología -->
+                            <div id="methodology-editor" class="rich-text-editor"></div>
                             <textarea 
                                 id="project-methodology"
                                 name="methodology"
-                                class="form-textarea"
-                                placeholder="Describa los métodos y enfoques utilizados..."
-                                rows="8"
+                                style="display: none;"
                             ></textarea>
                             <div class="text-xs text-muted-foreground mt-1">
                                 <i class="fas fa-route mr-1"></i>
-                                Detalle los métodos, herramientas y procesos utilizados en el proyecto.
+                                Detalle los métodos, herramientas y procesos utilizados en el proyecto. Use listas y formato para mayor claridad.
                             </div>
                         </div>
                     </div>
@@ -1840,6 +3031,27 @@ app.get('/dashboard/proyectos/:id/editar', async (c) => {
                         Productos Científicos del Proyecto
                     </div>
                     
+                    <!-- Búsqueda de productos existentes -->
+                    <div class="form-field">
+                        <label for="product-search" class="form-label">
+                            <i class="fas fa-search text-primary mr-2"></i>
+                            Asociar Producto Existente
+                        </label>
+                        <div class="relative">
+                            <input 
+                                type="text" 
+                                id="product-search"
+                                class="form-input"
+                                placeholder="Buscar productos por título o autor..."
+                            >
+                            <div id="product-search-results" class="search-results" style="display: none;"></div>
+                        </div>
+                        <div class="text-xs text-muted-foreground mt-1">
+                            <i class="fas fa-lightbulb mr-1"></i>
+                            Escriba para buscar productos científicos existentes en la base de datos.
+                        </div>
+                    </div>
+                    
                     <div id="associated-products" class="products-list">
                         <div class="text-center text-muted-foreground py-4">
                             <i class="fas fa-box-open mb-2 block text-lg"></i>
@@ -1847,14 +3059,20 @@ app.get('/dashboard/proyectos/:id/editar', async (c) => {
                         </div>
                     </div>
                     
-                    <button type="button" id="create-product-btn" class="btn-primary btn w-full">
-                        <i class="fas fa-plus"></i>
-                        Crear Nuevo Producto Científico
-                    </button>
+                    <div class="flex gap-2 mt-3">
+                        <button type="button" id="create-product-btn" class="btn-primary btn flex-1">
+                            <i class="fas fa-plus"></i>
+                            Crear Nuevo
+                        </button>
+                        <button type="button" id="show-all-products-btn" class="btn-outline btn">
+                            <i class="fas fa-list"></i>
+                            Ver Todos
+                        </button>
+                    </div>
                     
                     <div class="text-xs text-muted-foreground mt-2">
                         <i class="fas fa-info-circle mr-1"></i>
-                        Los productos científicos incluyen artículos, libros, patentes, software, etc.
+                        Los productos incluyen artículos, libros, patentes, software, etc.
                     </div>
                 </div>
             </div>
@@ -1878,25 +3096,154 @@ app.get('/dashboard/proyectos/:id/editar', async (c) => {
             let associatedProducts = [];
             
             // Configuración de autenticación
-            let authToken = localStorage.getItem('auth_token');
+            let authToken = null;
             
-            // Configurar axios con token de autenticación
-            if (authToken) {
-                axios.defaults.headers.common['Authorization'] = \`Bearer \${authToken}\`;
+            // Editores de texto enriquecido
+            let introductionEditor = null;
+            let methodologyEditor = null;
+            
+            // Función para obtener y verificar token
+            function getAuthTokenFromStorage() {
+                // Intentar obtener token de localStorage
+                const token = localStorage.getItem('auth_token');
+                
+                if (!token) {
+                    console.warn('No se encontró token de autenticación en localStorage');
+                    return null;
+                }
+                
+                console.log('Token encontrado en localStorage:', token ? 'Presente' : 'Ausente');
+                return token;
+            }
+            
+            // Función para configurar cabeceras de autenticación
+            function setupAuthHeaders(token) {
+                if (!token) {
+                    console.warn('Intento de configurar cabeceras sin token');
+                    delete axios.defaults.headers.common['Authorization'];
+                    return false;
+                }
+                
+                // Configurar cabecera Authorization para todas las solicitudes axios
+                axios.defaults.headers.common['Authorization'] = \`Bearer \${token}\`;
+                console.log('Cabeceras de autenticación configuradas correctamente');
+                
+                // DIAGNÓSTICO: Configurar interceptor de solicitudes axios
+                setupAxiosInterceptors();
+                
+                return true;
+            }
+            
+            // Configurar interceptores de axios para diagnóstico avanzado
+            function setupAxiosInterceptors() {
+                console.log('🔧 Configurando interceptores de axios para diagnóstico...');
+                
+                // Interceptor de solicitudes (antes de enviar)
+                axios.interceptors.request.use(
+                    function(config) {
+                        console.log('📤 SOLICITUD SALIENTE:', {
+                            method: config.method.toUpperCase(),
+                            url: config.url,
+                            hasAuthHeader: !!config.headers.Authorization,
+                            authHeader: config.headers.Authorization ? 
+                                config.headers.Authorization.substring(0, 20) + '...' : 'NO PRESENTE',
+                            allHeaders: config.headers
+                        });
+                        
+                        // Verificación crítica: ¿La solicitud tiene cabecera Authorization?
+                        if (!config.headers.Authorization && config.url.includes('/private/')) {
+                            console.error('🚨 PROBLEMA DETECTADO: Solicitud a ruta privada SIN cabecera Authorization');
+                            console.error('URL:', config.url);
+                            console.error('Cabeceras:', config.headers);
+                        }
+                        
+                        return config;
+                    },
+                    function(error) {
+                        console.error('❌ Error en interceptor de solicitud:', error);
+                        return Promise.reject(error);
+                    }
+                );
+                
+                // Interceptor de respuestas (después de recibir)
+                axios.interceptors.response.use(
+                    function(response) {
+                        console.log('📥 RESPUESTA RECIBIDA:', {
+                            status: response.status,
+                            statusText: response.statusText,
+                            url: response.config.url,
+                            success: response.data?.success
+                        });
+                        return response;
+                    },
+                    function(error) {
+                        console.error('📥 RESPUESTA DE ERROR:', {
+                            status: error.response?.status,
+                            statusText: error.response?.statusText,
+                            url: error.config?.url,
+                            data: error.response?.data
+                        });
+                        
+                        // Diagnóstico específico para errores 401
+                        if (error.response?.status === 401) {
+                            console.error('🚨 ERROR 401 DETECTADO - Analizando causa:');
+                            console.error('¿Tenía cabecera Authorization?', !!error.config?.headers?.Authorization);
+                            console.error('Cabecera enviada:', error.config?.headers?.Authorization);
+                            console.error('Respuesta del servidor:', error.response?.data);
+                        }
+                        
+                        return Promise.reject(error);
+                    }
+                );
+                
+                console.log('✅ Interceptores de axios configurados');
             }
             
             // Verificar autenticación
             function checkAuthentication() {
+                console.log('🔐 === INICIANDO VERIFICACIÓN DE AUTENTICACIÓN ===');
+                
+                // 1. Obtener token del storage
+                console.log('Paso 1: Obteniendo token del localStorage...');
+                authToken = getAuthTokenFromStorage();
+                
+                // 2. Si no hay token, mostrar error de autenticación
                 if (!authToken) {
+                    console.error('❌ FALLA EN AUTENTICACIÓN: Token no encontrado en localStorage');
+                    console.log('Posibles causas:');
+                    console.log('- Usuario nunca hizo login');
+                    console.log('- Token fue eliminado manualmente');
+                    console.log('- Error en el proceso de login');
                     showAuthError();
                     return false;
                 }
+                
+                // 3. Configurar cabeceras para futuras solicitudes
+                console.log('Paso 2: Configurando cabeceras de autenticación...');
+                const headersConfigured = setupAuthHeaders(authToken);
+                
+                if (!headersConfigured) {
+                    console.error('❌ FALLA EN CONFIGURACIÓN: No se pudieron configurar cabeceras');
+                    showAuthError();
+                    return false;
+                }
+                
+                // 4. Verificación final
+                console.log('✅ AUTENTICACIÓN EXITOSA');
+                console.log('Token configurado correctamente en axios.defaults');
+                console.log('La próxima solicitud HTTP incluirá:', axios.defaults.headers.common['Authorization']);
+                
                 return true;
             }
             
             // Mostrar error de autenticación
             function showAuthError() {
-                updatePageTitle(); // Actualizar título aunque no haya proyecto
+                // Actualizar título con información del error
+                const pageTitle = document.getElementById('page-title');
+                if (pageTitle) {
+                    pageTitle.textContent = \`Acceso Restringido - Proyecto ID: \${PROJECT_ID}\`;
+                }
+                
                 showSpecificError('auth', 'Sesión Requerida', 
                     'Para editar proyectos necesitas iniciar sesión primero. Por favor, autentícate con tu cuenta de CTeI-Manager.');
             }
@@ -1911,31 +3258,129 @@ app.get('/dashboard/proyectos/:id/editar', async (c) => {
             
             // Inicialización
             document.addEventListener('DOMContentLoaded', async () => {
+                console.log('=== INICIANDO PÁGINA DE EDICIÓN DE PROYECTO ===');
+                console.log('Proyecto ID:', PROJECT_ID);
+                
                 try {
-                    // Verificar autenticación primero
+                    // PASO 1: Verificar autenticación y configurar cabeceras
+                    console.log('Paso 1: Verificando autenticación...');
                     if (!checkAuthentication()) {
+                        console.error('Autenticación fallida - Deteniendo inicialización');
                         return; // showAuthError() ya se llamó en checkAuthentication()
                     }
                     
+                    // PASO 2: Verificar permisos de edición
+                    console.log('Paso 2: Verificando permisos de edición...');
+                    const hasPermissions = await checkProjectPermissions();
+                    if (!hasPermissions) {
+                        return; // Detener inicialización si no tiene permisos
+                    }
+                    
+                    // PASO 3: Cargar datos del proyecto
+                    console.log('Paso 3: Cargando datos del proyecto...');
                     await loadProject();
+                    
+                    // PASO 4: Inicializar componentes de la interfaz
+                    console.log('Paso 4: Inicializando componentes...');
                     initializeForm();
                     initializeKeywords();
                     initializeProductSearch();
+                    
+                    // PASO 5: Ocultar loading y mostrar interfaz
+                    console.log('Paso 5: Inicialización completa');
                     hideLoading();
+                    
                 } catch (error) {
-                    console.error('Error al inicializar:', error);
+                    console.error('Error durante inicialización:', error);
                     hideLoading(); // CRÍTICO: Siempre ocultar loading en caso de error
                     // El error específico ya fue manejado en loadProject()
                 }
             });
             
+            // Verificar permisos del usuario para este proyecto
+            async function checkProjectPermissions() {
+                try {
+                    const response = await axios.get(\`\${API_BASE}/private/projects/\${PROJECT_ID}/permissions\`);
+                    
+                    if (response.data.success) {
+                        const permissions = response.data.data;
+                        
+                        if (!permissions.canEdit) {
+                            showSpecificError('permission', 
+                                'Sin Permisos de Edición', 
+                                \`No puedes editar este proyecto. Solo el propietario (\${permissions.isOwner ? 'tú' : 'otro usuario'}) puede realizar cambios. Tu rol actual: \${permissions.userRole}.\`
+                            );
+                            return false;
+                        }
+                        
+                        console.log('✅ Permisos verificados - Usuario puede editar el proyecto');
+                        return true;
+                    }
+                } catch (error) {
+                    console.warn('No se pudieron verificar permisos, continuando con carga normal');
+                    return true; // Continuar con flujo normal si no se pueden verificar permisos
+                }
+            }
+
             // Cargar datos del proyecto
             async function loadProject() {
+                console.log('🔍 === DIAGNÓSTICO AVANZADO DE AUTENTICACIÓN ===');
+                
+                // PASO 1: Verificar existencia del token en Local Storage
+                console.log('📋 PASO 1: Verificando fuente del token...');
+                const tokenInStorage = localStorage.getItem('auth_token');
+                console.log('Token en localStorage:', tokenInStorage ? \`Presente (longitud: \${tokenInStorage.length})\` : 'AUSENTE');
+                console.log('Primeros 50 chars del token:', tokenInStorage ? tokenInStorage.substring(0, 50) + '...' : 'N/A');
+                
+                // PASO 2: Rastrear flujo de datos del token
+                console.log('📋 PASO 2: Rastreando flujo de datos...');
+                console.log('Variable authToken global:', authToken ? \`Presente (longitud: \${authToken.length})\` : 'AUSENTE');
+                console.log('Token antes de enviar:', authToken); // LÍNEA CRÍTICA DE DIAGNÓSTICO
+                
+                // PASO 3: Auditar configuración del cliente API
+                console.log('📋 PASO 3: Auditando configuración de axios...');
+                const authHeader = axios.defaults.headers.common['Authorization'];
+                console.log('Cabecera Authorization en axios.defaults:', authHeader || 'NO CONFIGURADA');
+                console.log('Todas las cabeceras de axios.defaults:', JSON.stringify(axios.defaults.headers.common, null, 2));
+                
+                // Verificar si el token es válido (no expirado)
+                if (authToken) {
+                    try {
+                        const tokenParts = authToken.split('.');
+                        if (tokenParts.length === 3) {
+                            const payload = JSON.parse(atob(tokenParts[1]));
+                            const expTime = new Date(payload.exp * 1000);
+                            const now = new Date();
+                            console.log('Token expira:', expTime.toISOString());
+                            console.log('Hora actual:', now.toISOString());
+                            console.log('Token válido:', expTime > now ? 'SÍ' : 'EXPIRADO');
+                        }
+                    } catch (e) {
+                        console.warn('No se pudo decodificar el token JWT:', e);
+                    }
+                }
+                
+                console.log('🚀 Iniciando solicitud a:', \`\${API_BASE}/private/projects/\${PROJECT_ID}\`);
+                
                 try {
+                    // Hacer la solicitud con diagnóstico completo
                     const response = await axios.get(\`\${API_BASE}/private/projects/\${PROJECT_ID}\`);
+                    
+                    console.log('✅ Respuesta exitosa recibida:', {
+                        status: response.status,
+                        statusText: response.statusText,
+                        headers: response.headers,
+                        dataSuccess: response.data.success
+                    });
                     
                     if (response.data.success) {
                         currentProject = response.data.data;
+                        console.log('📄 Datos del proyecto cargados:', {
+                            id: currentProject.id,
+                            title: currentProject.title,
+                            owner: currentProject.owner_name
+                        });
+                        
                         populateForm();
                         updatePageTitle();
                         updatePublicLink();
@@ -1943,7 +3388,7 @@ app.get('/dashboard/proyectos/:id/editar', async (c) => {
                         throw new Error(response.data.message || 'Error al cargar el proyecto');
                     }
                 } catch (error) {
-                    console.error('Error cargando proyecto:', error);
+                    console.error('❌ Error cargando proyecto:', error);
                     
                     // Manejo específico según código de estado HTTP
                     if (error.response) {
@@ -1989,12 +3434,27 @@ app.get('/dashboard/proyectos/:id/editar', async (c) => {
                 
                 document.getElementById('project-title').value = currentProject.title || '';
                 document.getElementById('project-abstract').value = currentProject.abstract || '';
-                document.getElementById('project-introduction').value = currentProject.introduction || '';
-                document.getElementById('project-methodology').value = currentProject.methodology || '';
+                
+                // Poblar editores de texto enriquecido
+                const introductionContent = currentProject.introduction || '';
+                const methodologyContent = currentProject.methodology || '';
+                
+                // Sincronizar textareas ocultas
+                document.getElementById('project-introduction').value = introductionContent;
+                document.getElementById('project-methodology').value = methodologyContent;
+                
+                // Poblar editores Quill
+                if (introductionEditor) {
+                    introductionEditor.root.innerHTML = introductionContent;
+                }
+                if (methodologyEditor) {
+                    methodologyEditor.root.innerHTML = methodologyContent;
+                }
+                
                 document.getElementById('project-status').value = currentProject.status || 'DRAFT';
                 
-                // Visibilidad (simulada - implementar según schema de BD)
-                const isPublic = currentProject.is_public;
+                // Visibilidad
+                const isPublic = currentProject.is_public === 1 || currentProject.is_public === true;
                 document.getElementById('visibility-public').checked = isPublic;
                 document.getElementById('visibility-private').checked = !isPublic;
                 
@@ -2037,12 +3497,83 @@ app.get('/dashboard/proyectos/:id/editar', async (c) => {
                 
                 // Prevenir salida accidental
                 window.addEventListener('beforeunload', handleBeforeUnload);
+                
+                // Inicializar estado del botón de guardar (deshabilitado por defecto)
+                resetSaveButton();
+                
+                // Inicializar editores de texto enriquecido
+                initializeRichTextEditors();
+            }
+            
+            // Inicializar editores de texto enriquecido
+            function initializeRichTextEditors() {
+                // Configuración común de Quill
+                const quillOptions = {
+                    theme: 'snow',
+                    modules: {
+                        toolbar: [
+                            [{ 'header': [1, 2, 3, false] }],
+                            ['bold', 'italic', 'underline'],
+                            [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+                            ['link'],
+                            ['clean']
+                        ]
+                    },
+                    placeholder: ''
+                };
+                
+                // Editor para Introducción
+                if (document.getElementById('introduction-editor')) {
+                    introductionEditor = new Quill('#introduction-editor', {
+                        ...quillOptions,
+                        placeholder: 'Contexto y antecedentes del proyecto...'
+                    });
+                    
+                    // Detectar cambios en el editor
+                    introductionEditor.on('text-change', () => {
+                        // Sincronizar con textarea oculta
+                        const content = introductionEditor.root.innerHTML;
+                        document.getElementById('project-introduction').value = content;
+                        handleFormChange();
+                    });
+                }
+                
+                // Editor para Metodología
+                if (document.getElementById('methodology-editor')) {
+                    methodologyEditor = new Quill('#methodology-editor', {
+                        ...quillOptions,
+                        placeholder: 'Describa los métodos y enfoques utilizados...'
+                    });
+                    
+                    // Detectar cambios en el editor
+                    methodologyEditor.on('text-change', () => {
+                        // Sincronizar con textarea oculta
+                        const content = methodologyEditor.root.innerHTML;
+                        document.getElementById('project-methodology').value = content;
+                        handleFormChange();
+                    });
+                }
             }
             
             // Manejar cambios en el formulario
             function handleFormChange() {
                 hasUnsavedChanges = true;
+                enableSaveButton();
+            }
+            
+            // Habilitar botón de guardar cuando hay cambios
+            function enableSaveButton() {
                 saveBtn.disabled = false;
+                saveBtn.classList.remove('btn-disabled');
+                saveBtn.title = 'Guardar cambios del proyecto';
+            }
+            
+            // Resetear botón de guardar al estado inicial
+            function resetSaveButton() {
+                saveBtn.disabled = true;
+                saveBtn.classList.add('btn-disabled');
+                saveBtn.title = 'Realiza algún cambio para guardar';
+                hasUnsavedChanges = false;
             }
             
             // Manejar envío del formulario
@@ -2056,6 +3587,15 @@ app.get('/dashboard/proyectos/:id/editar', async (c) => {
                     saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Guardando...';
                     
                     const formData = new FormData(form);
+                    
+                    // Sincronizar contenido de editores Quill antes de enviar
+                    if (introductionEditor) {
+                        document.getElementById('project-introduction').value = introductionEditor.root.innerHTML;
+                    }
+                    if (methodologyEditor) {
+                        document.getElementById('project-methodology').value = methodologyEditor.root.innerHTML;
+                    }
+                    
                     const projectData = {
                         title: formData.get('title'),
                         abstract: formData.get('abstract'),
@@ -2063,7 +3603,7 @@ app.get('/dashboard/proyectos/:id/editar', async (c) => {
                         methodology: formData.get('methodology') || null,
                         status: formData.get('status'),
                         keywords: keywords.join(', ') || null,
-                        // is_public: formData.get('visibility') === 'public' // Implementar según schema
+                        is_public: formData.get('visibility') === 'public'
                     };
                     
                     const response = await axios.put(\`\${API_BASE}/private/projects/\${PROJECT_ID}\`, projectData);
@@ -2076,14 +3616,47 @@ app.get('/dashboard/proyectos/:id/editar', async (c) => {
                         currentProject = { ...currentProject, ...projectData };
                         updatePageTitle();
                         
-                        saveBtn.disabled = true;
+                        // Resetear botón de guardar
+                        resetSaveButton();
                         saveBtn.innerHTML = '<i class="fas fa-save"></i> Guardar Cambios';
                     } else {
                         throw new Error(response.data.message || 'Error al actualizar el proyecto');
                     }
                 } catch (error) {
                     console.error('Error al guardar:', error);
-                    showError('Error al guardar el proyecto');
+                    
+                    // Manejo específico de errores
+                    let errorMessage = 'Error al guardar el proyecto';
+                    
+                    if (error.response) {
+                        const status = error.response.status;
+                        const data = error.response.data;
+                        
+                        switch (status) {
+                            case 403:
+                                errorMessage = data.details || data.error || 'No tienes permisos para editar este proyecto';
+                                break;
+                            case 404:
+                                errorMessage = 'Proyecto no encontrado';
+                                break;
+                            case 400:
+                                errorMessage = data.error || 'Datos inválidos en el formulario';
+                                break;
+                            case 401:
+                                errorMessage = 'Tu sesión ha expirado. Por favor, inicia sesión nuevamente';
+                                // Redirigir al login después de 2 segundos
+                                setTimeout(() => {
+                                    window.location.href = '/login';
+                                }, 2000);
+                                break;
+                            default:
+                                errorMessage = data.error || \`Error del servidor (\${status})\`;
+                        }
+                    } else if (error.request) {
+                        errorMessage = 'Error de conexión. Verifica tu internet e intenta nuevamente';
+                    }
+                    
+                    showError(errorMessage);
                     saveBtn.disabled = false;
                     saveBtn.innerHTML = '<i class="fas fa-save"></i> Guardar Cambios';
                 }
@@ -2149,11 +3722,186 @@ app.get('/dashboard/proyectos/:id/editar', async (c) => {
             // Inicializar gestión de productos
             function initializeProductSearch() {
                 const createBtn = document.getElementById('create-product-btn');
+                const showAllBtn = document.getElementById('show-all-products-btn');
+                const searchInput = document.getElementById('product-search');
+                const searchResults = document.getElementById('product-search-results');
+                let searchTimeout = null;
                 
+                // Botón crear nuevo producto
                 createBtn.addEventListener('click', () => {
                     // Redirigir a página de creación de producto con project_id
                     window.location.href = \`/dashboard/productos/nuevo?project_id=\${PROJECT_ID}\`;
                 });
+                
+                // Botón ver todos los productos
+                showAllBtn.addEventListener('click', () => {
+                    // Mostrar todos los productos disponibles
+                    searchAllProducts();
+                });
+                
+                // Búsqueda en tiempo real
+                searchInput.addEventListener('input', (e) => {
+                    const query = e.target.value.trim();
+                    
+                    // Limpiar timeout anterior
+                    if (searchTimeout) {
+                        clearTimeout(searchTimeout);
+                    }
+                    
+                    if (query.length < 2) {
+                        hideSearchResults();
+                        return;
+                    }
+                    
+                    // Buscar después de 300ms de inactividad
+                    searchTimeout = setTimeout(() => {
+                        searchProducts(query);
+                    }, 300);
+                });
+                
+                // Ocultar resultados al hacer clic fuera
+                document.addEventListener('click', (e) => {
+                    if (!searchInput.contains(e.target) && !searchResults.contains(e.target)) {
+                        hideSearchResults();
+                    }
+                });
+            }
+            
+            // Buscar productos por query
+            async function searchProducts(query) {
+                try {
+                    const searchResults = document.getElementById('product-search-results');
+                    
+                    // Mostrar indicador de carga
+                    searchResults.innerHTML = '<div class="search-result-item"><i class="fas fa-spinner fa-spin mr-2"></i>Buscando productos...</div>';
+                    searchResults.style.display = 'block';
+                    
+                    const response = await axios.get(\`\${API_BASE}/public/products/search?q=\${encodeURIComponent(query)}&limit=10\`);
+                    
+                    if (response.data.success && response.data.data.products) {
+                        renderSearchResults(response.data.data.products);
+                    } else {
+                        showNoResults();
+                    }
+                } catch (error) {
+                    console.error('Error buscando productos:', error);
+                    searchResults.innerHTML = '<div class="search-result-item text-destructive"><i class="fas fa-exclamation-triangle mr-2"></i>Error en la búsqueda</div>';
+                }
+            }
+            
+            // Mostrar todos los productos disponibles
+            async function searchAllProducts() {
+                try {
+                    const searchResults = document.getElementById('product-search-results');
+                    
+                    // Mostrar indicador de carga
+                    searchResults.innerHTML = '<div class="search-result-item"><i class="fas fa-spinner fa-spin mr-2"></i>Cargando productos...</div>';
+                    searchResults.style.display = 'block';
+                    
+                    const response = await axios.get(\`\${API_BASE}/public/products?limit=20\`);
+                    
+                    if (response.data.success && response.data.data.products) {
+                        renderSearchResults(response.data.data.products, 'Todos los productos disponibles:');
+                    } else {
+                        showNoResults('No hay productos disponibles');
+                    }
+                } catch (error) {
+                    console.error('Error cargando productos:', error);
+                    searchResults.innerHTML = '<div class="search-result-item text-destructive"><i class="fas fa-exclamation-triangle mr-2"></i>Error cargando productos</div>';
+                }
+            }
+            
+            // Renderizar resultados de búsqueda
+            function renderSearchResults(products, title = '') {
+                const searchResults = document.getElementById('product-search-results');
+                
+                if (!products || products.length === 0) {
+                    showNoResults();
+                    return;
+                }
+                
+                let html = '';
+                
+                if (title) {
+                    html += \`<div class="search-result-item" style="background: hsl(var(--muted)); font-weight: 600;">\${title}</div>\`;
+                }
+                
+                products.forEach(product => {
+                    const isAssociated = associatedProducts.some(p => p.id === product.id);
+                    const statusIcon = isAssociated ? 'fas fa-check text-green-500' : 'fas fa-plus text-primary';
+                    const statusText = isAssociated ? 'Asociado' : 'Asociar';
+                    
+                    html += \`
+                        <div class="search-result-item" onclick="handleProductSelection(\${product.id}, '\${product.title}', \${isAssociated})">
+                            <div class="flex justify-between items-start">
+                                <div class="flex-1 min-w-0">
+                                    <div class="font-medium text-sm truncate">\${product.title}</div>
+                                    <div class="text-xs text-muted-foreground mt-1">
+                                        <i class="fas fa-user mr-1"></i>\${product.authors || 'Sin autor'}
+                                        <span class="ml-2"><i class="fas fa-calendar mr-1"></i>\${product.publication_year || 'Sin fecha'}</span>
+                                    </div>
+                                </div>
+                                <div class="ml-2 flex items-center text-xs">
+                                    <i class="\${statusIcon} mr-1"></i>
+                                    <span>\${statusText}</span>
+                                </div>
+                            </div>
+                        </div>
+                    \`;
+                });
+                
+                searchResults.innerHTML = html;
+                searchResults.style.display = 'block';
+            }
+            
+            // Manejar selección de producto
+            async function handleProductSelection(productId, productTitle, isAssociated) {
+                if (isAssociated) {
+                    alert('Este producto ya está asociado al proyecto');
+                    return;
+                }
+                
+                try {
+                    // Confirmar asociación
+                    if (!confirm(\`¿Desea asociar el producto "\${productTitle}" a este proyecto?\`)) {
+                        return;
+                    }
+                    
+                    const response = await axios.post(\`\${API_BASE}/private/projects/\${PROJECT_ID}/products/\${productId}\`);
+                    
+                    if (response.data.success) {
+                        // Recargar productos asociados
+                        await loadAssociatedProducts();
+                        hideSearchResults();
+                        document.getElementById('product-search').value = '';
+                        handleFormChange(); // Marcar como cambio no guardado
+                        
+                        console.log('Producto asociado exitosamente');
+                    } else {
+                        throw new Error(response.data.message || 'Error al asociar producto');
+                    }
+                } catch (error) {
+                    console.error('Error asociando producto:', error);
+                    alert('Error al asociar el producto. Por favor, intente nuevamente.');
+                }
+            }
+            
+            // Mostrar mensaje sin resultados
+            function showNoResults(message = 'No se encontraron productos') {
+                const searchResults = document.getElementById('product-search-results');
+                searchResults.innerHTML = \`
+                    <div class="search-result-item text-muted-foreground text-center">
+                        <i class="fas fa-search mr-2"></i>\${message}
+                    </div>
+                \`;
+                searchResults.style.display = 'block';
+            }
+            
+            // Ocultar resultados de búsqueda
+            function hideSearchResults() {
+                const searchResults = document.getElementById('product-search-results');
+                searchResults.style.display = 'none';
+                searchResults.innerHTML = '';
             }
             
             // Cargar productos del proyecto
@@ -2261,6 +4009,21 @@ app.get('/dashboard/proyectos/:id/editar', async (c) => {
             // Mostrar error específico según tipo y código de estado
             function showSpecificError(type, title, description) {
                 hideLoading();
+                
+                // Actualizar título de la página según el tipo de error
+                const pageTitle = document.getElementById('page-title');
+                if (pageTitle) {
+                    const errorTitles = {
+                        auth: \`Sesión Requerida - Proyecto ID: \${PROJECT_ID}\`,
+                        permission: \`Sin Permisos - Proyecto ID: \${PROJECT_ID}\`,
+                        notfound: \`Proyecto No Encontrado - ID: \${PROJECT_ID}\`,
+                        server: \`Error del Servidor - Proyecto ID: \${PROJECT_ID}\`,
+                        network: \`Error de Conexión - Proyecto ID: \${PROJECT_ID}\`,
+                        unknown: \`Error Inesperado - Proyecto ID: \${PROJECT_ID}\`
+                    };
+                    
+                    pageTitle.textContent = errorTitles[type] || errorTitles.unknown;
+                }
                 
                 // Configuración específica según tipo de error
                 const errorConfig = {
@@ -2382,19 +4145,34 @@ app.get('/dashboard/proyectos/:id/editar', async (c) => {
                                     </div>
                                 \` : ''}
                                 
+                                <!-- Herramientas de Diagnóstico Avanzado -->
+                                <div style="margin-top: 2rem;">
+                                    <button 
+                                        onclick="runAdvancedDiagnostic()" 
+                                        class="btn-secondary btn"
+                                        style="width: 100%; margin-bottom: 1rem;"
+                                    >
+                                        <i class="fas fa-stethoscope mr-2"></i>
+                                        Ejecutar Diagnóstico Completo
+                                    </button>
+                                </div>
+                                
                                 <!-- Información Técnica (Colapsible) -->
-                                <details style="margin-top: 2rem; text-align: left;">
+                                <details style="margin-top: 1rem; text-align: left;">
                                     <summary style="cursor: pointer; color: hsl(var(--muted-foreground)); font-size: 0.875rem;">
                                         <i class="fas fa-code mr-1"></i>
                                         Información técnica para soporte
                                     </summary>
-                                    <div style="margin-top: 1rem; padding: 1rem; background: hsl(var(--muted)); border-radius: calc(var(--radius)); font-family: monospace; font-size: 0.75rem; color: hsl(var(--muted-foreground));">
+                                    <div id="tech-info-\${type}" style="margin-top: 1rem; padding: 1rem; background: hsl(var(--muted)); border-radius: calc(var(--radius)); font-family: monospace; font-size: 0.75rem; color: hsl(var(--muted-foreground));">
                                         <strong>Tipo de Error:</strong> \${type}<br>
                                         <strong>Proyecto ID:</strong> \${PROJECT_ID}<br>
                                         <strong>URL de la API:</strong> \${API_BASE}/private/projects/\${PROJECT_ID}<br>
                                         <strong>Token Presente:</strong> \${authToken ? 'Sí' : 'No'}<br>
                                         <strong>Título:</strong> \${title}<br>
-                                        <strong>Timestamp:</strong> \${new Date().toISOString()}
+                                        <strong>Timestamp:</strong> \${new Date().toISOString()}<br>
+                                        <div id="diagnostic-results" style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid hsl(var(--border));">
+                                            <em>Ejecuta el diagnóstico completo para más información...</em>
+                                        </div>
                                     </div>
                                 </details>
                             </div>
@@ -2480,10 +4258,87 @@ app.get('/dashboard/proyectos/:id/editar', async (c) => {
             
             // Función para reintentar la carga
             function retryLoadProject() {
-                // Mostrar loading nuevamente
-                const mainContent = document.querySelector('.content-columns');
-                if (mainContent) {
-                    location.reload(); // Recargar la página completa para reiniciar el estado
+                console.log('🔄 Reintentando carga del proyecto...');
+                location.reload(); // Recargar la página completa para reiniciar el estado
+            }
+            
+            // Función de diagnóstico completo en tiempo real
+            function runAdvancedDiagnostic() {
+                console.log('🔍 === EJECUTANDO DIAGNÓSTICO COMPLETO ===');
+                
+                const results = [];
+                
+                // 1. Verificar localStorage
+                const tokenInStorage = localStorage.getItem('auth_token');
+                results.push(\`🔑 Token en localStorage: \${tokenInStorage ? 'PRESENTE' : 'AUSENTE'}\`);
+                
+                if (tokenInStorage) {
+                    results.push(\`📏 Longitud del token: \${tokenInStorage.length} caracteres\`);
+                    results.push(\`🔤 Primeros 20 chars: \${tokenInStorage.substring(0, 20)}...\`);
+                    
+                    // Verificar si es un JWT válido
+                    try {
+                        const parts = tokenInStorage.split('.');
+                        if (parts.length === 3) {
+                            const payload = JSON.parse(atob(parts[1]));
+                            const expTime = new Date(payload.exp * 1000);
+                            const now = new Date();
+                            results.push(\`⏰ Token expira: \${expTime.toLocaleString()}\`);
+                            results.push(\`✅ Token válido: \${expTime > now ? 'SÍ' : 'EXPIRADO'}\`);
+                            results.push(\`👤 Usuario: \${payload.email || 'N/A'}\`);
+                            results.push(\`🔐 Rol: \${payload.role || 'N/A'}\`);
+                        } else {
+                            results.push(\`❌ Token no parece ser JWT válido (partes: \${parts.length})\`);
+                        }
+                    } catch (e) {
+                        results.push(\`❌ Error decodificando JWT: \${e.message}\`);
+                    }
+                }
+                
+                // 2. Verificar variable global
+                results.push(\`🌐 Variable global authToken: \${authToken ? 'PRESENTE' : 'AUSENTE'}\`);
+                
+                // 3. Verificar configuración de axios
+                const authHeader = axios.defaults.headers.common['Authorization'];
+                results.push(\`🔧 Axios Authorization header: \${authHeader ? 'CONFIGURADA' : 'NO CONFIGURADA'}\`);
+                
+                if (authHeader) {
+                    results.push(\`📤 Cabecera completa: \${authHeader.substring(0, 30)}...\`);
+                }
+                
+                // 4. Verificar todas las cabeceras
+                const allHeaders = Object.keys(axios.defaults.headers.common);
+                results.push(\`📋 Todas las cabeceras axios: \${allHeaders.join(', ')}\`);
+                
+                // 5. Test de conectividad básica
+                results.push(\`🌐 Probando conectividad con API...\`);
+                
+                // Hacer una prueba de conectividad
+                axios.get(\`\${API_BASE}/health\`).then(() => {
+                    results.push(\`✅ API accesible (endpoint /health)\`);
+                    updateDiagnosticResults(results);
+                }).catch(err => {
+                    results.push(\`❌ API no accesible: \${err.message}\`);
+                    updateDiagnosticResults(results);
+                });
+                
+                // Mostrar resultados inmediatos
+                updateDiagnosticResults(results);
+                
+                // Log completo en consola
+                console.log('Resultados del diagnóstico:');
+                results.forEach((result, index) => {
+                    console.log(\`\${index + 1}. \${result}\`);
+                });
+            }
+            
+            // Actualizar resultados del diagnóstico en la UI
+            function updateDiagnosticResults(results) {
+                const diagnosticDiv = document.getElementById('diagnostic-results');
+                if (diagnosticDiv) {
+                    diagnosticDiv.innerHTML = results.map(result => 
+                        \`<div style="margin: 0.25rem 0;">\${result}</div>\`
+                    ).join('');
                 }
             }
             
@@ -2562,7 +4417,7 @@ app.get('/dashboard-simple', (c) => {
             });
             
             function updateStatus() {
-                const existing = localStorage.getItem('ctei_token');
+                const existing = localStorage.getItem('auth_token');
                 document.getElementById('status-info').innerHTML = \`
                     <div class="space-y-2">
                         <p><strong>URL:</strong> \${window.location.href}</p>
@@ -2589,7 +4444,7 @@ app.get('/dashboard-simple', (c) => {
                     
                     if (response.data.success) {
                         adminToken = response.data.data.token;
-                        localStorage.setItem('ctei_token', adminToken);
+                        localStorage.setItem('auth_token', adminToken);
                         axios.defaults.headers.common['Authorization'] = \`Bearer \${adminToken}\`;
                         
                         results.innerHTML = \`

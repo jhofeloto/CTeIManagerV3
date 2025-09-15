@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Set Token - Diagnóstico</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 p-8">
+    <div class="max-w-2xl mx-auto bg-white p-6 rounded-lg shadow">
+        <h1 class="text-2xl font-bold mb-4">🔧 Establecer Token de Autenticación</h1>
+        
+        <div class="mb-6">
+            <label for="token" class="block text-sm font-medium text-gray-700 mb-2">Token JWT:</label>
+            <textarea id="token" rows="4" class="w-full p-3 border border-gray-300 rounded-md" 
+                      placeholder="Pegar token JWT aquí..."></textarea>
+        </div>
+        
+        <div class="flex gap-4 mb-6">
+            <button onclick="setToken()" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
+                💾 Establecer Token
+            </button>
+            <button onclick="clearToken()" class="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700">
+                🗑️ Limpiar Token
+            </button>
+            <button onclick="checkToken()" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">
+                🔍 Verificar Token
+            </button>
+        </div>
+        
+        <div id="result" class="p-4 rounded-md hidden"></div>
+        
+        <div class="mt-6">
+            <h2 class="text-lg font-semibold mb-2">🚀 Acciones Rápidas:</h2>
+            <div class="space-y-2">
+                <button onclick="setTestToken()" class="w-full bg-purple-600 text-white px-4 py-2 rounded hover:bg-purple-700">
+                    🧪 Establecer Token de Prueba (Carlos Rodríguez)
+                </button>
+                <button onclick="goToEdit()" class="w-full bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700">
+                    📝 Ir a Página de Edición (Proyecto ID: 1)
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Token de prueba válido para Carlos Rodríguez
+        const TEST_TOKEN = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjIsImVtYWlsIjoiY2FybG9zLnJvZHJpZ3VlekBjdGVpLmVkdS5jbyIsInJvbGUiOiJJTlZFU1RJR0FUT1IiLCJleHAiOjE3NTc5ODYxNjl9.e2MHisoqWo3Q5g7M-91cbiJF6zR3OGKMjXIBnAdGCwI';
+
+        function setToken() {
+            const token = document.getElementById('token').value.trim();
+            
+            if (!token) {
+                showResult('error', 'Por favor, ingresa un token válido');
+                return;
+            }
+            
+            localStorage.setItem('auth_token', token);
+            showResult('success', 'Token establecido correctamente en localStorage');
+            console.log('Token establecido:', token);
+        }
+
+        function clearToken() {
+            localStorage.removeItem('auth_token');
+            document.getElementById('token').value = '';
+            showResult('info', 'Token eliminado de localStorage');
+            console.log('Token eliminado');
+        }
+
+        function checkToken() {
+            const token = localStorage.getItem('auth_token');
+            
+            if (!token) {
+                showResult('error', 'No hay token en localStorage');
+                return;
+            }
+            
+            try {
+                const parts = token.split('.');
+                if (parts.length !== 3) {
+                    showResult('error', 'Token JWT inválido (formato incorrecto)');
+                    return;
+                }
+                
+                const payload = JSON.parse(atob(parts[1]));
+                const expTime = new Date(payload.exp * 1000);
+                const now = new Date();
+                
+                const info = `
+                    <strong>Token encontrado:</strong><br>
+                    Usuario ID: ${payload.userId}<br>
+                    Email: ${payload.email}<br>
+                    Rol: ${payload.role}<br>
+                    Expira: ${expTime.toLocaleString()}<br>
+                    Estado: ${expTime > now ? '✅ Válido' : '❌ Expirado'}
+                `;
+                
+                showResult(expTime > now ? 'success' : 'error', info);
+                
+            } catch (e) {
+                showResult('error', 'Error decodificando token: ' + e.message);
+            }
+        }
+
+        function setTestToken() {
+            document.getElementById('token').value = TEST_TOKEN;
+            localStorage.setItem('auth_token', TEST_TOKEN);
+            showResult('success', 'Token de prueba establecido (Carlos Rodríguez - INVESTIGATOR)');
+        }
+
+        function goToEdit() {
+            window.location.href = '/edit/1';
+        }
+
+        function showResult(type, message) {
+            const result = document.getElementById('result');
+            result.className = `p-4 rounded-md ${type === 'success' ? 'bg-green-100 text-green-800' : 
+                                                 type === 'error' ? 'bg-red-100 text-red-800' : 
+                                                 'bg-blue-100 text-blue-800'}`;
+            result.innerHTML = message;
+            result.classList.remove('hidden');
+        }
+    </script>
+</body>
+</html>

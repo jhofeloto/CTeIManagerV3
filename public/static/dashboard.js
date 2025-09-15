@@ -3,7 +3,7 @@
 // Estado global del dashboard
 const DashboardState = {
     user: null,
-    token: localStorage.getItem('ctei_token') || null,
+    token: localStorage.getItem('auth_token') || null,
     currentView: 'dashboard',
     projects: [],
     adminProjects: [], // Proyectos para vista de administrador
@@ -64,7 +64,7 @@ function formatDate(dateString) {
 }
 
 function logout() {
-    localStorage.removeItem('ctei_token');
+    localStorage.removeItem('auth_token');
     delete axios.defaults.headers.common['Authorization'];
     window.location.href = '/';
 }
@@ -5104,7 +5104,7 @@ function goToPublicPortal() {
     console.log('🔄 Navegando al portal público preservando sesión...');
     
     // Verificar que el token esté guardado
-    const token = localStorage.getItem('ctei_token');
+    const token = localStorage.getItem('auth_token');
     if (token) {
         console.log('✅ Token encontrado, navegando al portal público');
         // Agregar parámetro para indicar que viene del dashboard

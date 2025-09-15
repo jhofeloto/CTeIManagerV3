@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug Auth Flow</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios@1.6.0/dist/axios.min.js"></script>
+</head>
+<body class="bg-gray-100 p-8">
+    <div class="max-w-4xl mx-auto bg-white p-6 rounded-lg shadow">
+        <h1 class="text-2xl font-bold mb-4">🔧 Diagnóstico Completo de Autenticación</h1>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <!-- Panel de Control -->
+            <div class="bg-gray-50 p-4 rounded">
+                <h2 class="text-lg font-semibold mb-4">Panel de Control</h2>
+                <div class="space-y-3">
+                    <button onclick="step1_setToken()" class="w-full bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
+                        1️⃣ Establecer Token
+                    </button>
+                    <button onclick="step2_configureAxios()" class="w-full bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">
+                        2️⃣ Configurar Axios
+                    </button>
+                    <button onclick="step3_testAPI()" class="w-full bg-purple-600 text-white px-4 py-2 rounded hover:bg-purple-700">
+                        3️⃣ Probar API
+                    </button>
+                    <button onclick="step4_fullTest()" class="w-full bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700">
+                        🚀 Test Completo
+                    </button>
+                    <button onclick="clearAll()" class="w-full bg-gray-600 text-white px-4 py-2 rounded hover:bg-gray-700">
+                        🗑️ Limpiar Todo
+                    </button>
+                </div>
+            </div>
+
+            <!-- Resultados -->
+            <div>
+                <h2 class="text-lg font-semibold mb-4">Resultados</h2>
+                <div id="results" class="bg-black text-green-400 p-4 rounded font-mono text-sm h-96 overflow-y-auto">
+                    Esperando comandos...<br>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Variables globales
+        const API_BASE = '/api';
+        const TEST_TOKEN = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjIsImVtYWlsIjoiY2FybG9zLnJvZHJpZ3VlekBjdGVpLmVkdS5jbyIsInJvbGUiOiJJTlZFU1RJR0FUT1IiLCJleHAiOjE3NTc5ODYxNjl9.e2MHisoqWo3Q5g7M-91cbiJF6zR3OGKMjXIBnAdGCwI';
+        let authToken = null;
+
+        function log(message) {
+            const results = document.getElementById('results');
+            const timestamp = new Date().toLocaleTimeString();
+            results.innerHTML += timestamp + ' > ' + message + '<br>';
+            results.scrollTop = results.scrollHeight;
+            console.log(message);
+        }
+
+        function step1_setToken() {
+            log('🔍 PASO 1: ESTABLECIENDO TOKEN');
+            
+            // Limpiar localStorage primero
+            localStorage.removeItem('auth_token');
+            log('✓ localStorage limpio');
+            
+            // Establecer token
+            localStorage.setItem('auth_token', TEST_TOKEN);
+            log('✓ Token establecido en localStorage');
+            
+            // Verificar token
+            const storedToken = localStorage.getItem('auth_token');
+            log('✓ Token verificado: ' + (storedToken ? 'PRESENTE' : 'AUSENTE'));
+            log('✓ Longitud: ' + (storedToken ? storedToken.length : 0));
+            
+            // Asignar a variable global
+            authToken = storedToken;
+            log('✓ Variable global authToken actualizada');
+            
+            // Decodificar token para verificar
+            try {
+                const parts = storedToken.split('.');
+                const payload = JSON.parse(atob(parts[1]));
+                log('✓ Token decodificado - Usuario: ' + payload.email + ' (' + payload.role + ')');
+                log('✓ Expira: ' + new Date(payload.exp * 1000).toLocaleString());
+            } catch (e) {
+                log('❌ Error decodificando token: ' + e.message);
+            }
+        }
+
+        function step2_configureAxios() {
+            log('🔍 PASO 2: CONFIGURANDO AXIOS');
+            
+            if (!authToken) {
+                log('❌ ERROR: No hay token disponible. Ejecuta Paso 1 primero.');
+                return;
+            }
+            
+            // Configurar cabecera Authorization
+            axios.defaults.headers.common['Authorization'] = 'Bearer ' + authToken;
+            log('✓ Cabecera Authorization configurada');
+            
+            // Verificar configuración
+            const authHeader = axios.defaults.headers.common['Authorization'];
+            log('✓ Verificación: ' + (authHeader ? 'CONFIGURADO' : 'NO CONFIGURADO'));
+            log('✓ Cabecera actual: ' + (authHeader || 'NINGUNA'));
+            
+            // Configurar interceptor de solicitudes
+            axios.interceptors.request.use(
+                function(config) {
+                    log('📤 INTERCEPTOR: Solicitud saliente a ' + config.url);
+                    log('📤 Auth header: ' + (config.headers.Authorization ? 'PRESENTE' : 'AUSENTE'));
+                    return config;
+                },
+                function(error) {
+                    log('❌ INTERCEPTOR: Error en solicitud: ' + error.message);
+                    return Promise.reject(error);
+                }
+            );
+            
+            // Configurar interceptor de respuestas
+            axios.interceptors.response.use(
+                function(response) {
+                    log('📥 INTERCEPTOR: Respuesta recibida - Status: ' + response.status);
+                    return response;
+                },
+                function(error) {
+                    log('❌ INTERCEPTOR: Error en respuesta: ' + (error.response ? error.response.status : error.message));
+                    return Promise.reject(error);
+                }
+            );
+            
+            log('✓ Interceptores configurados');
+        }
+
+        function step3_testAPI() {
+            log('🔍 PASO 3: PROBANDO API');
+            
+            if (!authToken) {
+                log('❌ ERROR: No hay token disponible. Ejecuta Paso 1 primero.');
+                return;
+            }
+            
+            log('🚀 Enviando solicitud a: ' + API_BASE + '/private/projects/1');
+            
+            // Hacer solicitud
+            axios.get(API_BASE + '/private/projects/1')
+                .then(function(response) {
+                    log('✅ ÉXITO: Respuesta recibida');
+                    log('✅ Status: ' + response.status + ' ' + response.statusText);
+                    log('✅ Success: ' + response.data.success);
+                    
+                    if (response.data.success && response.data.data) {
+                        log('✅ Proyecto cargado: ' + response.data.data.title);
+                        log('✅ Propietario: ' + response.data.data.owner_name);
+                    }
+                })
+                .catch(function(error) {
+                    log('❌ ERROR: Fallo en API');
+                    if (error.response) {
+                        log('❌ Status: ' + error.response.status);
+                        log('❌ Error: ' + (error.response.data ? error.response.data.error : 'Desconocido'));
+                    } else {
+                        log('❌ Error de red: ' + error.message);
+                    }
+                });
+        }
+
+        function step4_fullTest() {
+            log('🚀 INICIANDO TEST COMPLETO...');
+            log('='.repeat(50));
+            
+            // Ejecutar todos los pasos en secuencia
+            step1_setToken();
+            
+            setTimeout(function() {
+                step2_configureAxios();
+                
+                setTimeout(function() {
+                    step3_testAPI();
+                }, 500);
+            }, 500);
+        }
+
+        function clearAll() {
+            log('🗑️ LIMPIANDO TODO...');
+            
+            // Limpiar localStorage
+            localStorage.removeItem('auth_token');
+            authToken = null;
+            
+            // Limpiar axios
+            delete axios.defaults.headers.common['Authorization'];
+            
+            // Limpiar interceptores (esto reinicia axios)
+            axios.interceptors.request.clear();
+            axios.interceptors.response.clear();
+            
+            // Limpiar log
+            setTimeout(function() {
+                document.getElementById('results').innerHTML = 'Sistema limpio. Listo para nueva prueba.<br>';
+            }, 1000);
+            
+            log('✓ Todo limpiado');
+        }
+
+        // Auto-configurar en carga inicial
+        document.addEventListener('DOMContentLoaded', function() {
+            log('🔧 Sistema de diagnóstico cargado');
+            log('🔧 Axios disponible: ' + (typeof axios !== 'undefined' ? 'SÍ' : 'NO'));
+            log('🔧 localStorage disponible: ' + (typeof localStorage !== 'undefined' ? 'SÍ' : 'NO'));
+            log('');
+            log('Instrucciones:');
+            log('1. Ejecuta "1️⃣ Establecer Token" para configurar autenticación');
+            log('2. Ejecuta "2️⃣ Configurar Axios" para configurar cliente HTTP');
+            log('3. Ejecuta "3️⃣ Probar API" para hacer solicitud');
+            log('4. O usa "🚀 Test Completo" para ejecutar todo automáticamente');
+            log('');
+        });
+    </script>
+</body>
+</html>

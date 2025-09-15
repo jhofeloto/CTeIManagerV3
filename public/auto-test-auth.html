@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Auto Test Auth</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios@1.6.0/dist/axios.min.js"></script>
+</head>
+<body class="bg-gray-100 p-8">
+    <div class="max-w-4xl mx-auto bg-white p-6 rounded-lg shadow">
+        <h1 class="text-2xl font-bold mb-4">🚀 Test Automático de Autenticación</h1>
+        
+        <div class="bg-black text-green-400 p-4 rounded font-mono text-sm h-96 overflow-y-auto" id="results">
+            Iniciando test automático...<br>
+        </div>
+        
+        <div class="mt-4">
+            <button onclick="goToEditPage()" class="bg-blue-600 text-white px-6 py-3 rounded hover:bg-blue-700">
+                📝 Ir a Página de Edición Ahora
+            </button>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = '/api';
+        const TEST_TOKEN = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjIsImVtYWlsIjoiY2FybG9zLnJvZHJpZ3VlekBjdGVpLmVkdS5jbyIsInJvbGUiOiJJTlZFU1RJR0FUT1IiLCJleHAiOjE3NTc5ODYxNjl9.e2MHisoqWo3Q5g7M-91cbiJF6zR3OGKMjXIBnAdGCwI';
+        let authToken = null;
+
+        function log(message) {
+            const results = document.getElementById('results');
+            const timestamp = new Date().toLocaleTimeString();
+            results.innerHTML += timestamp + ' > ' + message + '<br>';
+            results.scrollTop = results.scrollHeight;
+            console.log(message);
+        }
+
+        function runAutomaticTest() {
+            log('🚀 INICIANDO TEST AUTOMÁTICO COMPLETO');
+            log('='.repeat(60));
+            
+            // PASO 1: Establecer token
+            log('');
+            log('🔍 PASO 1: ESTABLECIENDO TOKEN EN localStorage');
+            localStorage.removeItem('auth_token');
+            localStorage.setItem('auth_token', TEST_TOKEN);
+            const storedToken = localStorage.getItem('auth_token');
+            authToken = storedToken;
+            log('✓ Token establecido y verificado: ' + (storedToken ? 'PRESENTE (' + storedToken.length + ' chars)' : 'AUSENTE'));
+            
+            // Decodificar token
+            try {
+                const parts = storedToken.split('.');
+                const payload = JSON.parse(atob(parts[1]));
+                log('✓ Usuario decodificado: ' + payload.email + ' (' + payload.role + ')');
+                const expTime = new Date(payload.exp * 1000);
+                const now = new Date();
+                log('✓ Token expira: ' + expTime.toLocaleString() + ' (válido: ' + (expTime > now ? 'SÍ' : 'NO') + ')');
+            } catch (e) {
+                log('❌ Error decodificando token: ' + e.message);
+                return;
+            }
+            
+            // PASO 2: Configurar Axios
+            setTimeout(() => {
+                log('');
+                log('🔍 PASO 2: CONFIGURANDO AXIOS CON TOKEN');
+                axios.defaults.headers.common['Authorization'] = 'Bearer ' + authToken;
+                const authHeader = axios.defaults.headers.common['Authorization'];
+                log('✓ Cabecera Authorization: ' + (authHeader ? 'CONFIGURADA' : 'NO CONFIGURADA'));
+                log('✓ Valor de cabecera: ' + (authHeader || 'NINGUNA'));
+                
+                // Configurar interceptores
+                axios.interceptors.request.use(
+                    function(config) {
+                        log('📤 REQUEST INTERCEPTOR: ' + config.method.toUpperCase() + ' ' + config.url);
+                        log('📤 Auth header presente: ' + (config.headers.Authorization ? 'SÍ' : 'NO'));
+                        if (config.headers.Authorization) {
+                            log('📤 Auth value: ' + config.headers.Authorization.substring(0, 20) + '...');
+                        }
+                        return config;
+                    },
+                    function(error) {
+                        log('❌ REQUEST ERROR: ' + error.message);
+                        return Promise.reject(error);
+                    }
+                );
+                
+                axios.interceptors.response.use(
+                    function(response) {
+                        log('📥 RESPONSE SUCCESS: Status ' + response.status + ' from ' + response.config.url);
+                        return response;
+                    },
+                    function(error) {
+                        log('❌ RESPONSE ERROR: Status ' + (error.response ? error.response.status : 'N/A') + ' - ' + error.message);
+                        return Promise.reject(error);
+                    }
+                );
+                
+                log('✓ Interceptores de axios configurados');
+                
+                // PASO 3: Probar API
+                setTimeout(() => {
+                    log('');
+                    log('🔍 PASO 3: PROBANDO ENDPOINT DE API');
+                    log('🚀 Haciendo solicitud GET a: ' + API_BASE + '/private/projects/1');
+                    
+                    axios.get(API_BASE + '/private/projects/1')
+                        .then(function(response) {
+                            log('');
+                            log('✅ ¡ÉXITO COMPLETO! API RESPONDIÓ CORRECTAMENTE');
+                            log('✅ Status HTTP: ' + response.status + ' ' + response.statusText);
+                            log('✅ Response success: ' + response.data.success);
+                            
+                            if (response.data.success && response.data.data) {
+                                log('✅ Proyecto cargado exitosamente:');
+                                log('   - ID: ' + response.data.data.id);
+                                log('   - Título: ' + response.data.data.title);
+                                log('   - Propietario: ' + response.data.data.owner_name);
+                                log('   - Email: ' + response.data.data.owner_email);
+                                log('');
+                                log('🎉 DIAGNÓSTICO: TOKEN Y CONFIGURACIÓN FUNCIONAN CORRECTAMENTE');
+                                log('🎉 El problema NO está en el token ni en axios.defaults');
+                                log('');
+                                log('💡 PRÓXIMO PASO: Verificar que la página de edición use axios.defaults');
+                                log('💡 O verificar si está usando una instancia diferente de axios');
+                            }
+                        })
+                        .catch(function(error) {
+                            log('');
+                            log('❌ ERROR EN API - AQUÍ ESTÁ EL PROBLEMA:');
+                            if (error.response) {
+                                log('❌ Status HTTP: ' + error.response.status);
+                                log('❌ Mensaje: ' + (error.response.data ? JSON.stringify(error.response.data) : 'Sin mensaje'));
+                                
+                                if (error.response.status === 401) {
+                                    log('❌ DIAGNÓSTICO: Token no enviado o inválido');
+                                    log('❌ Verificar que axios.defaults.headers.common esté configurado');
+                                } else if (error.response.status === 403) {
+                                    log('❌ DIAGNÓSTICO: Token válido pero sin permisos');
+                                } else {
+                                    log('❌ DIAGNÓSTICO: Error diferente - revisar backend');
+                                }
+                            } else {
+                                log('❌ Error de red: ' + error.message);
+                                log('❌ DIAGNÓSTICO: Problema de conectividad o CORS');
+                            }
+                        });
+                }, 1000);
+            }, 1000);
+        }
+
+        function goToEditPage() {
+            log('');
+            log('🚀 NAVEGANDO A PÁGINA DE EDICIÓN...');
+            log('✓ Token ya está configurado en localStorage');
+            log('✓ Axios ya está configurado con cabeceras');
+            
+            // Pequeño delay para que se vean los logs
+            setTimeout(() => {
+                window.location.href = '/edit/1';
+            }, 1000);
+        }
+
+        // Ejecutar automáticamente al cargar
+        document.addEventListener('DOMContentLoaded', function() {
+            log('🔧 Sistema de test automático cargado');
+            log('🔧 Dependencias verificadas:');
+            log('   - Axios: ' + (typeof axios !== 'undefined' ? '✓ Disponible' : '❌ No disponible'));
+            log('   - localStorage: ' + (typeof localStorage !== 'undefined' ? '✓ Disponible' : '❌ No disponible'));
+            log('');
+            
+            // Iniciar test automático después de 2 segundos
+            setTimeout(runAutomaticTest, 2000);
+        });
+    </script>
+</body>
+</html>

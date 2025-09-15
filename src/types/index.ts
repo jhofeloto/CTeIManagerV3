@@ -148,6 +148,7 @@ export interface UpdateProjectRequest {
   keywords?: string;
   introduction?: string;
   methodology?: string;
+  is_public?: boolean;
   // Nuevos campos Fase 1
   status?: 'DRAFT' | 'ACTIVE' | 'REVIEW' | 'COMPLETED' | 'SUSPENDED';
   start_date?: string;

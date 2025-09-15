@@ -193,6 +193,55 @@ privateRoutes.post('/projects', requireRole('INVESTIGATOR', 'ADMIN'), async (c) 
   }
 });
 
+// Verificar permisos de edición para un proyecto
+privateRoutes.get('/projects/:id/permissions', async (c) => {
+  try {
+    const user = c.get('user')!;
+    const projectId = parseInt(c.req.param('id'));
+
+    const project = await c.env.DB.prepare(`
+      SELECT id, owner_id, title, status
+      FROM projects 
+      WHERE id = ?
+    `).bind(projectId).first<{
+      id: number;
+      owner_id: number;
+      title: string;
+      status: string;
+    }>();
+
+    if (!project) {
+      return c.json<APIResponse>({
+        success: false,
+        error: 'Proyecto no encontrado'
+      }, 404);
+    }
+
+    const canEdit = user.role === 'ADMIN' || project.owner_id === user.userId;
+    const canView = true; // Todos pueden ver proyectos públicos/privados según lógica de negocio
+
+    return c.json<APIResponse<any>>({
+      success: true,
+      data: {
+        projectId: project.id,
+        projectTitle: project.title,
+        canEdit,
+        canView,
+        isOwner: project.owner_id === user.userId,
+        userRole: user.role,
+        projectStatus: project.status
+      }
+    });
+
+  } catch (error) {
+    console.error('Error verificando permisos:', error);
+    return c.json<APIResponse>({
+      success: false,
+      error: 'Error interno del servidor'
+    }, 500);
+  }
+});
+
 // Obtener proyecto individual para edición
 privateRoutes.get('/projects/:id', requireRole('INVESTIGATOR', 'ADMIN'), async (c) => {
   try {
@@ -252,18 +301,25 @@ privateRoutes.put('/projects/:id', requireRole('INVESTIGATOR', 'ADMIN'), async (
     const projectId = parseInt(c.req.param('id'));
     const body: UpdateProjectRequest = await c.req.json();
 
-    // Verificar propiedad del proyecto (excepto admins)
-    if (user.role !== 'ADMIN') {
-      const project = await c.env.DB.prepare(
-        'SELECT owner_id FROM projects WHERE id = ?'
-      ).bind(projectId).first<{ owner_id: number }>();
+    // Verificar que el proyecto existe y permisos
+    const projectCheck = await c.env.DB.prepare(
+      'SELECT id, owner_id, title FROM projects WHERE id = ?'
+    ).bind(projectId).first<{ id: number; owner_id: number; title: string }>();
 
-      if (!project || project.owner_id !== user.userId) {
-        return c.json<APIResponse>({ 
-          success: false, 
-          error: 'No tienes permiso para editar este proyecto' 
-        }, 403);
-      }
+    if (!projectCheck) {
+      return c.json<APIResponse>({ 
+        success: false, 
+        error: 'Proyecto no encontrado' 
+      }, 404);
+    }
+
+    // Verificar permisos de edición (excepto admins)
+    if (user.role !== 'ADMIN' && projectCheck.owner_id !== user.userId) {
+      return c.json<APIResponse>({ 
+        success: false, 
+        error: 'No tienes permiso para editar este proyecto',
+        details: `Solo el propietario puede editar este proyecto`
+      }, 403);
     }
 
     const updateFields: string[] = [];
@@ -288,6 +344,10 @@ privateRoutes.put('/projects/:id', requireRole('INVESTIGATOR', 'ADMIN'), async (
     if (body.methodology !== undefined) {
       updateFields.push('methodology = ?');
       params.push(body.methodology);
+    }
+    if (body.is_public !== undefined) {
+      updateFields.push('is_public = ?');
+      params.push(body.is_public ? 1 : 0);
     }
     // Nuevos campos Fase 1
     if (body.status !== undefined) {
@@ -361,9 +421,20 @@ privateRoutes.put('/projects/:id', requireRole('INVESTIGATOR', 'ADMIN'), async (
 
   } catch (error) {
     console.error('Error actualizando proyecto:', error);
+    
+    // Mejores mensajes de error específicos para debugging
+    const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
+    console.error('Detalles del error:', {
+      projectId,
+      userId: user.userId,
+      updateFields: updateFields.length,
+      errorMessage
+    });
+    
     return c.json<APIResponse>({ 
       success: false, 
-      error: 'Error interno del servidor' 
+      error: 'Error interno del servidor',
+      details: process.env.NODE_ENV === 'development' ? errorMessage : undefined
     }, 500);
   }
 });
@@ -573,6 +644,93 @@ privateRoutes.post('/projects/:projectId/products', requireRole('INVESTIGATOR', 
     return c.json<APIResponse>({ 
       success: false, 
       error: 'Error interno del servidor' 
+    }, 500);
+  }
+});
+
+// Asociar producto existente a un proyecto
+privateRoutes.post('/projects/:projectId/products/:productId', requireRole('INVESTIGATOR', 'ADMIN'), async (c) => {
+  try {
+    const user = c.get('user')!;
+    const projectId = parseInt(c.req.param('projectId'));
+    const productId = parseInt(c.req.param('productId'));
+
+    // Verificar que el proyecto existe y el usuario tiene permisos
+    const projectCheck = await c.env.DB.prepare(
+      'SELECT id, owner_id, title FROM projects WHERE id = ?'
+    ).bind(projectId).first<{ id: number; owner_id: number; title: string }>();
+
+    if (!projectCheck) {
+      return c.json<APIResponse>({
+        success: false,
+        error: 'Proyecto no encontrado'
+      }, 404);
+    }
+
+    // Verificar permisos
+    if (user.role !== 'ADMIN' && projectCheck.owner_id !== user.userId) {
+      // También verificar si es colaborador con permisos
+      const collaborator = await c.env.DB.prepare(`
+        SELECT can_add_products FROM project_collaborators 
+        WHERE project_id = ? AND user_id = ? AND can_add_products = 1
+      `).bind(projectId, user.userId).first<{ can_add_products: number }>();
+
+      if (!collaborator) {
+        return c.json<APIResponse>({
+          success: false,
+          error: 'No tienes permisos para asociar productos a este proyecto'
+        }, 403);
+      }
+    }
+
+    // Verificar que el producto existe
+    const productCheck = await c.env.DB.prepare(
+      'SELECT id, description FROM products WHERE id = ?'
+    ).bind(productId).first<{ id: number; description: string }>();
+
+    if (!productCheck) {
+      return c.json<APIResponse>({
+        success: false,
+        error: 'Producto no encontrado'
+      }, 404);
+    }
+
+    // Verificar si ya está asociado
+    const existingAssociation = await c.env.DB.prepare(
+      'SELECT project_id FROM products WHERE id = ? AND project_id = ?'
+    ).bind(productId, projectId).first();
+
+    if (existingAssociation) {
+      return c.json<APIResponse>({
+        success: false,
+        error: 'El producto ya está asociado a este proyecto'
+      }, 400);
+    }
+
+    // Asociar producto al proyecto (actualizar el project_id)
+    const result = await c.env.DB.prepare(`
+      UPDATE products 
+      SET project_id = ?, updated_at = datetime('now')
+      WHERE id = ?
+    `).bind(projectId, productId).run();
+
+    if (!result.success) {
+      return c.json<APIResponse>({
+        success: false,
+        error: 'Error al asociar el producto al proyecto'
+      }, 500);
+    }
+
+    return c.json<APIResponse>({
+      success: true,
+      message: 'Producto asociado exitosamente al proyecto'
+    });
+
+  } catch (error) {
+    console.error('Error asociando producto:', error);
+    return c.json<APIResponse>({
+      success: false,
+      error: 'Error interno del servidor'
     }, 500);
   }
 });
