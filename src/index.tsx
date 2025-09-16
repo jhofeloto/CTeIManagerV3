@@ -3427,6 +3427,47 @@ app.get('/dashboard/proyectos/:id/editar', async (c) => {
                         Los archivos se almacenan de forma segura y solo son accesibles por colaboradores del proyecto.
                     </div>
                 </div>
+                
+                <!-- Panel de Evaluación y Scoring -->
+                <div class="panel">
+                    <div class="panel-title">
+                        <i class="fas fa-chart-line text-primary"></i>
+                        Evaluación y Scoring
+                        <button type="button" onclick="loadProjectScore()" class="ml-auto text-xs text-primary hover:text-primary/80 transition-colors" title="Actualizar score">
+                            <i class="fas fa-sync-alt"></i>
+                        </button>
+                    </div>
+                    
+                    <!-- Score General -->
+                    <div class="form-field">
+                        <div id="project-score-container" class="space-y-3">
+                            <div class="text-center text-muted-foreground py-6">
+                                <i class="fas fa-spinner fa-spin text-lg mb-2 block"></i>
+                                <p class="text-sm">Cargando evaluación...</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Botones de Acción -->
+                    <div class="form-field">
+                        <div class="flex flex-col gap-2">
+                            <button type="button" onclick="calculateProjectScore()" class="btn-primary btn text-xs">
+                                <i class="fas fa-calculator mr-1"></i>
+                                Recalcular Score
+                            </button>
+                            <button type="button" onclick="viewScoreDetails()" class="btn-outline btn text-xs">
+                                <i class="fas fa-chart-bar mr-1"></i>
+                                Ver Detalles
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Información adicional -->
+                    <div class="text-xs text-muted-foreground mt-2">
+                        <i class="fas fa-info-circle mr-1"></i>
+                        El scoring se actualiza automáticamente cuando guardas cambios importantes en el proyecto.
+                    </div>
+                </div>
             </div>
         </div>
         
@@ -4004,6 +4045,10 @@ app.get('/dashboard/proyectos/:id/editar', async (c) => {
                 // Inicializar gestión de archivos después de cargar el proyecto
                 console.log('🚀 Inicializando gestión de archivos después de poblar formulario');
                 initFileManagementAfterProjectLoad();
+                
+                // Inicializar scoring después de cargar el proyecto
+                console.log('📊 Inicializando scoring después de poblar formulario');
+                initScoringAfterProjectLoad();
             }
             
             // Actualizar título de la página
@@ -4199,6 +4244,12 @@ app.get('/dashboard/proyectos/:id/editar', async (c) => {
                         // Resetear botón de guardar
                         resetSaveButton();
                         saveBtn.innerHTML = '<i class="fas fa-save"></i> Guardar Cambios';
+                        
+                        // Recalcular score automáticamente después de guardar cambios importantes
+                        console.log('🔄 Recalculando score automáticamente después de guardar cambios');
+                        setTimeout(() => {
+                            calculateProjectScore();
+                        }, 2000); // Esperar 2 segundos para que se procese el guardado
                     } else {
                         throw new Error(response.data.message || 'Error al actualizar el proyecto');
                     }
@@ -5814,6 +5865,406 @@ app.get('/dashboard/proyectos/:id/editar', async (c) => {
                     initializeFileManagement();
                 } else {
                     console.warn('⚠️ No se puede inicializar gestión de archivos: proyecto no cargado');
+                }
+            }
+            
+            // =====================================
+            // SISTEMA DE SCORING Y EVALUACIÓN
+            // =====================================
+            
+            // Variables para scoring
+            let currentProjectScore = null;
+            
+            // Cargar score del proyecto
+            async function loadProjectScore() {
+                if (!authToken) {
+                    console.warn('⚠️ No hay token de autenticación para cargar score');
+                    showScoreError('Token de autenticación no disponible');
+                    return;
+                }
+                
+                console.log('📊 Cargando score del proyecto:', PROJECT_ID);
+                
+                try {
+                    const response = await axios.get(
+                        \`\${API_BASE}/private/projects/\${PROJECT_ID}/score\`,
+                        {
+                            headers: {
+                                'Authorization': \`Bearer \${authToken}\`
+                            }
+                        }
+                    );
+                    
+                    if (response.data.success) {
+                        currentProjectScore = response.data.data;
+                        console.log('✅ Score cargado correctamente:', currentProjectScore);
+                        renderProjectScore();
+                    } else {
+                        throw new Error(response.data.error || 'Score no disponible');
+                    }
+                    
+                } catch (error) {
+                    console.error('❌ Error cargando score:', error);
+                    
+                    if (error.response?.status === 404) {
+                        showScoreNotCalculated();
+                    } else {
+                        let userMessage = 'No se pudo cargar el score del proyecto';
+                        if (error.response?.status === 401) {
+                            userMessage = 'Sesión expirada. Recarga la página e inicia sesión nuevamente';
+                        } else if (error.response?.data?.error) {
+                            userMessage = error.response.data.error;
+                        }
+                        showScoreError(userMessage);
+                    }
+                }
+            }
+            
+            // Mostrar que no hay score calculado
+            function showScoreNotCalculated() {
+                const container = document.getElementById('project-score-container');
+                if (container) {
+                    container.innerHTML = \`
+                        <div class="text-center py-6">
+                            <i class="fas fa-calculator text-2xl text-muted-foreground mb-3 block"></i>
+                            <p class="text-sm font-medium text-foreground mb-2">Score no calculado</p>
+                            <p class="text-xs text-muted-foreground mb-4">
+                                Haz clic en "Recalcular Score" para generar la evaluación de este proyecto
+                            </p>
+                            <button onclick="calculateProjectScore()" class="text-xs text-primary hover:text-primary/80 underline">
+                                <i class="fas fa-calculator mr-1"></i>
+                                Calcular ahora
+                            </button>
+                        </div>
+                    \`;
+                }
+            }
+            
+            // Renderizar score del proyecto
+            function renderProjectScore() {
+                if (!currentProjectScore) {
+                    showScoreNotCalculated();
+                    return;
+                }
+                
+                const container = document.getElementById('project-score-container');
+                if (!container) return;
+                
+                // Obtener colores por categoría
+                const categoryColors = {
+                    'EXCELENTE': { bg: 'bg-green-500/20', text: 'text-green-700', border: 'border-green-500/30' },
+                    'BUENO': { bg: 'bg-blue-500/20', text: 'text-blue-700', border: 'border-blue-500/30' },
+                    'REGULAR': { bg: 'bg-yellow-500/20', text: 'text-yellow-700', border: 'border-yellow-500/30' },
+                    'NECESITA_MEJORA': { bg: 'bg-red-500/20', text: 'text-red-700', border: 'border-red-500/30' }
+                };
+                
+                const colors = categoryColors[currentProjectScore.evaluation_category] || categoryColors['REGULAR'];
+                
+                // Calcular fecha de última actualización
+                const lastUpdate = new Date(currentProjectScore.last_calculated_at).toLocaleDateString();
+                
+                container.innerHTML = \`
+                    <!-- Score Total -->
+                    <div class="text-center mb-4">
+                        <div class="relative w-24 h-24 mx-auto mb-2">
+                            <svg class="transform -rotate-90 w-24 h-24">
+                                <circle cx="48" cy="48" r="40" stroke="currentColor" 
+                                        stroke-width="6" fill="transparent" 
+                                        class="text-muted opacity-20"/>
+                                <circle cx="48" cy="48" r="40" stroke="currentColor" 
+                                        stroke-width="6" fill="transparent" 
+                                        stroke-dasharray="\${2 * Math.PI * 40}"
+                                        stroke-dashoffset="\${2 * Math.PI * 40 * (1 - currentProjectScore.total_score / 100)}"
+                                        class="\${colors.text} transition-all duration-1000 ease-out"
+                                        stroke-linecap="round"/>
+                            </svg>
+                            <div class="absolute inset-0 flex items-center justify-center">
+                                <span class="text-xl font-bold \${colors.text}">\${Math.round(currentProjectScore.total_score)}</span>
+                            </div>
+                        </div>
+                        <div class="px-2 py-1 rounded-full text-xs font-medium \${colors.bg} \${colors.text} \${colors.border} border">
+                            \${getCategoryLabel(currentProjectScore.evaluation_category)}
+                        </div>
+                    </div>
+                    
+                    <!-- Scores por Categoría -->
+                    <div class="space-y-2">
+                        <div class="score-item">
+                            <div class="flex items-center justify-between text-xs mb-1">
+                                <span class="text-muted-foreground">Completitud</span>
+                                <span class="font-medium">\${Math.round(currentProjectScore.completeness_score)}%</span>
+                            </div>
+                            <div class="w-full bg-muted rounded-full h-1.5">
+                                <div class="bg-primary h-1.5 rounded-full transition-all duration-500" 
+                                     style="width: \${currentProjectScore.completeness_score}%"></div>
+                            </div>
+                        </div>
+                        
+                        <div class="score-item">
+                            <div class="flex items-center justify-between text-xs mb-1">
+                                <span class="text-muted-foreground">Colaboración</span>
+                                <span class="font-medium">\${Math.round(currentProjectScore.collaboration_score)}%</span>
+                            </div>
+                            <div class="w-full bg-muted rounded-full h-1.5">
+                                <div class="bg-blue-500 h-1.5 rounded-full transition-all duration-500" 
+                                     style="width: \${currentProjectScore.collaboration_score}%"></div>
+                            </div>
+                        </div>
+                        
+                        <div class="score-item">
+                            <div class="flex items-center justify-between text-xs mb-1">
+                                <span class="text-muted-foreground">Productividad</span>
+                                <span class="font-medium">\${Math.round(currentProjectScore.productivity_score)}%</span>
+                            </div>
+                            <div class="w-full bg-muted rounded-full h-1.5">
+                                <div class="bg-green-500 h-1.5 rounded-full transition-all duration-500" 
+                                     style="width: \${currentProjectScore.productivity_score}%"></div>
+                            </div>
+                        </div>
+                        
+                        <div class="score-item">
+                            <div class="flex items-center justify-between text-xs mb-1">
+                                <span class="text-muted-foreground">Impacto</span>
+                                <span class="font-medium">\${Math.round(currentProjectScore.impact_score)}%</span>
+                            </div>
+                            <div class="w-full bg-muted rounded-full h-1.5">
+                                <div class="bg-purple-500 h-1.5 rounded-full transition-all duration-500" 
+                                     style="width: \${currentProjectScore.impact_score}%"></div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Última actualización -->
+                    <div class="text-xs text-muted-foreground text-center mt-3">
+                        <i class="fas fa-clock mr-1"></i>
+                        Actualizado: \${lastUpdate}
+                    </div>
+                \`;
+            }
+            
+            // Obtener etiqueta de categoría
+            function getCategoryLabel(category) {
+                const labels = {
+                    'EXCELENTE': 'Excelente',
+                    'BUENO': 'Bueno',
+                    'REGULAR': 'Regular',
+                    'NECESITA_MEJORA': 'Necesita Mejora'
+                };
+                return labels[category] || category;
+            }
+            
+            // Calcular score del proyecto
+            async function calculateProjectScore() {
+                if (!authToken) {
+                    console.error('❌ No hay token de autenticación para calcular score');
+                    return;
+                }
+                
+                console.log('🔄 Calculando score del proyecto:', PROJECT_ID);
+                
+                try {
+                    // Mostrar estado de carga
+                    const container = document.getElementById('project-score-container');
+                    if (container) {
+                        container.innerHTML = \`
+                            <div class="text-center py-6">
+                                <i class="fas fa-cog fa-spin text-2xl text-primary mb-2 block"></i>
+                                <p class="text-sm font-medium">Calculando evaluación...</p>
+                                <p class="text-xs text-muted-foreground">Esto puede tomar unos segundos</p>
+                            </div>
+                        \`;
+                    }
+                    
+                    const response = await axios.post(
+                        \`\${API_BASE}/private/projects/\${PROJECT_ID}/calculate-score\`,
+                        {},
+                        {
+                            headers: {
+                                'Authorization': \`Bearer \${authToken}\`
+                            }
+                        }
+                    );
+                    
+                    if (response.data.success) {
+                        console.log('✅ Score calculado exitosamente');
+                        
+                        // Mostrar mensaje de éxito
+                        showScoreSuccessMessage('Score calculado exitosamente');
+                        
+                        // Recargar el score
+                        setTimeout(() => {
+                            loadProjectScore();
+                        }, 1000);
+                        
+                    } else {
+                        throw new Error(response.data.error || 'Error desconocido');
+                    }
+                    
+                } catch (error) {
+                    console.error('❌ Error calculando score:', error);
+                    
+                    let userMessage = 'No se pudo calcular el score del proyecto';
+                    if (error.response?.status === 401) {
+                        userMessage = 'Sesión expirada. Recarga la página e inicia sesión nuevamente';
+                    } else if (error.response?.data?.error) {
+                        userMessage = error.response.data.error;
+                    }
+                    
+                    showScoreError(userMessage);
+                }
+            }
+            
+            // Ver detalles del score
+            function viewScoreDetails() {
+                if (!currentProjectScore) {
+                    alert('Primero calcula el score del proyecto');
+                    return;
+                }
+                
+                // Crear modal de detalles
+                const modal = document.createElement('div');
+                modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4';
+                modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
+                
+                const recommendations = currentProjectScore.recommendations || [];
+                
+                modal.innerHTML = \`
+                    <div class="bg-background rounded-lg max-w-2xl w-full max-h-[80vh] overflow-y-auto">
+                        <div class="p-6 border-b border-border">
+                            <div class="flex items-center justify-between">
+                                <h2 class="text-xl font-bold text-foreground">
+                                    <i class="fas fa-chart-line mr-2 text-primary"></i>
+                                    Detalles de Evaluación
+                                </h2>
+                                <button onclick="this.closest('.fixed').remove()" class="text-muted-foreground hover:text-foreground">
+                                    <i class="fas fa-times text-lg"></i>
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div class="p-6 space-y-6">
+                            <!-- Score General -->
+                            <div class="text-center">
+                                <div class="text-3xl font-bold text-primary mb-2">
+                                    \${Math.round(currentProjectScore.total_score)}/100
+                                </div>
+                                <div class="text-lg font-medium text-foreground">
+                                    \${getCategoryLabel(currentProjectScore.evaluation_category)}
+                                </div>
+                            </div>
+                            
+                            <!-- Scores Detallados -->
+                            <div class="space-y-4">
+                                <h3 class="text-lg font-semibold text-foreground border-b border-border pb-2">
+                                    Scores por Categoría
+                                </h3>
+                                
+                                <div class="grid grid-cols-2 gap-4">
+                                    <div class="p-3 bg-muted/50 rounded-lg">
+                                        <div class="text-sm text-muted-foreground">Completitud</div>
+                                        <div class="text-lg font-bold">\${Math.round(currentProjectScore.completeness_score)}%</div>
+                                    </div>
+                                    <div class="p-3 bg-muted/50 rounded-lg">
+                                        <div class="text-sm text-muted-foreground">Colaboración</div>
+                                        <div class="text-lg font-bold">\${Math.round(currentProjectScore.collaboration_score)}%</div>
+                                    </div>
+                                    <div class="p-3 bg-muted/50 rounded-lg">
+                                        <div class="text-sm text-muted-foreground">Productividad</div>
+                                        <div class="text-lg font-bold">\${Math.round(currentProjectScore.productivity_score)}%</div>
+                                    </div>
+                                    <div class="p-3 bg-muted/50 rounded-lg">
+                                        <div class="text-sm text-muted-foreground">Impacto</div>
+                                        <div class="text-lg font-bold">\${Math.round(currentProjectScore.impact_score)}%</div>
+                                    </div>
+                                    <div class="p-3 bg-muted/50 rounded-lg">
+                                        <div class="text-sm text-muted-foreground">Innovación</div>
+                                        <div class="text-lg font-bold">\${Math.round(currentProjectScore.innovation_score)}%</div>
+                                    </div>
+                                    <div class="p-3 bg-muted/50 rounded-lg">
+                                        <div class="text-sm text-muted-foreground">Cronograma</div>
+                                        <div class="text-lg font-bold">\${Math.round(currentProjectScore.timeline_score)}%</div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            \${recommendations.length > 0 ? \`
+                                <!-- Recomendaciones -->
+                                <div class="space-y-3">
+                                    <h3 class="text-lg font-semibold text-foreground border-b border-border pb-2">
+                                        Recomendaciones para Mejorar
+                                    </h3>
+                                    <div class="space-y-2">
+                                        \${recommendations.map(rec => \`
+                                            <div class="flex items-start gap-2 p-3 bg-blue-500/10 border border-blue-500/20 rounded-lg">
+                                                <i class="fas fa-lightbulb text-blue-600 mt-0.5"></i>
+                                                <span class="text-sm text-foreground">\${rec}</span>
+                                            </div>
+                                        \`).join('')}
+                                    </div>
+                                </div>
+                            \` : ''}
+                        </div>
+                    </div>
+                \`;
+                
+                document.body.appendChild(modal);
+            }
+            
+            // Mostrar mensaje de éxito de score
+            function showScoreSuccessMessage(message) {
+                const successDiv = document.createElement('div');
+                successDiv.className = 'bg-green-500/10 border border-green-500/20 rounded-lg p-3 mb-3';
+                successDiv.innerHTML = \`
+                    <div class="flex items-center gap-2">
+                        <i class="fas fa-check-circle text-green-600"></i>
+                        <span class="text-sm text-green-700">\${message}</span>
+                        <button onclick="this.parentElement.parentElement.remove()" class="text-green-600/60 hover:text-green-600 ml-auto">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                \`;
+                
+                // Insertar después del título del panel
+                const scoreContainer = document.getElementById('project-score-container');
+                if (scoreContainer && scoreContainer.parentElement) {
+                    scoreContainer.parentElement.insertBefore(successDiv, scoreContainer);
+                    
+                    // Remover automáticamente después de 4 segundos
+                    setTimeout(() => {
+                        if (successDiv.parentElement) {
+                            successDiv.remove();
+                        }
+                    }, 4000);
+                }
+            }
+            
+            // Mostrar error de score
+            function showScoreError(message) {
+                const container = document.getElementById('project-score-container');
+                if (container) {
+                    container.innerHTML = \`
+                        <div class="text-center text-destructive py-6">
+                            <i class="fas fa-exclamation-triangle text-2xl mb-2 block"></i>
+                            <p class="text-sm font-medium">Error cargando score</p>
+                            <p class="text-xs mt-1">\${message}</p>
+                            <button 
+                                onclick="loadProjectScore()" 
+                                class="mt-3 text-xs text-primary hover:text-primary/80 underline"
+                            >
+                                Reintentar
+                            </button>
+                        </div>
+                    \`;
+                }
+            }
+            
+            // Inicializar scoring cuando el proyecto se carga
+            function initScoringAfterProjectLoad() {
+                if (currentProject) {
+                    console.log('📊 Inicializando scoring después de cargar proyecto');
+                    loadProjectScore();
+                } else {
+                    console.warn('⚠️ No se puede inicializar scoring: proyecto no cargado');
                 }
             }
         </script>

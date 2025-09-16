@@ -3166,4 +3166,212 @@ privateRoutes.delete('/projects/:projectId/files/:fileId', requireRole('INVESTIG
   }
 });
 
+// ===== SISTEMA DE SCORING PARA PRODUCTOS CIENTÍFICOS =====
+
+// Calcular score de un producto específico
+privateRoutes.post('/products/:productId/calculate-score', async (c) => {
+  try {
+    const { productId } = c.req.param();
+    const user = c.get('user')!;
+    
+    // Verificar acceso al producto
+    const product = await c.env.DB.prepare(`
+      SELECT pr.*, p.owner_id 
+      FROM products pr
+      LEFT JOIN projects p ON pr.project_id = p.id
+      LEFT JOIN project_collaborators pc ON p.id = pc.project_id AND pc.user_id = ?
+      WHERE pr.id = ? AND (p.owner_id = ? OR pc.user_id = ? OR pr.author_id = ?)
+    `).bind(user.userId, productId, user.userId, user.userId, user.userId).first();
+    
+    if (!product) {
+      return c.json({ success: false, error: 'Producto no encontrado o sin acceso' }, 404);
+    }
+    
+    // Calcular scores del producto
+    const scores = await calculateProductScores(c.env.DB, parseInt(productId), product);
+    const category = determineProductEvaluationCategory(scores.total_score);
+    
+    // Marcar scores anteriores como no actuales (si existe tabla)
+    try {
+      await c.env.DB.prepare(`
+        UPDATE product_scores SET is_current = 0 WHERE product_id = ?
+      `).bind(productId).run();
+    } catch (e) {
+      // Tabla no existe, continuar sin error
+    }
+    
+    // Intentar guardar score (crear tabla si no existe)
+    try {
+      await c.env.DB.prepare(`
+        CREATE TABLE IF NOT EXISTS product_scores (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          product_id INTEGER NOT NULL,
+          completeness_score DECIMAL(5,2) DEFAULT 0,
+          impact_score DECIMAL(5,2) DEFAULT 0,
+          quality_score DECIMAL(5,2) DEFAULT 0,
+          novelty_score DECIMAL(5,2) DEFAULT 0,
+          total_score DECIMAL(5,2) DEFAULT 0,
+          evaluation_category TEXT DEFAULT 'REGULAR',
+          recommendations TEXT,
+          last_calculated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+          is_current BOOLEAN DEFAULT 1,
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+          updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+          FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE
+        )
+      `).run();
+      
+      await c.env.DB.prepare(`
+        INSERT INTO product_scores (
+          product_id, completeness_score, impact_score, quality_score, 
+          novelty_score, total_score, evaluation_category, recommendations, 
+          last_calculated_at, is_current
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, 1)
+      `).bind(
+        productId,
+        scores.completeness_score,
+        scores.impact_score,
+        scores.quality_score,
+        scores.novelty_score,
+        scores.total_score,
+        category,
+        JSON.stringify(scores.recommendations || [])
+      ).run();
+      
+    } catch (e) {
+      console.warn('Error guardando product score:', e);
+    }
+    
+    return c.json({
+      success: true,
+      data: {
+        scores,
+        category,
+        message: 'Score de producto calculado exitosamente'
+      }
+    });
+    
+  } catch (error) {
+    console.error('Error calculando score de producto:', error);
+    return c.json({ success: false, error: 'Error interno del servidor' }, 500);
+  }
+});
+
+// Obtener score actual de un producto
+privateRoutes.get('/products/:productId/score', async (c) => {
+  try {
+    const { productId } = c.req.param();
+    const user = c.get('user')!;
+    
+    // Verificar acceso
+    const hasAccess = await c.env.DB.prepare(`
+      SELECT 1 FROM products pr
+      LEFT JOIN projects p ON pr.project_id = p.id
+      LEFT JOIN project_collaborators pc ON p.id = pc.project_id AND pc.user_id = ?
+      WHERE pr.id = ? AND (p.owner_id = ? OR pc.user_id = ? OR pr.author_id = ?)
+    `).bind(user.userId, productId, user.userId, user.userId, user.userId).first();
+    
+    if (!hasAccess) {
+      return c.json({ success: false, error: 'Sin acceso al producto' }, 403);
+    }
+    
+    // Intentar obtener score (la tabla podría no existir)
+    let score;
+    try {
+      score = await c.env.DB.prepare(`
+        SELECT * FROM product_scores WHERE product_id = ? AND is_current = 1
+      `).bind(productId).first();
+    } catch (e) {
+      // Tabla no existe
+      return c.json({ success: false, error: 'No hay score calculado para este producto' }, 404);
+    }
+    
+    if (!score) {
+      return c.json({ success: false, error: 'No hay score calculado para este producto' }, 404);
+    }
+    
+    return c.json({
+      success: true,
+      data: {
+        ...score,
+        recommendations: score.recommendations ? JSON.parse(score.recommendations as string) : []
+      }
+    });
+    
+  } catch (error) {
+    console.error('Error obteniendo score de producto:', error);
+    return c.json({ success: false, error: 'Error interno del servidor' }, 500);
+  }
+});
+
+// Funciones auxiliares para scoring de productos
+async function calculateProductScores(db: any, productId: number, product: any) {
+  // 1. Score de Completitud (0-100)
+  let completeness = 0;
+  if (product.description && product.description.trim().length > 0) completeness += 25;
+  if (product.product_type && product.product_type.trim().length > 0) completeness += 20;
+  if (product.doi && product.doi.trim().length > 0) completeness += 20;
+  if (product.publication_date) completeness += 15;
+  if (product.journal_name && product.journal_name.trim().length > 0) completeness += 20;
+  
+  // 2. Score de Impacto (0-100)
+  let impact = 20; // Base score
+  if (product.doi && product.doi.trim().length > 0) impact += 30; // Tiene DOI
+  if (product.impact_factor && product.impact_factor > 0) {
+    impact += Math.min(product.impact_factor * 10, 30); // Factor de impacto
+  }
+  if (product.citations && product.citations > 0) {
+    impact += Math.min(product.citations * 2, 20); // Citaciones
+  }
+  
+  // 3. Score de Calidad (0-100) - Basado en journal y tipo
+  let quality = 40; // Base score
+  if (product.journal_name && product.journal_name.includes('International')) quality += 20;
+  if (product.product_type === 'JOURNAL_ARTICLE') quality += 20;
+  if (product.product_type === 'BOOK') quality += 15;
+  if (product.product_type === 'PATENT') quality += 20;
+  
+  // 4. Score de Novedad (0-100) - Basado en fecha y tipo
+  let novelty = 50; // Base score
+  if (product.publication_date) {
+    const pubDate = new Date(product.publication_date);
+    const now = new Date();
+    const monthsDiff = (now.getTime() - pubDate.getTime()) / (1000 * 60 * 60 * 24 * 30);
+    if (monthsDiff <= 12) novelty += 30; // Publicado en último año
+    else if (monthsDiff <= 24) novelty += 20; // Publicado en últimos 2 años
+    else if (monthsDiff <= 36) novelty += 10; // Publicado en últimos 3 años
+  }
+  
+  // Score total ponderado
+  const total_score = Math.round(
+    (completeness * 0.30) +
+    (impact * 0.35) +
+    (quality * 0.25) +
+    (novelty * 0.10)
+  );
+  
+  // Generar recomendaciones
+  const recommendations = [];
+  if (completeness < 70) recommendations.push('Completa la información básica del producto (descripción, tipo, DOI)');
+  if (impact < 50) recommendations.push('Considera publicar en journals con mayor factor de impacto');
+  if (!product.doi) recommendations.push('Obtén un DOI para el producto para mejorar su visibilidad');
+  if (quality < 60) recommendations.push('Apunta a publicaciones en journals internacionales reconocidos');
+  
+  return {
+    completeness_score: Math.min(Math.round(completeness), 100),
+    impact_score: Math.min(Math.round(impact), 100),
+    quality_score: Math.min(Math.round(quality), 100),
+    novelty_score: Math.min(Math.round(novelty), 100),
+    total_score: Math.min(total_score, 100),
+    recommendations
+  };
+}
+
+function determineProductEvaluationCategory(totalScore: number): string {
+  if (totalScore >= 85) return 'EXCELENTE';
+  if (totalScore >= 70) return 'BUENO';
+  if (totalScore >= 50) return 'REGULAR';
+  return 'NECESITA_MEJORA';
+}
+
 export { privateRoutes };
