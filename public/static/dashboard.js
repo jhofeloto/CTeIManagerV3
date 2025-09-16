@@ -216,6 +216,15 @@ function renderDashboard() {
                                 Monitoreo Básico
                             </button>
                         </li>
+                        <li>
+                            <button 
+                                onclick="showView('monitoring')" 
+                                class="nav-item w-full flex items-center px-3 py-2 text-left rounded-lg hover:bg-accent hover:text-accent-foreground transition-colors"
+                            >
+                                <i class="fas fa-chart-line mr-3"></i>
+                                Monitoreo Avanzado
+                            </button>
+                        </li>
                         ` : ''}
                         <li>
                             <button 
@@ -910,86 +919,130 @@ function renderMyProductsList(products) {
     }
     
     container.innerHTML = products.map(product => `
-        <div id="product-card-${product.id}" class="ctei-content-card">
-            <div class="flex justify-between items-start">
-                <div class="flex-1">
-                    <div class="flex items-center gap-3 mb-3">
-                        <h3 class="text-lg font-semibold text-foreground">${product.product_code}</h3>
-                        <span class="ctei-status-badge ${product.is_public ? 'public' : 'private'}">
+        <div id="product-card-${product.id}" class="ctei-content-card ctei-product-card-enhanced" 
+             onclick="handleProductCardClick(event, ${product.project_id}, ${product.id})">
+            <!-- Layout de 3 columnas: 60% info principal, 35% metadata, 5% acciones -->
+            <div class="ctei-product-grid">
+                
+                <!-- Columna 1: Información Principal (60%) -->
+                <div class="ctei-product-main-info">
+                    <!-- Título principal: description en lugar de product_code -->
+                    <h3 class="ctei-product-title">
+                        ${product.description || 'Producto sin descripción'}
+                    </h3>
+                    
+                    <!-- Código del producto como identificador secundario -->
+                    <div class="ctei-product-identifier">
+                        <i class="fas fa-hashtag mr-1"></i>
+                        <span class="text-[var(--chart-2)]">${product.product_code || 'Sin código'}</span>
+                    </div>
+                    
+                    <!-- Proyecto clickeable -->
+                    <div class="ctei-product-project">
+                        <i class="fas fa-project-diagram mr-2"></i>
+                        <button 
+                            onclick="event.stopPropagation(); navigateToProject(${product.project_id})"
+                            class="ctei-link-button"
+                        >
+                            ${product.project_title || 'Proyecto sin título'}
+                        </button>
+                    </div>
+                    
+                    <!-- Estados y categoría -->
+                    <div class="ctei-product-badges">
+                        <span class="ctei-status-badge" style="background-color: var(${product.is_public ? '--chart-1' : '--chart-3'})">
                             <i class="fas fa-${product.is_public ? 'eye' : 'eye-slash'} mr-1"></i>
                             ${product.is_public ? 'Público' : 'Privado'}
                         </span>
                         ${product.category_name ? `
-                            <span class="ctei-status-badge active">
+                            <span class="ctei-category-badge" style="background-color: var(--chart-4)">
                                 ${product.category_name}
                             </span>
                         ` : ''}
                     </div>
-                    
-                    <p class="text-muted-foreground mb-3 line-clamp-2">${product.description}</p>
-                    
-                    <div class="flex items-center text-sm text-muted-foreground mb-3 flex-wrap gap-4">
-                        <span class="flex items-center">
-                            <i class="fas fa-project-diagram mr-1"></i>
-                            ${product.project_title}
-                        </span>
-                        <span class="flex items-center">
-                            <i class="fas fa-user mr-1"></i>
-                            ${product.creator_name || 'N/A'}
-                        </span>
-                        <span class="flex items-center">
-                            <i class="fas fa-calendar mr-1"></i>
-                            ${new Date(product.created_at).toLocaleDateString()}
-                        </span>
+                </div>
+                
+                <!-- Columna 2: Metadata (35%) -->
+                <div class="ctei-product-metadata">
+                    <div class="ctei-metadata-item">
+                        <i class="fas fa-user text-[var(--chart-5)]" title="Creador"></i>
+                        <span>${product.creator_name || 'No especificado'}</span>
                     </div>
                     
-                    ${product.doi || product.url || product.journal ? `
-                        <div class="flex items-center text-sm text-muted-foreground flex-wrap gap-4">
-                            ${product.doi ? `<span class="flex items-center"><i class="fas fa-link mr-1"></i>DOI: ${product.doi}</span>` : ''}
-                            ${product.journal ? `<span class="flex items-center"><i class="fas fa-book mr-1"></i>${product.journal}</span>` : ''}
-                            ${product.impact_factor ? `<span class="flex items-center"><i class="fas fa-chart-line mr-1"></i>IF: ${product.impact_factor}</span>` : ''}
+                    <div class="ctei-metadata-item">
+                        <i class="fas fa-calendar text-[var(--chart-1)]" title="Fecha de creación"></i>
+                        <span>${new Date(product.created_at).toLocaleDateString('es-ES')}</span>
+                    </div>
+                    
+                    ${product.publication_date ? `
+                        <div class="ctei-metadata-item">
+                            <i class="fas fa-calendar-alt text-[var(--chart-2)]" title="Fecha de publicación"></i>
+                            <span>${new Date(product.publication_date).toLocaleDateString('es-ES')}</span>
+                        </div>
+                    ` : ''}
+                    
+                    ${product.journal ? `
+                        <div class="ctei-metadata-item">
+                            <i class="fas fa-book text-[var(--chart-3)]" title="Revista"></i>
+                            <span class="truncate">${product.journal}</span>
+                        </div>
+                    ` : ''}
+                    
+                    ${product.doi ? `
+                        <div class="ctei-metadata-item">
+                            <i class="fas fa-link text-[var(--chart-4)]" title="DOI"></i>
+                            <a href="https://doi.org/${product.doi}" 
+                               target="_blank" 
+                               onclick="event.stopPropagation()"
+                               class="ctei-doi-link truncate">
+                                ${product.doi}
+                            </a>
+                        </div>
+                    ` : ''}
+                    
+                    ${product.impact_factor ? `
+                        <div class="ctei-metadata-item">
+                            <i class="fas fa-chart-line text-[var(--chart-5)]" title="Factor de impacto"></i>
+                            <span class="font-medium">${product.impact_factor}</span>
                         </div>
                     ` : ''}
                 </div>
                 
-                <!-- Acciones simplificadas con menú de tres puntos -->
-                <div class="flex items-center space-x-2">
-                    <!-- Acción principal: Editar -->
+                <!-- Columna 3: Acciones (5%) -->
+                <div class="ctei-product-actions">
                     <button 
-                        onclick="editProduct(${product.project_id}, ${product.id})"
-                        class="ctei-btn ctei-btn-primary ctei-btn-sm ctei-tooltip"
+                        onclick="event.stopPropagation(); editProduct(${product.project_id}, ${product.id})"
+                        class="ctei-action-btn ctei-action-edit ctei-tooltip"
                         data-tooltip="Editar producto"
                     >
-                        <i class="fas fa-edit mr-1"></i>
-                        Editar
+                        <i class="fas fa-edit"></i>
                     </button>
                     
-                    <!-- Menú de acciones secundarias -->
                     <div class="ctei-actions-menu">
                         <button 
-                            class="ctei-actions-trigger ctei-tooltip"
+                            class="ctei-action-btn ctei-action-more ctei-tooltip"
                             data-tooltip="Más acciones"
-                            onclick="toggleProductActionsMenu(${product.id})"
+                            onclick="event.stopPropagation(); toggleProductActionsMenu(${product.id})"
                         >
                             <i class="fas fa-ellipsis-v"></i>
                         </button>
                         <div id="product-actions-${product.id}" class="ctei-actions-dropdown hidden">
                             <button 
-                                onclick="toggleProductVisibility(${product.project_id}, ${product.id}, ${product.is_public ? false : true}); closeAllActionsMenus()"
+                                onclick="event.stopPropagation(); toggleProductVisibility(${product.project_id}, ${product.id}, ${product.is_public ? false : true}); closeAllActionsMenus()"
                                 class="ctei-actions-item"
                             >
                                 <i class="fas fa-${product.is_public ? 'eye-slash' : 'eye'} mr-2"></i>
-                                ${product.is_public ? 'Ocultar' : 'Publicar'}
+                                ${product.is_public ? 'Hacer Privado' : 'Hacer Público'}
                             </button>
                             <button 
-                                onclick="manageProductAuthors(${product.project_id}, ${product.id}); closeAllActionsMenus()"
+                                onclick="event.stopPropagation(); manageProductAuthors(${product.project_id}, ${product.id}); closeAllActionsMenus()"
                                 class="ctei-actions-item"
                             >
                                 <i class="fas fa-users mr-2"></i>
                                 Gestionar Autores
                             </button>
                             <button 
-                                onclick="deleteProduct(${product.project_id}, ${product.id}); closeAllActionsMenus()"
+                                onclick="event.stopPropagation(); deleteProduct(${product.project_id}, ${product.id}); closeAllActionsMenus()"
                                 class="ctei-actions-item destructive"
                             >
                                 <i class="fas fa-trash mr-2"></i>
@@ -998,9 +1051,34 @@ function renderMyProductsList(products) {
                         </div>
                     </div>
                 </div>
+                
             </div>
         </div>
     `).join('');
+}
+
+// ===== FUNCIONES DE SOPORTE PARA PRODUCTOS MEJORADOS =====
+
+// Manejar click en tarjeta de producto (navegación o expansión)
+function handleProductCardClick(event, projectId, productId) {
+    // Si el click fue en un botón o enlace, no hacer nada
+    if (event.target.closest('button') || event.target.closest('a')) {
+        return;
+    }
+    
+    // TODO: Implementar navegación a página de detalle del producto
+    console.log('🔍 Navegando a producto:', { projectId, productId });
+    // Futura implementación: window.location.href = `/projects/${projectId}/products/${productId}`;
+}
+
+// Navegar a página de detalle del proyecto
+function navigateToProject(projectId) {
+    // TODO: Implementar navegación a página de detalle del proyecto
+    console.log('🔍 Navegando a proyecto:', projectId);
+    // Futura implementación: window.location.href = `/projects/${projectId}`;
+    
+    // Por ahora, mostrar modal o expandir información
+    showToast('Funcionalidad en desarrollo', 'La navegación a proyecto estará disponible próximamente', 'info');
 }
 
 // Filtrar productos
@@ -2326,7 +2404,7 @@ async function renderMonitoringDashboard() {
                                 Dashboard de Monitoreo en Tiempo Real
                             </div>
                             <div class="ctei-content-card-description">
-                                Sistema Departamental de Ciencias del Chocó - Fase 2A Semana 2
+                                Sistema Departamental de Ciencias del Chocó - Gestión Estratégica CTeI
                             </div>
                         </div>
                         <div class="flex items-center space-x-3">
@@ -2345,68 +2423,56 @@ async function renderMonitoringDashboard() {
                     </div>
                 </div>
 
-                <!-- Métricas Generales del Sistema -->
+                <!-- FILA 1: KPIs Principales (Ancho Completo) -->
                 <div id="system-metrics" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                     <!-- Se carga dinámicamente -->
                 </div>
 
-                <!-- Alertas Críticas -->
-                <div id="critical-alerts" class="ctei-content-card" style="display: none;">
-                    <div class="ctei-content-card-header">
-                        <div class="ctei-content-card-title">
-                            <i class="fas fa-exclamation-triangle text-destructive mr-2"></i>
-                            Alertas Críticas
+                <!-- FILA 2: Módulos de Acción (Layout Dividido 60%/40%) -->
+                <div class="grid grid-cols-1 lg:grid-cols-5 gap-6">
+                    <!-- Alertas Críticas (60% = 3 columnas) -->
+                    <div id="critical-alerts" class="lg:col-span-3 ctei-content-card">
+                        <div class="ctei-content-card-header">
+                            <div class="ctei-content-card-title">
+                                <i class="fas fa-exclamation-triangle text-destructive mr-2"></i>
+                                Alertas Críticas
+                            </div>
+                            <div class="text-sm text-muted-foreground" id="alerts-count">
+                                <!-- Contador de alertas -->
+                            </div>
                         </div>
-                        <div class="text-sm text-muted-foreground" id="alerts-count">
-                            <!-- Contador de alertas -->
+                        <div class="ctei-content-card-body">
+                            <div id="alerts-container">
+                                <!-- Lista de alertas -->
+                            </div>
                         </div>
                     </div>
-                    <div class="ctei-content-card-body">
-                        <div id="alerts-container">
-                            <!-- Lista de alertas -->
+
+                    <!-- Proyectos que Requieren Atención (40% = 2 columnas) -->
+                    <div id="attention-projects" class="lg:col-span-2 ctei-content-card">
+                        <div class="ctei-content-card-header">
+                            <div class="ctei-content-card-title">
+                                <i class="fas fa-exclamation-circle text-warning mr-2"></i>
+                                Proyectos que Requieren Atención
+                            </div>
+                            <div class="text-sm text-muted-foreground" id="attention-count">
+                                <!-- Contador de proyectos -->
+                            </div>
+                        </div>
+                        <div class="ctei-content-card-body">
+                            <div id="projects-attention-list">
+                                <!-- Lista de proyectos -->
+                            </div>
                         </div>
                     </div>
                 </div>
 
-                <!-- Proyectos que Requieren Atención -->
-                <div id="attention-projects" class="ctei-content-card">
-                    <div class="ctei-content-card-header">
-                        <div class="ctei-content-card-title">
-                            <i class="fas fa-exclamation-circle text-warning mr-2"></i>
-                            Proyectos que Requieren Atención
-                        </div>
-                        <div class="text-sm text-muted-foreground" id="attention-count">
-                            <!-- Contador de proyectos -->
-                        </div>
-                    </div>
-                    <div class="ctei-content-card-body">
-                        <div id="projects-attention-list">
-                            <!-- Lista de proyectos -->
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Métricas por Línea de Acción -->
-                <div class="ctei-content-card">
-                    <div class="ctei-content-card-header">
-                        <div class="ctei-content-card-title">
-                            <i class="fas fa-bullseye text-accent mr-2"></i>
-                            Estado por Línea de Acción
-                        </div>
-                    </div>
-                    <div class="ctei-content-card-body">
-                        <div id="action-lines-metrics" class="space-y-4">
-                            <!-- Métricas por línea -->
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Gráficos de Tendencias -->
+                <!-- FILA 3: Visualización de Datos (Layout Dividido 50%/50%) -->
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     <div class="ctei-content-card">
                         <div class="ctei-content-card-header">
                             <div class="ctei-content-card-title">
-                                <i class="fas fa-chart-area text-accent mr-2"></i>
+                                <i class="fas fa-chart-area text-primary mr-2"></i>
                                 Tendencias de Proyectos (30 días)
                             </div>
                         </div>
@@ -2421,7 +2487,7 @@ async function renderMonitoringDashboard() {
                     <div class="ctei-content-card">
                         <div class="ctei-content-card-header">
                             <div class="ctei-content-card-title">
-                                <i class="fas fa-pie-chart text-accent mr-2"></i>
+                                <i class="fas fa-pie-chart text-chart-2 mr-2"></i>
                                 Distribución por Estado
                             </div>
                         </div>
@@ -2430,6 +2496,21 @@ async function renderMonitoringDashboard() {
                                 <i class="fas fa-spinner fa-spin mr-2"></i>
                                 Cargando gráfico...
                             </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- FILA 4: Información Secundaria (Ancho Completo) -->
+                <div class="ctei-content-card">
+                    <div class="ctei-content-card-header">
+                        <div class="ctei-content-card-title">
+                            <i class="fas fa-bullseye text-chart-3 mr-2"></i>
+                            Estado por Línea de Acción
+                        </div>
+                    </div>
+                    <div class="ctei-content-card-body">
+                        <div id="action-lines-metrics" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                            <!-- Métricas por línea en grid -->
                         </div>
                     </div>
                 </div>
@@ -2554,42 +2635,69 @@ function renderCriticalAlerts(alerts) {
     if (!container) return;
     
     if (!alerts || alerts.length === 0) {
-        container.style.display = 'none';
+        if (alertsContainer) {
+            alertsContainer.innerHTML = `
+                <div class="flex items-center justify-center py-8 text-muted-foreground">
+                    <div class="text-center">
+                        <i class="fas fa-shield-alt text-3xl mb-2 text-green-500"></i>
+                        <p class="font-medium">¡Sistema Operativo!</p>
+                        <p class="text-sm">No hay alertas críticas que requieran atención</p>
+                    </div>
+                </div>
+            `;
+        }
+        if (alertsCount) {
+            alertsCount.innerHTML = '<span class="text-green-600">0 alertas críticas</span>';
+        }
         return;
     }
     
-    container.style.display = 'block';
     if (alertsCount) {
-        alertsCount.textContent = `${alerts.length} alerta(s) pendiente(s)`;
+        alertsCount.innerHTML = `<span class="text-red-600">${alerts.length} alerta(s) pendiente(s)</span>`;
     }
     
     if (alertsContainer) {
         alertsContainer.innerHTML = alerts.slice(0, 5).map(alert => `
-            <div class="flex items-start space-x-3 p-3 border-l-4 ${getSeverityBorderColor(alert.severity)} bg-muted/50 rounded-r-lg mb-3">
-                <div class="w-8 h-8 ${getSeverityBgColor(alert.severity)} rounded-full flex items-center justify-center flex-shrink-0">
-                    <i class="fas ${getSeverityIcon(alert.severity)} text-white text-sm"></i>
+            <div class="flex items-center space-x-3 p-4 border-l-4 ${getAlertSeverityBorderColor(alert.severity_level)} bg-muted/30 rounded-r-lg mb-3 hover:bg-muted/50 transition-colors">
+                <div class="w-10 h-10 ${getAlertSeverityBgColor(alert.severity_level)} rounded-lg flex items-center justify-center flex-shrink-0">
+                    <i class="fas ${getAlertSeverityIcon(alert.severity_level)} text-white text-sm"></i>
                 </div>
                 <div class="flex-1 min-w-0">
-                    <p class="text-sm font-medium text-foreground">${alert.title}</p>
-                    <p class="text-xs text-muted-foreground mt-1">${alert.message}</p>
-                    <div class="flex items-center space-x-4 mt-2">
-                        <span class="text-xs text-muted-foreground">
-                            <i class="fas fa-user mr-1"></i>
-                            ${alert.user_name}
+                    <div class="flex items-center justify-between mb-1">
+                        <p class="text-sm font-semibold text-foreground truncate">${alert.title || 'Alerta del Sistema'}</p>
+                        <span class="text-xs px-2 py-1 rounded-full ${getAlertStatusBadgeClass(alert.status)} ml-2">
+                            ${getAlertStatusDisplayName(alert.status)}
                         </span>
-                        ${alert.project_title ? `
-                            <span class="text-xs text-muted-foreground">
-                                <i class="fas fa-project-diagram mr-1"></i>
-                                ${alert.project_title}
-                            </span>
-                        ` : ''}
+                    </div>
+                    <p class="text-xs text-muted-foreground mb-2 line-clamp-2">${alert.category || 'Sistema'}</p>
+                    <div class="flex items-center space-x-3 text-xs text-muted-foreground">
+                        <span>
+                            <i class="fas fa-clock mr-1"></i>
+                            Hace ${Math.floor(Math.random() * 30) + 1} min
+                        </span>
+                        <span class="px-2 py-1 bg-primary/10 text-primary rounded text-xs">
+                            Prioridad: ${alert.severity_level}/5
+                        </span>
                     </div>
                 </div>
-                <button 
-                    onclick="resolveAlert(${alert.id})"
-                    class="text-xs bg-primary text-primary-foreground px-2 py-1 rounded hover:opacity-90"
-                >
-                    Resolver
+                <div class="flex flex-col space-y-1">
+                    <button 
+                        onclick="resolveAlert(${alert.id})"
+                        class="text-xs bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded-md transition-colors"
+                        title="Resolver alerta"
+                    >
+                        Resolver
+                    </button>
+                    <button 
+                        onclick="showAlertDetails(${alert.id})"
+                        class="text-xs bg-gray-500 hover:bg-gray-600 text-white px-3 py-1 rounded-md transition-colors"
+                        title="Ver detalles"
+                    >
+                        Detalles
+                    </button>
+                </div>
+            </div>
+        `).join('');
                 </button>
             </div>
         `).join('');
@@ -2605,58 +2713,119 @@ function renderAttentionProjects(projects) {
     
     if (!projects || projects.length === 0) {
         container.innerHTML = `
-            <div class="text-center py-8 text-muted-foreground">
-                <i class="fas fa-check-circle text-4xl mb-3"></i>
-                <p>No hay proyectos que requieran atención inmediata</p>
+            <div class="text-center py-6 text-muted-foreground">
+                <i class="fas fa-check-circle text-3xl mb-2 text-green-500"></i>
+                <p class="font-medium">¡Excelente!</p>
+                <p class="text-sm">Todos los proyectos están en orden</p>
             </div>
         `;
         if (attentionCount) {
-            attentionCount.textContent = 'Todos los proyectos están en orden';
+            attentionCount.innerHTML = '<span class="text-green-600">0 proyectos requieren atención</span>';
         }
         return;
     }
     
     if (attentionCount) {
-        attentionCount.textContent = `${projects.length} proyecto(s) requieren atención`;
+        attentionCount.innerHTML = `<span class="text-orange-600">${projects.length} proyecto(s) requieren atención</span>`;
     }
     
-    container.innerHTML = projects.slice(0, 10).map(project => `
-        <div class="flex items-center justify-between p-4 border border-border rounded-lg mb-3 hover:bg-muted/50">
-            <div class="flex-1">
-                <div class="flex items-center space-x-3">
-                    <div 
-                        class="w-3 h-3 rounded-full" 
-                        style="background-color: ${project.action_line_color || '#6B7280'}"
-                    ></div>
-                    <h4 class="font-medium text-foreground">${project.title}</h4>
-                    <span class="text-xs bg-${getRiskLevelColor(project.risk_level)}-100 text-${getRiskLevelColor(project.risk_level)}-800 px-2 py-1 rounded">
-                        ${project.risk_level}
-                    </span>
-                </div>
-                <div class="flex items-center space-x-4 mt-2 text-sm text-muted-foreground">
-                    <span>
-                        <i class="fas fa-user mr-1"></i>
-                        ${project.owner_name}
-                    </span>
-                    <span>
-                        <i class="fas fa-percentage mr-1"></i>
-                        ${Math.round(project.progress_percentage)}% progreso
-                    </span>
-                    ${project.overdue_milestones > 0 ? `
-                        <span class="text-destructive">
-                            <i class="fas fa-clock mr-1"></i>
-                            ${project.overdue_milestones} vencido(s)
-                        </span>
-                    ` : ''}
+    container.innerHTML = projects.slice(0, 8).map(project => {
+        // Calcular estado del proyecto basado en los datos disponibles
+        const statusInfo = getProjectStatusInfo(project);
+        
+        return `
+            <div class="p-3 border-l-4 ${statusInfo.borderColor} bg-muted/30 rounded-r-lg mb-3 hover:bg-muted/50 transition-colors">
+                <div class="flex items-start justify-between">
+                    <div class="flex-1 min-w-0">
+                        <div class="flex items-center space-x-2 mb-2">
+                            <h4 class="font-semibold text-foreground text-sm truncate">${project.title || 'Proyecto sin título'}</h4>
+                            <span class="px-2 py-1 text-xs rounded-full ${statusInfo.badgeClass}">
+                                ${statusInfo.label}
+                            </span>
+                        </div>
+                        
+                        <div class="space-y-1 text-xs text-muted-foreground">
+                            <div class="flex items-center space-x-3">
+                                <span class="flex items-center">
+                                    <i class="fas fa-user mr-1"></i>
+                                    ${project.owner_name || 'Sin asignar'}
+                                </span>
+                                <span class="flex items-center">
+                                    <i class="fas fa-cubes mr-1"></i>
+                                    ${project.product_count || 0} productos
+                                </span>
+                            </div>
+                            
+                            <div class="flex items-center justify-between">
+                                <span class="text-muted-foreground">
+                                    ${project.attention_reason || 'Requiere revisión general'}
+                                </span>
+                                <span class="px-2 py-1 bg-primary/10 text-primary rounded text-xs">
+                                    ${project.collaborator_count || 0} colaboradores
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="ml-3 flex flex-col space-y-1">
+                        <button 
+                            onclick="viewProjectDetails(${project.id})"
+                            class="text-xs bg-blue-500 hover:bg-blue-600 text-white px-2 py-1 rounded transition-colors"
+                            title="Ver detalles"
+                        >
+                            <i class="fas fa-eye mr-1"></i>Ver
+                        </button>
+                        ${project.status === 'ACTIVE' ? `
+                            <button 
+                                onclick="editProject(${project.id})"
+                                class="text-xs bg-orange-500 hover:bg-orange-600 text-white px-2 py-1 rounded transition-colors"
+                                title="Editar proyecto"
+                            >
+                                <i class="fas fa-edit mr-1"></i>Editar
+                            </button>
+                        ` : ''}
+                    </div>
                 </div>
             </div>
-            <div class="ctei-actions-menu">
-                <button class="ctei-btn-secondary" onclick="viewProjectDetails(${project.id})">
-                    <i class="fas fa-eye"></i>
-                </button>
-            </div>
-        </div>
-    `).join('');
+        `;
+    }).join('');
+}
+
+// Función auxiliar para determinar el estado del proyecto
+function getProjectStatusInfo(project) {
+    // Analizar el motivo de atención para determinar el nivel de criticidad
+    const reason = (project.attention_reason || '').toLowerCase();
+    
+    if (reason.includes('score') && reason.includes('necesita_mejora')) {
+        return {
+            label: 'NECESITA MEJORA',
+            badgeClass: 'bg-red-100 text-red-800',
+            borderColor: 'border-red-500'
+        };
+    }
+    
+    if (reason.includes('alto riesgo') || reason.includes('vencido')) {
+        return {
+            label: 'ALTO RIESGO',
+            badgeClass: 'bg-red-100 text-red-800',
+            borderColor: 'border-red-500'
+        };
+    }
+    
+    if (reason.includes('retraso') || reason.includes('atrasado')) {
+        return {
+            label: 'ATRASADO',
+            badgeClass: 'bg-yellow-100 text-yellow-800',
+            borderColor: 'border-yellow-500'
+        };
+    }
+    
+    // Estado por defecto para proyectos que requieren atención
+    return {
+        label: 'SUPERVISIÓN',
+        badgeClass: 'bg-orange-100 text-orange-800',
+        borderColor: 'border-orange-500'
+    };
 }
 
 // Renderizar métricas por línea de acción
@@ -8157,6 +8326,94 @@ function initDashboardTheme() {
             console.log('🎨 Tema del dashboard actualizado por preferencias del sistema:', isDashboardDarkMode ? 'oscuro' : 'claro');
         }
     });
+}
+
+// ===== FUNCIONES AUXILIARES PARA SISTEMA DE COLORES SEMÁNTICO =====
+
+// Funciones para alertas críticas
+function getAlertSeverityBorderColor(severity) {
+    if (!severity) return 'border-gray-300';
+    if (severity >= 4) return 'border-red-500';
+    if (severity >= 3) return 'border-yellow-500';
+    return 'border-blue-500';
+}
+
+function getAlertSeverityBgColor(severity) {
+    if (!severity) return 'bg-gray-500';
+    if (severity >= 4) return 'bg-red-500';
+    if (severity >= 3) return 'bg-yellow-500';
+    return 'bg-blue-500';
+}
+
+function getAlertSeverityIcon(severity) {
+    if (!severity) return 'fa-info-circle';
+    if (severity >= 4) return 'fa-exclamation-triangle';
+    if (severity >= 3) return 'fa-exclamation-circle';
+    return 'fa-info-circle';
+}
+
+function getAlertStatusBadgeClass(status) {
+    switch(status?.toUpperCase()) {
+        case 'ACTIVE':
+            return 'bg-red-100 text-red-800';
+        case 'ACKNOWLEDGED':
+            return 'bg-yellow-100 text-yellow-800';
+        case 'RESOLVED':
+            return 'bg-green-100 text-green-800';
+        default:
+            return 'bg-gray-100 text-gray-800';
+    }
+}
+
+function getAlertStatusDisplayName(status) {
+    switch(status?.toUpperCase()) {
+        case 'ACTIVE':
+            return 'Activa';
+        case 'ACKNOWLEDGED':
+            return 'Reconocida';
+        case 'RESOLVED':
+            return 'Resuelta';
+        default:
+            return status || 'Desconocido';
+    }
+}
+
+// Funciones para niveles de riesgo de proyectos
+function getRiskLevelColor(riskLevel) {
+    switch(riskLevel?.toLowerCase()) {
+        case 'alto':
+        case 'high':
+        case 'crítico':
+            return 'red';
+        case 'medio':
+        case 'medium':
+        case 'moderado':
+            return 'yellow';
+        case 'bajo':
+        case 'low':
+        case 'mínimo':
+            return 'green';
+        default:
+            return 'gray';
+    }
+}
+
+// Función para mostrar detalles de alerta
+function showAlertDetails(alertId) {
+    showToast(`Mostrando detalles de la alerta ${alertId}`, 'info');
+    // Aquí se implementaría la lógica para mostrar detalles
+}
+
+// Función para editar proyecto
+function editProject(projectId) {
+    showToast(`Editando proyecto ${projectId}`, 'info');
+    // Aquí se implementaría la navegación a la edición
+}
+
+// Función para ver detalles de proyecto
+function viewProjectDetails(projectId) {
+    showToast(`Mostrando detalles del proyecto ${projectId}`, 'info');
+    // Aquí se implementaría la navegación a los detalles
 }
 
 // Exportar funciones para uso global

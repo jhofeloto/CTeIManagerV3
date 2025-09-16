@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Dashboard Simple</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios@1.6.0/dist/axios.min.js"></script>
+</head>
+<body class="bg-gray-100 p-8">
+    <div class="max-w-4xl mx-auto">
+        <h1 class="text-3xl font-bold mb-6">🔧 Test Dashboard Simple</h1>
+        
+        <div class="bg-white p-6 rounded-lg shadow mb-6">
+            <h2 class="text-xl font-semibold mb-4">Estado de Autenticación</h2>
+            <div id="auth-status" class="p-4 rounded bg-gray-50">
+                Verificando...
+            </div>
+        </div>
+
+        <div class="bg-white p-6 rounded-lg shadow mb-6">
+            <h2 class="text-xl font-semibold mb-4">Test API Básico</h2>
+            <div id="api-test" class="p-4 rounded bg-gray-50">
+                Probando APIs...
+            </div>
+        </div>
+
+        <div class="bg-white p-6 rounded-lg shadow">
+            <h2 class="text-xl font-semibold mb-4">Logs de Debug</h2>
+            <div id="debug-logs" class="p-4 rounded bg-gray-50 font-mono text-sm max-h-96 overflow-y-auto">
+                <!-- Logs aparecerán aquí -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const debugLogs = document.getElementById('debug-logs');
+        function addLog(message) {
+            console.log(message);
+            debugLogs.innerHTML += `<div>${new Date().toLocaleTimeString()}: ${message}</div>`;
+            debugLogs.scrollTop = debugLogs.scrollHeight;
+        }
+
+        async function testAuth() {
+            addLog('🚀 Iniciando test de autenticación');
+            
+            // Verificar token
+            const token = localStorage.getItem('auth_token');
+            addLog(`🎫 Token encontrado: ${token ? 'SÍ' : 'NO'}`);
+            
+            if (!token) {
+                document.getElementById('auth-status').innerHTML = '❌ Sin token de autenticación';
+                return false;
+            }
+
+            // Configurar axios
+            axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+            
+            // Test profile API
+            try {
+                addLog('📡 Probando /api/private/profile');
+                const response = await axios.get('/api/private/profile');
+                addLog(`✅ Profile API OK: ${JSON.stringify(response.data)}`);
+                document.getElementById('auth-status').innerHTML = `✅ Autenticado como: ${response.data.data.full_name} (${response.data.data.role})`;
+                return true;
+            } catch (error) {
+                addLog(`❌ Profile API Error: ${error.message}`);
+                if (error.response) {
+                    addLog(`📄 Response data: ${JSON.stringify(error.response.data)}`);
+                }
+                document.getElementById('auth-status').innerHTML = '❌ Error de autenticación';
+                return false;
+            }
+        }
+
+        async function testAPIs() {
+            addLog('🧪 Iniciando test de APIs');
+            
+            const apis = [
+                '/api/public/projects',
+                '/api/public/products',
+                '/api/private/my-projects',
+                '/api/admin/monitoring/overview'
+            ];
+
+            for (const api of apis) {
+                try {
+                    addLog(`📡 Probando ${api}`);
+                    const response = await axios.get(api);
+                    addLog(`✅ ${api} OK`);
+                } catch (error) {
+                    addLog(`❌ ${api} Error: ${error.message}`);
+                    if (error.response?.data) {
+                        addLog(`📄 Error data: ${JSON.stringify(error.response.data).substring(0, 200)}...`);
+                    }
+                }
+            }
+        }
+
+        // Ejecutar tests
+        window.addEventListener('DOMContentLoaded', async function() {
+            addLog('🎯 Página cargada, iniciando tests');
+            
+            const isAuthenticated = await testAuth();
+            await testAPIs();
+            
+            document.getElementById('api-test').innerHTML = '✅ Tests completados (ver logs de debug)';
+            
+            addLog('🏁 Tests completados');
+        });
+    </script>
+</body>
+</html>

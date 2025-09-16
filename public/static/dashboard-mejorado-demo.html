@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="es" id="dashboard-html" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🚀 Dashboard de Monitoreo - Clase Mundial</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="/static/styles.css" rel="stylesheet">
+</head>
+<body class="bg-background text-foreground min-h-screen">
+    <!-- Header -->
+    <div class="bg-card border-b border-border p-6">
+        <div class="max-w-7xl mx-auto">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h1 class="text-3xl font-bold flex items-center">
+                        <i class="fas fa-chart-line text-accent mr-3"></i>
+                        Dashboard de Monitoreo - Clase Mundial
+                    </h1>
+                    <p class="text-muted-foreground mt-1">
+                        Sistema Departamental de Ciencias del Chocó - Gestión Estratégica CTeI
+                    </p>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <div class="text-sm text-muted-foreground flex items-center">
+                        <i class="fas fa-clock mr-2"></i>
+                        <span id="last-updated">Actualizado: ${new Date().toLocaleTimeString()}</span>
+                    </div>
+                    <button onclick="loadDemoData()" class="ctei-btn-primary">
+                        <i class="fas fa-sync-alt mr-2"></i>
+                        Actualizar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Contenido Principal -->
+    <div class="max-w-7xl mx-auto p-6">
+        
+        <!-- FILA 1: KPIs Principales (Ancho Completo) -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <div class="ctei-metric-card">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm font-medium text-muted-foreground">Proyectos Totales</p>
+                        <p class="text-2xl font-bold text-foreground mt-1">12</p>
+                        <p class="text-xs text-muted-foreground mt-1">8 activos</p>
+                    </div>
+                    <div class="w-12 h-12 bg-primary rounded-lg flex items-center justify-center">
+                        <i class="fas fa-project-diagram text-white text-lg"></i>
+                    </div>
+                </div>
+            </div>
+
+            <div class="ctei-metric-card">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm font-medium text-muted-foreground">Productos CTeI</p>
+                        <p class="text-2xl font-bold text-foreground mt-1">24</p>
+                        <p class="text-xs text-muted-foreground mt-1">6 experiencias</p>
+                    </div>
+                    <div class="w-12 h-12 bg-green-500 rounded-lg flex items-center justify-center">
+                        <i class="fas fa-flask text-white text-lg"></i>
+                    </div>
+                </div>
+            </div>
+
+            <div class="ctei-metric-card">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm font-medium text-muted-foreground">Investigadores</p>
+                        <p class="text-2xl font-bold text-foreground mt-1">18</p>
+                        <p class="text-xs text-muted-foreground mt-1">únicos en el sistema</p>
+                    </div>
+                    <div class="w-12 h-12 bg-blue-500 rounded-lg flex items-center justify-center">
+                        <i class="fas fa-users text-white text-lg"></i>
+                    </div>
+                </div>
+            </div>
+
+            <div class="ctei-metric-card">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm font-medium text-muted-foreground">Progreso Promedio</p>
+                        <p class="text-2xl font-bold text-foreground mt-1">78%</p>
+                        <p class="text-xs text-muted-foreground mt-1">2 alto riesgo</p>
+                    </div>
+                    <div class="w-12 h-12 bg-teal-500 rounded-lg flex items-center justify-center">
+                        <i class="fas fa-chart-line text-white text-lg"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- FILA 2: Módulos de Acción (Layout Dividido 60%/40%) -->
+        <div class="grid grid-cols-1 lg:grid-cols-5 gap-6 mb-8">
+            <!-- Alertas Críticas (60% = 3 columnas) -->
+            <div class="lg:col-span-3 ctei-content-card">
+                <div class="ctei-content-card-header">
+                    <div class="ctei-content-card-title">
+                        <i class="fas fa-exclamation-triangle text-destructive mr-2"></i>
+                        Alertas Críticas
+                    </div>
+                    <div class="text-sm text-muted-foreground">
+                        <span class="text-red-600">3 alerta(s) pendiente(s)</span>
+                    </div>
+                </div>
+                <div class="ctei-content-card-body">
+                    <div id="alerts-demo">
+                        <!-- Alert 1 -->
+                        <div class="flex items-center space-x-3 p-4 border-l-4 border-red-500 bg-muted/30 rounded-r-lg mb-3 hover:bg-muted/50 transition-colors">
+                            <div class="w-10 h-10 bg-red-500 rounded-lg flex items-center justify-center flex-shrink-0">
+                                <i class="fas fa-exclamation-triangle text-white text-sm"></i>
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <div class="flex items-center justify-between mb-1">
+                                    <p class="text-sm font-semibold text-foreground truncate">Proyecto con Score Crítico</p>
+                                    <span class="text-xs px-2 py-1 rounded-full bg-red-100 text-red-800 ml-2">ACTIVA</span>
+                                </div>
+                                <p class="text-xs text-muted-foreground mb-2 line-clamp-2">PERFORMANCE</p>
+                                <div class="flex items-center space-x-3 text-xs text-muted-foreground">
+                                    <span><i class="fas fa-clock mr-1"></i>Hace 15 min</span>
+                                    <span class="px-2 py-1 bg-primary/10 text-primary rounded text-xs">Prioridad: 5/5</span>
+                                </div>
+                            </div>
+                            <div class="flex flex-col space-y-1">
+                                <button class="text-xs bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded-md transition-colors">Resolver</button>
+                                <button class="text-xs bg-gray-500 hover:bg-gray-600 text-white px-3 py-1 rounded-md transition-colors">Detalles</button>
+                            </div>
+                        </div>
+                        
+                        <!-- Alert 2 -->
+                        <div class="flex items-center space-x-3 p-4 border-l-4 border-yellow-500 bg-muted/30 rounded-r-lg mb-3 hover:bg-muted/50 transition-colors">
+                            <div class="w-10 h-10 bg-yellow-500 rounded-lg flex items-center justify-center flex-shrink-0">
+                                <i class="fas fa-exclamation-circle text-white text-sm"></i>
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <div class="flex items-center justify-between mb-1">
+                                    <p class="text-sm font-semibold text-foreground truncate">Productos sin Validación</p>
+                                    <span class="text-xs px-2 py-1 rounded-full bg-yellow-100 text-yellow-800 ml-2">RECONOCIDA</span>
+                                </div>
+                                <p class="text-xs text-muted-foreground mb-2 line-clamp-2">COMPLIANCE</p>
+                                <div class="flex items-center space-x-3 text-xs text-muted-foreground">
+                                    <span><i class="fas fa-clock mr-1"></i>Hace 2 horas</span>
+                                    <span class="px-2 py-1 bg-primary/10 text-primary rounded text-xs">Prioridad: 3/5</span>
+                                </div>
+                            </div>
+                            <div class="flex flex-col space-y-1">
+                                <button class="text-xs bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded-md transition-colors">Resolver</button>
+                                <button class="text-xs bg-gray-500 hover:bg-gray-600 text-white px-3 py-1 rounded-md transition-colors">Detalles</button>
+                            </div>
+                        </div>
+
+                        <!-- Alert 3 -->
+                        <div class="flex items-center space-x-3 p-4 border-l-4 border-blue-500 bg-muted/30 rounded-r-lg mb-3 hover:bg-muted/50 transition-colors">
+                            <div class="w-10 h-10 bg-blue-500 rounded-lg flex items-center justify-center flex-shrink-0">
+                                <i class="fas fa-info-circle text-white text-sm"></i>
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <div class="flex items-center justify-between mb-1">
+                                    <p class="text-sm font-semibold text-foreground truncate">Nueva Actualización del Sistema</p>
+                                    <span class="text-xs px-2 py-1 rounded-full bg-blue-100 text-blue-800 ml-2">ACTIVA</span>
+                                </div>
+                                <p class="text-xs text-muted-foreground mb-2 line-clamp-2">PERFORMANCE</p>
+                                <div class="flex items-center space-x-3 text-xs text-muted-foreground">
+                                    <span><i class="fas fa-clock mr-1"></i>Hace 1 día</span>
+                                    <span class="px-2 py-1 bg-primary/10 text-primary rounded text-xs">Prioridad: 2/5</span>
+                                </div>
+                            </div>
+                            <div class="flex flex-col space-y-1">
+                                <button class="text-xs bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded-md transition-colors">Resolver</button>
+                                <button class="text-xs bg-gray-500 hover:bg-gray-600 text-white px-3 py-1 rounded-md transition-colors">Detalles</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Proyectos que Requieren Atención (40% = 2 columnas) -->
+            <div class="lg:col-span-2 ctei-content-card">
+                <div class="ctei-content-card-header">
+                    <div class="ctei-content-card-title">
+                        <i class="fas fa-exclamation-circle text-warning mr-2"></i>
+                        Proyectos que Requieren Atención
+                    </div>
+                    <div class="text-sm text-muted-foreground">
+                        <span class="text-orange-600">2 proyecto(s) requieren atención</span>
+                    </div>
+                </div>
+                <div class="ctei-content-card-body">
+                    <!-- Proyecto 1 -->
+                    <div class="p-3 border-l-4 border-red-500 bg-muted/30 rounded-r-lg mb-3 hover:bg-muted/50 transition-colors">
+                        <div class="flex items-start justify-between">
+                            <div class="flex-1 min-w-0">
+                                <div class="flex items-center space-x-2 mb-2">
+                                    <h4 class="font-semibold text-foreground text-sm truncate">IA para Conservación Marina</h4>
+                                    <span class="px-2 py-1 text-xs rounded-full bg-red-100 text-red-800">NECESITA MEJORA</span>
+                                </div>
+                                <div class="space-y-1 text-xs text-muted-foreground">
+                                    <div class="flex items-center space-x-3">
+                                        <span class="flex items-center"><i class="fas fa-user mr-1"></i>Dr. Investigador Demo</span>
+                                        <span class="flex items-center"><i class="fas fa-cubes mr-1"></i>2 productos</span>
+                                    </div>
+                                    <div class="flex items-center justify-between">
+                                        <span class="text-muted-foreground">Score: 27 (NECESITA_MEJORA)</span>
+                                        <span class="px-2 py-1 bg-primary/10 text-primary rounded text-xs">0 colaboradores</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="ml-3 flex flex-col space-y-1">
+                                <button class="text-xs bg-blue-500 hover:bg-blue-600 text-white px-2 py-1 rounded transition-colors"><i class="fas fa-eye mr-1"></i>Ver</button>
+                                <button class="text-xs bg-orange-500 hover:bg-orange-600 text-white px-2 py-1 rounded transition-colors"><i class="fas fa-edit mr-1"></i>Editar</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Proyecto 2 -->
+                    <div class="p-3 border-l-4 border-yellow-500 bg-muted/30 rounded-r-lg mb-3 hover:bg-muted/50 transition-colors">
+                        <div class="flex items-start justify-between">
+                            <div class="flex-1 min-w-0">
+                                <div class="flex items-center space-x-2 mb-2">
+                                    <h4 class="font-semibold text-foreground text-sm truncate">Blockchain para Agricultura</h4>
+                                    <span class="px-2 py-1 text-xs rounded-full bg-yellow-100 text-yellow-800">ATRASADO</span>
+                                </div>
+                                <div class="space-y-1 text-xs text-muted-foreground">
+                                    <div class="flex items-center space-x-3">
+                                        <span class="flex items-center"><i class="fas fa-user mr-1"></i>Dra. Community Demo</span>
+                                        <span class="flex items-center"><i class="fas fa-cubes mr-1"></i>1 productos</span>
+                                    </div>
+                                    <div class="flex items-center justify-between">
+                                        <span class="text-muted-foreground">Score: 23 (NECESITA_MEJORA)</span>
+                                        <span class="px-2 py-1 bg-primary/10 text-primary rounded text-xs">1 colaboradores</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="ml-3 flex flex-col space-y-1">
+                                <button class="text-xs bg-blue-500 hover:bg-blue-600 text-white px-2 py-1 rounded transition-colors"><i class="fas fa-eye mr-1"></i>Ver</button>
+                                <button class="text-xs bg-orange-500 hover:bg-orange-600 text-white px-2 py-1 rounded transition-colors"><i class="fas fa-edit mr-1"></i>Editar</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- FILA 3: Visualización de Datos (Layout Dividido 50%/50%) -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+            <div class="ctei-content-card">
+                <div class="ctei-content-card-header">
+                    <div class="ctei-content-card-title">
+                        <i class="fas fa-chart-area text-primary mr-2"></i>
+                        Tendencias de Proyectos (30 días)
+                    </div>
+                </div>
+                <div class="ctei-content-card-body">
+                    <div class="h-64 flex items-center justify-center">
+                        <div class="text-center">
+                            <i class="fas fa-chart-line text-6xl text-primary mb-4"></i>
+                            <p class="text-lg font-semibold">Gráfico de Tendencias</p>
+                            <p class="text-muted-foreground">+15% crecimiento este mes</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="ctei-content-card">
+                <div class="ctei-content-card-header">
+                    <div class="ctei-content-card-title">
+                        <i class="fas fa-pie-chart text-chart-2 mr-2"></i>
+                        Distribución por Estado
+                    </div>
+                </div>
+                <div class="ctei-content-card-body">
+                    <div class="h-64 flex items-center justify-center">
+                        <div class="text-center">
+                            <i class="fas fa-chart-pie text-6xl text-chart-2 mb-4"></i>
+                            <p class="text-lg font-semibold">Distribución de Estados</p>
+                            <div class="flex justify-center space-x-4 mt-2 text-sm">
+                                <span class="flex items-center"><div class="w-3 h-3 bg-green-500 rounded-full mr-1"></div>Activos: 67%</span>
+                                <span class="flex items-center"><div class="w-3 h-3 bg-yellow-500 rounded-full mr-1"></div>En Pausa: 25%</span>
+                                <span class="flex items-center"><div class="w-3 h-3 bg-red-500 rounded-full mr-1"></div>Críticos: 8%</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- FILA 4: Información Secundaria (Ancho Completo) -->
+        <div class="ctei-content-card">
+            <div class="ctei-content-card-header">
+                <div class="ctei-content-card-title">
+                    <i class="fas fa-bullseye text-chart-3 mr-2"></i>
+                    Estado por Línea de Acción
+                </div>
+            </div>
+            <div class="ctei-content-card-body">
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <!-- Línea de Acción 1 -->
+                    <div class="p-4 border border-border rounded-lg">
+                        <div class="flex items-center justify-between mb-3">
+                            <div class="flex items-center space-x-3">
+                                <div class="w-4 h-4 rounded-full bg-primary"></div>
+                                <h4 class="font-medium text-foreground">Mentalidad y Cultura</h4>
+                            </div>
+                            <span class="text-sm font-medium text-foreground">85% promedio</span>
+                        </div>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div class="text-center">
+                                <div class="text-lg font-bold text-foreground">4</div>
+                                <div class="text-xs text-muted-foreground">Proyectos</div>
+                            </div>
+                            <div class="text-center">
+                                <div class="text-lg font-bold text-green-600">3</div>
+                                <div class="text-xs text-muted-foreground">Activos</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Línea de Acción 2 -->
+                    <div class="p-4 border border-border rounded-lg">
+                        <div class="flex items-center justify-between mb-3">
+                            <div class="flex items-center space-x-3">
+                                <div class="w-4 h-4 rounded-full bg-chart-2"></div>
+                                <h4 class="font-medium text-foreground">Servicios de Apoyo</h4>
+                            </div>
+                            <span class="text-sm font-medium text-foreground">72% promedio</span>
+                        </div>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div class="text-center">
+                                <div class="text-lg font-bold text-foreground">3</div>
+                                <div class="text-xs text-muted-foreground">Proyectos</div>
+                            </div>
+                            <div class="text-center">
+                                <div class="text-lg font-bold text-green-600">2</div>
+                                <div class="text-xs text-muted-foreground">Activos</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Línea de Acción 3 -->
+                    <div class="p-4 border border-border rounded-lg">
+                        <div class="flex items-center justify-between mb-3">
+                            <div class="flex items-center space-x-3">
+                                <div class="w-4 h-4 rounded-full bg-chart-3"></div>
+                                <h4 class="font-medium text-foreground">Expansión de Mercados</h4>
+                            </div>
+                            <span class="text-sm font-medium text-foreground">90% promedio</span>
+                        </div>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div class="text-center">
+                                <div class="text-lg font-bold text-foreground">5</div>
+                                <div class="text-xs text-muted-foreground">Proyectos</div>
+                            </div>
+                            <div class="text-center">
+                                <div class="text-lg font-bold text-green-600">5</div>
+                                <div class="text-xs text-muted-foreground">Activos</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Resumen de Mejoras -->
+        <div class="bg-gradient-to-r from-green-50 to-blue-50 dark:from-green-900/20 dark:to-blue-900/20 border border-green-200 dark:border-green-800 rounded-lg p-6 mt-8">
+            <h3 class="text-xl font-bold mb-4 flex items-center">
+                <i class="fas fa-trophy text-yellow-500 mr-2"></i>
+                Mejoras Implementadas - Dashboard de Clase Mundial
+            </h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div class="flex items-start space-x-3">
+                    <i class="fas fa-check-circle text-green-500 mt-1"></i>
+                    <div>
+                        <p class="font-semibold">Íconos Unificados</p>
+                        <p class="text-sm text-muted-foreground">Todas las tarjetas KPI con fondo sólido consistente</p>
+                    </div>
+                </div>
+                <div class="flex items-start space-x-3">
+                    <i class="fas fa-check-circle text-green-500 mt-1"></i>
+                    <div>
+                        <p class="font-semibold">Datos Corregidos</p>
+                        <p class="text-sm text-muted-foreground">Eliminados todos los "undefined" en alertas y proyectos</p>
+                    </div>
+                </div>
+                <div class="flex items-start space-x-3">
+                    <i class="fas fa-check-circle text-green-500 mt-1"></i>
+                    <div>
+                        <p class="font-semibold">Colores Semánticos</p>
+                        <p class="text-sm text-muted-foreground">Sistema de colores que comunica estado instantáneamente</p>
+                    </div>
+                </div>
+                <div class="flex items-start space-x-3">
+                    <i class="fas fa-check-circle text-green-500 mt-1"></i>
+                    <div>
+                        <p class="font-semibold">Alineación Perfecta</p>
+                        <p class="text-sm text-muted-foreground">Elementos centrados con Flexbox para diseño pulido</p>
+                    </div>
+                </div>
+                <div class="flex items-start space-x-3">
+                    <i class="fas fa-check-circle text-green-500 mt-1"></i>
+                    <div>
+                        <p class="font-semibold">Layout de Grid</p>
+                        <p class="text-sm text-muted-foreground">Información crítica "above the fold" en grid profesional</p>
+                    </div>
+                </div>
+                <div class="flex items-start space-x-3">
+                    <i class="fas fa-check-circle text-green-500 mt-1"></i>
+                    <div>
+                        <p class="font-semibold">Distribución 60/40</p>
+                        <p class="text-sm text-muted-foreground">Alertas priorizadas con espacio óptimo para acción</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/axios@1.6.0/dist/axios.min.js"></script>
+    <script>
+        function loadDemoData() {
+            document.getElementById('last-updated').textContent = `Actualizado: ${new Date().toLocaleTimeString()}`;
+            
+            // Simular efecto de carga
+            const buttons = document.querySelectorAll('button');
+            buttons.forEach(btn => {
+                if (btn.textContent.includes('Actualizar')) {
+                    btn.disabled = true;
+                    btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Actualizando...';
+                    
+                    setTimeout(() => {
+                        btn.disabled = false;
+                        btn.innerHTML = '<i class="fas fa-sync-alt mr-2"></i>Actualizar';
+                    }, 2000);
+                }
+            });
+
+            // Mostrar toast de éxito
+            showToast('Dashboard actualizado exitosamente', 'success');
+        }
+
+        function showToast(message, type = 'success') {
+            const toast = document.createElement('div');
+            toast.className = `fixed bottom-4 right-4 px-6 py-3 rounded-lg font-medium text-white z-50 ${
+                type === 'success' ? 'bg-green-500' : 'bg-blue-500'
+            }`;
+            toast.innerHTML = `
+                <div class="flex items-center">
+                    <i class="fas fa-check-circle mr-2"></i>
+                    ${message}
+                </div>
+            `;
+            
+            document.body.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.remove();
+            }, 3000);
+        }
+
+        // Inicializar demo
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🚀 Dashboard de Clase Mundial inicializado');
+            showToast('Dashboard de clase mundial cargado correctamente', 'success');
+        });
+    </script>
+</body>
+</html>

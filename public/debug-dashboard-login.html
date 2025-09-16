@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug Dashboard Login</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios@1.6.0/dist/axios.min.js"></script>
+</head>
+<body class="bg-gray-100 p-4">
+    <div class="max-w-6xl mx-auto space-y-6">
+        
+        <!-- Status Panel -->
+        <div class="bg-white p-6 rounded-lg shadow">
+            <h1 class="text-2xl font-bold mb-4">🔧 Debug Dashboard Login</h1>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                    <h3 class="font-semibold text-sm text-gray-600">Estado Token</h3>
+                    <div id="token-status" class="text-lg font-mono">❓ Verificando...</div>
+                </div>
+                <div>
+                    <h3 class="font-semibold text-sm text-gray-600">Estado Usuario</h3>
+                    <div id="user-status" class="text-lg">❓ Verificando...</div>
+                </div>
+                <div>
+                    <h3 class="font-semibold text-sm text-gray-600">Estado Dashboard</h3>
+                    <div id="dashboard-status" class="text-lg">❓ No iniciado</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Login Section -->
+        <div class="bg-white p-6 rounded-lg shadow">
+            <h2 class="text-xl font-semibold mb-4">🔑 Login de Prueba</h2>
+            <div class="flex gap-4 mb-4">
+                <input type="email" id="email" placeholder="Email" value="admin@test.com" class="flex-1 p-2 border rounded">
+                <input type="password" id="password" placeholder="Password" value="admin123" class="flex-1 p-2 border rounded">
+                <button onclick="doLogin()" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
+                    Login
+                </button>
+                <button onclick="clearAuth()" class="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700">
+                    Clear Auth
+                </button>
+            </div>
+            <div id="login-result" class="hidden p-3 rounded"></div>
+        </div>
+
+        <!-- Dashboard Test Section -->
+        <div class="bg-white p-6 rounded-lg shadow">
+            <h2 class="text-xl font-semibold mb-4">📊 Test Dashboard</h2>
+            <div class="flex gap-4 mb-4">
+                <button onclick="testDashboardPage()" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">
+                    Test Dashboard Page
+                </button>
+                <button onclick="testDashboardJS()" class="bg-purple-600 text-white px-4 py-2 rounded hover:bg-purple-700">
+                    Test Dashboard.js
+                </button>
+                <button onclick="openDashboard()" class="bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700">
+                    Abrir Dashboard
+                </button>
+            </div>
+            <div id="dashboard-test-result" class="hidden p-3 rounded"></div>
+        </div>
+
+        <!-- Live Console -->
+        <div class="bg-white p-6 rounded-lg shadow">
+            <h2 class="text-xl font-semibold mb-4">📋 Console en Vivo</h2>
+            <div id="live-console" class="bg-gray-900 text-green-400 p-4 rounded font-mono text-sm h-64 overflow-y-auto">
+                <!-- Console output aquí -->
+            </div>
+            <button onclick="clearConsole()" class="mt-2 bg-gray-600 text-white px-3 py-1 rounded text-sm">
+                Clear Console
+            </button>
+        </div>
+    </div>
+
+    <script>
+        const console_div = document.getElementById('live-console');
+        
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const colors = {
+                info: 'text-green-400',
+                error: 'text-red-400', 
+                warning: 'text-yellow-400',
+                success: 'text-blue-400'
+            };
+            
+            console.log(`[${timestamp}] ${message}`);
+            console_div.innerHTML += `<div class="${colors[type] || colors.info}">[${timestamp}] ${message}</div>`;
+            console_div.scrollTop = console_div.scrollHeight;
+        }
+
+        function clearConsole() {
+            console_div.innerHTML = '';
+        }
+
+        function showResult(elementId, message, isError = false) {
+            const element = document.getElementById(elementId);
+            element.className = `p-3 rounded ${isError ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'}`;
+            element.innerHTML = message;
+            element.classList.remove('hidden');
+        }
+
+        function updateStatus() {
+            const token = localStorage.getItem('auth_token');
+            document.getElementById('token-status').innerHTML = token ? '✅ Presente' : '❌ No encontrado';
+            
+            if (token) {
+                // Decodificar JWT básico para mostrar info
+                try {
+                    const payload = JSON.parse(atob(token.split('.')[1]));
+                    document.getElementById('user-status').innerHTML = `✅ ${payload.email} (${payload.role})`;
+                    log(`Token decodificado: ${JSON.stringify(payload)}`, 'info');
+                } catch (e) {
+                    document.getElementById('user-status').innerHTML = '⚠️ Token inválido';
+                    log(`Error decodificando token: ${e.message}`, 'error');
+                }
+            } else {
+                document.getElementById('user-status').innerHTML = '❌ No autenticado';
+            }
+        }
+
+        async function doLogin() {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            
+            log(`Iniciando login para: ${email}`, 'info');
+            
+            try {
+                const response = await axios.post('/api/auth/login', { email, password });
+                log(`Login response: ${JSON.stringify(response.data)}`, 'success');
+                
+                if (response.data.success && response.data.data.token) {
+                    localStorage.setItem('auth_token', response.data.data.token);
+                    axios.defaults.headers.common['Authorization'] = `Bearer ${response.data.data.token}`;
+                    
+                    showResult('login-result', '✅ Login exitoso! Token guardado.');
+                    log('Token guardado exitosamente', 'success');
+                    updateStatus();
+                } else {
+                    showResult('login-result', '❌ Login falló: Respuesta inválida', true);
+                    log('Login falló: Respuesta inválida', 'error');
+                }
+            } catch (error) {
+                const errorMsg = error.response?.data?.error || error.message;
+                showResult('login-result', `❌ Error de login: ${errorMsg}`, true);
+                log(`Error de login: ${errorMsg}`, 'error');
+            }
+        }
+
+        function clearAuth() {
+            localStorage.removeItem('auth_token');
+            delete axios.defaults.headers.common['Authorization'];
+            updateStatus();
+            log('Token eliminado', 'warning');
+        }
+
+        async function testDashboardPage() {
+            log('Probando acceso a página de dashboard...', 'info');
+            try {
+                const response = await fetch('/dashboard');
+                log(`Dashboard page response: ${response.status} ${response.statusText}`, 'info');
+                
+                if (response.ok) {
+                    const html = await response.text();
+                    log(`Dashboard HTML length: ${html.length} caracteres`, 'success');
+                    
+                    // Verificar si contiene el div app
+                    if (html.includes('id="app"')) {
+                        log('✅ Página dashboard contiene div#app', 'success');
+                    } else {
+                        log('❌ Página dashboard NO contiene div#app', 'error');
+                    }
+                    
+                    // Verificar si carga dashboard.js
+                    if (html.includes('dashboard.js')) {
+                        log('✅ Página dashboard carga dashboard.js', 'success');
+                    } else {
+                        log('❌ Página dashboard NO carga dashboard.js', 'error');
+                    }
+                } else {
+                    log(`❌ Error accediendo a dashboard: ${response.status}`, 'error');
+                }
+            } catch (error) {
+                log(`❌ Error probando dashboard page: ${error.message}`, 'error');
+            }
+        }
+
+        async function testDashboardJS() {
+            log('Probando carga de dashboard.js...', 'info');
+            try {
+                const response = await fetch('/static/dashboard.js');
+                log(`Dashboard.js response: ${response.status} ${response.statusText}`, 'info');
+                
+                if (response.ok) {
+                    const js = await response.text();
+                    log(`Dashboard.js length: ${js.length} caracteres`, 'success');
+                    
+                    // Verificar funciones clave
+                    const keyFunctions = ['initDashboard', 'renderDashboard', 'showView'];
+                    for (const func of keyFunctions) {
+                        if (js.includes(func)) {
+                            log(`✅ Dashboard.js contiene función: ${func}`, 'success');
+                        } else {
+                            log(`❌ Dashboard.js NO contiene función: ${func}`, 'error');
+                        }
+                    }
+                } else {
+                    log(`❌ Error cargando dashboard.js: ${response.status}`, 'error');
+                }
+            } catch (error) {
+                log(`❌ Error probando dashboard.js: ${error.message}`, 'error');
+            }
+        }
+
+        function openDashboard() {
+            log('Abriendo dashboard en nueva pestaña...', 'info');
+            const token = localStorage.getItem('auth_token');
+            if (!token) {
+                log('❌ No hay token, haz login primero', 'error');
+                alert('No hay token de autenticación. Haz login primero.');
+                return;
+            }
+            
+            window.open('/dashboard', '_blank');
+            log('Dashboard abierto en nueva pestaña', 'info');
+        }
+
+        // Inicializar
+        window.addEventListener('DOMContentLoaded', function() {
+            log('🚀 Debug page cargada', 'info');
+            updateStatus();
+            
+            // Configurar axios si hay token
+            const token = localStorage.getItem('auth_token');
+            if (token) {
+                axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+                log('Axios configurado con token existente', 'info');
+            }
+        });
+    </script>
+</body>
+</html>

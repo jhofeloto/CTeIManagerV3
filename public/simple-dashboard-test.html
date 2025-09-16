@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Simple Test</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios@1.6.0/dist/axios.min.js"></script>
+    <link href="/static/styles.css" rel="stylesheet">
+</head>
+<body class="bg-background text-foreground">
+    <div id="app">
+        <div class="p-8">
+            <div class="bg-card p-6 rounded-lg shadow mb-6">
+                <h1 class="text-2xl font-bold mb-4">🔧 Dashboard Simple - Test Manual</h1>
+                <div id="status" class="mb-4">
+                    <div class="text-sm text-muted-foreground">Inicializando...</div>
+                </div>
+                <div id="debug-info" class="bg-gray-50 p-4 rounded font-mono text-sm">
+                    <!-- Debug info aquí -->
+                </div>
+            </div>
+
+            <!-- Dashboard Content Placeholder -->
+            <div id="dashboard-content" class="hidden">
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                    <div class="bg-card p-6 rounded-lg shadow">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-sm text-muted-foreground">Test Dashboard</p>
+                                <p class="text-3xl font-bold text-green-600">✓ OK</p>
+                            </div>
+                            <div class="p-3 bg-green-100 rounded-full">
+                                <i class="fas fa-check text-green-600 text-xl"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="bg-card p-6 rounded-lg shadow">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-sm text-muted-foreground">Usuario</p>
+                                <p id="user-name" class="text-lg font-bold">-</p>
+                            </div>
+                            <div class="p-3 bg-blue-100 rounded-full">
+                                <i class="fas fa-user text-blue-600 text-xl"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="bg-card p-6 rounded-lg shadow">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-sm text-muted-foreground">Rol</p>
+                                <p id="user-role" class="text-lg font-bold">-</p>
+                            </div>
+                            <div class="p-3 bg-purple-100 rounded-full">
+                                <i class="fas fa-shield-alt text-purple-600 text-xl"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="bg-card p-6 rounded-lg shadow">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-sm text-muted-foreground">Dashboard Real</p>
+                                <button onclick="goToRealDashboard()" class="text-blue-600 hover:text-blue-800 font-semibold">
+                                    Ir al Dashboard →
+                                </button>
+                            </div>
+                            <div class="p-3 bg-indigo-100 rounded-full">
+                                <i class="fas fa-arrow-right text-indigo-600 text-xl"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="bg-card p-6 rounded-lg shadow">
+                    <h2 class="text-xl font-semibold mb-4">🎯 Opciones de Dashboard</h2>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <button onclick="loadRealDashboard()" class="bg-blue-600 text-white p-4 rounded-lg hover:bg-blue-700">
+                            <i class="fas fa-chart-line mb-2 text-2xl block"></i>
+                            Cargar Dashboard Real
+                        </button>
+                        <button onclick="testMonitoring()" class="bg-green-600 text-white p-4 rounded-lg hover:bg-green-700">
+                            <i class="fas fa-chart-bar mb-2 text-2xl block"></i>
+                            Test Monitoreo
+                        </button>
+                        <button onclick="testAPIs()" class="bg-purple-600 text-white p-4 rounded-lg hover:bg-purple-700">
+                            <i class="fas fa-api mb-2 text-2xl block"></i>
+                            Test APIs
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let debugInfo = document.getElementById('debug-info');
+        let currentUser = null;
+        
+        function addDebug(message) {
+            console.log(message);
+            const timestamp = new Date().toLocaleTimeString();
+            debugInfo.innerHTML += `<div>[${timestamp}] ${message}</div>`;
+            debugInfo.scrollTop = debugInfo.scrollHeight;
+        }
+
+        function updateStatus(message, type = 'info') {
+            const status = document.getElementById('status');
+            const colors = {
+                info: 'text-blue-600',
+                success: 'text-green-600',
+                error: 'text-red-600',
+                warning: 'text-yellow-600'
+            };
+            status.innerHTML = `<div class="${colors[type]}">${message}</div>`;
+        }
+
+        async function initSimpleDashboard() {
+            addDebug('🚀 Iniciando dashboard simple...');
+            
+            // Verificar token
+            const token = localStorage.getItem('auth_token');
+            addDebug(`🎫 Token: ${token ? 'PRESENTE' : 'AUSENTE'}`);
+            
+            if (!token) {
+                updateStatus('❌ No hay token de autenticación', 'error');
+                addDebug('❌ Redirigiendo a página principal por falta de token');
+                setTimeout(() => {
+                    window.location.href = '/';
+                }, 2000);
+                return;
+            }
+
+            // Configurar axios
+            axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+            addDebug('✅ Axios configurado con token');
+
+            try {
+                updateStatus('🔄 Obteniendo perfil de usuario...', 'info');
+                addDebug('👤 Llamando a /api/private/profile...');
+                
+                const response = await axios.get('/api/private/profile');
+                addDebug(`📋 Respuesta del perfil: ${JSON.stringify(response.data)}`);
+                
+                if (response.data.success) {
+                    currentUser = response.data.data;
+                    addDebug(`✅ Usuario cargado: ${currentUser.full_name} (${currentUser.role})`);
+                    
+                    // Actualizar UI
+                    document.getElementById('user-name').textContent = currentUser.full_name;
+                    document.getElementById('user-role').textContent = currentUser.role;
+                    
+                    updateStatus(`✅ Dashboard cargado para ${currentUser.full_name}`, 'success');
+                    document.getElementById('dashboard-content').classList.remove('hidden');
+                } else {
+                    throw new Error('Respuesta de perfil inválida');
+                }
+            } catch (error) {
+                addDebug(`❌ Error obteniendo perfil: ${error.message}`);
+                if (error.response) {
+                    addDebug(`📄 Response status: ${error.response.status}`);
+                    addDebug(`📄 Response data: ${JSON.stringify(error.response.data)}`);
+                }
+                updateStatus('❌ Error cargando perfil de usuario', 'error');
+            }
+        }
+
+        function goToRealDashboard() {
+            addDebug('🚀 Navegando al dashboard real...');
+            window.location.href = '/dashboard';
+        }
+
+        function loadRealDashboard() {
+            addDebug('🔄 Intentando cargar dashboard.js...');
+            const script = document.createElement('script');
+            script.src = '/static/dashboard.js';
+            script.onload = () => {
+                addDebug('✅ Dashboard.js cargado');
+                if (typeof initDashboard === 'function') {
+                    addDebug('🎯 Llamando a initDashboard()...');
+                    initDashboard();
+                } else {
+                    addDebug('❌ Función initDashboard no encontrada');
+                }
+            };
+            script.onerror = () => {
+                addDebug('❌ Error cargando dashboard.js');
+            };
+            document.head.appendChild(script);
+        }
+
+        async function testMonitoring() {
+            addDebug('🔬 Testing APIs de monitoreo...');
+            try {
+                const response = await axios.get('/api/admin/monitoring/overview');
+                addDebug(`✅ Monitoreo API: ${JSON.stringify(response.data)}`);
+            } catch (error) {
+                addDebug(`❌ Monitoreo API Error: ${error.message}`);
+            }
+        }
+
+        async function testAPIs() {
+            const apis = [
+                '/api/public/projects',
+                '/api/private/my-projects',
+                '/api/admin/users'
+            ];
+
+            for (const api of apis) {
+                try {
+                    addDebug(`📡 Probando ${api}...`);
+                    const response = await axios.get(api);
+                    addDebug(`✅ ${api} OK`);
+                } catch (error) {
+                    addDebug(`❌ ${api} Error: ${error.message}`);
+                }
+            }
+        }
+
+        // Inicializar cuando la página cargue
+        window.addEventListener('DOMContentLoaded', initSimpleDashboard);
+    </script>
+</body>
+</html>

@@ -369,10 +369,7 @@ privateRoutes.put('/projects/:id', requireRole('INVESTIGATOR', 'ADMIN'), async (
       updateFields.push('progress_percentage = ?');
       params.push(body.progress_percentage);
     }
-    if (body.risk_level !== undefined) {
-      updateFields.push('risk_level = ?');
-      params.push(body.risk_level);
-    }
+    // risk_level field removed - column doesn't exist in current schema
 
     if (updateFields.length === 0) {
       return c.json<APIResponse>({ 
@@ -1258,7 +1255,7 @@ privateRoutes.get('/dashboard/stats', async (c) => {
           COUNT(*) as total, 
           COUNT(CASE WHEN is_public = 1 THEN 1 END) as public,
           COUNT(CASE WHEN status = 'ACTIVE' THEN 1 END) as active,
-          COUNT(CASE WHEN risk_level = 'HIGH' OR risk_level = 'CRITICAL' THEN 1 END) as at_risk,
+          0 as at_risk,
           ROUND(AVG(COALESCE(progress_percentage, 0)), 2) as avg_progress
         FROM projects
       `;
@@ -1266,8 +1263,8 @@ privateRoutes.get('/dashboard/stats', async (c) => {
       milestonesQuery = `
         SELECT 
           COUNT(*) as total,
-          COUNT(CASE WHEN is_completed = 1 THEN 1 END) as completed,
-          COUNT(CASE WHEN due_date < date('now') AND is_completed = 0 THEN 1 END) as overdue
+          COUNT(CASE WHEN status = 'COMPLETED' THEN 1 END) as completed,
+          COUNT(CASE WHEN target_date < date('now') AND status != 'COMPLETED' THEN 1 END) as overdue
         FROM project_milestones
       `;
       alertsQuery = `
@@ -1284,7 +1281,7 @@ privateRoutes.get('/dashboard/stats', async (c) => {
           COUNT(*) as total, 
           COUNT(CASE WHEN p.is_public = 1 THEN 1 END) as public,
           COUNT(CASE WHEN p.status = 'ACTIVE' THEN 1 END) as active,
-          COUNT(CASE WHEN p.risk_level = 'HIGH' OR p.risk_level = 'CRITICAL' THEN 1 END) as at_risk,
+          0 as at_risk,
           ROUND(AVG(COALESCE(p.progress_percentage, 0)), 2) as avg_progress
         FROM projects p
         LEFT JOIN project_collaborators pc ON p.id = pc.project_id
@@ -1300,8 +1297,8 @@ privateRoutes.get('/dashboard/stats', async (c) => {
       milestonesQuery = `
         SELECT 
           COUNT(*) as total,
-          COUNT(CASE WHEN pm.is_completed = 1 THEN 1 END) as completed,
-          COUNT(CASE WHEN pm.due_date < date('now') AND pm.is_completed = 0 THEN 1 END) as overdue
+          COUNT(CASE WHEN pm.status = 'COMPLETED' THEN 1 END) as completed,
+          COUNT(CASE WHEN pm.target_date < date('now') AND pm.status != 'COMPLETED' THEN 1 END) as overdue
         FROM project_milestones pm
         JOIN projects p ON pm.project_id = p.id
         LEFT JOIN project_collaborators pc ON p.id = pc.project_id
@@ -1646,13 +1643,13 @@ privateRoutes.get('/timeline', async (c) => {
         SELECT 
           'milestone' as event_type,
           pm.id as entity_id,
-          pm.milestone_title as event_title,
+          pm.title as event_title,
           CASE 
-            WHEN pm.is_completed = 1 THEN 'Milestone completado'
-            WHEN pm.due_date < date('now') THEN 'Milestone vencido'
+            WHEN pm.status = 'COMPLETED' THEN 'Milestone completado'
+            WHEN pm.target_date < date('now') THEN 'Milestone vencido'
             ELSE 'Milestone programado'
           END as event_description,
-          COALESCE(pm.completion_date, pm.due_date) as event_date,
+          COALESCE(pm.completion_date, pm.target_date) as event_date,
           u.full_name as user_name,
           al.name as action_line_name,
           al.color_code as action_line_color
@@ -1691,13 +1688,13 @@ privateRoutes.get('/timeline', async (c) => {
         SELECT 
           'milestone' as event_type,
           pm.id as entity_id,
-          pm.milestone_title as event_title,
+          pm.title as event_title,
           CASE 
-            WHEN pm.is_completed = 1 THEN 'Milestone completado'
-            WHEN pm.due_date < date('now') THEN 'Milestone vencido'
+            WHEN pm.status = 'COMPLETED' THEN 'Milestone completado'
+            WHEN pm.target_date < date('now') THEN 'Milestone vencido'
             ELSE 'Milestone programado'
           END as event_description,
-          COALESCE(pm.completion_date, pm.due_date) as event_date,
+          COALESCE(pm.completion_date, pm.target_date) as event_date,
           u.full_name as user_name,
           al.name as action_line_name,
           al.color_code as action_line_color
@@ -1754,12 +1751,12 @@ privateRoutes.get('/projects/:projectId/milestones', async (c) => {
 
     const milestones = await c.env.DB.prepare(`
       SELECT 
-        id, project_id, milestone_title, milestone_description,
-        due_date, is_completed, completion_date, milestone_order,
+        id, project_id, title, description,
+        target_date, status, completion_date, progress_percentage,
         created_at, updated_at
       FROM project_milestones 
       WHERE project_id = ?
-      ORDER BY milestone_order ASC, due_date ASC
+      ORDER BY progress_percentage ASC, target_date ASC
     `).bind(projectId).all();
 
     return c.json<APIResponse<any>>({
@@ -1834,15 +1831,15 @@ privateRoutes.post('/projects/:projectId/milestones', requireRole('INVESTIGATOR'
       UPDATE projects 
       SET 
         next_milestone_date = (
-          SELECT MIN(due_date) 
+          SELECT MIN(target_date) 
           FROM project_milestones 
-          WHERE project_id = ? AND is_completed = 0
+          WHERE project_id = ? AND status != 'COMPLETED'
         ),
         next_milestone_description = (
-          SELECT milestone_title 
+          SELECT title 
           FROM project_milestones 
-          WHERE project_id = ? AND is_completed = 0
-          ORDER BY due_date ASC, milestone_order ASC 
+          WHERE project_id = ? AND status != 'COMPLETED'
+          ORDER BY target_date ASC, progress_percentage ASC 
           LIMIT 1
         )
       WHERE id = ?
@@ -1869,7 +1866,7 @@ privateRoutes.put('/projects/:projectId/milestones/:milestoneId/complete', requi
     const user = c.get('user')!;
     const projectId = parseInt(c.req.param('projectId'));
     const milestoneId = parseInt(c.req.param('milestoneId'));
-    const { is_completed } = await c.req.json<{ is_completed: boolean }>();
+    const { status } = await c.req.json<{ status: string }>();
 
     // Verificar permisos sobre el proyecto
     if (user.role !== 'ADMIN') {
@@ -1891,11 +1888,11 @@ privateRoutes.put('/projects/:projectId/milestones/:milestoneId/complete', requi
     const result = await c.env.DB.prepare(`
       UPDATE project_milestones 
       SET 
-        is_completed = ?, 
-        completion_date = CASE WHEN ? = 1 THEN datetime('now') ELSE NULL END,
+        status = ?, 
+        completion_date = CASE WHEN ? = 'COMPLETED' THEN datetime('now') ELSE NULL END,
         updated_at = datetime('now')
       WHERE id = ? AND project_id = ?
-    `).bind(is_completed ? 1 : 0, is_completed ? 1 : 0, milestoneId, projectId).run();
+    `).bind(status, status, milestoneId, projectId).run();
 
     if (!result.success || result.meta.changes === 0) {
       return c.json<APIResponse>({ 
@@ -1908,7 +1905,7 @@ privateRoutes.put('/projects/:projectId/milestones/:milestoneId/complete', requi
     const progressResult = await c.env.DB.prepare(`
       SELECT 
         COUNT(*) as total_milestones,
-        COUNT(CASE WHEN is_completed = 1 THEN 1 END) as completed_milestones
+        COUNT(CASE WHEN status = 'COMPLETED' THEN 1 END) as completed_milestones
       FROM project_milestones 
       WHERE project_id = ?
     `).bind(projectId).first();
@@ -1926,15 +1923,15 @@ privateRoutes.put('/projects/:projectId/milestones/:milestoneId/complete', requi
         SET 
           progress_percentage = ?,
           next_milestone_date = (
-            SELECT MIN(due_date) 
+            SELECT MIN(target_date) 
             FROM project_milestones 
-            WHERE project_id = ? AND is_completed = 0
+            WHERE project_id = ? AND status != 'COMPLETED'
           ),
           next_milestone_description = (
-            SELECT milestone_title 
+            SELECT title 
             FROM project_milestones 
-            WHERE project_id = ? AND is_completed = 0
-            ORDER BY due_date ASC, milestone_order ASC 
+            WHERE project_id = ? AND status != 'COMPLETED'
+            ORDER BY target_date ASC, progress_percentage ASC 
             LIMIT 1
           )
         WHERE id = ?
@@ -1943,7 +1940,7 @@ privateRoutes.put('/projects/:projectId/milestones/:milestoneId/complete', requi
 
     return c.json<APIResponse>({
       success: true,
-      message: `Milestone ${is_completed ? 'completado' : 'marcado como pendiente'} exitosamente`
+      message: `Milestone ${status === 'COMPLETED' ? 'completado' : 'actualizado'} exitosamente`
     });
 
   } catch (error) {
@@ -1960,7 +1957,7 @@ privateRoutes.put('/projects/:id/monitoring', requireRole('INVESTIGATOR', 'ADMIN
   try {
     const user = c.get('user')!;
     const projectId = parseInt(c.req.param('id'));
-    const { action_line_id, risk_level, progress_percentage } = await c.req.json();
+    const { action_line_id, progress_percentage } = await c.req.json();
 
     // Verificar propiedad del proyecto (excepto admins)
     if (user.role !== 'ADMIN') {
@@ -1983,10 +1980,7 @@ privateRoutes.put('/projects/:id/monitoring', requireRole('INVESTIGATOR', 'ADMIN
       updateFields.push('action_line_id = ?');
       params.push(action_line_id);
     }
-    if (risk_level !== undefined) {
-      updateFields.push('risk_level = ?');
-      params.push(risk_level);
-    }
+    // risk_level field removed - column doesn't exist in current schema
     if (progress_percentage !== undefined) {
       updateFields.push('progress_percentage = ?');
       params.push(progress_percentage);
@@ -2106,16 +2100,27 @@ privateRoutes.post('/projects/:projectId/upload', async (c) => {
     const { projectId } = c.req.param();
     const user = c.get('user')!;
     
-    // Verificar permisos sobre el proyecto
-    const projectAccess = await c.env.DB.prepare(`
-      SELECT p.*, pc.can_add_products, pc.can_edit_project
-      FROM projects p
-      LEFT JOIN project_collaborators pc ON p.id = pc.project_id AND pc.user_id = ?
-      WHERE p.id = ? AND (p.owner_id = ? OR pc.user_id = ?)
-    `).bind(user.id, projectId, user.id, user.id).first();
+    // Verificar permisos sobre el proyecto (ADMIN tiene acceso completo)
+    if (user.role !== 'ADMIN') {
+      const projectAccess = await c.env.DB.prepare(`
+        SELECT p.*, pc.can_add_products, pc.can_edit_project
+        FROM projects p
+        LEFT JOIN project_collaborators pc ON p.id = pc.project_id AND pc.user_id = ?
+        WHERE p.id = ? AND (p.owner_id = ? OR pc.user_id = ?)
+      `).bind(user.userId, projectId, user.userId, user.userId).first();
+      
+      if (!projectAccess) {
+        return c.json({ success: false, error: 'No tienes permisos para subir archivos a este proyecto' }, 403);
+      }
+    }
     
-    if (!projectAccess) {
-      return c.json({ success: false, error: 'No tienes permisos para subir archivos a este proyecto' }, 403);
+    // Verificar que el proyecto existe (para ADMIN)
+    const project = await c.env.DB.prepare(`
+      SELECT id FROM projects WHERE id = ?
+    `).bind(projectId).first();
+    
+    if (!project) {
+      return c.json({ success: false, error: 'Proyecto no encontrado' }, 404);
     }
     
     const formData = await c.req.formData();
@@ -2144,32 +2149,37 @@ privateRoutes.post('/projects/:projectId/upload', async (c) => {
       }, 400);
     }
     
-    if (!c.env.R2) {
-      return c.json({ success: false, error: 'Almacenamiento no disponible' }, 500);
-    }
-    
     // Generar nombre único
     const timestamp = Date.now();
     const randomId = Math.random().toString(36).substring(2, 15);
     const extension = file.name.split('.').pop();
     const fileName = `project-${projectId}-${timestamp}-${randomId}.${extension}`;
-    const fullPath = `projects/${fileName}`;
     
-    // Subir a R2
-    const arrayBuffer = await file.arrayBuffer();
-    await c.env.R2.put(fullPath, arrayBuffer, {
-      httpMetadata: {
-        contentType: file.type,
-      },
-      customMetadata: {
-        originalName: file.name,
-        uploadedBy: user.id.toString(),
-        projectId: projectId,
-        uploadedAt: new Date().toISOString(),
-      },
-    });
+    let fileUrl;
+    let fullPath;
     
-    const fileUrl = `/api/admin/files/projects/${fileName}`;
+    if (c.env.R2) {
+      // Usar R2 en producción
+      fullPath = `projects/${fileName}`;
+      const arrayBuffer = await file.arrayBuffer();
+      await c.env.R2.put(fullPath, arrayBuffer, {
+        httpMetadata: {
+          contentType: file.type,
+        },
+        customMetadata: {
+          originalName: file.name,
+          uploadedBy: user.userId.toString(),
+          projectId: projectId,
+          uploadedAt: new Date().toISOString(),
+        },
+      });
+      fileUrl = `/api/files/r2/${fullPath}`;
+    } else {
+      // Almacenamiento simulado para desarrollo local
+      fullPath = `local/${fileName}`;
+      fileUrl = `/api/files/local/${fileName}`;
+      console.log(`📁 Archivo simulado guardado: ${fileName} (${file.size} bytes, tipo: ${file.type})`);
+    }
     
     // Registrar en base de datos
     await c.env.DB.prepare(`
@@ -2187,7 +2197,7 @@ privateRoutes.post('/projects/:projectId/upload', async (c) => {
       file.type,
       'project',
       projectId,
-      user.id,
+      user.userId,
       new Date().toISOString()
     ).run();
     
@@ -2214,15 +2224,26 @@ privateRoutes.post('/projects/:projectId/products/:productId/upload', async (c) 
     const { projectId, productId } = c.req.param();
     const user = c.get('user')!;
     
-    // Verificar permisos sobre el producto
-    const productAccess = await c.env.DB.prepare(`
-      SELECT pr.*, p.owner_id, pc.can_add_products,
-             (pr.creator_id = ? OR p.owner_id = ? OR pc.user_id = ?) as has_permission
-      FROM products pr
-      JOIN projects p ON pr.project_id = p.id
-      LEFT JOIN project_collaborators pc ON p.id = pc.project_id AND pc.user_id = ?
-      WHERE pr.id = ? AND pr.project_id = ?
-    `).bind(user.id, user.id, user.id, user.id, productId, projectId).first();
+    // Verificar permisos sobre el producto (ADMIN tiene acceso completo)
+    let productAccess;
+    if (user.role === 'ADMIN') {
+      // ADMIN puede acceder a cualquier producto
+      productAccess = await c.env.DB.prepare(`
+        SELECT pr.*, p.owner_id, 1 as has_permission
+        FROM products pr
+        JOIN projects p ON pr.project_id = p.id
+        WHERE pr.id = ? AND pr.project_id = ?
+      `).bind(productId, projectId).first();
+    } else {
+      productAccess = await c.env.DB.prepare(`
+        SELECT pr.*, p.owner_id, pc.can_add_products,
+               (pr.creator_id = ? OR p.owner_id = ? OR pc.user_id = ?) as has_permission
+        FROM products pr
+        JOIN projects p ON pr.project_id = p.id
+        LEFT JOIN project_collaborators pc ON p.id = pc.project_id AND pc.user_id = ?
+        WHERE pr.id = ? AND pr.project_id = ?
+      `).bind(user.userId, user.userId, user.userId, user.userId, productId, projectId).first();
+    }
     
     if (!productAccess || !productAccess.has_permission) {
       return c.json({ success: false, error: 'No tienes permisos para subir archivos a este producto' }, 403);
@@ -2274,7 +2295,7 @@ privateRoutes.post('/projects/:projectId/products/:productId/upload', async (c) 
       },
       customMetadata: {
         originalName: file.name,
-        uploadedBy: user.id.toString(),
+        uploadedBy: user.userId.toString(),
         productId: productId,
         projectId: projectId,
         uploadedAt: new Date().toISOString(),
@@ -2299,7 +2320,7 @@ privateRoutes.post('/projects/:projectId/products/:productId/upload', async (c) 
       file.type,
       'product',
       productId,
-      user.id,
+      user.userId,
       new Date().toISOString()
     ).run();
     
@@ -2326,41 +2347,7 @@ privateRoutes.post('/projects/:projectId/products/:productId/upload', async (c) 
   }
 });
 
-// Listar archivos de un proyecto
-privateRoutes.get('/projects/:projectId/files', async (c) => {
-  try {
-    const { projectId } = c.req.param();
-    const user = c.get('user')!;
-    
-    // Verificar acceso al proyecto
-    const hasAccess = await c.env.DB.prepare(`
-      SELECT 1 FROM projects p
-      LEFT JOIN project_collaborators pc ON p.id = pc.project_id AND pc.user_id = ?
-      WHERE p.id = ? AND (p.owner_id = ? OR pc.user_id = ?)
-    `).bind(user.id, projectId, user.id, user.id).first();
-    
-    if (!hasAccess) {
-      return c.json({ success: false, error: 'No tienes acceso a este proyecto' }, 403);
-    }
-    
-    const files = await c.env.DB.prepare(`
-      SELECT f.*, u.full_name as uploaded_by_name
-      FROM files f
-      LEFT JOIN users u ON f.uploaded_by = u.id
-      WHERE f.entity_type = 'project' AND f.entity_id = ?
-      ORDER BY f.uploaded_at DESC
-    `).bind(projectId).all();
-    
-    return c.json({
-      success: true,
-      data: files.results
-    });
-    
-  } catch (error) {
-    console.error('Error listando archivos:', error);
-    return c.json({ success: false, error: 'Error interno del servidor' }, 500);
-  }
-});
+
 
 // Listar archivos de un producto
 privateRoutes.get('/projects/:projectId/products/:productId/files', async (c) => {
@@ -2368,13 +2355,23 @@ privateRoutes.get('/projects/:projectId/products/:productId/files', async (c) =>
     const { projectId, productId } = c.req.param();
     const user = c.get('user')!;
     
-    // Verificar acceso
-    const hasAccess = await c.env.DB.prepare(`
-      SELECT 1 FROM products pr
-      JOIN projects p ON pr.project_id = p.id
-      LEFT JOIN project_collaborators pc ON p.id = pc.project_id AND pc.user_id = ?
-      WHERE pr.id = ? AND pr.project_id = ? AND (p.owner_id = ? OR pc.user_id = ?)
-    `).bind(user.id, productId, projectId, user.id, user.id).first();
+    // Verificar acceso (ADMIN tiene acceso completo)
+    let hasAccess;
+    if (user.role === 'ADMIN') {
+      // ADMIN puede acceder a cualquier producto
+      hasAccess = await c.env.DB.prepare(`
+        SELECT 1 FROM products pr
+        JOIN projects p ON pr.project_id = p.id
+        WHERE pr.id = ? AND pr.project_id = ?
+      `).bind(productId, projectId).first();
+    } else {
+      hasAccess = await c.env.DB.prepare(`
+        SELECT 1 FROM products pr
+        JOIN projects p ON pr.project_id = p.id
+        LEFT JOIN project_collaborators pc ON p.id = pc.project_id AND pc.user_id = ?
+        WHERE pr.id = ? AND pr.project_id = ? AND (p.owner_id = ? OR pc.user_id = ?)
+      `).bind(user.userId, productId, projectId, user.userId, user.userId).first();
+    }
     
     if (!hasAccess) {
       return c.json({ success: false, error: 'No tienes acceso a este producto' }, 403);
@@ -2419,9 +2416,9 @@ privateRoutes.delete('/files/:fileId', async (c) => {
     }
     
     // Verificar permisos
-    const canDelete = fileInfo.uploaded_by === user.id || 
-                     fileInfo.owner_id === user.id || 
-                     fileInfo.product_creator === user.id ||
+    const canDelete = fileInfo.uploaded_by === user.userId || 
+                     fileInfo.owner_id === user.userId || 
+                     fileInfo.product_creator === user.userId ||
                      user.role === 'ADMIN';
     
     if (!canDelete) {
@@ -2465,7 +2462,7 @@ privateRoutes.post('/projects/:projectId/calculate-score', async (c) => {
       FROM projects p
       LEFT JOIN project_collaborators pc ON p.id = pc.project_id AND pc.user_id = ?
       WHERE p.id = ? AND (p.owner_id = ? OR pc.user_id = ?)
-    `).bind(user.id, projectId, user.id, user.id).first();
+    `).bind(user.userId, projectId, user.userId, user.userId).first();
     
     if (!project) {
       return c.json({ success: false, error: 'Proyecto no encontrado o sin permisos' }, 404);
@@ -2540,7 +2537,7 @@ privateRoutes.get('/projects/:projectId/score', async (c) => {
       SELECT 1 FROM projects p
       LEFT JOIN project_collaborators pc ON p.id = pc.project_id AND pc.user_id = ?
       WHERE p.id = ? AND (p.owner_id = ? OR pc.user_id = ?)
-    `).bind(user.id, projectId, user.id, user.id).first();
+    `).bind(user.userId, projectId, user.userId, user.userId).first();
     
     if (!hasAccess) {
       return c.json({ success: false, error: 'No tienes acceso a este proyecto' }, 403);
@@ -2580,7 +2577,7 @@ privateRoutes.get('/projects/:projectId/alerts', async (c) => {
       SELECT 1 FROM projects p
       LEFT JOIN project_collaborators pc ON p.id = pc.project_id AND pc.user_id = ?
       WHERE p.id = ? AND (p.owner_id = ? OR pc.user_id = ?)
-    `).bind(user.id, projectId, user.id, user.id).first();
+    `).bind(user.userId, projectId, user.userId, user.userId).first();
     
     if (!hasAccess) {
       return c.json({ success: false, error: 'No tienes acceso a este proyecto' }, 403);
@@ -2616,7 +2613,7 @@ privateRoutes.put('/alerts/:alertId/acknowledge', async (c) => {
       JOIN projects p ON a.project_id = p.id
       LEFT JOIN project_collaborators pc ON p.id = pc.project_id AND pc.user_id = ?
       WHERE a.id = ? AND (p.owner_id = ? OR pc.user_id = ?)
-    `).bind(user.id, alertId, user.id, user.id).first();
+    `).bind(user.userId, alertId, user.userId, user.userId).first();
     
     if (!alert) {
       return c.json({ success: false, error: 'Alerta no encontrada o sin permisos' }, 404);
@@ -2627,7 +2624,7 @@ privateRoutes.put('/alerts/:alertId/acknowledge', async (c) => {
       UPDATE project_alerts 
       SET status = 'ACKNOWLEDGED', acknowledged_by = ?, acknowledged_at = CURRENT_TIMESTAMP
       WHERE id = ?
-    `).bind(user.id, alertId).run();
+    `).bind(user.userId, alertId).run();
     
     return c.json({
       success: true,
@@ -2650,7 +2647,7 @@ privateRoutes.post('/projects/calculate-all-scores', async (c) => {
       SELECT DISTINCT p.id FROM projects p
       LEFT JOIN project_collaborators pc ON p.id = pc.project_id
       WHERE p.owner_id = ? OR pc.user_id = ?
-    `).bind(user.id, user.id).all();
+    `).bind(user.userId, user.userId).all();
     
     const criteria = await c.env.DB.prepare(`
       SELECT * FROM scoring_criteria WHERE is_active = 1 ORDER BY weight DESC
@@ -2890,5 +2887,283 @@ async function generateProjectAlerts(db: any, projectId: number, scores: any, pr
     }
   }
 }
+
+// ===== GESTIÓN DE ARCHIVOS PARA PROYECTOS =====
+
+// Subir archivo a un proyecto
+privateRoutes.post('/projects/:projectId/files', requireRole('INVESTIGATOR', 'ADMIN'), async (c) => {
+  try {
+    const user = c.get('user')!;
+    const projectId = parseInt(c.req.param('projectId'));
+    
+    // Verificar acceso al proyecto
+    const project = await c.env.DB.prepare(`
+      SELECT p.id, p.owner_id, pc.user_id as collaborator_id
+      FROM projects p
+      LEFT JOIN project_collaborators pc ON p.id = pc.project_id AND pc.user_id = ?
+      WHERE p.id = ? AND (p.owner_id = ? OR pc.user_id = ?)
+    `).bind(user.userId, projectId, user.userId, user.userId).first();
+
+    if (!project) {
+      return c.json<APIResponse>({
+        success: false,
+        error: 'Proyecto no encontrado o sin permisos para subir archivos'
+      }, 404);
+    }
+
+    const formData = await c.req.formData();
+    const file = formData.get('file') as File;
+    const fileType = formData.get('fileType') as string || 'document';
+    
+    if (!file) {
+      return c.json<APIResponse>({
+        success: false,
+        error: 'No se proporcionó ningún archivo'
+      }, 400);
+    }
+
+    // Validar tipo de archivo
+    const allowedTypes = [
+      'application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'application/vnd.ms-excel', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      'application/vnd.ms-powerpoint', 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+      'text/plain', 'text/csv',
+      'image/jpeg', 'image/png', 'image/webp', 'image/gif'
+    ];
+
+    if (!allowedTypes.includes(file.type)) {
+      return c.json<APIResponse>({
+        success: false,
+        error: 'Tipo de archivo no permitido'
+      }, 400);
+    }
+
+    // Validar tamaño (50MB máximo)
+    const maxSize = 50 * 1024 * 1024;
+    if (file.size > maxSize) {
+      return c.json<APIResponse>({
+        success: false,
+        error: 'El archivo es demasiado grande (máximo 50MB)'
+      }, 400);
+    }
+
+    // Generar nombre de archivo único
+    const timestamp = Date.now();
+    const randomId = Math.random().toString(36).substring(2, 15);
+    const extension = file.name.split('.').pop();
+    const fileName = `${timestamp}_${randomId}.${extension}`;
+    const filePath = `projects/${fileName}`;
+
+    // Subir a R2
+    await c.env.R2.put(filePath, await file.arrayBuffer(), {
+      customMetadata: {
+        originalName: file.name,
+        uploadedBy: user.userId.toString(),
+        projectId: projectId.toString(),
+        fileType: fileType,
+        uploadedAt: new Date().toISOString(),
+      },
+    });
+
+    // Registrar en base de datos
+    const insertResult = await c.env.DB.prepare(`
+      INSERT INTO files (
+        filename, original_name, file_path, file_url, file_type, 
+        file_size, mime_type, entity_type, entity_id, uploaded_by
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `).bind(
+      fileName,
+      file.name,
+      filePath,
+      `/api/private/files/download/${fileName}`,
+      fileType,
+      file.size,
+      file.type,
+      'project',
+      projectId.toString(),
+      user.userId
+    ).run();
+
+    return c.json<APIResponse<any>>({
+      success: true,
+      data: {
+        fileId: insertResult.meta.last_row_id,
+        fileName: fileName,
+        originalName: file.name,
+        fileUrl: `/api/private/files/download/${fileName}`,
+        size: file.size,
+        type: file.type
+      }
+    });
+
+  } catch (error) {
+    console.error('Error subiendo archivo:', error);
+    return c.json<APIResponse>({
+      success: false,
+      error: 'Error interno del servidor'
+    }, 500);
+  }
+});
+
+// Obtener archivos de un proyecto
+privateRoutes.get('/projects/:projectId/files', async (c) => {
+  try {
+    const user = c.get('user')!;
+    const projectId = parseInt(c.req.param('projectId'));
+    
+    // Verificar acceso al proyecto (ADMIN tiene acceso completo)
+    let project;
+    if (user.role === 'ADMIN') {
+      // ADMIN puede acceder a cualquier proyecto
+      project = await c.env.DB.prepare(`
+        SELECT p.id, p.owner_id, null as collaborator_id
+        FROM projects p
+        WHERE p.id = ?
+      `).bind(projectId).first();
+    } else {
+      project = await c.env.DB.prepare(`
+        SELECT p.id, p.owner_id, pc.user_id as collaborator_id
+        FROM projects p
+        LEFT JOIN project_collaborators pc ON p.id = pc.project_id AND pc.user_id = ?
+        WHERE p.id = ? AND (p.owner_id = ? OR pc.user_id = ? OR p.is_public = 1)
+      `).bind(user.userId, projectId, user.userId, user.userId).first();
+    }
+
+    if (!project) {
+      return c.json<APIResponse>({
+        success: false,
+        error: 'Proyecto no encontrado o sin permisos'
+      }, 404);
+    }
+
+    const files = await c.env.DB.prepare(`
+      SELECT 
+        f.id, f.filename, f.original_name, f.file_url, f.file_type, 
+        f.file_size, f.mime_type, f.uploaded_at,
+        u.full_name as uploaded_by_name, u.email as uploaded_by_email
+      FROM files f
+      LEFT JOIN users u ON f.uploaded_by = u.id
+      WHERE f.entity_type = 'project' AND f.entity_id = ?
+      ORDER BY f.uploaded_at DESC
+    `).bind(projectId.toString()).all();
+
+    return c.json<APIResponse<any>>({
+      success: true,
+      data: { files: files.results }
+    });
+
+  } catch (error) {
+    console.error('Error obteniendo archivos:', error);
+    return c.json<APIResponse>({
+      success: false,
+      error: 'Error interno del servidor'
+    }, 500);
+  }
+});
+
+// Descargar archivo
+privateRoutes.get('/files/download/:filename', async (c) => {
+  try {
+    const { filename } = c.req.param();
+    
+    // Verificar que el archivo existe en la base de datos
+    const fileRecord = await c.env.DB.prepare(`
+      SELECT f.*, p.owner_id, pc.user_id as collaborator_id
+      FROM files f
+      LEFT JOIN projects p ON f.entity_type = 'project' AND CAST(f.entity_id AS INTEGER) = p.id
+      LEFT JOIN project_collaborators pc ON p.id = pc.project_id
+      WHERE f.filename = ?
+    `).bind(filename).first();
+
+    if (!fileRecord) {
+      return c.text('Archivo no encontrado', 404);
+    }
+
+    // Verificar permisos
+    const user = c.get('user')!;
+    const hasAccess = user.role === 'ADMIN' || 
+                      fileRecord.uploaded_by === user.userId ||
+                      fileRecord.owner_id === user.userId ||
+                      fileRecord.collaborator_id === user.userId;
+
+    if (!hasAccess) {
+      return c.text('Sin permisos para acceder al archivo', 403);
+    }
+
+    // Obtener archivo de R2
+    const object = await c.env.R2.get(fileRecord.file_path);
+    
+    if (!object) {
+      return c.text('Archivo no encontrado en el almacenamiento', 404);
+    }
+
+    return new Response(object.body, {
+      headers: {
+        'Content-Type': fileRecord.mime_type,
+        'Content-Disposition': `inline; filename="${fileRecord.original_name}"`,
+        'Content-Length': fileRecord.file_size.toString(),
+      },
+    });
+
+  } catch (error) {
+    console.error('Error descargando archivo:', error);
+    return c.text('Error interno del servidor', 500);
+  }
+});
+
+// Eliminar archivo
+privateRoutes.delete('/projects/:projectId/files/:fileId', requireRole('INVESTIGATOR', 'ADMIN'), async (c) => {
+  try {
+    const user = c.get('user')!;
+    const projectId = parseInt(c.req.param('projectId'));
+    const fileId = parseInt(c.req.param('fileId'));
+    
+    // Verificar que el archivo pertenece al proyecto y el usuario tiene permisos
+    const file = await c.env.DB.prepare(`
+      SELECT f.*, p.owner_id, pc.user_id as collaborator_id
+      FROM files f
+      LEFT JOIN projects p ON f.entity_type = 'project' AND CAST(f.entity_id AS INTEGER) = p.id
+      LEFT JOIN project_collaborators pc ON p.id = pc.project_id AND pc.user_id = ?
+      WHERE f.id = ? AND f.entity_id = ? AND f.entity_type = 'project'
+    `).bind(user.userId, fileId, projectId.toString()).first();
+
+    if (!file) {
+      return c.json<APIResponse>({
+        success: false,
+        error: 'Archivo no encontrado'
+      }, 404);
+    }
+
+    // Verificar permisos de eliminación
+    const canDelete = user.role === 'ADMIN' || 
+                      file.uploaded_by === user.userId ||
+                      file.owner_id === user.userId;
+
+    if (!canDelete) {
+      return c.json<APIResponse>({
+        success: false,
+        error: 'Sin permisos para eliminar este archivo'
+      }, 403);
+    }
+
+    // Eliminar de R2
+    await c.env.R2.delete(file.file_path);
+    
+    // Eliminar de base de datos
+    await c.env.DB.prepare('DELETE FROM files WHERE id = ?').bind(fileId).run();
+
+    return c.json<APIResponse>({
+      success: true,
+      data: { message: 'Archivo eliminado correctamente' }
+    });
+
+  } catch (error) {
+    console.error('Error eliminando archivo:', error);
+    return c.json<APIResponse>({
+      success: false,
+      error: 'Error interno del servidor'
+    }, 500);
+  }
+});
 
 export { privateRoutes };

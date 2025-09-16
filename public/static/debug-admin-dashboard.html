@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug - Admin Dashboard Functions</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="/static/styles.css" rel="stylesheet">
+</head>
+<body class="bg-background text-foreground p-8">
+    <div class="max-w-6xl mx-auto">
+        <h1 class="text-3xl font-bold mb-8 text-center">
+            <i class="fas fa-bug mr-2 text-red-500"></i>
+            Debug - Admin Dashboard Functions
+        </h1>
+        
+        <!-- Token de Admin -->
+        <div class="bg-card rounded-lg p-6 mb-8">
+            <h2 class="text-xl font-bold mb-4">🔑 Configuración de Autenticación</h2>
+            <p class="mb-4"><strong>Token Admin:</strong> <span class="text-green-600">CONFIGURADO</span></p>
+            <p class="mb-4"><strong>Headers:</strong> <span id="auth-status" class="text-gray-500">Verificando...</span></p>
+        </div>
+
+        <!-- Pruebas de Funciones -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <!-- Monitoreo -->
+            <div class="bg-card rounded-lg p-6">
+                <h3 class="text-lg font-bold mb-4">
+                    <i class="fas fa-chart-line mr-2 text-blue-500"></i>
+                    Monitoreo en Tiempo Real
+                </h3>
+                <button id="test-monitoring" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 w-full mb-2">
+                    Test Monitoreo
+                </button>
+                <div id="monitoring-result" class="text-sm text-gray-600">
+                    <p>Haz clic para probar...</p>
+                </div>
+            </div>
+
+            <!-- Alertas -->
+            <div class="bg-card rounded-lg p-6">
+                <h3 class="text-lg font-bold mb-4">
+                    <i class="fas fa-bell mr-2 text-yellow-500"></i>
+                    Sistema de Alertas
+                </h3>
+                <button id="test-alerts" class="bg-yellow-500 text-white px-4 py-2 rounded hover:bg-yellow-600 w-full mb-2">
+                    Test Alertas
+                </button>
+                <div id="alerts-result" class="text-sm text-gray-600">
+                    <p>Haz clic para probar...</p>
+                </div>
+            </div>
+
+            <!-- Scoring -->
+            <div class="bg-card rounded-lg p-6">
+                <h3 class="text-lg font-bold mb-4">
+                    <i class="fas fa-star mr-2 text-purple-500"></i>
+                    Evaluación y Scoring
+                </h3>
+                <button id="test-scoring" class="bg-purple-500 text-white px-4 py-2 rounded hover:bg-purple-600 w-full mb-2">
+                    Test Scoring
+                </button>
+                <div id="scoring-result" class="text-sm text-gray-600">
+                    <p>Haz clic para probar...</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Área de Resultados Detallados -->
+        <div class="bg-card rounded-lg p-6">
+            <h3 class="text-xl font-bold mb-4">📋 Log de Pruebas</h3>
+            <div id="detailed-log" class="bg-gray-900 text-green-400 p-4 rounded font-mono text-sm max-h-96 overflow-y-auto">
+                <p>🔄 Inicializando sistema de debug...</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/axios@1.6.0/dist/axios.min.js"></script>
+    <script>
+        // Configuración inicial
+        const ADMIN_TOKEN = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjksImVtYWlsIjoiYWRtaW5AdGVzdC5jb20iLCJyb2xlIjoiQURNSU4iLCJleHAiOjE3NTc3MzM2MzB9.b2FpH_ZrqIR1TfCCcsba8g_1GLAQQLhLSk8oyd8lYyQ';
+        const API_BASE = '/api';
+        
+        // Configurar axios
+        axios.defaults.headers.common['Authorization'] = `Bearer ${ADMIN_TOKEN}`;
+        
+        // Log function
+        function addLog(message, type = 'info') {
+            const logDiv = document.getElementById('detailed-log');
+            const timestamp = new Date().toLocaleTimeString();
+            const color = {
+                'success': 'text-green-400',
+                'error': 'text-red-400',
+                'info': 'text-blue-400',
+                'warning': 'text-yellow-400'
+            }[type] || 'text-gray-400';
+            
+            logDiv.innerHTML += `\n<p class="${color}">[${timestamp}] ${message}</p>`;
+            logDiv.scrollTop = logDiv.scrollHeight;
+        }
+
+        // Función para mostrar resultados en tarjetas
+        function showResult(elementId, success, data) {
+            const element = document.getElementById(elementId);
+            if (success) {
+                element.innerHTML = `
+                    <p class="text-green-600 font-bold">✅ Exitoso</p>
+                    <p class="text-xs mt-1">Datos: ${JSON.stringify(data).substring(0, 100)}...</p>
+                `;
+            } else {
+                element.innerHTML = `
+                    <p class="text-red-600 font-bold">❌ Error</p>
+                    <p class="text-xs mt-1">${data}</p>
+                `;
+            }
+        }
+
+        // Test Monitoreo
+        document.getElementById('test-monitoring').addEventListener('click', async () => {
+            addLog('🔍 Iniciando test de monitoreo...', 'info');
+            
+            try {
+                const response = await axios.get('/api/admin/monitoring/overview');
+                addLog(`✅ Monitoreo: ${response.status} - ${response.statusText}`, 'success');
+                addLog(`📊 Datos recibidos: ${JSON.stringify(response.data)}`, 'success');
+                
+                if (response.data.success) {
+                    showResult('monitoring-result', true, response.data.data);
+                    addLog(`📈 Métricas: ${JSON.stringify(response.data.data.system_metrics)}`, 'info');
+                } else {
+                    showResult('monitoring-result', false, response.data.error);
+                }
+                
+            } catch (error) {
+                addLog(`❌ Error en monitoreo: ${error.message}`, 'error');
+                addLog(`📝 Detalles: ${JSON.stringify(error.response?.data || 'Sin detalles')}`, 'error');
+                showResult('monitoring-result', false, error.message);
+            }
+        });
+
+        // Test Alertas
+        document.getElementById('test-alerts').addEventListener('click', async () => {
+            addLog('🔍 Iniciando test de alertas...', 'info');
+            
+            try {
+                const response = await axios.get('/api/admin/alerts/overview');
+                addLog(`✅ Alertas: ${response.status} - ${response.statusText}`, 'success');
+                addLog(`📊 Datos recibidos: ${JSON.stringify(response.data)}`, 'success');
+                
+                if (response.data.success) {
+                    showResult('alerts-result', true, response.data.data);
+                    addLog(`🚨 Alertas encontradas: ${response.data.data.alerts?.length || 0}`, 'info');
+                } else {
+                    showResult('alerts-result', false, response.data.error);
+                }
+                
+            } catch (error) {
+                addLog(`❌ Error en alertas: ${error.message}`, 'error');
+                addLog(`📝 Detalles: ${JSON.stringify(error.response?.data || 'Sin detalles')}`, 'error');
+                showResult('alerts-result', false, error.message);
+            }
+        });
+
+        // Test Scoring
+        document.getElementById('test-scoring').addEventListener('click', async () => {
+            addLog('🔍 Iniciando test de scoring...', 'info');
+            
+            try {
+                const response = await axios.get('/api/admin/scoring/overview');
+                addLog(`✅ Scoring: ${response.status} - ${response.statusText}`, 'success');
+                addLog(`📊 Datos recibidos: ${JSON.stringify(response.data)}`, 'success');
+                
+                if (response.data.success) {
+                    showResult('scoring-result', true, response.data.data);
+                    addLog(`⭐ Evaluaciones encontradas: ${response.data.data.scores?.length || 0}`, 'info');
+                } else {
+                    showResult('scoring-result', false, response.data.error);
+                }
+                
+            } catch (error) {
+                addLog(`❌ Error en scoring: ${error.message}`, 'error');
+                addLog(`📝 Detalles: ${JSON.stringify(error.response?.data || 'Sin detalles')}`, 'error');
+                showResult('scoring-result', false, error.message);
+            }
+        });
+
+        // Verificar estado de autenticación
+        async function checkAuthStatus() {
+            try {
+                const response = await axios.get('/api/me');
+                if (response.data.success) {
+                    document.getElementById('auth-status').innerHTML = `
+                        <span class="text-green-600">✅ Autenticado como ${response.data.data.full_name} (${response.data.data.role})</span>
+                    `;
+                    addLog(`✅ Usuario autenticado: ${response.data.data.full_name} - ${response.data.data.role}`, 'success');
+                } else {
+                    document.getElementById('auth-status').innerHTML = `
+                        <span class="text-red-600">❌ Error de autenticación</span>
+                    `;
+                    addLog(`❌ Error de autenticación: ${response.data.error}`, 'error');
+                }
+            } catch (error) {
+                document.getElementById('auth-status').innerHTML = `
+                    <span class="text-red-600">❌ Fallo en verificación</span>
+                `;
+                addLog(`❌ Error verificando auth: ${error.message}`, 'error');
+            }
+        }
+
+        // Inicializar
+        document.addEventListener('DOMContentLoaded', function() {
+            addLog('🚀 Sistema de debug iniciado', 'success');
+            checkAuthStatus();
+        });
+    </script>
+</body>
+</html>
