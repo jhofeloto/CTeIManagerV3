@@ -9,7 +9,9 @@ const DashboardState = {
     adminProjects: [], // Proyectos para vista de administrador
     users: [], // Solo para admins
     selectedProject: null,
-    charts: {}
+    charts: {},
+    myProducts: [], // Productos del usuario
+    productCategories: [] // Categorías de productos
 };
 
 // API Base URL
@@ -834,8 +836,8 @@ async function loadMyProducts() {
             // Llenar filtro de categorías
             populateProductCategoryFilter();
             
-            // Renderizar productos
-            renderMyProductsList(allProducts);
+            // Aplicar filtros y renderizar productos
+            filterMyProducts();
         } else {
             throw new Error('Error en la respuesta de la API');
         }
@@ -894,6 +896,11 @@ function populateProductCategoryFilter() {
 // Renderizar lista de productos
 function renderMyProductsList(products) {
     console.log('🎨 Renderizando lista de productos:', products);
+    console.log('🔍 Tipo de datos recibidos:', typeof products);
+    console.log('🔍 Es array:', Array.isArray(products));
+    if (products && products.length > 0) {
+        console.log('🔍 Primer producto completo:', JSON.stringify(products[0], null, 2));
+    }
     const container = document.getElementById('myProductsList');
     
     if (!products || products.length === 0) {
@@ -1107,7 +1114,13 @@ function filterMyProducts() {
     const categoryFilter = document.getElementById('productCategoryFilter')?.value || '';
     const searchInput = document.getElementById('productSearchInput')?.value?.toLowerCase() || '';
     
-    if (!DashboardState.myProducts) return;
+    console.log('🔍 Filtros aplicados:', { statusFilter, categoryFilter, searchInput });
+    console.log('🔍 Productos en estado:', DashboardState.myProducts ? DashboardState.myProducts.length : 'null');
+    
+    if (!DashboardState.myProducts) {
+        console.log('⚠️ No hay productos en DashboardState.myProducts');
+        return;
+    }
     
     let filteredProducts = DashboardState.myProducts.filter(product => {
         const matchesStatus = !statusFilter || 
@@ -1117,13 +1130,14 @@ function filterMyProducts() {
         const matchesCategory = !categoryFilter || product.product_type === categoryFilter;
         
         const matchesSearch = !searchInput || 
-            product.product_code.toLowerCase().includes(searchInput) ||
-            product.description.toLowerCase().includes(searchInput) ||
-            product.project_title.toLowerCase().includes(searchInput);
+            (product.product_code && product.product_code.toLowerCase().includes(searchInput)) ||
+            (product.description && product.description.toLowerCase().includes(searchInput)) ||
+            (product.project_title && product.project_title.toLowerCase().includes(searchInput));
         
         return matchesStatus && matchesCategory && matchesSearch;
     });
     
+    console.log('🎯 Productos después del filtro:', filteredProducts.length);
     renderMyProductsList(filteredProducts);
 }
 

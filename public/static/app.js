@@ -302,7 +302,7 @@ function createProductCard(product) {
                 <p><i class="fas fa-calendar" style="margin-right: 0.25rem;"></i>${formatDate(product.created_at)}</p>
             </div>
         </div>
-        <button onclick="viewProductDetails(${product.id})" class="ctei-btn-primary">
+        <button onclick="viewPublicProductDetails(${product.id})" class="ctei-btn-primary">
             Ver Detalles
         </button>
     `;
@@ -317,8 +317,9 @@ async function viewProjectDetails(projectId) {
 }
 
 // 🎯 NUEVA FUNCIONALIDAD: Navegación directa a páginas dedicadas  
-async function viewProductDetails(productId) {
-    // Navegar directamente a la página dedicada del producto
+async function viewPublicProductDetails(productId) {
+    // Función específica para el portal público
+    // Navegar a la página dedicada del producto  
     window.location.href = `/producto/${productId}`;
 }
 
@@ -347,7 +348,7 @@ function showProjectModal(project) {
                 ${createTechLabelWithTooltip(product.product_type, 'px-3 py-2 text-sm rounded-lg bg-muted/80 text-muted-foreground border border-border')}
             </div>
             <p class="text-lg text-foreground leading-relaxed mb-4 line-height-1.7">${product.description}</p>
-            <button onclick="viewProductDetails(${product.id})" 
+            <button onclick="viewPublicProductDetails(${product.id})" 
                     class="inline-flex items-center px-4 py-2 text-sm text-primary hover:text-primary-foreground hover:bg-primary font-semibold rounded-lg border border-primary/30 hover:border-primary transition-all duration-300 group-hover:scale-105">
                 <i class="fas fa-external-link-alt mr-2"></i>Ver detalles del producto
             </button>
