@@ -893,6 +893,7 @@ function populateProductCategoryFilter() {
 
 // Renderizar lista de productos
 function renderMyProductsList(products) {
+    console.log('🎨 Renderizando lista de productos:', products);
     const container = document.getElementById('myProductsList');
     
     if (!products || products.length === 0) {
@@ -918,7 +919,18 @@ function renderMyProductsList(products) {
         return;
     }
     
-    container.innerHTML = products.map(product => `
+    console.log('🔍 Primer producto para debug:', products[0]);
+    
+    container.innerHTML = products.map((product, index) => {
+        console.log(`🎯 Producto ${index + 1}:`, {
+            id: product.id,
+            description: product.description,
+            product_code: product.product_code,
+            project_title: product.project_title,
+            category_name: product.category_name
+        });
+        
+        return `
         <div id="product-card-${product.id}" class="ctei-content-card ctei-product-card-enhanced" 
              onclick="handleProductCardClick(event, ${product.project_id}, ${product.id})">
             <!-- Layout de 3 columnas: 60% info principal, 35% metadata, 5% acciones -->
@@ -1028,6 +1040,13 @@ function renderMyProductsList(products) {
                         </button>
                         <div id="product-actions-${product.id}" class="ctei-actions-dropdown hidden">
                             <button 
+                                onclick="event.stopPropagation(); viewProductDetails(${product.id}); closeAllActionsMenus()"
+                                class="ctei-actions-item"
+                            >
+                                <i class="fas fa-info-circle mr-2"></i>
+                                Ver Detalles
+                            </button>
+                            <button 
                                 onclick="event.stopPropagation(); toggleProductVisibility(${product.project_id}, ${product.id}, ${product.is_public ? false : true}); closeAllActionsMenus()"
                                 class="ctei-actions-item"
                             >
@@ -1054,7 +1073,8 @@ function renderMyProductsList(products) {
                 
             </div>
         </div>
-    `).join('');
+        `;
+    }).join('');
 }
 
 // ===== FUNCIONES DE SOPORTE PARA PRODUCTOS MEJORADOS =====
@@ -8414,6 +8434,136 @@ function editProject(projectId) {
 function viewProjectDetails(projectId) {
     showToast(`Mostrando detalles del proyecto ${projectId}`, 'info');
     // Aquí se implementaría la navegación a los detalles
+}
+
+// Función para ver detalles de producto
+function viewProductDetails(productId) {
+    console.log('🔍 Viendo detalles del producto:', productId);
+    
+    // Buscar el producto en el estado
+    const product = DashboardState.myProducts.find(p => p.id === productId);
+    
+    if (!product) {
+        showToast('Producto no encontrado', 'error');
+        return;
+    }
+    
+    // Crear modal con detalles del producto
+    const modalHtml = `
+        <div class="ctei-modal-overlay" onclick="closeModal()">
+            <div class="ctei-modal-content" onclick="event.stopPropagation()" style="max-width: 600px;">
+                <div class="ctei-modal-header">
+                    <h2 class="ctei-modal-title">Detalles del Producto</h2>
+                    <button class="ctei-modal-close" onclick="closeModal()">&times;</button>
+                </div>
+                
+                <div class="ctei-modal-body">
+                    <div class="space-y-4">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="font-semibold text-foreground">Código:</label>
+                                <p class="text-muted-foreground">${product.product_code || 'No especificado'}</p>
+                            </div>
+                            <div>
+                                <label class="font-semibold text-foreground">Tipo:</label>
+                                <p class="text-muted-foreground">${product.category_name || 'No especificado'}</p>
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <label class="font-semibold text-foreground">Descripción:</label>
+                            <p class="text-muted-foreground">${product.description || 'No especificado'}</p>
+                        </div>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="font-semibold text-foreground">Proyecto:</label>
+                                <p class="text-muted-foreground">${product.project_title || 'No especificado'}</p>
+                            </div>
+                            <div>
+                                <label class="font-semibold text-foreground">Creador:</label>
+                                <p class="text-muted-foreground">${product.creator_name || 'No especificado'}</p>
+                            </div>
+                        </div>
+                        
+                        ${product.journal ? `
+                            <div>
+                                <label class="font-semibold text-foreground">Revista:</label>
+                                <p class="text-muted-foreground">${product.journal}</p>
+                            </div>
+                        ` : ''}
+                        
+                        ${product.doi ? `
+                            <div>
+                                <label class="font-semibold text-foreground">DOI:</label>
+                                <p class="text-muted-foreground">
+                                    <a href="https://doi.org/${product.doi}" target="_blank" class="text-primary hover:underline">
+                                        ${product.doi}
+                                    </a>
+                                </p>
+                            </div>
+                        ` : ''}
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="font-semibold text-foreground">Fecha de Creación:</label>
+                                <p class="text-muted-foreground">${new Date(product.created_at).toLocaleDateString('es-ES')}</p>
+                            </div>
+                            ${product.publication_date ? `
+                                <div>
+                                    <label class="font-semibold text-foreground">Fecha de Publicación:</label>
+                                    <p class="text-muted-foreground">${new Date(product.publication_date).toLocaleDateString('es-ES')}</p>
+                                </div>
+                            ` : ''}
+                        </div>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="font-semibold text-foreground">Visibilidad:</label>
+                                <p class="text-muted-foreground">
+                                    <span class="inline-flex items-center px-2 py-1 rounded text-xs" 
+                                          style="background-color: var(${product.is_public ? '--chart-1' : '--chart-3'}); color: white;">
+                                        <i class="fas fa-${product.is_public ? 'eye' : 'eye-slash'} mr-1"></i>
+                                        ${product.is_public ? 'Público' : 'Privado'}
+                                    </span>
+                                </p>
+                            </div>
+                            ${product.impact_factor ? `
+                                <div>
+                                    <label class="font-semibold text-foreground">Factor de Impacto:</label>
+                                    <p class="text-muted-foreground font-medium">${product.impact_factor}</p>
+                                </div>
+                            ` : ''}
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="ctei-modal-footer">
+                    <button 
+                        onclick="editProduct(${product.project_id}, ${product.id}); closeModal()"
+                        class="ctei-btn ctei-btn-primary"
+                    >
+                        <i class="fas fa-edit mr-2"></i>
+                        Editar Producto
+                    </button>
+                    <button onclick="closeModal()" class="ctei-btn ctei-btn-secondary">
+                        Cerrar
+                    </button>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    // Insertar modal en el DOM
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
+}
+
+// Función para cerrar modal
+function closeModal() {
+    const modal = document.querySelector('.ctei-modal-overlay');
+    if (modal) {
+        modal.remove();
+    }
 }
 
 // Exportar funciones para uso global
