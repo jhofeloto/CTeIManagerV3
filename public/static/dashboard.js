@@ -6025,14 +6025,23 @@ function renderFileManagerView() {
         </div>
     `;
     
-    // Cargar pestaña inicial
-    setActiveFileManagerTab('all');
+    // Cargar estadísticas iniciales y luego la pestaña
+    setTimeout(async () => {
+        try {
+            await loadFileManagerStats();
+            await setActiveFileManagerTab('all');
+        } catch (error) {
+            console.error('❌ Error inicializando gestor de archivos:', error);
+            // Intentar cargar la pestaña de todos modos
+            await setActiveFileManagerTab('all');
+        }
+    }, 100);
 }
 
-// Cargar datos del gestor de archivos
-async function loadFileManagerData() {
+// Cargar y actualizar estadísticas de archivos
+async function loadFileManagerStats() {
     try {
-        // Usar el nuevo endpoint unificado para obtener todos los archivos
+        console.log('📊 Cargando estadísticas de archivos...');
         const response = await axios.get(`${API_BASE}/private/files`);
         
         if (!response.data.success) {
@@ -6043,74 +6052,122 @@ async function loadFileManagerData() {
         const allFiles = data.files || [];
         const stats = data.stats || {};
         
-        // Actualizar estadísticas con los datos del servidor
-        document.getElementById('totalFiles').textContent = stats.total || 0;
-        document.getElementById('projectFiles').textContent = stats.project_files || 0;
-        document.getElementById('productFiles').textContent = stats.product_files || 0;
-        document.getElementById('totalSize').textContent = FileManager.formatFileSize(stats.total_size || 0);
+        // Actualizar estadísticas con los datos del servidor (solo si existen los elementos)
+        const totalFilesEl = document.getElementById('totalFiles');
+        const projectFilesEl = document.getElementById('projectFiles');
+        const productFilesEl = document.getElementById('productFiles');
+        const totalSizeEl = document.getElementById('totalSize');
+        
+        if (totalFilesEl) totalFilesEl.textContent = stats.total || 0;
+        if (projectFilesEl) projectFilesEl.textContent = stats.project_files || 0;
+        if (productFilesEl) productFilesEl.textContent = stats.product_files || 0;
+        if (totalSizeEl) totalSizeEl.textContent = FileManager.formatFileSize(stats.total_size || 0);
         
         // Almacenar archivos para filtrado
         window.allFilesData = allFiles;
         window.fileStats = stats;
         
-        // Mostrar lista inicial
-        renderFilesList(allFiles);
+        console.log('✅ Estadísticas cargadas:', stats);
+        return { files: allFiles, stats };
         
-        console.log('✅ Archivos cargados exitosamente:', {
-            total: stats.total,
-            proyectos: stats.project_files,
-            productos: stats.product_files,
-            size: FileManager.formatFileSize(stats.total_size || 0)
-        });
+    } catch (error) {
+        console.error('❌ Error cargando estadísticas:', error);
+        throw error;
+    }
+}
+
+// Cargar datos del gestor de archivos (solo para la pestaña "Todos los Archivos")
+async function loadFileManagerData() {
+    try {
+        console.log('📁 Cargando lista de archivos...');
+        
+        // Cargar estadísticas y archivos
+        const { files } = await loadFileManagerStats();
+        
+        // Mostrar lista de archivos
+        renderFilesList(files);
+        
+        console.log('✅ Lista de archivos renderizada');
         
     } catch (error) {
         console.error('❌ Error cargando datos de archivos:', error);
-        document.getElementById('filesList').innerHTML = `
-            <div class="text-center py-8 text-red-600">
-                <i class="fas fa-exclamation-triangle text-4xl mb-3"></i>
-                <p>Error al cargar archivos: ${error.message}</p>
-                <button onclick="loadFileManagerData()" class="ctei-btn-secondary mt-3">
-                    <i class="fas fa-sync-alt mr-2"></i>
-                    Reintentar
-                </button>
-            </div>
-        `;
+        const filesListEl = document.getElementById('filesList');
+        if (filesListEl) {
+            filesListEl.innerHTML = `
+                <div class="text-center py-8 text-red-600">
+                    <i class="fas fa-exclamation-triangle text-4xl mb-3"></i>
+                    <p>Error al cargar archivos: ${error.message}</p>
+                    <button onclick="loadFileManagerData()" class="ctei-btn-secondary mt-3">
+                        <i class="fas fa-sync-alt mr-2"></i>
+                        Reintentar
+                    </button>
+                </div>
+            `;
+        }
     }
 }
 
 // Cambiar pestaña activa en el gestor de archivos
 async function setActiveFileManagerTab(tab) {
     try {
+        console.log(`🔄 Cambiando a pestaña: ${tab}`);
+        
+        // Verificar que los elementos existen antes de continuar
+        const tabButton = document.getElementById(`tab-manager-${tab}`);
+        const container = document.getElementById('fileManagerTabContent');
+        
+        if (!tabButton || !container) {
+            console.error('❌ Elementos de pestañas no encontrados:', { 
+                tabButton: !!tabButton, 
+                container: !!container 
+            });
+            return;
+        }
+        
         // Actualizar estado visual de las pestañas
         document.querySelectorAll('[id^="tab-manager-"]').forEach(btn => {
             btn.className = "border-b-2 border-transparent text-muted-foreground hover:text-foreground py-2 px-1 text-sm font-medium";
         });
-        document.getElementById(`tab-manager-${tab}`).className = "border-b-2 border-primary text-primary py-2 px-1 text-sm font-medium";
+        tabButton.className = "border-b-2 border-primary text-primary py-2 px-1 text-sm font-medium";
         
         // Cargar contenido según la pestaña
-        const container = document.getElementById('fileManagerTabContent');
-        
         switch (tab) {
             case 'all':
+                console.log('📁 Cargando pestaña: Todos los Archivos');
                 await loadAllFilesTab();
                 break;
             case 'projects':
+                console.log('📁 Cargando pestaña: Por Proyectos');
                 await loadProjectsFilesTab();
                 break;
             case 'products':
+                console.log('📁 Cargando pestaña: Por Productos');
                 await loadProductsFilesTab();
                 break;
+            default:
+                console.warn('⚠️ Pestaña desconocida:', tab);
+                await loadAllFilesTab();
         }
         
+        console.log('✅ Pestaña cargada exitosamente:', tab);
+        
     } catch (error) {
-        console.error('Error cambiando pestaña:', error);
-        showNotification('Error al cargar la pestaña', 'error');
+        console.error('❌ Error cambiando pestaña:', error);
+        if (typeof showNotification === 'function') {
+            showNotification('Error al cargar la pestaña', 'error');
+        }
     }
 }
 
 // Cargar pestaña de todos los archivos
 async function loadAllFilesTab() {
+    console.log('🔄 Iniciando carga de pestaña: Todos los Archivos');
     const container = document.getElementById('fileManagerTabContent');
+    
+    if (!container) {
+        console.error('❌ Container fileManagerTabContent no encontrado');
+        return;
+    }
     
     container.innerHTML = `
         <div class="flex justify-between items-center mb-6">
@@ -6139,7 +6196,9 @@ async function loadAllFilesTab() {
     `;
     
     // Cargar los datos
+    console.log('📊 Cargando datos de archivos...');
     await loadFileManagerData();
+    console.log('✅ Pestaña "Todos los Archivos" cargada completamente');
 }
 
 // Cargar pestaña de archivos por proyectos
