@@ -184,7 +184,7 @@ function renderDashboard() {
                         </li>
                         <li>
                             <button 
-                                onclick="showView('file-manager')" 
+                                onclick="showView('files')" 
                                 class="nav-item w-full flex items-center px-3 py-2 text-left rounded-lg hover:bg-accent hover:text-accent-foreground transition-colors"
                             >
                                 <i class="fas fa-folder-open mr-3"></i>
