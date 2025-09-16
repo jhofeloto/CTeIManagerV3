@@ -1811,6 +1811,21 @@ privateRoutes.post('/products/:productId/files', requireRole('INVESTIGATOR', 'AD
     const filePath = `/uploads/products/${productId}/${uniqueFilename}`;
     const fileUrl = `/api/files/${uniqueFilename}`;
     
+    // Mapear MIME type a file_type permitido por la constraint de DB
+    function getFileTypeFromMime(mimeType: string): string {
+      if (mimeType.startsWith('image/')) {
+        return 'image';
+      } else if (mimeType.includes('pdf') || mimeType.includes('document') || 
+                 mimeType.includes('text') || mimeType.includes('word') || 
+                 mimeType.includes('excel') || mimeType.includes('powerpoint')) {
+        return 'document';
+      } else {
+        return 'general';
+      }
+    }
+    
+    const mappedFileType = getFileTypeFromMime(file.type);
+    
     // Guardar información del archivo en la base de datos usando la tabla files existente
     const result = await c.env.DB.prepare(`
       INSERT INTO files 
@@ -1818,7 +1833,7 @@ privateRoutes.post('/products/:productId/files', requireRole('INVESTIGATOR', 'AD
        entity_type, entity_id, uploaded_by, uploaded_at)
       VALUES (?, ?, ?, ?, ?, ?, ?, 'product', ?, ?, datetime('now'))
     `).bind(
-      uniqueFilename, file.name, filePath, fileUrl, file.type, 
+      uniqueFilename, file.name, filePath, fileUrl, mappedFileType, 
       file.size, file.type, productId.toString(), user.userId
     ).run();
     
@@ -2443,6 +2458,21 @@ privateRoutes.post('/projects/:projectId/upload', async (c) => {
       return c.json({ success: false, error: 'No se proporcionó ningún archivo' }, 400);
     }
     
+    // Función para mapear MIME types a valores permitidos en DB
+    function getFileTypeFromMime(mimeType: string): string {
+      if (mimeType.startsWith('image/')) {
+        return 'image';
+      } else if (mimeType.includes('pdf') || mimeType.includes('document') || 
+                 mimeType.includes('text') || mimeType.includes('word') || 
+                 mimeType.includes('excel') || mimeType.includes('powerpoint')) {
+        return 'document';
+      } else {
+        return 'general';
+      }
+    }
+    
+    const mappedFileType = getFileTypeFromMime(file.type);
+    
     // Validaciones de archivo
     const allowedTypes = ['application/pdf', 'image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'text/plain'];
     const maxSize = 15 * 1024 * 1024; // 15MB
@@ -2504,7 +2534,7 @@ privateRoutes.post('/projects/:projectId/upload', async (c) => {
       file.name,
       fullPath,
       fileUrl,
-      fileType,
+      mappedFileType,
       file.size,
       file.type,
       'project',
@@ -3253,6 +3283,21 @@ privateRoutes.post('/projects/:projectId/files', requireRole('INVESTIGATOR', 'AD
         error: 'No se proporcionó ningún archivo'
       }, 400);
     }
+    
+    // Función para mapear MIME types a valores permitidos en DB
+    function getFileTypeFromMime(mimeType: string): string {
+      if (mimeType.startsWith('image/')) {
+        return 'image';
+      } else if (mimeType.includes('pdf') || mimeType.includes('document') || 
+                 mimeType.includes('text') || mimeType.includes('word') || 
+                 mimeType.includes('excel') || mimeType.includes('powerpoint')) {
+        return 'document';
+      } else {
+        return 'general';
+      }
+    }
+    
+    const mappedFileType = getFileTypeFromMime(file.type);
 
     // Validar tipo de archivo
     const allowedTypes = [
@@ -3308,7 +3353,7 @@ privateRoutes.post('/projects/:projectId/files', requireRole('INVESTIGATOR', 'AD
       file.name,
       filePath,
       `/api/private/files/download/${fileName}`,
-      fileType,
+      mappedFileType,
       file.size,
       file.type,
       'project',
