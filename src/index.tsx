@@ -3061,6 +3061,71 @@ app.get('/dashboard/proyectos/:id/editar', async (c) => {
                 border-bottom: none;
             }
             
+            /* Estilos para gestión de archivos */
+            .dropzone {
+                transition: all 0.2s ease;
+            }
+            
+            .dropzone.dragover {
+                border-color: hsl(var(--primary)) !important;
+                background-color: hsl(var(--primary) / 0.1) !important;
+            }
+            
+            .file-item {
+                background: hsl(var(--card));
+                border: 1px solid hsl(var(--border));
+                border-radius: calc(var(--radius));
+                padding: 0.75rem;
+                margin-bottom: 0.5rem;
+                transition: all 0.2s;
+            }
+            
+            .file-item:hover {
+                background: hsl(var(--accent));
+                border-color: hsl(var(--primary) / 0.3);
+            }
+            
+            .progress-bar {
+                width: 100%;
+                height: 4px;
+                background: hsl(var(--muted));
+                border-radius: 2px;
+                overflow: hidden;
+            }
+            
+            .progress-fill {
+                height: 100%;
+                background: hsl(var(--primary));
+                border-radius: 2px;
+                transition: width 0.3s ease;
+            }
+            
+            .btn-file {
+                padding: 0.375rem 0.75rem;
+                border-radius: calc(var(--radius) * 0.75);
+                font-size: 0.75rem;
+                border: 1px solid hsl(var(--border));
+                background: hsl(var(--background));
+                color: hsl(var(--foreground));
+                cursor: pointer;
+                transition: all 0.2s;
+            }
+            
+            .btn-file:hover {
+                background: hsl(var(--accent));
+                border-color: hsl(var(--primary) / 0.5);
+            }
+            
+            .btn-file.btn-danger {
+                color: hsl(var(--destructive));
+                border-color: hsl(var(--destructive) / 0.3);
+            }
+            
+            .btn-file.btn-danger:hover {
+                background: hsl(var(--destructive) / 0.1);
+                border-color: hsl(var(--destructive));
+            }
+            
             /* Responsive */
             @media (max-width: 1024px) {
                 .content-columns {
@@ -3303,6 +3368,63 @@ app.get('/dashboard/proyectos/:id/editar', async (c) => {
                     <div class="text-xs text-muted-foreground mt-2">
                         <i class="fas fa-info-circle mr-1"></i>
                         Los productos incluyen artículos, libros, patentes, software, etc.
+                    </div>
+                </div>
+                
+                <!-- Panel de Gestión de Archivos -->
+                <div class="panel">
+                    <div class="panel-title">
+                        <i class="fas fa-folder-open text-primary"></i>
+                        Archivos del Proyecto
+                    </div>
+                    
+                    <!-- Zona de carga de archivos con drag & drop -->
+                    <div class="form-field">
+                        <div id="file-dropzone" class="dropzone border-2 border-dashed border-border rounded-lg p-6 text-center cursor-pointer transition-colors hover:border-primary hover:bg-primary/5">
+                            <div class="dropzone-content">
+                                <i class="fas fa-cloud-upload-alt text-3xl text-muted-foreground mb-2 block"></i>
+                                <p class="text-sm text-foreground mb-1">
+                                    Arrastra archivos aquí o 
+                                    <span class="text-primary font-medium cursor-pointer" onclick="document.getElementById('file-input').click()">
+                                        selecciona archivos
+                                    </span>
+                                </p>
+                                <p class="text-xs text-muted-foreground">
+                                    PDF, DOC, XLS, PPT, TXT, CSV, Imágenes • Máx. 15MB por archivo
+                                </p>
+                            </div>
+                            <input type="file" id="file-input" multiple accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.csv,.jpg,.jpeg,.png,.webp" style="display: none;">
+                        </div>
+                        
+                        <!-- Área de progreso de carga -->
+                        <div id="upload-progress-area" class="mt-3" style="display: none;">
+                            <div class="text-xs text-muted-foreground mb-2">Subiendo archivos...</div>
+                            <div id="upload-progress-list"></div>
+                        </div>
+                    </div>
+                    
+                    <!-- Lista de archivos existentes -->
+                    <div class="form-field">
+                        <div class="flex items-center justify-between mb-3">
+                            <label class="form-label mb-0">Archivos del Proyecto</label>
+                            <button type="button" onclick="loadProjectFiles()" class="text-xs text-primary hover:text-primary/80 transition-colors" title="Actualizar lista">
+                                <i class="fas fa-sync-alt mr-1"></i>
+                                Actualizar
+                            </button>
+                        </div>
+                        
+                        <div id="project-files-list" class="max-h-64 overflow-y-auto border border-border rounded-lg">
+                            <div class="text-center text-muted-foreground py-8">
+                                <i class="fas fa-spinner fa-spin text-lg mb-2 block"></i>
+                                Cargando archivos...
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Información adicional -->
+                    <div class="text-xs text-muted-foreground mt-2">
+                        <i class="fas fa-info-circle mr-1"></i>
+                        Los archivos se almacenan de forma segura y solo son accesibles por colaboradores del proyecto.
                     </div>
                 </div>
             </div>
@@ -3878,6 +4000,10 @@ app.get('/dashboard/proyectos/:id/editar', async (c) => {
                     keywords = currentProject.keywords.split(',').map(k => k.trim()).filter(k => k);
                     renderKeywords();
                 }
+                
+                // Inicializar gestión de archivos después de cargar el proyecto
+                console.log('🚀 Inicializando gestión de archivos después de poblar formulario');
+                initFileManagementAfterProjectLoad();
             }
             
             // Actualizar título de la página
@@ -5005,6 +5131,657 @@ app.get('/dashboard/proyectos/:id/editar', async (c) => {
             
             // Los productos asociados se cargan ahora en el paso 5 del flujo de inicialización
             // después de configurar la autenticación
+            
+            // =====================================
+            // GESTIÓN DE ARCHIVOS DEL PROYECTO
+            // =====================================
+            
+            // Variables para gestión de archivos
+            let projectFiles = [];
+            let isUploading = false;
+            
+            // Inicializar gestión de archivos al cargar el proyecto
+            function initializeFileManagement() {
+                console.log('Inicializando gestión de archivos para proyecto:', PROJECT_ID);
+                
+                // Configurar drag & drop
+                setupDragAndDrop();
+                
+                // Configurar input de archivos
+                setupFileInput();
+                
+                // Cargar archivos existentes
+                loadProjectFiles();
+            }
+            
+            // Configurar funcionalidad drag & drop
+            function setupDragAndDrop() {
+                const dropzone = document.getElementById('file-dropzone');
+                if (!dropzone) return;
+                
+                // Prevenir comportamientos por defecto
+                ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+                    dropzone.addEventListener(eventName, preventDefaults, false);
+                    document.body.addEventListener(eventName, preventDefaults, false);
+                });
+                
+                // Efectos visuales para drag
+                ['dragenter', 'dragover'].forEach(eventName => {
+                    dropzone.addEventListener(eventName, highlightDropzone, false);
+                });
+                
+                ['dragleave', 'drop'].forEach(eventName => {
+                    dropzone.addEventListener(eventName, unhighlightDropzone, false);
+                });
+                
+                // Manejar drop de archivos
+                dropzone.addEventListener('drop', handleDrop, false);
+                
+                console.log('✅ Drag & drop configurado correctamente');
+            }
+            
+            // Prevenir comportamientos por defecto del navegador
+            function preventDefaults(e) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+            
+            // Resaltar zona de drop
+            function highlightDropzone() {
+                const dropzone = document.getElementById('file-dropzone');
+                if (dropzone) {
+                    dropzone.classList.add('border-primary', 'bg-primary/10');
+                    dropzone.classList.remove('border-border');
+                }
+            }
+            
+            // Quitar resaltado de zona de drop
+            function unhighlightDropzone() {
+                const dropzone = document.getElementById('file-dropzone');
+                if (dropzone) {
+                    dropzone.classList.remove('border-primary', 'bg-primary/10');
+                    dropzone.classList.add('border-border');
+                }
+            }
+            
+            // Manejar archivos soltados
+            function handleDrop(e) {
+                const files = e.dataTransfer.files;
+                if (files && files.length > 0) {
+                    console.log('📁 Archivos soltados:', files.length);
+                    handleFiles(files);
+                }
+            }
+            
+            // Configurar input de archivos
+            function setupFileInput() {
+                const fileInput = document.getElementById('file-input');
+                if (!fileInput) return;
+                
+                fileInput.addEventListener('change', function(e) {
+                    const files = e.target.files;
+                    if (files && files.length > 0) {
+                        console.log('📁 Archivos seleccionados:', files.length);
+                        handleFiles(files);
+                    }
+                    // Limpiar input para permitir seleccionar los mismos archivos de nuevo
+                    e.target.value = '';
+                });
+                
+                console.log('✅ Input de archivos configurado correctamente');
+            }
+            
+            // Procesar archivos seleccionados/soltados
+            function handleFiles(files) {
+                if (isUploading) {
+                    console.warn('⚠️ Ya hay una subida en progreso');
+                    return;
+                }
+                
+                console.log('📤 Iniciando procesamiento de archivos:', files.length);
+                
+                // Validar archivos
+                const validFiles = [];
+                const errors = [];
+                
+                Array.from(files).forEach(file => {
+                    const validation = validateFile(file);
+                    if (validation.valid) {
+                        validFiles.push(file);
+                    } else {
+                        errors.push(\`\${file.name}: \${validation.error}\`);
+                    }
+                });
+                
+                // Mostrar errores de validación
+                if (errors.length > 0) {
+                    showFileErrors(errors);
+                }
+                
+                // Subir archivos válidos
+                if (validFiles.length > 0) {
+                    uploadFiles(validFiles);
+                }
+            }
+            
+            // Validar archivo individual
+            function validateFile(file) {
+                const maxSize = 15 * 1024 * 1024; // 15MB
+                const allowedTypes = [
+                    'application/pdf',
+                    'application/msword',
+                    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+                    'application/vnd.ms-excel',
+                    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                    'application/vnd.ms-powerpoint',
+                    'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+                    'text/plain',
+                    'text/csv',
+                    'image/jpeg',
+                    'image/jpg',
+                    'image/png',
+                    'image/webp'
+                ];
+                
+                // Validar tamaño
+                if (file.size > maxSize) {
+                    return {
+                        valid: false,
+                        error: \`Archivo demasiado grande (máx. 15MB), actual: \${(file.size / (1024 * 1024)).toFixed(1)}MB\`
+                    };
+                }
+                
+                // Validar tipo
+                if (!allowedTypes.includes(file.type)) {
+                    return {
+                        valid: false,
+                        error: \`Tipo de archivo no permitido: \${file.type}\`
+                    };
+                }
+                
+                return { valid: true };
+            }
+            
+            // Mostrar errores de validación de archivos
+            function showFileErrors(errors) {
+                console.error('❌ Errores de validación de archivos:', errors);
+                
+                // Crear elemento de error temporal
+                const errorDiv = document.createElement('div');
+                errorDiv.className = 'bg-destructive/10 border border-destructive/20 rounded-lg p-3 mb-3';
+                errorDiv.innerHTML = \`
+                    <div class="flex items-start gap-2">
+                        <i class="fas fa-exclamation-triangle text-destructive mt-0.5"></i>
+                        <div class="flex-1">
+                            <div class="font-medium text-destructive text-sm mb-1">Error en algunos archivos:</div>
+                            \${errors.map(error => \`<div class="text-xs text-destructive/80">• \${error}</div>\`).join('')}
+                        </div>
+                        <button onclick="this.parentElement.parentElement.remove()" class="text-destructive/60 hover:text-destructive">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                \`;
+                
+                // Insertar error antes del dropzone
+                const dropzone = document.getElementById('file-dropzone');
+                if (dropzone && dropzone.parentElement) {
+                    dropzone.parentElement.insertBefore(errorDiv, dropzone);
+                    
+                    // Remover automáticamente después de 8 segundos
+                    setTimeout(() => {
+                        if (errorDiv.parentElement) {
+                            errorDiv.remove();
+                        }
+                    }, 8000);
+                }
+            }
+            
+            // Subir archivos al servidor
+            async function uploadFiles(files) {
+                if (!authToken) {
+                    console.error('❌ No hay token de autenticación para subir archivos');
+                    return;
+                }
+                
+                isUploading = true;
+                console.log('📤 Iniciando subida de', files.length, 'archivos');
+                
+                // Mostrar área de progreso
+                showUploadProgress();
+                
+                try {
+                    for (let i = 0; i < files.length; i++) {
+                        const file = files[i];
+                        console.log(\`📤 Subiendo archivo \${i + 1}/\${files.length}: \${file.name}\`);
+                        
+                        await uploadSingleFile(file, i + 1, files.length);
+                    }
+                    
+                    console.log('✅ Todos los archivos subidos exitosamente');
+                    
+                    // Recargar lista de archivos
+                    setTimeout(() => {
+                        loadProjectFiles();
+                        hideUploadProgress();
+                    }, 1000);
+                    
+                } catch (error) {
+                    console.error('❌ Error durante la subida de archivos:', error);
+                    showUploadError(error.message);
+                } finally {
+                    isUploading = false;
+                }
+            }
+            
+            // Subir un archivo individual
+            async function uploadSingleFile(file, current, total) {
+                const formData = new FormData();
+                formData.append('file', file);
+                
+                // Mostrar progreso para este archivo
+                addFileProgress(file.name, current, total);
+                
+                try {
+                    const response = await axios.post(
+                        \`\${API_BASE}/private/projects/\${PROJECT_ID}/upload\`,
+                        formData,
+                        {
+                            headers: {
+                                'Content-Type': 'multipart/form-data',
+                                'Authorization': \`Bearer \${authToken}\`
+                            },
+                            onUploadProgress: (progressEvent) => {
+                                const percentCompleted = Math.round(
+                                    (progressEvent.loaded * 100) / progressEvent.total
+                                );
+                                updateFileProgress(file.name, percentCompleted);
+                            }
+                        }
+                    );
+                    
+                    if (response.data.success) {
+                        console.log(\`✅ Archivo subido exitosamente: \${file.name}\`);
+                        completeFileProgress(file.name, true);
+                    } else {
+                        throw new Error(response.data.error || 'Error desconocido');
+                    }
+                    
+                } catch (error) {
+                    console.error(\`❌ Error subiendo \${file.name}:\`, error);
+                    completeFileProgress(file.name, false, error.message);
+                    throw error;
+                }
+            }
+            
+            // Mostrar área de progreso de subida
+            function showUploadProgress() {
+                const progressArea = document.getElementById('upload-progress-area');
+                const progressList = document.getElementById('upload-progress-list');
+                
+                if (progressArea && progressList) {
+                    progressList.innerHTML = '';
+                    progressArea.style.display = 'block';
+                }
+            }
+            
+            // Ocultar área de progreso de subida
+            function hideUploadProgress() {
+                const progressArea = document.getElementById('upload-progress-area');
+                if (progressArea) {
+                    setTimeout(() => {
+                        progressArea.style.display = 'none';
+                    }, 2000);
+                }
+            }
+            
+            // Agregar progreso para un archivo
+            function addFileProgress(filename, current, total) {
+                const progressList = document.getElementById('upload-progress-list');
+                if (!progressList) return;
+                
+                const progressId = \`progress-\${filename.replace(/[^a-zA-Z0-9]/g, '-')}\`;
+                const progressDiv = document.createElement('div');
+                progressDiv.id = progressId;
+                progressDiv.className = 'mb-2 p-2 border border-border rounded';
+                progressDiv.innerHTML = \`
+                    <div class="flex items-center justify-between mb-1">
+                        <span class="text-xs font-medium text-foreground truncate pr-2">\${filename}</span>
+                        <span class="text-xs text-muted-foreground">\${current}/\${total}</span>
+                    </div>
+                    <div class="w-full bg-muted rounded-full h-1.5">
+                        <div class="bg-primary h-1.5 rounded-full progress-bar transition-all duration-300" style="width: 0%"></div>
+                    </div>
+                    <div class="text-xs text-muted-foreground mt-1 status-text">Iniciando...</div>
+                \`;
+                
+                progressList.appendChild(progressDiv);
+            }
+            
+            // Actualizar progreso de un archivo
+            function updateFileProgress(filename, percentage) {
+                const progressId = \`progress-\${filename.replace(/[^a-zA-Z0-9]/g, '-')}\`;
+                const progressDiv = document.getElementById(progressId);
+                
+                if (progressDiv) {
+                    const progressBar = progressDiv.querySelector('.progress-bar');
+                    const statusText = progressDiv.querySelector('.status-text');
+                    
+                    if (progressBar) progressBar.style.width = \`\${percentage}%\`;
+                    if (statusText) statusText.textContent = \`Subiendo... \${percentage}%\`;
+                }
+            }
+            
+            // Completar progreso de un archivo
+            function completeFileProgress(filename, success, errorMessage = '') {
+                const progressId = \`progress-\${filename.replace(/[^a-zA-Z0-9]/g, '-')}\`;
+                const progressDiv = document.getElementById(progressId);
+                
+                if (progressDiv) {
+                    const progressBar = progressDiv.querySelector('.progress-bar');
+                    const statusText = progressDiv.querySelector('.status-text');
+                    
+                    if (success) {
+                        if (progressBar) {
+                            progressBar.style.width = '100%';
+                            progressBar.classList.remove('bg-primary');
+                            progressBar.classList.add('bg-green-500');
+                        }
+                        if (statusText) {
+                            statusText.textContent = '✅ Completado';
+                            statusText.classList.add('text-green-600');
+                        }
+                    } else {
+                        if (progressBar) {
+                            progressBar.classList.remove('bg-primary');
+                            progressBar.classList.add('bg-destructive');
+                        }
+                        if (statusText) {
+                            statusText.textContent = \`❌ Error: \${errorMessage}\`;
+                            statusText.classList.add('text-destructive');
+                        }
+                    }
+                }
+            }
+            
+            // Mostrar error de subida
+            function showUploadError(message) {
+                console.error('❌ Error de subida:', message);
+                
+                const progressList = document.getElementById('upload-progress-list');
+                if (progressList) {
+                    const errorDiv = document.createElement('div');
+                    errorDiv.className = 'bg-destructive/10 border border-destructive/20 rounded p-2 mt-2';
+                    errorDiv.innerHTML = \`
+                        <div class="flex items-center gap-2">
+                            <i class="fas fa-exclamation-triangle text-destructive"></i>
+                            <span class="text-xs text-destructive">Error general: \${message}</span>
+                        </div>
+                    \`;
+                    progressList.appendChild(errorDiv);
+                }
+            }
+            
+            // Cargar archivos del proyecto
+            async function loadProjectFiles() {
+                if (!authToken) {
+                    console.warn('⚠️ No hay token de autenticación para cargar archivos');
+                    return;
+                }
+                
+                console.log('📁 Cargando archivos del proyecto:', PROJECT_ID);
+                
+                try {
+                    const response = await axios.get(
+                        \`\${API_BASE}/private/projects/\${PROJECT_ID}/files\`,
+                        {
+                            headers: {
+                                'Authorization': \`Bearer \${authToken}\`
+                            }
+                        }
+                    );
+                    
+                    if (response.data.success) {
+                        projectFiles = response.data.data || [];
+                        console.log(\`✅ Archivos cargados: \${projectFiles.length}\`);
+                        renderFilesList();
+                    } else {
+                        throw new Error(response.data.error || 'Error desconocido');
+                    }
+                    
+                } catch (error) {
+                    console.error('❌ Error cargando archivos:', error);
+                    showFilesError('No se pudieron cargar los archivos del proyecto');
+                }
+            }
+            
+            // Renderizar lista de archivos
+            function renderFilesList() {
+                const filesList = document.getElementById('project-files-list');
+                if (!filesList) return;
+                
+                if (projectFiles.length === 0) {
+                    filesList.innerHTML = \`
+                        <div class="text-center text-muted-foreground py-8">
+                            <i class="fas fa-folder-open text-2xl mb-2 block opacity-50"></i>
+                            <p class="text-sm">No hay archivos en este proyecto</p>
+                            <p class="text-xs mt-1">Arrastra archivos arriba para comenzar</p>
+                        </div>
+                    \`;
+                    return;
+                }
+                
+                const filesHTML = projectFiles.map(file => {
+                    const fileIcon = getFileIcon(file.filename);
+                    const fileSize = formatFileSize(file.file_size);
+                    const uploadDate = new Date(file.uploaded_at).toLocaleDateString();
+                    
+                    return \`
+                        <div class="file-item flex items-center gap-3 p-3 border-b border-border last:border-b-0 hover:bg-muted/50 transition-colors">
+                            <div class="file-icon text-lg">
+                                <i class="\${fileIcon.icon}" style="color: \${fileIcon.color};"></i>
+                            </div>
+                            
+                            <div class="file-info flex-1 min-w-0">
+                                <div class="file-name font-medium text-sm text-foreground truncate" title="\${file.filename}">
+                                    \${file.filename}
+                                </div>
+                                <div class="file-meta text-xs text-muted-foreground">
+                                    \${fileSize} • Subido el \${uploadDate}
+                                </div>
+                            </div>
+                            
+                            <div class="file-actions flex items-center gap-2">
+                                <button 
+                                    onclick="downloadFile('\${file.id}', '\${file.filename}')"
+                                    class="text-primary hover:text-primary/80 transition-colors p-1"
+                                    title="Descargar archivo"
+                                >
+                                    <i class="fas fa-download"></i>
+                                </button>
+                                <button 
+                                    onclick="deleteFile('\${file.id}', '\${file.filename}')"
+                                    class="text-destructive hover:text-destructive/80 transition-colors p-1"
+                                    title="Eliminar archivo"
+                                >
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                    \`;
+                }).join('');
+                
+                filesList.innerHTML = filesHTML;
+                
+                console.log(\`✅ Lista de archivos renderizada: \${projectFiles.length} archivos\`);
+            }
+            
+            // Obtener ícono para tipo de archivo
+            function getFileIcon(filename) {
+                const extension = filename.toLowerCase().split('.').pop();
+                
+                const iconMap = {
+                    pdf: { icon: 'fas fa-file-pdf', color: '#dc2626' },
+                    doc: { icon: 'fas fa-file-word', color: '#2563eb' },
+                    docx: { icon: 'fas fa-file-word', color: '#2563eb' },
+                    xls: { icon: 'fas fa-file-excel', color: '#16a34a' },
+                    xlsx: { icon: 'fas fa-file-excel', color: '#16a34a' },
+                    ppt: { icon: 'fas fa-file-powerpoint', color: '#ea580c' },
+                    pptx: { icon: 'fas fa-file-powerpoint', color: '#ea580c' },
+                    txt: { icon: 'fas fa-file-alt', color: '#6b7280' },
+                    csv: { icon: 'fas fa-file-csv', color: '#16a34a' },
+                    jpg: { icon: 'fas fa-file-image', color: '#7c3aed' },
+                    jpeg: { icon: 'fas fa-file-image', color: '#7c3aed' },
+                    png: { icon: 'fas fa-file-image', color: '#7c3aed' },
+                    webp: { icon: 'fas fa-file-image', color: '#7c3aed' }
+                };
+                
+                return iconMap[extension] || { icon: 'fas fa-file', color: '#6b7280' };
+            }
+            
+            // Formatear tamaño de archivo
+            function formatFileSize(bytes) {
+                if (bytes === 0) return '0 B';
+                
+                const k = 1024;
+                const sizes = ['B', 'KB', 'MB', 'GB'];
+                const i = Math.floor(Math.log(bytes) / Math.log(k));
+                
+                return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+            }
+            
+            // Descargar archivo
+            async function downloadFile(fileId, filename) {
+                if (!authToken) {
+                    console.error('❌ No hay token de autenticación para descargar archivo');
+                    return;
+                }
+                
+                console.log(\`📥 Descargando archivo: \${filename} (ID: \${fileId})\`);
+                
+                try {
+                    // Crear enlace de descarga temporal
+                    const downloadUrl = \`\${API_BASE}/private/files/download/\${filename}?auth=\${authToken}\`;
+                    
+                    const link = document.createElement('a');
+                    link.href = downloadUrl;
+                    link.download = filename;
+                    link.target = '_blank';
+                    
+                    // Agregar temporalmente al DOM y hacer clic
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                    
+                    console.log(\`✅ Descarga iniciada para: \${filename}\`);
+                    
+                } catch (error) {
+                    console.error(\`❌ Error descargando archivo \${filename}:\`, error);
+                    alert(\`Error descargando archivo: \${error.message}\`);
+                }
+            }
+            
+            // Eliminar archivo
+            async function deleteFile(fileId, filename) {
+                if (!authToken) {
+                    console.error('❌ No hay token de autenticación para eliminar archivo');
+                    return;
+                }
+                
+                // Confirmar eliminación
+                const confirmed = confirm(\`¿Estás seguro que deseas eliminar el archivo "\${filename}"?\\n\\nEsta acción no se puede deshacer.\`);
+                if (!confirmed) {
+                    return;
+                }
+                
+                console.log(\`🗑️ Eliminando archivo: \${filename} (ID: \${fileId})\`);
+                
+                try {
+                    const response = await axios.delete(
+                        \`\${API_BASE}/private/files/\${fileId}\`,
+                        {
+                            headers: {
+                                'Authorization': \`Bearer \${authToken}\`
+                            }
+                        }
+                    );
+                    
+                    if (response.data.success) {
+                        console.log(\`✅ Archivo eliminado exitosamente: \${filename}\`);
+                        
+                        // Recargar lista de archivos
+                        loadProjectFiles();
+                        
+                        // Mostrar mensaje de éxito temporal
+                        showFileSuccessMessage(\`Archivo "\${filename}" eliminado correctamente\`);
+                        
+                    } else {
+                        throw new Error(response.data.error || 'Error desconocido');
+                    }
+                    
+                } catch (error) {
+                    console.error(\`❌ Error eliminando archivo \${filename}:\`, error);
+                    alert(\`Error eliminando archivo: \${error.response?.data?.error || error.message}\`);
+                }
+            }
+            
+            // Mostrar mensaje de éxito temporal
+            function showFileSuccessMessage(message) {
+                const successDiv = document.createElement('div');
+                successDiv.className = 'bg-green-500/10 border border-green-500/20 rounded-lg p-3 mb-3';
+                successDiv.innerHTML = \`
+                    <div class="flex items-center gap-2">
+                        <i class="fas fa-check-circle text-green-600"></i>
+                        <span class="text-sm text-green-700">\${message}</span>
+                        <button onclick="this.parentElement.parentElement.remove()" class="text-green-600/60 hover:text-green-600 ml-auto">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                \`;
+                
+                // Insertar antes del dropzone
+                const dropzone = document.getElementById('file-dropzone');
+                if (dropzone && dropzone.parentElement) {
+                    dropzone.parentElement.insertBefore(successDiv, dropzone);
+                    
+                    // Remover automáticamente después de 4 segundos
+                    setTimeout(() => {
+                        if (successDiv.parentElement) {
+                            successDiv.remove();
+                        }
+                    }, 4000);
+                }
+            }
+            
+            // Mostrar error de archivos
+            function showFilesError(message) {
+                const filesList = document.getElementById('project-files-list');
+                if (filesList) {
+                    filesList.innerHTML = \`
+                        <div class="text-center text-destructive py-8">
+                            <i class="fas fa-exclamation-triangle text-2xl mb-2 block"></i>
+                            <p class="text-sm font-medium">Error cargando archivos</p>
+                            <p class="text-xs mt-1">\${message}</p>
+                            <button 
+                                onclick="loadProjectFiles()" 
+                                class="mt-3 text-xs text-primary hover:text-primary/80 underline"
+                            >
+                                Reintentar
+                            </button>
+                        </div>
+                    \`;
+                }
+            }
+            
+            // Inicializar gestión de archivos cuando el proyecto se carga exitosamente
+            // Esto se llamará desde la función loadProjectSuccess existente
+            function initFileManagementAfterProjectLoad() {
+                if (currentProject) {
+                    console.log('🚀 Inicializando gestión de archivos después de cargar proyecto');
+                    initializeFileManagement();
+                } else {
+                    console.warn('⚠️ No se puede inicializar gestión de archivos: proyecto no cargado');
+                }
+            }
         </script>
     </body>
     </html>
