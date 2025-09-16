@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Mínimo - Editar Proyecto</title>
+    <!-- NO incluir app.js ni otros scripts globales que pueden interferir -->
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+</head>
+<body>
+    <h1>Test Mínimo - Editar Proyecto</h1>
+    <div id="result"></div>
+    
+    <script>
+        // Script completamente independiente
+        async function testProjectEdit() {
+            try {
+                console.log('🔄 Iniciando test...');
+                
+                // 1. Login
+                const loginResponse = await fetch('/api/auth/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        email: 'test2@admin.com',
+                        password: 'password123'
+                    })
+                });
+                
+                const loginData = await loginResponse.json();
+                console.log('Login response:', loginData);
+                
+                if (!loginData.success) {
+                    throw new Error('Login failed');
+                }
+                
+                const token = loginData.data.token;
+                console.log('✅ Token obtenido');
+                
+                // 2. Test project edit page
+                const editResponse = await fetch('/dashboard/proyectos/1/editar', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                
+                console.log('Edit page response status:', editResponse.status);
+                console.log('Edit page response headers:', Object.fromEntries(editResponse.headers.entries()));
+                
+                if (editResponse.ok) {
+                    const html = await editResponse.text();
+                    console.log('✅ Edit page loaded successfully');
+                    console.log('HTML length:', html.length);
+                    console.log('Contains edit form?:', html.includes('editProjectTitle'));
+                    
+                    document.getElementById('result').innerHTML = `
+                        <div style="color: green;">
+                            <h3>✅ Test EXITOSO</h3>
+                            <p>Status: ${editResponse.status}</p>
+                            <p>HTML Length: ${html.length} characters</p>
+                            <p>Contains edit form: ${html.includes('editProjectTitle') ? 'YES' : 'NO'}</p>
+                            <p>Title check: ${html.includes('<title>Editar Proyecto') ? 'YES' : 'NO'}</p>
+                        </div>
+                    `;
+                } else {
+                    throw new Error(`HTTP ${editResponse.status}: ${editResponse.statusText}`);
+                }
+                
+            } catch (error) {
+                console.error('❌ Test failed:', error);
+                document.getElementById('result').innerHTML = `
+                    <div style="color: red;">
+                        <h3>❌ Test FALLÓ</h3>
+                        <p>Error: ${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+        
+        // Ejecutar test cuando la página carga
+        window.addEventListener('load', testProjectEdit);
+    </script>
+</body>
+</html>

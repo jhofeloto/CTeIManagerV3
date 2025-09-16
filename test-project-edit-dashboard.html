@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test - Editar Proyecto Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .step { margin: 10px 0; padding: 10px; border: 1px solid #ccc; }
+        .success { background-color: #d4edda; }
+        .error { background-color: #f8d7da; }
+        .info { background-color: #d1ecf1; }
+        button { padding: 8px 16px; margin: 5px; }
+        .project-item { margin: 10px 0; padding: 15px; border: 1px solid #ddd; }
+        .project-actions button { margin: 0 5px; }
+    </style>
+</head>
+<body>
+    <h1>Test Dashboard - Editar Proyecto</h1>
+    
+    <div class="step info">
+        <h3>Paso 1: Configurar Autenticación</h3>
+        <p>Simulando login con test2@admin.com / password123</p>
+        <button onclick="simulateLogin()">Simular Login</button>
+        <div id="loginResult"></div>
+    </div>
+
+    <div class="step info">
+        <h3>Paso 2: Cargar Proyectos</h3>
+        <button onclick="loadProjects()">Cargar Mis Proyectos</button>
+        <div id="projectsResult"></div>
+    </div>
+
+    <div class="step info">
+        <h3>Paso 3: Test Botón Editar Proyecto</h3>
+        <div id="projectsList"></div>
+    </div>
+
+    <div class="step info">
+        <h3>Logs</h3>
+        <div id="logs"></div>
+    </div>
+
+    <script>
+        const API_BASE = '/api';
+        let currentToken = null;
+
+        function log(message) {
+            const logs = document.getElementById('logs');
+            logs.innerHTML += `<p>[${new Date().toLocaleTimeString()}] ${message}</p>`;
+        }
+
+        async function simulateLogin() {
+            try {
+                log('🔄 Intentando login...');
+                const response = await axios.post(`${API_BASE}/auth/login`, {
+                    email: 'test2@admin.com',
+                    password: 'password123'
+                });
+
+                if (response.data.token) {
+                    currentToken = response.data.token;
+                    localStorage.setItem('token', currentToken);
+                    
+                    // Configurar axios para usar el token
+                    axios.defaults.headers.common['Authorization'] = `Bearer ${currentToken}`;
+                    
+                    document.getElementById('loginResult').innerHTML = 
+                        '<p class="success">✅ Login exitoso</p>';
+                    log('✅ Login exitoso, token obtenido');
+                } else {
+                    throw new Error('No se recibió token');
+                }
+            } catch (error) {
+                log(`❌ Error en login: ${error.message}`);
+                document.getElementById('loginResult').innerHTML = 
+                    `<p class="error">❌ Error: ${error.message}</p>`;
+            }
+        }
+
+        async function loadProjects() {
+            if (!currentToken) {
+                log('❌ No hay token, hacer login primero');
+                return;
+            }
+
+            try {
+                log('🔄 Cargando proyectos...');
+                const response = await axios.get(`${API_BASE}/private/projects`, {
+                    headers: { Authorization: `Bearer ${currentToken}` }
+                });
+
+                const projects = response.data;
+                log(`✅ Proyectos cargados: ${projects.length}`);
+                
+                document.getElementById('projectsResult').innerHTML = 
+                    `<p class="success">✅ ${projects.length} proyectos encontrados</p>`;
+
+                displayProjects(projects);
+            } catch (error) {
+                log(`❌ Error cargando proyectos: ${error.message}`);
+                document.getElementById('projectsResult').innerHTML = 
+                    `<p class="error">❌ Error: ${error.message}</p>`;
+            }
+        }
+
+        function displayProjects(projects) {
+            const container = document.getElementById('projectsList');
+            container.innerHTML = '<h4>Proyectos disponibles:</h4>';
+
+            if (projects.length === 0) {
+                container.innerHTML += '<p>No se encontraron proyectos</p>';
+                return;
+            }
+
+            projects.forEach(project => {
+                const projectDiv = document.createElement('div');
+                projectDiv.className = 'project-item';
+                projectDiv.innerHTML = `
+                    <h5>${project.titulo || 'Sin título'}</h5>
+                    <p><strong>ID:</strong> ${project.id}</p>
+                    <p><strong>Descripción:</strong> ${project.descripcion || 'Sin descripción'}</p>
+                    <p><strong>Estado:</strong> ${project.estado || 'Sin estado'}</p>
+                    <div class="project-actions">
+                        <button onclick="testEditProject(${project.id})" style="background: #007bff; color: white;">
+                            ✏️ Editar Proyecto (Test Directo)
+                        </button>
+                        <button onclick="testEditProjectWithFunction(${project.id})" style="background: #28a745; color: white;">
+                            📝 Test editProject() Function
+                        </button>
+                        <button onclick="checkEditRoute(${project.id})" style="background: #6c757d; color: white;">
+                            🔍 Verificar Ruta Edit
+                        </button>
+                    </div>
+                `;
+                container.appendChild(projectDiv);
+            });
+        }
+
+        // Test directo de redirección
+        function testEditProject(projectId) {
+            log(`🔄 Test directo: redirigiendo a editar proyecto ${projectId}`);
+            const editUrl = `/dashboard/proyectos/${projectId}/editar`;
+            log(`🔗 URL de edición: ${editUrl}`);
+            window.location.href = editUrl;
+        }
+
+        // Test de la función editProject como en dashboard.js
+        function testEditProjectWithFunction(projectId) {
+            log(`🔄 Test función editProject(): proyecto ${projectId}`);
+            
+            // Simulamos la función exacta de dashboard.js
+            function editProject(projectId) {
+                console.log(`Editando proyecto con ID: ${projectId}`);
+                window.location.href = `/dashboard/proyectos/${projectId}/editar`;
+            }
+            
+            editProject(projectId);
+        }
+
+        // Verificar si la ruta existe
+        async function checkEditRoute(projectId) {
+            try {
+                log(`🔄 Verificando ruta para proyecto ${projectId}...`);
+                const editUrl = `/dashboard/proyectos/${projectId}/editar`;
+                
+                const response = await axios.get(editUrl, {
+                    headers: { Authorization: `Bearer ${currentToken}` }
+                });
+                
+                log(`✅ Ruta ${editUrl} responde correctamente (Status: ${response.status})`);
+            } catch (error) {
+                log(`❌ Error verificando ruta: ${error.response?.status || error.message}`);
+                
+                if (error.response?.status === 401) {
+                    log('⚠️ Error 401: Problema de autenticación');
+                } else if (error.response?.status === 404) {
+                    log('⚠️ Error 404: Ruta no encontrada');
+                } else {
+                    log('⚠️ Otro error de servidor');
+                }
+            }
+        }
+
+        // Auto-setup cuando la página carga
+        window.addEventListener('load', () => {
+            log('🚀 Test page cargada');
+            log('📝 Instrucciones: 1) Simular Login, 2) Cargar Proyectos, 3) Test botones');
+        });
+    </script>
+</body>
+</html>
