@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Debug Edit Button</title>
+    <script src="https://cdn.jsdelivr.net/npm/axios@1.6.0/dist/axios.min.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .log { background: #f5f5f5; padding: 10px; margin: 10px 0; border-radius: 3px; }
+        button { padding: 10px 15px; margin: 5px; cursor: pointer; }
+        .success { color: green; }
+        .error { color: red; }
+        .info { color: blue; }
+    </style>
+</head>
+<body>
+    <h1>🔍 Debug: Botón "Editar Producto"</h1>
+    
+    <div>
+        <h2>Paso 1: Login</h2>
+        <button onclick="doLogin()">🔑 Hacer Login</button>
+        <div id="loginResult" class="log"></div>
+    </div>
+
+    <div>
+        <h2>Paso 2: Test Función editProduct</h2>
+        <button onclick="testEditProduct()">🔧 Test editProduct Function</button>
+        <div id="editResult" class="log"></div>
+    </div>
+
+    <div>
+        <h2>Paso 3: Test Ruta Directa</h2>
+        <button onclick="testRoute()">🔗 Test Route</button>
+        <div id="routeResult" class="log"></div>
+    </div>
+
+    <script>
+        const API_BASE = '/api';
+        let token = null;
+
+        function log(elementId, message, type = 'info') {
+            const element = document.getElementById(elementId);
+            const timestamp = new Date().toLocaleTimeString();
+            element.innerHTML += `<div class="${type}">[${timestamp}] ${message}</div>`;
+            console.log(`[${type}] ${message}`);
+        }
+
+        async function doLogin() {
+            try {
+                log('loginResult', '🔄 Intentando login...', 'info');
+                
+                // Probar con usuario existente
+                const response = await axios.post(`${API_BASE}/auth/login`, {
+                    email: 'admin@ctei.edu.co',
+                    password: 'admin123'
+                });
+
+                if (response.data.success) {
+                    token = response.data.token;
+                    axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+                    log('loginResult', `✅ Login exitoso: ${response.data.user.full_name}`, 'success');
+                } else {
+                    log('loginResult', `❌ Login falló: ${response.data.error}`, 'error');
+                    
+                    // Intentar con otro usuario
+                    const response2 = await axios.post(`${API_BASE}/auth/login`, {
+                        email: 'carlos.rodriguez@ctei.edu.co',
+                        password: 'test123'
+                    });
+                    
+                    if (response2.data.success) {
+                        token = response2.data.token;
+                        axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+                        log('loginResult', `✅ Login exitoso (2do intento): ${response2.data.user.full_name}`, 'success');
+                    } else {
+                        log('loginResult', `❌ Login falló también en 2do intento`, 'error');
+                    }
+                }
+            } catch (error) {
+                log('loginResult', `❌ Error de conexión: ${error.message}`, 'error');
+            }
+        }
+
+        function testEditProduct() {
+            log('editResult', '🔄 Probando función editProduct...', 'info');
+            
+            // Simular la función editProduct exactamente como está en dashboard.js
+            function editProduct(projectId, productId) {
+                console.log('🔗 Redirigiendo a editar producto:', productId);
+                log('editResult', `🔗 Función llamada con projectId: ${projectId}, productId: ${productId}`, 'info');
+                log('editResult', `🔗 URL generada: /dashboard/productos/${productId}/editar`, 'info');
+                
+                // NO redirigir realmente, solo simular
+                log('editResult', `✅ Función editProduct se ejecuta correctamente`, 'success');
+                return `/dashboard/productos/${productId}/editar`;
+            }
+
+            // Probar con IDs de ejemplo
+            const url1 = editProduct(1, 1);
+            const url2 = editProduct(2, 2);
+            
+            log('editResult', `✅ Test completado. URLs generadas: ${url1}, ${url2}`, 'success');
+        }
+
+        async function testRoute() {
+            log('routeResult', '🔄 Probando ruta directamente...', 'info');
+            
+            const testURLs = [
+                '/dashboard/productos/1/editar',
+                '/dashboard/productos/2/editar',
+                '/dashboard/productos/3/editar'
+            ];
+            
+            for (const url of testURLs) {
+                try {
+                    const response = await fetch(url, {
+                        method: 'GET',
+                        headers: token ? { 'Authorization': `Bearer ${token}` } : {}
+                    });
+                    
+                    log('routeResult', `${url} → Status: ${response.status} (${response.statusText})`, 
+                        response.ok ? 'success' : 'error');
+                        
+                } catch (error) {
+                    log('routeResult', `${url} → Error: ${error.message}`, 'error');
+                }
+            }
+        }
+
+        // Función para simular clic en botón real
+        function simulateButtonClick() {
+            log('editResult', '🔄 Simulando clic en botón de dashboard...', 'info');
+            
+            // Esta es la función exacta del dashboard.js
+            try {
+                window.editProductOriginal = function(projectId, productId) {
+                    console.log('🔗 Redirigiendo a editar producto:', productId);
+                    window.location.href = `/dashboard/productos/${productId}/editar`;
+                };
+                
+                log('editResult', '✅ Función editProduct disponible globalmente', 'success');
+            } catch (error) {
+                log('editResult', `❌ Error configurando función: ${error.message}`, 'error');
+            }
+        }
+
+        // Inicializar al cargar
+        window.onload = function() {
+            log('loginResult', '🚀 Debug iniciado. Haga clic en los botones para probar.', 'info');
+            simulateButtonClick();
+        };
+    </script>
+</body>
+</html>

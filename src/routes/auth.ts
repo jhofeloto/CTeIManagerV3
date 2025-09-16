@@ -98,7 +98,9 @@ auth.post('/login', async (c) => {
     }
 
     // Verificar contraseña
+    console.log('🔍 Login attempt - Email:', email, 'Hash in DB:', user.password_hash);
     const isValidPassword = await verifyPassword(password, user.password_hash);
+    console.log('🔍 Password verification result:', isValidPassword);
     
     if (!isValidPassword) {
       return c.json<APIResponse>({ 

@@ -1030,7 +1030,14 @@ function renderMyProductsList(products) {
                 <!-- Columna 3: Acciones (5%) -->
                 <div class="ctei-product-actions">
                     <button 
-                        onclick="event.stopPropagation(); editProduct(${product.project_id}, ${product.id})"
+                        onclick="event.stopPropagation(); 
+                                console.log('🔗 Botón Editar Producto clickeado - ID: ${product.id}');
+                                if (typeof editProduct === 'function') {
+                                    editProduct(${product.project_id}, ${product.id});
+                                } else {
+                                    console.log('🔗 Función editProduct no disponible, usando redirección directa');
+                                    window.location.href = '/dashboard/productos/${product.id}/editar';
+                                }"
                         class="ctei-action-btn ctei-action-edit ctei-tooltip"
                         data-tooltip="Editar producto"
                     >
@@ -1147,6 +1154,15 @@ function editProduct(projectId, productId) {
     console.log('🔗 Redirigiendo a editar producto:', productId);
     window.location.href = `/dashboard/productos/${productId}/editar`;
 }
+
+// Asegurar que editProduct esté disponible globalmente
+window.editProduct = editProduct;
+
+// Función de fallback adicional por si hay problemas
+window.editProductFallback = function(projectId, productId) {
+    console.log('🔗 Usando editProductFallback para producto:', productId);
+    window.location.href = `/dashboard/productos/${productId}/editar`;
+};
 
 async function toggleProductVisibility(projectId, productId, makePublic) {
     try {
@@ -8511,7 +8527,14 @@ function viewProductDetails(productId) {
                 
                 <div class="ctei-modal-footer">
                     <button 
-                        onclick="editProduct(${product.project_id}, ${product.id}); closeModal()"
+                        onclick="console.log('🔗 Modal Editar Producto clickeado - ID: ${product.id}');
+                                if (typeof editProduct === 'function') {
+                                    editProduct(${product.project_id}, ${product.id});
+                                } else {
+                                    console.log('🔗 Función editProduct no disponible, usando redirección directa');
+                                    window.location.href = '/dashboard/productos/${product.id}/editar';
+                                }
+                                closeModal();"
                         class="ctei-btn ctei-btn-primary"
                     >
                         <i class="fas fa-edit mr-2"></i>

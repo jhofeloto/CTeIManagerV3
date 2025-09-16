@@ -31,6 +31,142 @@ app.get('/test-password-change.html', async (c) => {
   }
 })
 
+// Ruta de debug para probar editProduct
+app.get('/debug-edit-product', async (c) => {
+  return c.html(`<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>🔍 Debug Edit Product</title>
+    <script src="https://cdn.jsdelivr.net/npm/axios@1.6.0/dist/axios.min.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .product { border: 1px solid #ddd; padding: 15px; margin: 10px 0; border-radius: 5px; }
+        .button { padding: 10px 15px; margin: 5px; cursor: pointer; background: #007bff; color: white; border: none; border-radius: 3px; }
+        .log { background: #f5f5f5; padding: 10px; margin: 10px 0; border-radius: 3px; font-family: monospace; }
+        .success { color: green; }
+        .error { color: red; }
+    </style>
+</head>
+<body>
+    <h1>🔍 Debug: Botón "Editar Producto"</h1>
+    
+    <div class="log">
+        <h3>Paso 1: Obtener Token</h3>
+        <button onclick="getToken()" class="button">🔑 Get Token</button>
+        <div id="tokenResult"></div>
+    </div>
+
+    <div id="productsSection" style="display:none;">
+        <h3>Paso 2: Mis Productos</h3>
+        <div id="productsList"></div>
+    </div>
+
+    <div id="testSection" style="display:none;">
+        <h3>Paso 3: Test Editar</h3>
+        <div id="testResults" class="log"></div>
+    </div>
+
+    <script>
+        const API_BASE = '/api';
+        let authToken = null;
+        let userProducts = [];
+
+        function log(elementId, message, type = 'info') {
+            const element = document.getElementById(elementId);
+            element.innerHTML += '<div class="' + type + '">' + message + '</div>';
+        }
+
+        async function getToken() {
+            try {
+                const response = await axios.post(API_BASE + '/auth/login', {
+                    email: 'test2@admin.com',
+                    password: 'password123'
+                });
+
+                if (response.data.success) {
+                    authToken = response.data.token;
+                    axios.defaults.headers.common['Authorization'] = 'Bearer ' + authToken;
+                    log('tokenResult', '✅ Token obtenido: ' + authToken.substring(0, 50) + '...', 'success');
+                    
+                    loadProducts();
+                } else {
+                    log('tokenResult', '❌ Error: ' + response.data.error, 'error');
+                }
+            } catch (error) {
+                log('tokenResult', '❌ Error: ' + error.message, 'error');
+            }
+        }
+
+        async function loadProducts() {
+            try {
+                const response = await axios.get(API_BASE + '/private/products');
+                
+                if (response.data.success) {
+                    userProducts = response.data.products;
+                    log('tokenResult', '✅ Productos cargados: ' + userProducts.length, 'success');
+                    
+                    document.getElementById('productsSection').style.display = 'block';
+                    document.getElementById('testSection').style.display = 'block';
+                    renderProducts();
+                } else {
+                    log('tokenResult', '❌ Error cargando productos: ' + response.data.error, 'error');
+                }
+            } catch (error) {
+                log('tokenResult', '❌ Error: ' + error.message, 'error');
+            }
+        }
+
+        function renderProducts() {
+            const container = document.getElementById('productsList');
+            
+            if (userProducts.length === 0) {
+                container.innerHTML = '<p>No hay productos disponibles</p>';
+                return;
+            }
+
+            container.innerHTML = userProducts.slice(0, 3).map(product => 
+                '<div class="product">' +
+                    '<h4>' + (product.description || 'Producto sin descripción') + '</h4>' +
+                    '<p><strong>ID:</strong> ' + product.id + ' | <strong>Proyecto:</strong> ' + product.project_id + '</p>' +
+                    '<button onclick="testEditProduct(' + product.project_id + ', ' + product.id + ')" class="button">' +
+                        '✏️ Editar Producto (Test)' +
+                    '</button>' +
+                '</div>'
+            ).join('');
+        }
+
+        function testEditProduct(projectId, productId) {
+            log('testResults', '🔄 Testing editProduct(' + projectId + ', ' + productId + ')');
+            
+            // Esta es la función EXACTA del dashboard.js
+            console.log('🔗 Redirigiendo a editar producto:', productId);
+            const editURL = '/dashboard/productos/' + productId + '/editar';
+            
+            log('testResults', '🔗 URL generada: ' + editURL);
+            
+            // Verificar la URL
+            fetch(editURL, {
+                method: 'HEAD',
+                headers: {
+                    'Authorization': 'Bearer ' + authToken
+                }
+            }).then(response => {
+                log('testResults', '📊 Status: ' + response.status + ' (' + response.statusText + ')', 
+                    response.ok || response.status === 302 ? 'success' : 'error');
+                
+                if (response.ok || response.status === 302) {
+                    log('testResults', '🎉 ¡ÉXITO! El botón funciona correctamente', 'success');
+                }
+            }).catch(error => {
+                log('testResults', '❌ Error: ' + error.message, 'error');
+            });
+        }
+    </script>
+</body>
+</html>`);
+})
+
 // Página de resultados del test del dashboard
 app.get('/dashboard-test-results', async (c) => {
   return c.html(`<!DOCTYPE html>
