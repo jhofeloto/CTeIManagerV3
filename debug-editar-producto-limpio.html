@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DEBUG LIMPIO - Editar Producto</title>
+    <!-- SOLO axios, sin otros scripts que interfieran -->
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+</head>
+<body style="font-family: monospace; margin: 20px; background: #f0f0f0;">
+    <div style="max-width: 1000px; margin: 0 auto;">
+        <h1>🔧 DEBUG LIMPIO - Problema Editar Producto</h1>
+        
+        <div id="status" style="margin: 20px 0; padding: 15px; border: 2px solid #333; background: white;">
+            <h3>Estado del Test</h3>
+            <div id="currentStatus">Iniciando...</div>
+        </div>
+
+        <div id="results" style="margin: 20px 0; padding: 15px; border: 2px solid #333; background: #000; color: #0f0; font-family: 'Courier New', monospace; max-height: 500px; overflow-y: auto;">
+            Logs aparecerán aquí...<br>
+        </div>
+
+        <div style="margin: 20px 0;">
+            <button onclick="runCompleteTest()" style="padding: 10px 20px; font-weight: bold; background: #007bff; color: white; border: none;">
+                ▶️ EJECUTAR TEST COMPLETO
+            </button>
+            <button onclick="clearResults()" style="padding: 10px 20px; font-weight: bold; background: #6c757d; color: white; border: none; margin-left: 10px;">
+                🗑️ LIMPIAR
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // Variables globales
+        let currentToken = null;
+        let testResults = [];
+
+        function log(message) {
+            const timestamp = new Date().toLocaleTimeString();
+            const results = document.getElementById('results');
+            results.innerHTML += `[${timestamp}] ${message}<br>`;
+            results.scrollTop = results.scrollHeight;
+            console.log(`[${timestamp}] ${message}`);
+        }
+
+        function updateStatus(message, color = '#333') {
+            document.getElementById('currentStatus').innerHTML = `<span style="color: ${color};">${message}</span>`;
+        }
+
+        function clearResults() {
+            document.getElementById('results').innerHTML = 'Logs limpiados...<br>';
+        }
+
+        async function runCompleteTest() {
+            log('🚀 INICIANDO TEST COMPLETO EDITAR PRODUCTO');
+            updateStatus('Ejecutando test...', '#0066cc');
+
+            try {
+                // PASO 1: Login
+                log('');
+                log('=== PASO 1: LOGIN ===');
+                await testLogin();
+
+                // PASO 2: Verificar productos
+                log('');
+                log('=== PASO 2: VERIFICAR PRODUCTOS ===');
+                await testProducts();
+
+                // PASO 3: Probar ruta de edición
+                log('');
+                log('=== PASO 3: PROBAR RUTA EDICIÓN ===');
+                await testEditRoute();
+
+                // PASO 4: Diagnóstico final
+                log('');
+                log('=== PASO 4: DIAGNÓSTICO FINAL ===');
+                await finalDiagnosis();
+
+                updateStatus('Test completado ✅', '#008000');
+
+            } catch (error) {
+                log(`❌ ERROR GENERAL: ${error.message}`);
+                updateStatus('Test falló ❌', '#cc0000');
+            }
+        }
+
+        async function testLogin() {
+            try {
+                log('Enviando credenciales...');
+                
+                const response = await fetch('/api/auth/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        email: 'test2@admin.com',
+                        password: 'password123'
+                    })
+                });
+
+                const data = await response.json();
+                log(`Login response: ${response.status} ${response.statusText}`);
+                log(`Response data: ${JSON.stringify(data)}`);
+
+                if (data.success && data.data.token) {
+                    currentToken = data.data.token;
+                    log(`✅ TOKEN OBTENIDO: ${currentToken.substring(0, 30)}...`);
+                    
+                    // Decodificar token para verificar
+                    const parts = currentToken.split('.');
+                    const payload = JSON.parse(atob(parts[1]));
+                    log(`User: ${payload.email}, Role: ${payload.role}, UserID: ${payload.userId}`);
+                    
+                    const exp = new Date(payload.exp * 1000);
+                    log(`Token expira: ${exp.toLocaleString()}`);
+                    log(`Token válido: ${exp > new Date() ? 'SÍ' : 'NO'}`);
+                } else {
+                    throw new Error('Login falló: ' + JSON.stringify(data));
+                }
+            } catch (error) {
+                log(`❌ ERROR LOGIN: ${error.message}`);
+                throw error;
+            }
+        }
+
+        async function testProducts() {
+            if (!currentToken) {
+                throw new Error('No hay token para test de productos');
+            }
+
+            try {
+                log('Obteniendo lista de productos...');
+                
+                const response = await fetch('/api/private/products', {
+                    headers: { 'Authorization': `Bearer ${currentToken}` }
+                });
+
+                log(`Products API response: ${response.status} ${response.statusText}`);
+
+                const data = await response.json();
+                log(`Products data: ${JSON.stringify(data)}`);
+
+                if (response.ok && Array.isArray(data) && data.length > 0) {
+                    log(`✅ ${data.length} PRODUCTOS DISPONIBLES`);
+                    data.slice(0, 3).forEach(product => {
+                        log(`- ID ${product.id}: "${product.description?.substring(0, 50)}..."`);
+                    });
+                } else {
+                    throw new Error('No se pudieron obtener productos válidos');
+                }
+            } catch (error) {
+                log(`❌ ERROR PRODUCTOS: ${error.message}`);
+                throw error;
+            }
+        }
+
+        async function testEditRoute() {
+            if (!currentToken) {
+                throw new Error('No hay token para test de ruta');
+            }
+
+            const testProductId = 1;
+            const editUrl = `/dashboard/productos/${testProductId}/editar`;
+
+            try {
+                log(`Probando ruta: ${editUrl}`);
+
+                // Test 1: Sin autenticación
+                log('📍 Test sin autenticación...');
+                const responseNoAuth = await fetch(editUrl, {
+                    method: 'HEAD',
+                    redirect: 'manual'
+                });
+                log(`Sin auth: ${responseNoAuth.status} ${responseNoAuth.statusText}`);
+                if (responseNoAuth.status === 302) {
+                    log(`Redirige a: ${responseNoAuth.headers.get('location')}`);
+                }
+
+                // Test 2: Con autenticación
+                log('📍 Test con autenticación...');
+                const responseWithAuth = await fetch(editUrl, {
+                    method: 'HEAD',
+                    headers: { 'Authorization': `Bearer ${currentToken}` },
+                    redirect: 'manual'
+                });
+                log(`Con auth: ${responseWithAuth.status} ${responseWithAuth.statusText}`);
+                if (responseWithAuth.status === 302) {
+                    log(`Redirige a: ${responseWithAuth.headers.get('location')}`);
+                }
+
+                // Test 3: GET completo para ver el contenido
+                if (responseWithAuth.status === 200) {
+                    log('📍 Obteniendo contenido HTML...');
+                    const htmlResponse = await fetch(editUrl, {
+                        method: 'GET',
+                        headers: { 'Authorization': `Bearer ${currentToken}` }
+                    });
+                    
+                    if (htmlResponse.ok) {
+                        const html = await htmlResponse.text();
+                        log(`✅ HTML obtenido: ${html.length} caracteres`);
+                        log(`Contiene título: ${html.includes('<title>') ? 'SÍ' : 'NO'}`);
+                        log(`Contiene "Editar Producto": ${html.includes('Editar Producto') ? 'SÍ' : 'NO'}`);
+                        log(`Contiene formulario: ${html.includes('form') ? 'SÍ' : 'NO'}`);
+                    }
+                } else {
+                    log('⚠️ PROBLEMA: La ruta no está funcionando correctamente');
+                }
+
+            } catch (error) {
+                log(`❌ ERROR RUTA: ${error.message}`);
+                throw error;
+            }
+        }
+
+        async function finalDiagnosis() {
+            log('🔍 DIAGNÓSTICO FINAL:');
+            
+            // Verificar configuración del servidor
+            log('Verificando configuración del servidor...');
+            
+            try {
+                // Test rutas básicas
+                const dashboardResponse = await fetch('/dashboard', { method: 'HEAD' });
+                log(`Dashboard route: ${dashboardResponse.status}`);
+
+                const loginPageResponse = await fetch('/login', { method: 'HEAD' });
+                log(`Login route: ${loginPageResponse.status}`);
+
+                // Test API básica
+                const apiResponse = await fetch('/api/private/profile', {
+                    headers: { 'Authorization': `Bearer ${currentToken}` }
+                });
+                log(`Profile API: ${apiResponse.status}`);
+
+                // Conclusiones
+                log('');
+                log('📊 CONCLUSIONES:');
+                
+                if (apiResponse.ok) {
+                    log('✅ API de backend funciona correctamente');
+                    log('✅ Autenticación JWT funciona');
+                } else {
+                    log('❌ Problema con API de backend');
+                }
+
+                // Test específico de la ruta problemática
+                const productEditResponse = await fetch('/dashboard/productos/1/editar', {
+                    headers: { 'Authorization': `Bearer ${currentToken}` },
+                    redirect: 'manual'
+                });
+
+                if (productEditResponse.status === 200) {
+                    log('✅ La ruta /dashboard/productos/ID/editar FUNCIONA');
+                    log('🎯 PROBLEMA IDENTIFICADO: Debe ser un problema de JavaScript en el frontend');
+                } else if (productEditResponse.status === 302) {
+                    const location = productEditResponse.headers.get('location');
+                    log(`❌ La ruta está redirigiendo a: ${location}`);
+                    log('🎯 PROBLEMA IDENTIFICADO: La ruta del servidor no está configurada correctamente');
+                } else {
+                    log(`❌ La ruta devuelve: ${productEditResponse.status}`);
+                }
+
+            } catch (error) {
+                log(`❌ ERROR EN DIAGNÓSTICO: ${error.message}`);
+            }
+        }
+
+        // Auto-ejecutar cuando la página carga
+        window.addEventListener('load', () => {
+            log('🚀 Debug tool cargado');
+            updateStatus('Listo para ejecutar', '#333');
+        });
+    </script>
+</body>
+</html>

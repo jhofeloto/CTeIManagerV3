@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DEBUG DIRECTO - Editar Producto</title>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <style>
+        body { font-family: monospace; margin: 20px; background: #f0f0f0; }
+        .container { max-width: 1200px; margin: 0 auto; }
+        .test-section { margin: 15px 0; padding: 15px; border: 2px solid #333; background: white; }
+        .success { background-color: #d4edda; border-color: #c3e6cb; }
+        .error { background-color: #f8d7da; border-color: #f5c6cb; }
+        .warning { background-color: #fff3cd; border-color: #ffeaa7; }
+        .info { background-color: #d1ecf1; border-color: #bee5eb; }
+        button { padding: 8px 16px; margin: 5px; font-weight: bold; }
+        .logs { background: #000; color: #0f0; padding: 15px; font-family: 'Courier New', monospace; max-height: 400px; overflow-y: auto; }
+        pre { background: #f8f9fa; padding: 10px; border-radius: 3px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🐛 DEBUG DIRECTO - Problema Botón "Editar Producto"</h1>
+        
+        <div class="test-section info">
+            <h3>🎯 TEST 1: Login y Obtención de Token</h3>
+            <button onclick="step1_login()">▶️ Ejecutar Login</button>
+            <div id="loginResults"></div>
+        </div>
+
+        <div class="test-section info">
+            <h3>📊 TEST 2: Verificar Productos Disponibles</h3>
+            <button onclick="step2_getProducts()">▶️ Obtener Productos</button>
+            <div id="productsResults"></div>
+        </div>
+
+        <div class="test-section info">
+            <h3>🎪 TEST 3: Probar Ruta de Edición (Sin Redirección)</h3>
+            <button onclick="step3_testEditRoute()">▶️ Test Ruta Editar (HEAD)</button>
+            <button onclick="step3b_testEditRouteFull()">▶️ Test Ruta Editar (GET)</button>
+            <div id="routeResults"></div>
+        </div>
+
+        <div class="test-section info">
+            <h3>🚀 TEST 4: Simular Botón Exacto del Dashboard</h3>
+            <button onclick="step4_simulateExactButton()">▶️ Simular Botón Real</button>
+            <div id="buttonResults"></div>
+        </div>
+
+        <div class="test-section info">
+            <h3>🔍 TEST 5: Análisis de Redirección</h3>
+            <button onclick="step5_analyzeRedirection()">▶️ Analizar Redirección</button>
+            <div id="redirectResults"></div>
+        </div>
+
+        <div class="test-section info">
+            <h3>📋 Logs Completos</h3>
+            <button onclick="clearLogs()">🗑️ Limpiar Logs</button>
+            <div class="logs" id="debugLogs">Logs aparecerán aquí...</div>
+        </div>
+    </div>
+
+    <script>
+        let currentToken = null;
+        let availableProducts = [];
+
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const logDiv = document.getElementById('debugLogs');
+            const prefix = type === 'error' ? '❌' : type === 'success' ? '✅' : type === 'warning' ? '⚠️' : 'ℹ️';
+            logDiv.innerHTML += `[${timestamp}] ${prefix} ${message}<br>`;
+            logDiv.scrollTop = logDiv.scrollHeight;
+            console.log(`[${timestamp}] ${message}`);
+        }
+
+        function clearLogs() {
+            document.getElementById('debugLogs').innerHTML = 'Logs limpiados.<br>';
+        }
+
+        async function step1_login() {
+            log('INICIANDO TEST 1: LOGIN Y TOKEN');
+            
+            try {
+                log('Enviando credenciales a /api/auth/login...');
+                const response = await axios.post('/api/auth/login', {
+                    email: 'test2@admin.com',
+                    password: 'password123'
+                });
+
+                log(`Response status: ${response.status}`);
+                log(`Response data: ${JSON.stringify(response.data)}`);
+
+                if (response.data.success && response.data.data.token) {
+                    currentToken = response.data.data.token;
+                    
+                    // Configurar axios
+                    axios.defaults.headers.common['Authorization'] = `Bearer ${currentToken}`;
+                    
+                    log(`✅ TOKEN OBTENIDO: ${currentToken.substring(0, 50)}...`, 'success');
+                    
+                    // Decodificar y verificar token
+                    try {
+                        const parts = currentToken.split('.');
+                        const payload = JSON.parse(atob(parts[1]));
+                        log(`Token payload: ${JSON.stringify(payload)}`, 'success');
+                        
+                        const exp = new Date(payload.exp * 1000);
+                        log(`Token expira: ${exp.toLocaleString()}`, 'success');
+                        log(`Token válido: ${exp > new Date() ? 'SÍ' : 'NO'}`, exp > new Date() ? 'success' : 'error');
+                    } catch (e) {
+                        log(`Error decodificando token: ${e.message}`, 'error');
+                    }
+
+                    document.getElementById('loginResults').innerHTML = 
+                        `<div class="success"><strong>✅ LOGIN EXITOSO</strong><br>
+                        Usuario: ${response.data.data.user.full_name}<br>
+                        Rol: ${response.data.data.user.role}<br>
+                        Token configurado en axios</div>`;
+                } else {
+                    throw new Error('Respuesta de login inválida');
+                }
+            } catch (error) {
+                log(`Error en login: ${error.message}`, 'error');
+                document.getElementById('loginResults').innerHTML = 
+                    `<div class="error"><strong>❌ ERROR LOGIN</strong><br>${error.message}</div>`;
+            }
+        }
+
+        async function step2_getProducts() {
+            if (!currentToken) {
+                log('No hay token. Ejecutar TEST 1 primero.', 'error');
+                return;
+            }
+
+            log('INICIANDO TEST 2: OBTENER PRODUCTOS');
+
+            try {
+                log('Solicitando productos a /api/private/products...');
+                const response = await axios.get('/api/private/products', {
+                    headers: { 'Authorization': `Bearer ${currentToken}` }
+                });
+
+                log(`Response status: ${response.status}`);
+                log(`Response data: ${JSON.stringify(response.data)}`);
+
+                if (response.data && Array.isArray(response.data)) {
+                    availableProducts = response.data;
+                    log(`✅ ${availableProducts.length} PRODUCTOS OBTENIDOS`, 'success');
+                    
+                    availableProducts.slice(0, 3).forEach(product => {
+                        log(`- Producto ID ${product.id}: "${product.description?.substring(0, 50)}..." (Proyecto: ${product.project_id})`, 'success');
+                    });
+
+                    document.getElementById('productsResults').innerHTML = 
+                        `<div class="success"><strong>✅ ${availableProducts.length} PRODUCTOS DISPONIBLES</strong><br>
+                        ${availableProducts.slice(0, 3).map(p => 
+                            `ID ${p.id}: ${p.description?.substring(0, 60)}...`
+                        ).join('<br>')}</div>`;
+                } else {
+                    log('❌ Respuesta de productos inválida', 'error');
+                }
+            } catch (error) {
+                log(`Error obteniendo productos: ${error.response?.status} - ${error.message}`, 'error');
+                document.getElementById('productsResults').innerHTML = 
+                    `<div class="error"><strong>❌ ERROR PRODUCTOS</strong><br>${error.message}</div>`;
+            }
+        }
+
+        async function step3_testEditRoute() {
+            if (!currentToken) {
+                log('No hay token. Ejecutar TEST 1 primero.', 'error');
+                return;
+            }
+
+            log('INICIANDO TEST 3: PROBAR RUTA DE EDICIÓN (HEAD)');
+
+            const testProductId = 1; // Producto ID conocido
+            const editUrl = `/dashboard/productos/${testProductId}/editar`;
+            
+            log(`Probando URL: ${editUrl}`);
+
+            try {
+                // Usar fetch en lugar de axios para más control
+                const response = await fetch(editUrl, {
+                    method: 'HEAD',
+                    headers: {
+                        'Authorization': `Bearer ${currentToken}`
+                    }
+                });
+
+                log(`Response status: ${response.status} ${response.statusText}`);
+                log(`Response headers: ${JSON.stringify(Object.fromEntries(response.headers.entries()))}`);
+
+                if (response.status === 200) {
+                    log(`✅ RUTA FUNCIONA CORRECTAMENTE`, 'success');
+                } else if (response.status === 302) {
+                    const location = response.headers.get('location');
+                    log(`⚠️ REDIRECCIÓN DETECTADA: ${response.status} -> ${location}`, 'warning');
+                } else {
+                    log(`❌ RUTA CON PROBLEMAS: ${response.status}`, 'error');
+                }
+
+                document.getElementById('routeResults').innerHTML = 
+                    `<div class="${response.status === 200 ? 'success' : response.status === 302 ? 'warning' : 'error'}">
+                    <strong>Status: ${response.status} ${response.statusText}</strong><br>
+                    URL: ${editUrl}<br>
+                    ${response.status === 302 ? `Redirige a: ${response.headers.get('location')}` : ''}
+                    </div>`;
+
+            } catch (error) {
+                log(`Error probando ruta: ${error.message}`, 'error');
+                document.getElementById('routeResults').innerHTML = 
+                    `<div class="error"><strong>❌ ERROR RUTA</strong><br>${error.message}</div>`;
+            }
+        }
+
+        async function step3b_testEditRouteFull() {
+            if (!currentToken) {
+                log('No hay token. Ejecutar TEST 1 primero.', 'error');
+                return;
+            }
+
+            log('INICIANDO TEST 3B: PROBAR RUTA DE EDICIÓN (GET COMPLETO)');
+
+            const testProductId = 1;
+            const editUrl = `/dashboard/productos/${testProductId}/editar`;
+            
+            try {
+                const response = await fetch(editUrl, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${currentToken}`
+                    },
+                    redirect: 'manual' // No seguir redirecciones automáticamente
+                });
+
+                log(`Response status: ${response.status} ${response.statusText}`);
+                
+                if (response.status === 200) {
+                    const html = await response.text();
+                    log(`✅ HTML RECIBIDO: ${html.length} caracteres`, 'success');
+                    log(`Title check: ${html.includes('<title>') ? 'PRESENTE' : 'AUSENTE'}`, html.includes('<title>') ? 'success' : 'error');
+                    log(`Edit form check: ${html.includes('editProduct') ? 'PRESENTE' : 'AUSENTE'}`, html.includes('editProduct') ? 'success' : 'error');
+                } else if (response.status === 302 || response.status === 301) {
+                    const location = response.headers.get('location');
+                    log(`🔄 REDIRECCIÓN: ${response.status} -> ${location}`, 'warning');
+                    log(`🚨 PROBLEMA IDENTIFICADO: La ruta está redirigiendo en lugar de servir contenido`, 'error');
+                }
+
+            } catch (error) {
+                log(`Error en GET completo: ${error.message}`, 'error');
+            }
+        }
+
+        async function step4_simulateExactButton() {
+            if (availableProducts.length === 0) {
+                log('No hay productos. Ejecutar TEST 2 primero.', 'error');
+                return;
+            }
+
+            log('INICIANDO TEST 4: SIMULAR BOTÓN EXACTO DEL DASHBOARD');
+
+            const testProduct = availableProducts[0];
+            log(`Simulando clic en producto: ID ${testProduct.id}, Proyecto: ${testProduct.project_id}`);
+
+            // Esta es la función EXACTA del dashboard.js
+            function simulateEditProduct(projectId, productId) {
+                log(`Ejecutando editProduct(${projectId}, ${productId})`);
+                log(`Generando URL: /dashboard/productos/${productId}/editar`);
+                
+                // En lugar de redirigir, vamos a probar la URL
+                return `/dashboard/productos/${productId}/editar`;
+            }
+
+            try {
+                const generatedUrl = simulateEditProduct(testProduct.project_id, testProduct.id);
+                log(`URL generada por función: ${generatedUrl}`, 'success');
+                
+                // Probar la URL generada
+                const response = await fetch(generatedUrl, {
+                    method: 'HEAD',
+                    headers: { 'Authorization': `Bearer ${currentToken}` }
+                });
+
+                log(`Test de URL generada: ${response.status} ${response.statusText}`, response.status === 200 ? 'success' : 'error');
+
+                document.getElementById('buttonResults').innerHTML = 
+                    `<div class="${response.status === 200 ? 'success' : 'error'}">
+                    <strong>Simulación de botón editProduct()</strong><br>
+                    Producto: ${testProduct.id}<br>
+                    URL generada: ${generatedUrl}<br>
+                    Status: ${response.status} ${response.statusText}
+                    </div>`;
+
+            } catch (error) {
+                log(`Error simulando botón: ${error.message}`, 'error');
+            }
+        }
+
+        async function step5_analyzeRedirection() {
+            log('INICIANDO TEST 5: ANÁLISIS PROFUNDO DE REDIRECCIÓN');
+
+            const testUrl = '/dashboard/productos/1/editar';
+            
+            try {
+                // Test sin autenticación
+                log('🔍 TEST 5A: Sin cabecera de autorización...');
+                const responseNoAuth = await fetch(testUrl, { method: 'HEAD', redirect: 'manual' });
+                log(`Sin auth: ${responseNoAuth.status} -> ${responseNoAuth.headers.get('location') || 'no redirige'}`, responseNoAuth.status === 302 ? 'warning' : 'info');
+
+                // Test con autenticación incorrecta
+                log('🔍 TEST 5B: Con token incorrecto...');
+                const responseWrongAuth = await fetch(testUrl, { 
+                    method: 'HEAD', 
+                    headers: { 'Authorization': 'Bearer token_falso' },
+                    redirect: 'manual' 
+                });
+                log(`Token falso: ${responseWrongAuth.status} -> ${responseWrongAuth.headers.get('location') || 'no redirige'}`, responseWrongAuth.status === 302 ? 'warning' : 'info');
+
+                // Test con autenticación correcta
+                log('🔍 TEST 5C: Con token correcto...');
+                const responseCorrectAuth = await fetch(testUrl, { 
+                    method: 'HEAD', 
+                    headers: { 'Authorization': `Bearer ${currentToken}` },
+                    redirect: 'manual' 
+                });
+                log(`Token correcto: ${responseCorrectAuth.status} -> ${responseCorrectAuth.headers.get('location') || 'no redirige'}`, responseCorrectAuth.status === 200 ? 'success' : 'error');
+
+                // Analizar patrón
+                log('📊 ANÁLISIS DE PATRÓN:');
+                if (responseNoAuth.status === 302 && responseCorrectAuth.status === 302) {
+                    log('🚨 PROBLEMA: Incluso con token correcto hay redirección. La ruta NO tiene middleware de auth o hay otro problema.', 'error');
+                } else if (responseNoAuth.status === 302 && responseCorrectAuth.status === 200) {
+                    log('✅ NORMAL: Sin token redirige, con token funciona. El problema debe estar en el frontend.', 'success');
+                }
+
+                document.getElementById('redirectResults').innerHTML = 
+                    `<div class="info">
+                    <strong>Análisis de Redirección:</strong><br>
+                    Sin auth: ${responseNoAuth.status}<br>
+                    Token falso: ${responseWrongAuth.status}<br>
+                    Token correcto: ${responseCorrectAuth.status}<br>
+                    <br><strong>Diagnóstico:</strong> ${responseCorrectAuth.status === 200 ? 'Ruta funciona con auth correcta' : 'Ruta tiene problemas de configuración'}
+                    </div>`;
+
+            } catch (error) {
+                log(`Error en análisis: ${error.message}`, 'error');
+            }
+        }
+
+        // Auto-inicializar
+        window.addEventListener('load', () => {
+            log('🚀 DEBUG TOOL INICIADO');
+            log('📝 INSTRUCCIONES: Ejecutar tests en orden 1→2→3→4→5');
+        });
+    </script>
+</body>
+</html>
