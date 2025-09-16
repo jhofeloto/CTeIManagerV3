@@ -8541,6 +8541,356 @@ function closeModal() {
     }
 }
 
+// ===== GESTIÓN DE LÍNEAS DE ACCIÓN =====
+
+function renderAdminActionLinesView() {
+    document.getElementById('content').innerHTML = `
+        <div class="mb-6">
+            <div class="flex justify-between items-center">
+                <div>
+                    <h2 class="text-2xl font-bold">Gestión de Líneas de Acción</h2>
+                    <p class="text-muted-foreground">Administrar líneas estratégicas de acción para proyectos CTeI</p>
+                </div>
+                <button 
+                    onclick="showCreateActionLineModal()"
+                    class="bg-primary text-primary-foreground px-4 py-2 rounded-lg hover:opacity-90 transition-opacity"
+                >
+                    <i class="fas fa-plus mr-2"></i>
+                    Nueva Línea de Acción
+                </button>
+            </div>
+        </div>
+        
+        <!-- Lista de Líneas de Acción ---->
+        <div class="card">
+            <div class="p-6">
+                <div id="action-lines-container">
+                    <div class="text-center py-8 text-muted-foreground">
+                        <i class="fas fa-spinner fa-spin text-2xl mb-2 block"></i>
+                        Cargando líneas de acción...
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Modal para crear/editar línea de acción -->
+        <div id="action-line-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50">
+            <div class="bg-card rounded-lg shadow-xl max-w-md w-full mx-4">
+                <div class="p-6">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 id="modal-title" class="text-lg font-semibold">Nueva Línea de Acción</h3>
+                        <button onclick="closeActionLineModal()" class="text-muted-foreground hover:text-foreground">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    
+                    <form id="action-line-form" class="space-y-4">
+                        <input type="hidden" id="action-line-id" value="">
+                        
+                        <div>
+                            <label class="block text-sm font-medium mb-1">Nombre *</label>
+                            <input 
+                                type="text" 
+                                id="action-line-name" 
+                                class="w-full px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                                placeholder="Ej: Mentalidad y Cultura"
+                                required
+                            >
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium mb-1">Descripción *</label>
+                            <textarea 
+                                id="action-line-description" 
+                                rows="3"
+                                class="w-full px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                                placeholder="Describe el propósito de esta línea de acción..."
+                                required
+                            ></textarea>
+                        </div>
+                        
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium mb-1">Ícono</label>
+                                <select 
+                                    id="action-line-icon" 
+                                    class="w-full px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                                >
+                                    <option value="fas fa-brain">🧠 Cerebro</option>
+                                    <option value="fas fa-handshake">🤝 Colaboración</option>
+                                    <option value="fas fa-coins">💰 Finanzas</option>
+                                    <option value="fas fa-globe">🌍 Global</option>
+                                    <option value="fas fa-chart-line">📈 Crecimiento</option>
+                                    <option value="fas fa-rocket">🚀 Innovación</option>
+                                    <option value="fas fa-users">👥 Usuarios</option>
+                                    <option value="fas fa-cog">⚙️ Configuración</option>
+                                </select>
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-medium mb-1">Color</label>
+                                <input 
+                                    type="color" 
+                                    id="action-line-color" 
+                                    class="w-full h-[42px] px-1 py-1 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                                    value="#3B82F6"
+                                >
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium mb-1">Orden de Visualización</label>
+                            <input 
+                                type="number" 
+                                id="action-line-order" 
+                                class="w-full px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                                placeholder="0"
+                                min="0"
+                            >
+                        </div>
+                        
+                        <div class="flex justify-end space-x-3 pt-4">
+                            <button 
+                                type="button" 
+                                onclick="closeActionLineModal()"
+                                class="px-4 py-2 text-muted-foreground hover:text-foreground transition-colors"
+                            >
+                                Cancelar
+                            </button>
+                            <button 
+                                type="submit"
+                                class="bg-primary text-primary-foreground px-4 py-2 rounded-lg hover:opacity-90 transition-opacity"
+                            >
+                                <i class="fas fa-save mr-2"></i>
+                                Guardar
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    // Cargar líneas de acción existentes
+    loadActionLines();
+    
+    // Agregar event listener al formulario
+    document.getElementById('action-line-form').addEventListener('submit', handleActionLineSubmit);
+}
+
+async function loadActionLines() {
+    try {
+        const response = await axios.get(`${API_BASE}/private/action-lines`, {
+            headers: {
+                'Authorization': `Bearer ${getAuthToken()}`
+            }
+        });
+        
+        if (response.data.success) {
+            renderActionLinesList(response.data.data);
+        } else {
+            throw new Error(response.data.error);
+        }
+    } catch (error) {
+        console.error('Error cargando líneas de acción:', error);
+        document.getElementById('action-lines-container').innerHTML = `
+            <div class="text-center py-8 text-destructive">
+                <i class="fas fa-exclamation-triangle text-2xl mb-2 block"></i>
+                <p class="font-medium">Error cargando líneas de acción</p>
+                <p class="text-sm">${error.response?.data?.error || error.message}</p>
+                <button onclick="loadActionLines()" class="mt-3 text-primary hover:underline">
+                    Reintentar
+                </button>
+            </div>
+        `;
+    }
+}
+
+function renderActionLinesList(actionLines) {
+    const container = document.getElementById('action-lines-container');
+    
+    if (actionLines.length === 0) {
+        container.innerHTML = `
+            <div class="text-center py-8 text-muted-foreground">
+                <i class="fas fa-road text-3xl mb-3 block opacity-50"></i>
+                <h3 class="font-medium mb-2">No hay líneas de acción configuradas</h3>
+                <p class="text-sm mb-4">Crea la primera línea de acción para comenzar</p>
+                <button 
+                    onclick="showCreateActionLineModal()"
+                    class="bg-primary text-primary-foreground px-4 py-2 rounded-lg hover:opacity-90 transition-opacity"
+                >
+                    <i class="fas fa-plus mr-2"></i>
+                    Crear Primera Línea
+                </button>
+            </div>
+        `;
+        return;
+    }
+    
+    container.innerHTML = `
+        <div class="space-y-4">
+            ${actionLines.map(actionLine => `
+                <div class="flex items-center justify-between p-4 border border-border rounded-lg hover:shadow-sm transition-shadow">
+                    <div class="flex items-center space-x-4">
+                        <div class="w-12 h-12 rounded-full flex items-center justify-center" style="background-color: ${actionLine.color}20; color: ${actionLine.color}">
+                            <i class="${actionLine.icon}"></i>
+                        </div>
+                        <div>
+                            <h4 class="font-medium">${actionLine.name}</h4>
+                            <p class="text-sm text-muted-foreground">${actionLine.description}</p>
+                            <div class="flex items-center space-x-4 mt-1">
+                                <span class="text-xs text-muted-foreground">Orden: ${actionLine.display_order}</span>
+                                <span class="text-xs text-muted-foreground">
+                                    ${actionLine.is_active ? '✅ Activa' : '❌ Inactiva'}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="flex space-x-2">
+                        <button 
+                            onclick="editActionLine(${actionLine.id})"
+                            class="p-2 text-muted-foreground hover:text-foreground hover:bg-accent rounded-lg transition-colors"
+                            title="Editar"
+                        >
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button 
+                            onclick="toggleActionLineStatus(${actionLine.id}, ${actionLine.is_active})"
+                            class="p-2 text-muted-foreground hover:text-foreground hover:bg-accent rounded-lg transition-colors"
+                            title="${actionLine.is_active ? 'Desactivar' : 'Activar'}"
+                        >
+                            <i class="fas fa-${actionLine.is_active ? 'eye-slash' : 'eye'}"></i>
+                        </button>
+                        <button 
+                            onclick="deleteActionLine(${actionLine.id}, '${actionLine.name}')"
+                            class="p-2 text-destructive hover:bg-destructive hover:text-destructive-foreground rounded-lg transition-colors"
+                            title="Eliminar"
+                        >
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                </div>
+            `).join('')}
+        </div>
+    `;
+}
+
+function showCreateActionLineModal() {
+    document.getElementById('modal-title').textContent = 'Nueva Línea de Acción';
+    document.getElementById('action-line-id').value = '';
+    document.getElementById('action-line-form').reset();
+    document.getElementById('action-line-color').value = '#3B82F6';
+    document.getElementById('action-line-modal').classList.remove('hidden');
+}
+
+async function editActionLine(id) {
+    try {
+        const response = await axios.get(`${API_BASE}/private/action-lines/${id}`, {
+            headers: {
+                'Authorization': `Bearer ${getAuthToken()}`
+            }
+        });
+        
+        if (response.data.success) {
+            const actionLine = response.data.data;
+            document.getElementById('modal-title').textContent = 'Editar Línea de Acción';
+            document.getElementById('action-line-id').value = actionLine.id;
+            document.getElementById('action-line-name').value = actionLine.name;
+            document.getElementById('action-line-description').value = actionLine.description;
+            document.getElementById('action-line-icon').value = actionLine.icon;
+            document.getElementById('action-line-color').value = actionLine.color;
+            document.getElementById('action-line-order').value = actionLine.display_order;
+            document.getElementById('action-line-modal').classList.remove('hidden');
+        }
+    } catch (error) {
+        showAlert('Error cargando línea de acción: ' + (error.response?.data?.error || error.message), 'error');
+    }
+}
+
+function closeActionLineModal() {
+    document.getElementById('action-line-modal').classList.add('hidden');
+}
+
+async function handleActionLineSubmit(event) {
+    event.preventDefault();
+    
+    const id = document.getElementById('action-line-id').value;
+    const data = {
+        name: document.getElementById('action-line-name').value,
+        description: document.getElementById('action-line-description').value,
+        icon: document.getElementById('action-line-icon').value,
+        color: document.getElementById('action-line-color').value,
+        display_order: parseInt(document.getElementById('action-line-order').value) || 0
+    };
+    
+    try {
+        const url = id ? `${API_BASE}/private/action-lines/${id}` : `${API_BASE}/private/action-lines`;
+        const method = id ? 'PUT' : 'POST';
+        
+        const response = await axios({
+            method,
+            url,
+            data,
+            headers: {
+                'Authorization': `Bearer ${getAuthToken()}`,
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        if (response.data.success) {
+            showAlert(response.data.message, 'success');
+            closeActionLineModal();
+            loadActionLines();
+        } else {
+            throw new Error(response.data.error);
+        }
+    } catch (error) {
+        console.error('Error guardando línea de acción:', error);
+        showAlert('Error guardando línea de acción: ' + (error.response?.data?.error || error.message), 'error');
+    }
+}
+
+async function toggleActionLineStatus(id, currentStatus) {
+    try {
+        const response = await axios.put(`${API_BASE}/private/action-lines/${id}`, {
+            is_active: currentStatus ? 0 : 1
+        }, {
+            headers: {
+                'Authorization': `Bearer ${getAuthToken()}`,
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        if (response.data.success) {
+            showAlert(response.data.message, 'success');
+            loadActionLines();
+        }
+    } catch (error) {
+        showAlert('Error actualizando estado: ' + (error.response?.data?.error || error.message), 'error');
+    }
+}
+
+async function deleteActionLine(id, name) {
+    if (!confirm(`¿Estás seguro de eliminar la línea de acción "${name}"?\n\nEsta acción no se puede deshacer.`)) {
+        return;
+    }
+    
+    try {
+        const response = await axios.delete(`${API_BASE}/private/action-lines/${id}`, {
+            headers: {
+                'Authorization': `Bearer ${getAuthToken()}`
+            }
+        });
+        
+        if (response.data.success) {
+            showAlert(response.data.message, 'success');
+            loadActionLines();
+        }
+    } catch (error) {
+        showAlert('Error eliminando línea de acción: ' + (error.response?.data?.error || error.message), 'error');
+    }
+}
+
 // Función de inicialización principal del dashboard
 function initializeDashboard() {
     console.log('🚀 Inicializando dashboard...');

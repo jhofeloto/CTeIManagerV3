@@ -3428,6 +3428,42 @@ app.get('/dashboard/proyectos/:id/editar', async (c) => {
                     </div>
                 </div>
                 
+                <!-- Panel de Línea de Acción -->
+                <div class="panel">
+                    <div class="panel-title">
+                        <i class="fas fa-road text-primary"></i>
+                        Línea de Acción Estratégica
+                    </div>
+                    
+                    <div class="form-field">
+                        <label for="project-action-line" class="form-label">
+                            <i class="fas fa-flag text-primary mr-2"></i>
+                            Seleccionar Línea de Acción
+                        </label>
+                        <select id="project-action-line" name="action_line_id" class="form-select">
+                            <option value="">Sin línea de acción asignada</option>
+                        </select>
+                        <div class="text-xs text-muted-foreground mt-1">
+                            <i class="fas fa-info-circle mr-1"></i>
+                            Las líneas de acción definen el enfoque estratégico del proyecto dentro del sistema CTeI.
+                        </div>
+                    </div>
+                    
+                    <div id="selected-action-line-info" class="mt-3" style="display: none;">
+                        <div class="bg-accent/10 border border-accent/20 rounded-lg p-3">
+                            <div class="flex items-center space-x-3">
+                                <div id="action-line-icon" class="w-10 h-10 rounded-full flex items-center justify-center">
+                                    <i class="fas fa-road"></i>
+                                </div>
+                                <div class="flex-1">
+                                    <h4 id="action-line-name" class="font-medium text-sm">Nombre de la línea</h4>
+                                    <p id="action-line-description" class="text-xs text-muted-foreground mt-0.5">Descripción de la línea de acción</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
                 <!-- Panel de Evaluación y Scoring -->
                 <div class="panel">
                     <div class="panel-title">
@@ -4049,6 +4085,10 @@ app.get('/dashboard/proyectos/:id/editar', async (c) => {
                 // Inicializar scoring después de cargar el proyecto
                 console.log('📊 Inicializando scoring después de poblar formulario');
                 initScoringAfterProjectLoad();
+                
+                // Cargar líneas de acción después de poblar formulario
+                console.log('🎯 Cargando líneas de acción disponibles');
+                loadActionLines();
             }
             
             // Actualizar título de la página
@@ -4067,6 +4107,132 @@ app.get('/dashboard/proyectos/:id/editar', async (c) => {
                     viewPublicBtn.href = publicUrl;
                     viewPublicBtn.style.display = 'inline-flex';
                 }
+            }
+            
+            // Cargar líneas de acción disponibles
+            async function loadActionLines() {
+                console.log('🎯 Cargando líneas de acción disponibles...');
+                
+                try {
+                    const response = await axios.get(\`\${API_BASE}/private/action-lines\`);
+                    
+                    if (response.data.success) {
+                        const actionLines = response.data.data.actionLines || [];
+                        console.log(\`✅ Líneas de acción cargadas: \${actionLines.length} disponibles\`);
+                        populateActionLinesSelect(actionLines);
+                        
+                        // Seleccionar línea de acción actual del proyecto si existe
+                        if (currentProject && currentProject.action_line_id) {
+                            const select = document.getElementById('project-action-line');
+                            if (select) {
+                                select.value = currentProject.action_line_id;
+                                // Mostrar información de la línea de acción seleccionada
+                                showActionLineInfo(actionLines.find(al => al.id == currentProject.action_line_id));
+                            }
+                        }
+                    } else {
+                        console.warn('⚠️ Error al cargar líneas de acción:', response.data.message);
+                        showActionLinesError('No se pudieron cargar las líneas de acción disponibles');
+                    }
+                } catch (error) {
+                    console.error('❌ Error cargando líneas de acción:', error);
+                    showActionLinesError('Error de conexión al cargar líneas de acción');
+                }
+            }
+            
+            // Poblar selector de líneas de acción
+            function populateActionLinesSelect(actionLines) {
+                const select = document.getElementById('project-action-line');
+                if (!select) {
+                    console.warn('⚠️ Elemento select de líneas de acción no encontrado');
+                    return;
+                }
+                
+                // Limpiar opciones existentes excepto la primera
+                select.innerHTML = '<option value="">Sin línea de acción asignada</option>';
+                
+                // Agregar opciones de líneas de acción
+                actionLines.forEach(actionLine => {
+                    const option = document.createElement('option');
+                    option.value = actionLine.id;
+                    option.textContent = actionLine.name;
+                    option.dataset.description = actionLine.description;
+                    option.dataset.icon = actionLine.icon;
+                    option.dataset.color = actionLine.color;
+                    select.appendChild(option);
+                });
+                
+                // Agregar event listener para cambios
+                select.addEventListener('change', handleActionLineChange);
+                
+                console.log(\`📝 Selector de líneas de acción poblado con \${actionLines.length} opciones\`);
+            }
+            
+            // Manejar cambio de línea de acción
+            function handleActionLineChange(event) {
+                const select = event.target;
+                const selectedOption = select.options[select.selectedIndex];
+                
+                if (selectedOption.value) {
+                    const actionLineData = {
+                        id: selectedOption.value,
+                        name: selectedOption.textContent,
+                        description: selectedOption.dataset.description,
+                        icon: selectedOption.dataset.icon,
+                        color: selectedOption.dataset.color
+                    };
+                    
+                    showActionLineInfo(actionLineData);
+                } else {
+                    hideActionLineInfo();
+                }
+                
+                // Marcar cambio en el formulario
+                handleFormChange();
+            }
+            
+            // Mostrar información de línea de acción seleccionada
+            function showActionLineInfo(actionLine) {
+                if (!actionLine) return;
+                
+                const infoPanel = document.getElementById('selected-action-line-info');
+                const iconElement = document.getElementById('action-line-icon');
+                const nameElement = document.getElementById('action-line-name');
+                const descriptionElement = document.getElementById('action-line-description');
+                
+                if (!infoPanel || !iconElement || !nameElement || !descriptionElement) return;
+                
+                // Actualizar el icono con color dinámico
+                iconElement.className = \`w-10 h-10 rounded-full flex items-center justify-center bg-\${actionLine.color}-500 text-white\`;
+                iconElement.querySelector('i').className = \`\${actionLine.icon}\`;
+                
+                // Actualizar nombre y descripción
+                nameElement.textContent = actionLine.name;
+                nameElement.className = \`font-medium text-sm text-\${actionLine.color}-900\`;
+                
+                descriptionElement.textContent = actionLine.description;
+                descriptionElement.className = \`text-xs mt-0.5 text-\${actionLine.color}-700\`;
+                
+                // Mostrar el panel
+                infoPanel.style.display = 'block';
+            }
+            
+            // Ocultar información de línea de acción
+            function hideActionLineInfo() {
+                const infoPanel = document.getElementById('selected-action-line-info');
+                if (infoPanel) {
+                    infoPanel.style.display = 'none';
+                }
+            }
+            
+            // Mostrar error de líneas de acción
+            function showActionLinesError(message) {
+                const select = document.getElementById('project-action-line');
+                if (select) {
+                    select.innerHTML = '<option value="">Error al cargar líneas de acción</option>';
+                    select.disabled = true;
+                }
+                console.error('❌ Error líneas de acción:', message);
             }
             
             // Inicializar formulario
@@ -4228,7 +4394,8 @@ app.get('/dashboard/proyectos/:id/editar', async (c) => {
                         methodology: formData.get('methodology') || null,
                         status: formData.get('status'),
                         keywords: keywords.join(', ') || null,
-                        is_public: formData.get('visibility') === 'public'
+                        is_public: formData.get('visibility') === 'public',
+                        action_line_id: formData.get('action_line_id') || null
                     };
                     
                     const response = await axios.put(\`\${API_BASE}/private/projects/\${PROJECT_ID}\`, projectData);

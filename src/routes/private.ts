@@ -3394,4 +3394,238 @@ function determineProductEvaluationCategory(totalScore: number): string {
   return 'NECESITA_MEJORA';
 }
 
+// ===== SISTEMA DE LÍNEAS DE ACCIÓN =====
+
+// Obtener todas las líneas de acción
+privateRoutes.get('/action-lines', async (c) => {
+  try {
+    const user = c.get('user')!;
+    
+    // Solo usuarios autenticados pueden ver las líneas de acción
+    const actionLines = await c.env.DB.prepare(`
+      SELECT id, name, description, icon, color, is_active, display_order
+      FROM action_lines 
+      WHERE is_active = 1 
+      ORDER BY display_order ASC, name ASC
+    `).all();
+
+    return c.json({
+      success: true,
+      data: actionLines.results
+    });
+
+  } catch (error) {
+    console.error('Error obteniendo líneas de acción:', error);
+    return c.json({ success: false, error: 'Error interno del servidor' }, 500);
+  }
+});
+
+// Obtener línea de acción por ID
+privateRoutes.get('/action-lines/:id', async (c) => {
+  try {
+    const { id } = c.req.param();
+    const user = c.get('user')!;
+    
+    const actionLine = await c.env.DB.prepare(`
+      SELECT id, name, description, icon, color, is_active, display_order, created_at, updated_at
+      FROM action_lines 
+      WHERE id = ?
+    `).bind(id).first();
+
+    if (!actionLine) {
+      return c.json({ success: false, error: 'Línea de acción no encontrada' }, 404);
+    }
+
+    return c.json({
+      success: true,
+      data: actionLine
+    });
+
+  } catch (error) {
+    console.error('Error obteniendo línea de acción:', error);
+    return c.json({ success: false, error: 'Error interno del servidor' }, 500);
+  }
+});
+
+// Crear nueva línea de acción (solo ADMIN)
+privateRoutes.post('/action-lines', requireRole('ADMIN'), async (c) => {
+  try {
+    const user = c.get('user')!;
+    const body = await c.req.json();
+    
+    const { name, description, icon, color, display_order } = body;
+    
+    // Validaciones
+    if (!name || !description) {
+      return c.json({ 
+        success: false, 
+        error: 'Nombre y descripción son obligatorios' 
+      }, 400);
+    }
+
+    // Verificar que el nombre no exista
+    const existing = await c.env.DB.prepare(`
+      SELECT id FROM action_lines WHERE name = ?
+    `).bind(name).first();
+
+    if (existing) {
+      return c.json({ 
+        success: false, 
+        error: 'Ya existe una línea de acción con ese nombre' 
+      }, 409);
+    }
+
+    // Insertar nueva línea de acción
+    const result = await c.env.DB.prepare(`
+      INSERT INTO action_lines (name, description, icon, color, display_order)
+      VALUES (?, ?, ?, ?, ?)
+    `).bind(
+      name,
+      description,
+      icon || 'fas fa-cog',
+      color || '#3B82F6',
+      display_order || 0
+    ).run();
+
+    // Obtener la línea de acción creada
+    const newActionLine = await c.env.DB.prepare(`
+      SELECT id, name, description, icon, color, is_active, display_order, created_at, updated_at
+      FROM action_lines 
+      WHERE id = ?
+    `).bind(result.meta.last_row_id).first();
+
+    return c.json({
+      success: true,
+      data: newActionLine,
+      message: 'Línea de acción creada exitosamente'
+    });
+
+  } catch (error) {
+    console.error('Error creando línea de acción:', error);
+    return c.json({ success: false, error: 'Error interno del servidor' }, 500);
+  }
+});
+
+// Actualizar línea de acción (solo ADMIN)
+privateRoutes.put('/action-lines/:id', requireRole('ADMIN'), async (c) => {
+  try {
+    const { id } = c.req.param();
+    const user = c.get('user')!;
+    const body = await c.req.json();
+    
+    const { name, description, icon, color, display_order, is_active } = body;
+    
+    // Verificar que la línea de acción existe
+    const existing = await c.env.DB.prepare(`
+      SELECT id FROM action_lines WHERE id = ?
+    `).bind(id).first();
+
+    if (!existing) {
+      return c.json({ 
+        success: false, 
+        error: 'Línea de acción no encontrada' 
+      }, 404);
+    }
+
+    // Verificar que el nombre no esté en uso por otra línea de acción
+    if (name) {
+      const nameConflict = await c.env.DB.prepare(`
+        SELECT id FROM action_lines WHERE name = ? AND id != ?
+      `).bind(name, id).first();
+
+      if (nameConflict) {
+        return c.json({ 
+          success: false, 
+          error: 'Ya existe otra línea de acción con ese nombre' 
+        }, 409);
+      }
+    }
+
+    // Actualizar línea de acción
+    await c.env.DB.prepare(`
+      UPDATE action_lines 
+      SET 
+        name = COALESCE(?, name),
+        description = COALESCE(?, description),
+        icon = COALESCE(?, icon),
+        color = COALESCE(?, color),
+        display_order = COALESCE(?, display_order),
+        is_active = COALESCE(?, is_active),
+        updated_at = datetime('now')
+      WHERE id = ?
+    `).bind(
+      name,
+      description, 
+      icon,
+      color,
+      display_order,
+      is_active,
+      id
+    ).run();
+
+    // Obtener la línea de acción actualizada
+    const updatedActionLine = await c.env.DB.prepare(`
+      SELECT id, name, description, icon, color, is_active, display_order, created_at, updated_at
+      FROM action_lines 
+      WHERE id = ?
+    `).bind(id).first();
+
+    return c.json({
+      success: true,
+      data: updatedActionLine,
+      message: 'Línea de acción actualizada exitosamente'
+    });
+
+  } catch (error) {
+    console.error('Error actualizando línea de acción:', error);
+    return c.json({ success: false, error: 'Error interno del servidor' }, 500);
+  }
+});
+
+// Eliminar línea de acción (solo ADMIN)
+privateRoutes.delete('/action-lines/:id', requireRole('ADMIN'), async (c) => {
+  try {
+    const { id } = c.req.param();
+    const user = c.get('user')!;
+    
+    // Verificar que la línea de acción existe
+    const existing = await c.env.DB.prepare(`
+      SELECT id, name FROM action_lines WHERE id = ?
+    `).bind(id).first();
+
+    if (!existing) {
+      return c.json({ 
+        success: false, 
+        error: 'Línea de acción no encontrada' 
+      }, 404);
+    }
+
+    // Verificar si hay proyectos asociados
+    const associatedProjects = await c.env.DB.prepare(`
+      SELECT COUNT(*) as count FROM projects WHERE action_line_id = ?
+    `).bind(id).first();
+
+    if (associatedProjects && associatedProjects.count > 0) {
+      return c.json({ 
+        success: false, 
+        error: `No se puede eliminar la línea de acción. Hay ${associatedProjects.count} proyecto(s) asociado(s)` 
+      }, 400);
+    }
+
+    // Eliminar línea de acción
+    await c.env.DB.prepare(`
+      DELETE FROM action_lines WHERE id = ?
+    `).bind(id).run();
+
+    return c.json({
+      success: true,
+      message: `Línea de acción "${existing.name}" eliminada exitosamente`
+    });
+
+  } catch (error) {
+    console.error('Error eliminando línea de acción:', error);
+    return c.json({ success: false, error: 'Error interno del servidor' }, 500);
+  }
+});
+
 export { privateRoutes };
