@@ -2456,13 +2456,24 @@ privateRoutes.post('/projects/:projectId/calculate-score', async (c) => {
     const { projectId } = c.req.param();
     const user = c.get('user')!;
     
-    // Verificar permisos
-    const project = await c.env.DB.prepare(`
-      SELECT p.*, pc.can_edit_project
-      FROM projects p
-      LEFT JOIN project_collaborators pc ON p.id = pc.project_id AND pc.user_id = ?
-      WHERE p.id = ? AND (p.owner_id = ? OR pc.user_id = ?)
-    `).bind(user.userId, projectId, user.userId, user.userId).first();
+    // Verificar permisos - admins pueden acceder a todos los proyectos
+    let project;
+    if (user.role === 'ADMIN') {
+      // Los administradores pueden acceder a cualquier proyecto
+      project = await c.env.DB.prepare(`
+        SELECT p.*
+        FROM projects p
+        WHERE p.id = ?
+      `).bind(projectId).first();
+    } else {
+      // Los investigadores solo pueden acceder a sus proyectos o aquellos donde colaboran
+      project = await c.env.DB.prepare(`
+        SELECT p.*, pc.can_edit_project
+        FROM projects p
+        LEFT JOIN project_collaborators pc ON p.id = pc.project_id AND pc.user_id = ?
+        WHERE p.id = ? AND (p.owner_id = ? OR pc.user_id = ?)
+      `).bind(user.userId, projectId, user.userId, user.userId).first();
+    }
     
     if (!project) {
       return c.json({ success: false, error: 'Proyecto no encontrado o sin permisos' }, 404);
@@ -2532,12 +2543,21 @@ privateRoutes.get('/projects/:projectId/score', async (c) => {
     const { projectId } = c.req.param();
     const user = c.get('user')!;
     
-    // Verificar acceso al proyecto
-    const hasAccess = await c.env.DB.prepare(`
-      SELECT 1 FROM projects p
-      LEFT JOIN project_collaborators pc ON p.id = pc.project_id AND pc.user_id = ?
-      WHERE p.id = ? AND (p.owner_id = ? OR pc.user_id = ?)
-    `).bind(user.userId, projectId, user.userId, user.userId).first();
+    // Verificar acceso al proyecto - admins pueden acceder a todos
+    let hasAccess;
+    if (user.role === 'ADMIN') {
+      // Los administradores pueden acceder a cualquier proyecto
+      hasAccess = await c.env.DB.prepare(`
+        SELECT 1 FROM projects WHERE id = ?
+      `).bind(projectId).first();
+    } else {
+      // Los investigadores solo pueden acceder a sus proyectos o aquellos donde colaboran
+      hasAccess = await c.env.DB.prepare(`
+        SELECT 1 FROM projects p
+        LEFT JOIN project_collaborators pc ON p.id = pc.project_id AND pc.user_id = ?
+        WHERE p.id = ? AND (p.owner_id = ? OR pc.user_id = ?)
+      `).bind(user.userId, projectId, user.userId, user.userId).first();
+    }
     
     if (!hasAccess) {
       return c.json({ success: false, error: 'No tienes acceso a este proyecto' }, 403);
