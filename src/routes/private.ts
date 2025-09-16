@@ -3200,7 +3200,7 @@ privateRoutes.post('/products/:productId/calculate-score', async (c) => {
       FROM products pr
       LEFT JOIN projects p ON pr.project_id = p.id
       LEFT JOIN project_collaborators pc ON p.id = pc.project_id AND pc.user_id = ?
-      WHERE pr.id = ? AND (p.owner_id = ? OR pc.user_id = ? OR pr.author_id = ?)
+      WHERE pr.id = ? AND (p.owner_id = ? OR pc.user_id = ? OR pr.creator_id = ?)
     `).bind(user.userId, productId, user.userId, user.userId, user.userId).first();
     
     if (!product) {
@@ -3288,7 +3288,7 @@ privateRoutes.get('/products/:productId/score', async (c) => {
       SELECT 1 FROM products pr
       LEFT JOIN projects p ON pr.project_id = p.id
       LEFT JOIN project_collaborators pc ON p.id = pc.project_id AND pc.user_id = ?
-      WHERE pr.id = ? AND (p.owner_id = ? OR pc.user_id = ? OR pr.author_id = ?)
+      WHERE pr.id = ? AND (p.owner_id = ? OR pc.user_id = ? OR pr.creator_id = ?)
     `).bind(user.userId, productId, user.userId, user.userId, user.userId).first();
     
     if (!hasAccess) {
