@@ -2418,6 +2418,26 @@ app.get('/dashboard', (c) => {
 
         <!-- Cargar dashboard.js donde están todas las correcciones -->
         <script src="/static/dashboard.js"></script>
+        <script>
+            // Verificar que dashboard.js se cargó correctamente
+            console.log('✅ Dashboard JavaScript cargado');
+            document.addEventListener('DOMContentLoaded', function() {
+                console.log('✅ DOM cargado, iniciando dashboard...');
+                if (typeof initializeDashboard === 'function') {
+                    initializeDashboard();
+                } else {
+                    console.log('⚠️ Función initializeDashboard no encontrada, usando método alternativo');
+                    // Método de respaldo si la función principal no está disponible
+                    setTimeout(() => {
+                        if (typeof DashboardState !== 'undefined') {
+                            console.log('✅ DashboardState encontrado');
+                        } else {
+                            console.log('❌ DashboardState no encontrado');
+                        }
+                    }, 1000);
+                }
+            });
+        </script>
     </body>
     </html>
   `)

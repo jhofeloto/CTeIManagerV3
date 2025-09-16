@@ -8580,6 +8580,20 @@ function closeModal() {
     }
 }
 
+// Función de inicialización principal del dashboard
+function initializeDashboard() {
+    console.log('🚀 Inicializando dashboard...');
+    
+    // Verificar autenticación
+    checkAuthentication();
+    
+    // Aplicar tema
+    applyDashboardTheme();
+    
+    console.log('✅ Dashboard inicializado correctamente');
+}
+
 // Exportar funciones para uso global
+window.initializeDashboard = initializeDashboard;
 window.toggleDashboardTheme = toggleDashboardTheme;
 window.applyDashboardTheme = applyDashboardTheme;
