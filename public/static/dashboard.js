@@ -8254,14 +8254,14 @@ function formatFileSize(bytes) {
 // Placeholder para funciones adicionales que se implementarán
 async function loadFilesByProjects() {
     try {
-        // Obtener lista de proyectos con archivos
-        const projectsResponse = await axios.get(`${API_BASE}/admin/projects?has_files=true&limit=50`);
+        // Obtener lista de proyectos del usuario
+        const projectsResponse = await axios.get(`${API_BASE}/me/projects`);
         
         if (!projectsResponse.data.success) {
             throw new Error('Error al cargar proyectos');
         }
         
-        const projects = projectsResponse.data.data.projects || [];
+        const projects = projectsResponse.data.data || [];
         
         document.getElementById('files-tab-content').innerHTML = `
             <div class="space-y-6">
@@ -8336,14 +8336,32 @@ async function loadFilesByProjects() {
 
 async function loadFilesByProducts() {
     try {
-        // Obtener lista de productos con archivos
-        const productsResponse = await axios.get(`${API_BASE}/admin/products?has_files=true&limit=50`);
+        // Obtener todos los productos del usuario desde todos sus proyectos
+        const projectsResponse = await axios.get(`${API_BASE}/me/projects`);
         
-        if (!productsResponse.data.success) {
-            throw new Error('Error al cargar productos');
+        if (!projectsResponse.data.success) {
+            throw new Error('Error al cargar proyectos');
         }
         
-        const products = productsResponse.data.data.products || [];
+        const projects = projectsResponse.data.data || [];
+        let products = [];
+        
+        // Obtener productos de cada proyecto del usuario
+        for (const project of projects) {
+            try {
+                const productsResponse = await axios.get(`${API_BASE}/me/projects/${project.id}/products`);
+                if (productsResponse.data.success) {
+                    const projectProducts = (productsResponse.data.data || []).map(product => ({
+                        ...product,
+                        project_title: project.title,
+                        project_id: project.id
+                    }));
+                    products.push(...projectProducts);
+                }
+            } catch (error) {
+                console.warn(`Error cargando productos del proyecto ${project.id}:`, error);
+            }
+        }
         
         document.getElementById('files-tab-content').innerHTML = `
             <div class="space-y-6">
@@ -8390,14 +8408,15 @@ async function loadFilesByProducts() {
                                         </div>
                                     </div>
                                     
-                                    <button onclick="toggleProductFiles('${product.id}')" 
-                                            class="w-full bg-primary text-primary-foreground py-2 rounded text-sm hover:opacity-90">
+                                    <button onclick="toggleProductFilesView('${product.project_id}', '${product.id}')" 
+                                            class="w-full bg-primary text-primary-foreground py-2 rounded text-sm hover:opacity-90"
+                                            id="toggle-product-${product.id}">
                                         <i class="fas fa-images mr-1"></i>
                                         Ver Archivos
                                     </button>
                                 </div>
                                 
-                                <div id="product-files-${product.id}" class="hidden border-t border-border">
+                                <div id="product-files-container-${product.id}" class="hidden border-t border-border">
                                     <!-- Los archivos se cargarán dinámicamente -->
                                 </div>
                             </div>
@@ -8453,7 +8472,7 @@ async function loadProjectFiles(projectId) {
             </div>
         `;
         
-        const response = await axios.get(`${API_BASE}/admin/files/project/${projectId}`);
+        const response = await axios.get(`${API_BASE}/me/projects/${projectId}/files`);
         
         if (response.data.success) {
             const files = response.data.data || [];
