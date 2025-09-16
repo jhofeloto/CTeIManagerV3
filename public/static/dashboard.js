@@ -1143,13 +1143,9 @@ function filterMyProducts() {
 
 // Funciones de acción para productos
 function editProduct(projectId, productId) {
-    // Buscar el producto en nuestros datos
-    const product = DashboardState.myProducts.find(p => p.id === productId);
-    if (product) {
-        showEnhancedProductModalWithAuthors(projectId, product);
-    } else {
-        showToast('Producto no encontrado', 'error');
-    }
+    // Redirigir a la página independiente de edición de producto
+    console.log('🔗 Redirigiendo a editar producto:', productId);
+    window.location.href = `/dashboard/productos/${productId}/editar`;
 }
 
 async function toggleProductVisibility(projectId, productId, makePublic) {

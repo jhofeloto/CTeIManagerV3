@@ -1581,6 +1581,317 @@ privateRoutes.get('/products', async (c) => {
   }
 });
 
+// Obtener producto específico por ID
+privateRoutes.get('/products/:productId', async (c) => {
+  try {
+    const user = c.get('user')!;
+    const productId = parseInt(c.req.param('productId'));
+    
+    console.log('🔍 Obteniendo producto ID:', productId, 'para usuario:', user.userId);
+    
+    let query: string;
+    let params: any[] = [productId];
+    
+    if (user.role === 'ADMIN') {
+      // Los administradores pueden ver cualquier producto
+      query = `
+        SELECT 
+          pr.id, pr.product_code, pr.product_type, pr.description, pr.doi, pr.url,
+          pr.publication_date, pr.journal, pr.impact_factor, pr.citation_count,
+          pr.is_public, pr.created_at, pr.updated_at, pr.project_id,
+          p.title as project_title,
+          u.full_name as creator_name, u.email as creator_email,
+          pc.name as category_name, pc.category_group, pc.impact_weight
+        FROM products pr
+        JOIN projects p ON pr.project_id = p.id
+        JOIN users u ON pr.creator_id = u.id
+        LEFT JOIN product_categories pc ON pr.product_type = pc.code
+        WHERE pr.id = ?
+      `;
+    } else {
+      // Los usuarios normales solo pueden ver sus productos o productos públicos de proyectos donde colaboran
+      query = `
+        SELECT 
+          pr.id, pr.product_code, pr.product_type, pr.description, pr.doi, pr.url,
+          pr.publication_date, pr.journal, pr.impact_factor, pr.citation_count,
+          pr.is_public, pr.created_at, pr.updated_at, pr.project_id,
+          p.title as project_title,
+          u.full_name as creator_name, u.email as creator_email,
+          pc.name as category_name, pc.category_group, pc.impact_weight
+        FROM products pr
+        JOIN projects p ON pr.project_id = p.id
+        JOIN users u ON pr.creator_id = u.id
+        LEFT JOIN product_categories pc ON pr.product_type = pc.code
+        LEFT JOIN project_collaborators pcol ON p.id = pcol.project_id AND pcol.user_id = ?
+        WHERE pr.id = ? AND (pr.creator_id = ? OR p.owner_id = ? OR pcol.user_id = ? OR pr.is_public = 1)
+      `;
+      params = [user.userId, productId, user.userId, user.userId, user.userId];
+    }
+    
+    const product = await c.env.DB.prepare(query).bind(...params).first();
+    
+    if (!product) {
+      return c.json<APIResponse>({ 
+        success: false, 
+        error: 'Producto no encontrado o sin permisos para acceder' 
+      }, 404);
+    }
+
+    return c.json<APIResponse<any>>({
+      success: true,
+      data: product
+    });
+
+  } catch (error) {
+    console.error('Error obteniendo producto:', error);
+    return c.json<APIResponse>({ 
+      success: false, 
+      error: 'Error interno del servidor' 
+    }, 500);
+  }
+});
+
+// Actualizar producto específico
+privateRoutes.put('/products/:productId', requireRole('INVESTIGATOR', 'ADMIN'), async (c) => {
+  try {
+    const user = c.get('user')!;
+    const productId = parseInt(c.req.param('productId'));
+    const body: UpdateProductRequest = await c.req.json();
+    
+    console.log('📝 Actualizando producto ID:', productId);
+    
+    // Verificar permisos sobre el producto
+    let canEdit = false;
+    if (user.role === 'ADMIN') {
+      canEdit = true;
+    } else {
+      const productCheck = await c.env.DB.prepare(`
+        SELECT pr.creator_id, p.owner_id 
+        FROM products pr
+        JOIN projects p ON pr.project_id = p.id
+        WHERE pr.id = ? AND (pr.creator_id = ? OR p.owner_id = ?)
+      `).bind(productId, user.userId, user.userId).first();
+      
+      canEdit = !!productCheck;
+    }
+    
+    if (!canEdit) {
+      return c.json<APIResponse>({ 
+        success: false, 
+        error: 'No tienes permisos para editar este producto' 
+      }, 403);
+    }
+
+    // Actualizar producto
+    const result = await c.env.DB.prepare(`
+      UPDATE products 
+      SET 
+        description = ?, product_code = ?, product_type = ?, doi = ?, 
+        url = ?, journal = ?, publication_date = ?, impact_factor = ?, 
+        is_public = ?, updated_at = datetime('now'),
+        last_editor_id = ?
+      WHERE id = ?
+    `).bind(
+      body.description, body.product_code, body.product_type, body.doi,
+      body.url, body.journal, body.publication_date, body.impact_factor,
+      body.is_public ? 1 : 0, user.userId, productId
+    ).run();
+
+    if (!result.success || result.meta.changes === 0) {
+      return c.json<APIResponse>({ 
+        success: false, 
+        error: 'No se pudo actualizar el producto' 
+      }, 400);
+    }
+
+    return c.json<APIResponse>({
+      success: true,
+      message: 'Producto actualizado exitosamente'
+    });
+
+  } catch (error) {
+    console.error('Error actualizando producto:', error);
+    return c.json<APIResponse>({ 
+      success: false, 
+      error: 'Error interno del servidor' 
+    }, 500);
+  }
+});
+
+// Obtener archivos de un producto específico
+privateRoutes.get('/products/:productId/files', async (c) => {
+  try {
+    const user = c.get('user')!;
+    const productId = parseInt(c.req.param('productId'));
+    
+    // Verificar acceso al producto
+    let hasAccess = false;
+    if (user.role === 'ADMIN') {
+      hasAccess = true;
+    } else {
+      const productCheck = await c.env.DB.prepare(`
+        SELECT 1 
+        FROM products pr
+        JOIN projects p ON pr.project_id = p.id
+        LEFT JOIN project_collaborators pc ON p.id = pc.project_id AND pc.user_id = ?
+        WHERE pr.id = ? AND (pr.creator_id = ? OR p.owner_id = ? OR pc.user_id = ? OR pr.is_public = 1)
+      `).bind(user.userId, productId, user.userId, user.userId, user.userId).first();
+      
+      hasAccess = !!productCheck;
+    }
+    
+    if (!hasAccess) {
+      return c.json({ success: false, error: 'No tienes acceso a este producto' }, 403);
+    }
+    
+    // Obtener archivos del producto usando la tabla files existente
+    const files = await c.env.DB.prepare(`
+      SELECT id, filename, original_name, file_size, mime_type, uploaded_at, uploaded_by
+      FROM files 
+      WHERE entity_type = 'product' AND entity_id = ?
+      ORDER BY uploaded_at DESC
+    `).bind(productId.toString()).all();
+
+    return c.json({
+      success: true,
+      data: {
+        files: files.results || []
+      }
+    });
+    
+  } catch (error) {
+    console.error('Error obteniendo archivos del producto:', error);
+    return c.json({ success: false, error: 'Error interno del servidor' }, 500);
+  }
+});
+
+// Subir archivo a un producto específico
+privateRoutes.post('/products/:productId/files', requireRole('INVESTIGATOR', 'ADMIN'), async (c) => {
+  try {
+    const user = c.get('user')!;
+    const productId = parseInt(c.req.param('productId'));
+    
+    // Verificar permisos sobre el producto
+    let canUpload = false;
+    if (user.role === 'ADMIN') {
+      canUpload = true;
+    } else {
+      const productCheck = await c.env.DB.prepare(`
+        SELECT pr.creator_id, p.owner_id
+        FROM products pr
+        JOIN projects p ON pr.project_id = p.id
+        WHERE pr.id = ? AND (pr.creator_id = ? OR p.owner_id = ?)
+      `).bind(productId, user.userId, user.userId).first();
+      
+      canUpload = !!productCheck;
+    }
+    
+    if (!canUpload) {
+      return c.json({ success: false, error: 'No tienes permisos para subir archivos a este producto' }, 403);
+    }
+    
+    // Procesar archivo (simplificado - en producción usar storage real)
+    const formData = await c.req.formData();
+    const file = formData.get('file') as File;
+    
+    if (!file) {
+      return c.json({ success: false, error: 'No se proporcionó ningún archivo' }, 400);
+    }
+    
+    // Validar archivo
+    const maxSize = 50 * 1024 * 1024; // 50MB
+    if (file.size > maxSize) {
+      return c.json({ success: false, error: 'El archivo es demasiado grande (máximo 50MB)' }, 400);
+    }
+    
+    // Generar nombres únicos para el archivo
+    const timestamp = Date.now();
+    const uniqueFilename = `product_${productId}_${timestamp}_${file.name}`;
+    const filePath = `/uploads/products/${productId}/${uniqueFilename}`;
+    const fileUrl = `/api/files/${uniqueFilename}`;
+    
+    // Guardar información del archivo en la base de datos usando la tabla files existente
+    const result = await c.env.DB.prepare(`
+      INSERT INTO files 
+      (filename, original_name, file_path, file_url, file_type, file_size, mime_type, 
+       entity_type, entity_id, uploaded_by, uploaded_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, 'product', ?, ?, datetime('now'))
+    `).bind(
+      uniqueFilename, file.name, filePath, fileUrl, file.type, 
+      file.size, file.type, productId.toString(), user.userId
+    ).run();
+    
+    if (!result.success) {
+      return c.json({ success: false, error: 'No se pudo guardar la información del archivo' }, 500);
+    }
+    
+    return c.json({
+      success: true,
+      message: 'Archivo subido exitosamente',
+      data: {
+        file_id: result.meta.last_row_id,
+        filename: file.name,
+        size: file.size,
+        url: fileUrl
+      }
+    });
+    
+  } catch (error) {
+    console.error('Error subiendo archivo al producto:', error);
+    return c.json({ success: false, error: 'Error interno del servidor' }, 500);
+  }
+});
+
+// Eliminar archivo de producto
+privateRoutes.delete('/products/:productId/files/:fileId', requireRole('INVESTIGATOR', 'ADMIN'), async (c) => {
+  try {
+    const user = c.get('user')!;
+    const productId = parseInt(c.req.param('productId'));
+    const fileId = parseInt(c.req.param('fileId'));
+    
+    // Verificar permisos
+    let canDelete = false;
+    if (user.role === 'ADMIN') {
+      canDelete = true;
+    } else {
+      const fileCheck = await c.env.DB.prepare(`
+        SELECT f.uploaded_by, pr.creator_id, p.owner_id
+        FROM files f
+        JOIN products pr ON f.entity_id = pr.id AND f.entity_type = 'product'
+        JOIN projects p ON pr.project_id = p.id
+        WHERE f.id = ? AND f.entity_id = ?
+      `).bind(fileId, productId.toString()).first();
+      
+      if (fileCheck && (fileCheck.uploaded_by === user.userId || fileCheck.creator_id === user.userId || fileCheck.owner_id === user.userId)) {
+        canDelete = true;
+      }
+    }
+    
+    if (!canDelete) {
+      return c.json({ success: false, error: 'No tienes permisos para eliminar este archivo' }, 403);
+    }
+    
+    // Eliminar archivo
+    const result = await c.env.DB.prepare(`
+      DELETE FROM files 
+      WHERE id = ? AND entity_type = 'product' AND entity_id = ?
+    `).bind(fileId, productId.toString()).run();
+    
+    if (!result.success || result.meta.changes === 0) {
+      return c.json({ success: false, error: 'Archivo no encontrado' }, 404);
+    }
+    
+    return c.json({
+      success: true,
+      message: 'Archivo eliminado exitosamente'
+    });
+    
+  } catch (error) {
+    console.error('Error eliminando archivo del producto:', error);
+    return c.json({ success: false, error: 'Error interno del servidor' }, 500);
+  }
+});
+
 // ===== RUTAS DE MONITOREO ESTRATÉGICO (NIVEL USUARIO) =====
 
 // Obtener líneas de acción disponibles

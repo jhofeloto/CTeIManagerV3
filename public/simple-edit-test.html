@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Simple Edit Product Test</title>
+    <script src="https://cdn.jsdelivr.net/npm/axios@1.6.0/dist/axios.min.js"></script>
+</head>
+<body>
+    <h1>Test Edit Product Fix</h1>
+    <div id="log"></div>
+    
+    <script>
+        const API_BASE = '/api';
+        let log = document.getElementById('log');
+        
+        function addLog(msg) {
+            log.innerHTML += `<p>${new Date().toLocaleTimeString()}: ${msg}</p>`;
+            console.log(msg);
+        }
+        
+        async function testEditProduct() {
+            addLog('🔄 Starting edit product test...');
+            
+            // Step 1: Login
+            try {
+                const loginResponse = await axios.post(`${API_BASE}/auth/login`, {
+                    email: 'investigador@demo.com',
+                    password: 'investigador123'
+                });
+                
+                if (loginResponse.data.success) {
+                    addLog('✅ Login successful');
+                    axios.defaults.headers.common['Authorization'] = `Bearer ${loginResponse.data.token}`;
+                } else {
+                    addLog('❌ Login failed');
+                    return;
+                }
+            } catch (e) {
+                addLog(`❌ Login error: ${e.message}`);
+                return;
+            }
+            
+            // Step 2: Get products
+            try {
+                const productsResponse = await axios.get(`${API_BASE}/private/products`);
+                if (productsResponse.data.success && productsResponse.data.products.length > 0) {
+                    const product = productsResponse.data.products[0];
+                    addLog(`✅ Found product: ${product.title} (ID: ${product.id})`);
+                    
+                    // Step 3: Test edit page route
+                    const editURL = `/dashboard/productos/${product.id}/editar`;
+                    addLog(`🔗 Testing edit URL: ${editURL}`);
+                    
+                    try {
+                        const editResponse = await fetch(editURL);
+                        if (editResponse.ok) {
+                            addLog(`✅ Edit page accessible (Status: ${editResponse.status})`);
+                            const html = await editResponse.text();
+                            
+                            if (html.includes('Editar Producto')) {
+                                addLog('✅ Edit page contains correct title');
+                            } else {
+                                addLog('❌ Edit page missing title');
+                            }
+                            
+                            if (html.includes('form')) {
+                                addLog('✅ Edit page contains form');
+                            } else {
+                                addLog('❌ Edit page missing form');
+                            }
+                            
+                        } else {
+                            addLog(`❌ Edit page not accessible (Status: ${editResponse.status})`);
+                        }
+                    } catch (e) {
+                        addLog(`❌ Edit page error: ${e.message}`);
+                    }
+                    
+                    // Step 4: Test individual product API
+                    try {
+                        const individualProductResponse = await axios.get(`${API_BASE}/private/products/${product.id}`);
+                        if (individualProductResponse.data.success) {
+                            addLog('✅ Individual product API working');
+                        } else {
+                            addLog('❌ Individual product API failed');
+                        }
+                    } catch (e) {
+                        addLog(`❌ Individual product API error: ${e.message}`);
+                    }
+                    
+                } else {
+                    addLog('❌ No products found');
+                }
+            } catch (e) {
+                addLog(`❌ Products error: ${e.message}`);
+            }
+        }
+        
+        // Start test automatically
+        testEditProduct();
+    </script>
+</body>
+</html>

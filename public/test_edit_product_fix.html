@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Editar Producto - CTeI Manager</title>
+    <script src="https://cdn.jsdelivr.net/npm/axios@1.6.0/dist/axios.min.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ccc; border-radius: 5px; }
+        .success { color: green; }
+        .error { color: red; }
+        .info { color: blue; }
+        .log { background: #f5f5f5; padding: 10px; margin: 10px 0; border-radius: 3px; }
+        button { padding: 10px 15px; margin: 5px; cursor: pointer; }
+        input { padding: 8px; margin: 5px; width: 200px; }
+    </style>
+</head>
+<body>
+    <h1>🧪 Test: Funcionalidad "Editar Producto" Corregida</h1>
+    
+    <div class="test-section">
+        <h2>📋 Credenciales de Prueba</h2>
+        <div>
+            <input type="email" id="email" placeholder="Email" value="investigador@demo.com">
+            <input type="password" id="password" placeholder="Password" value="investigador123">
+            <button onclick="login()">🔑 Login</button>
+            <div id="authStatus" class="info">Sin autenticación</div>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>🔍 Paso 1: Verificar Productos Disponibles</h2>
+        <button onclick="loadProducts()">📦 Cargar Mis Productos</button>
+        <div id="productsResult" class="log"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>✏️ Paso 2: Test Redirección "Editar Producto"</h2>
+        <p>Este test verifica que el botón "Editar Producto" redirija correctamente a la página independiente.</p>
+        <div>
+            <select id="productSelect">
+                <option value="">Selecciona un producto</option>
+            </select>
+            <button onclick="testEditRedirect()">🔗 Test Redirección de Edición</button>
+        </div>
+        <div id="redirectResult" class="log"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>🔧 Paso 3: Test Nueva Página de Edición</h2>
+        <p>Verificar que la nueva ruta /dashboard/productos/:id/editar funcione correctamente.</p>
+        <button onclick="testEditPage()">📄 Test Página de Edición</button>
+        <div id="editPageResult" class="log"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>📤 Paso 4: Test API Endpoints</h2>
+        <p>Verificar que los nuevos endpoints para gestión individual de productos funcionen.</p>
+        <button onclick="testAPIEndpoints()">🔌 Test APIs</button>
+        <div id="apiResult" class="log"></div>
+    </div>
+
+    <script>
+        const API_BASE = '/api';
+        let authToken = null;
+        let testProducts = [];
+
+        function log(elementId, message, type = 'info') {
+            const element = document.getElementById(elementId);
+            const timestamp = new Date().toLocaleTimeString();
+            element.innerHTML += `<div class="${type}">[${timestamp}] ${message}</div>`;
+            console.log(`[${type.toUpperCase()}] ${message}`);
+        }
+
+        async function login() {
+            try {
+                const email = document.getElementById('email').value;
+                const password = document.getElementById('password').value;
+                
+                log('authStatus', `🔄 Intentando login con ${email}...`);
+                
+                const response = await axios.post(`${API_BASE}/auth/login`, {
+                    email,
+                    password
+                });
+
+                if (response.data.success) {
+                    authToken = response.data.token;
+                    axios.defaults.headers.common['Authorization'] = `Bearer ${authToken}`;
+                    log('authStatus', `✅ Login exitoso como ${response.data.user.name} (${response.data.user.role})`, 'success');
+                    return true;
+                } else {
+                    log('authStatus', `❌ Error de login: ${response.data.error}`, 'error');
+                    return false;
+                }
+            } catch (error) {
+                log('authStatus', `❌ Error de conexión: ${error.message}`, 'error');
+                return false;
+            }
+        }
+
+        async function loadProducts() {
+            if (!authToken) {
+                log('productsResult', '❌ Debe hacer login primero', 'error');
+                return;
+            }
+
+            try {
+                log('productsResult', '🔄 Cargando productos del usuario...');
+                
+                const response = await axios.get(`${API_BASE}/private/products`);
+                
+                if (response.data.success) {
+                    testProducts = response.data.products;
+                    log('productsResult', `✅ ${testProducts.length} productos cargados`, 'success');
+                    
+                    // Mostrar productos
+                    testProducts.forEach((product, index) => {
+                        log('productsResult', `📦 ${index + 1}. ${product.title} (ID: ${product.id}) - Proyecto: ${product.project_title}`, 'info');
+                    });
+                    
+                    // Poblar el select
+                    const select = document.getElementById('productSelect');
+                    select.innerHTML = '<option value="">Selecciona un producto</option>';
+                    testProducts.forEach(product => {
+                        const option = document.createElement('option');
+                        option.value = product.id;
+                        option.textContent = `${product.title} (${product.id})`;
+                        select.appendChild(option);
+                    });
+                } else {
+                    log('productsResult', `❌ Error cargando productos: ${response.data.error}`, 'error');
+                }
+            } catch (error) {
+                log('productsResult', `❌ Error de conexión: ${error.message}`, 'error');
+            }
+        }
+
+        async function testEditRedirect() {
+            const productId = document.getElementById('productSelect').value;
+            if (!productId) {
+                log('redirectResult', '❌ Debe seleccionar un producto', 'error');
+                return;
+            }
+
+            log('redirectResult', `🔄 Simulando clic en "Editar Producto" para ID: ${productId}`);
+            
+            // Simular la función editProduct del dashboard.js
+            const editURL = `/dashboard/productos/${productId}/editar`;
+            log('redirectResult', `✅ URL de redirección generada: ${editURL}`, 'success');
+            log('redirectResult', `🔗 La función editProduct() ahora redirige a: window.location.href = "${editURL}"`, 'info');
+            
+            // Verificar que la URL sería accesible
+            try {
+                const testResponse = await fetch(editURL, { method: 'HEAD' });
+                if (testResponse.ok || testResponse.status === 401 || testResponse.status === 403) {
+                    log('redirectResult', `✅ Ruta accesible: ${editURL} (Status: ${testResponse.status})`, 'success');
+                } else {
+                    log('redirectResult', `⚠️ Ruta no encontrada: ${editURL} (Status: ${testResponse.status})`, 'error');
+                }
+            } catch (error) {
+                log('redirectResult', `❌ Error verificando ruta: ${error.message}`, 'error');
+            }
+        }
+
+        async function testEditPage() {
+            const productId = document.getElementById('productSelect').value;
+            if (!productId) {
+                log('editPageResult', '❌ Debe seleccionar un producto', 'error');
+                return;
+            }
+
+            try {
+                log('editPageResult', `🔄 Verificando página de edición para producto ${productId}...`);
+                
+                const editURL = `/dashboard/productos/${productId}/editar`;
+                const response = await fetch(editURL, {
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`
+                    }
+                });
+
+                if (response.ok) {
+                    const html = await response.text();
+                    
+                    // Verificar elementos clave de la página de edición
+                    const checks = [
+                        { test: html.includes('Editar Producto'), desc: 'Título de la página' },
+                        { test: html.includes('form'), desc: 'Formulario presente' },
+                        { test: html.includes('file'), desc: 'Campo de archivo' },
+                        { test: html.includes('drag'), desc: 'Área de drag & drop' },
+                        { test: html.includes('title'), desc: 'Campo título' },
+                        { test: html.includes('description'), desc: 'Campo descripción' }
+                    ];
+
+                    checks.forEach(check => {
+                        if (check.test) {
+                            log('editPageResult', `✅ ${check.desc}: PRESENTE`, 'success');
+                        } else {
+                            log('editPageResult', `❌ ${check.desc}: FALTANTE`, 'error');
+                        }
+                    });
+
+                    log('editPageResult', `✅ Página de edición cargada correctamente (${html.length} caracteres)`, 'success');
+                } else {
+                    log('editPageResult', `❌ Error cargando página: Status ${response.status}`, 'error');
+                }
+            } catch (error) {
+                log('editPageResult', `❌ Error: ${error.message}`, 'error');
+            }
+        }
+
+        async function testAPIEndpoints() {
+            const productId = document.getElementById('productSelect').value;
+            if (!productId) {
+                log('apiResult', '❌ Debe seleccionar un producto', 'error');
+                return;
+            }
+
+            const endpoints = [
+                { method: 'GET', url: `/products/${productId}`, desc: 'Obtener producto individual' },
+                { method: 'GET', url: `/products/${productId}/files`, desc: 'Obtener archivos del producto' },
+            ];
+
+            for (const endpoint of endpoints) {
+                try {
+                    log('apiResult', `🔄 Testing ${endpoint.method} ${endpoint.url}...`);
+                    
+                    const response = await axios({
+                        method: endpoint.method,
+                        url: `${API_BASE}/private${endpoint.url}`,
+                        headers: {
+                            'Authorization': `Bearer ${authToken}`
+                        }
+                    });
+
+                    if (response.data.success) {
+                        log('apiResult', `✅ ${endpoint.desc}: OK`, 'success');
+                        if (endpoint.url.includes('/files')) {
+                            log('apiResult', `📁 Archivos encontrados: ${response.data.files.length}`, 'info');
+                        }
+                    } else {
+                        log('apiResult', `⚠️ ${endpoint.desc}: ${response.data.error}`, 'error');
+                    }
+                } catch (error) {
+                    if (error.response && error.response.status === 404) {
+                        log('apiResult', `❌ ${endpoint.desc}: Endpoint no encontrado (404)`, 'error');
+                    } else {
+                        log('apiResult', `❌ ${endpoint.desc}: ${error.message}`, 'error');
+                    }
+                }
+            }
+        }
+
+        // Auto-test al cargar la página
+        window.onload = function() {
+            log('authStatus', '🚀 Test iniciado. Por favor haga login y ejecute las pruebas.', 'info');
+        };
+    </script>
+</body>
+</html>

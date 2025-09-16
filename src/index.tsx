@@ -6440,6 +6440,1176 @@ app.get('/dashboard/proyectos/:id/editar', async (c) => {
   `);
 })
 
+// Página de edición de producto (requiere autenticación en el frontend)
+app.get('/dashboard/productos/:id/editar', async (c) => {
+  const productId = c.req.param('id');
+  
+  return c.html(`
+    <!DOCTYPE html>
+    <html lang="es" id="dashboard-html">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Editar Producto Científico - CTeI-Manager</title>
+        <script src="https://cdn.tailwindcss.com"></script>
+        <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
+        <link href="/static/styles.css" rel="stylesheet">
+        <script src="https://cdn.jsdelivr.net/npm/axios@1.6.0/dist/axios.min.js"></script>
+        <!-- Quill Rich Text Editor -->
+        <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
+        <script src="https://cdn.quilljs.com/1.3.6/quill.min.js"></script>
+        <script>
+          tailwind.config = {
+            theme: {
+              extend: {
+                colors: {
+                  border: "hsl(var(--border))",
+                  input: "hsl(var(--input))",
+                  ring: "hsl(var(--ring))",
+                  background: "hsl(var(--background))",
+                  foreground: "hsl(var(--foreground))",
+                  primary: {
+                    DEFAULT: "hsl(var(--primary))",
+                    foreground: "hsl(var(--primary-foreground))",
+                  },
+                  secondary: {
+                    DEFAULT: "hsl(var(--secondary))",
+                    foreground: "hsl(var(--secondary-foreground))",
+                  },
+                  destructive: {
+                    DEFAULT: "hsl(var(--destructive))",
+                    foreground: "hsl(var(--destructive-foreground))",
+                  },
+                  muted: {
+                    DEFAULT: "hsl(var(--muted))",
+                    foreground: "hsl(var(--muted-foreground))",
+                  },
+                  accent: {
+                    DEFAULT: "hsl(var(--accent))",
+                    foreground: "hsl(var(--accent-foreground))",
+                  },
+                  popover: {
+                    DEFAULT: "hsl(var(--popover))",
+                    foreground: "hsl(var(--popover-foreground))",
+                  },
+                  card: {
+                    DEFAULT: "hsl(var(--card))",
+                    foreground: "hsl(var(--card-foreground))",
+                  },
+                }
+              }
+            }
+          }
+        </script>
+        <style>
+            /* Sistema de temas en tiempo real */
+            :root {
+                --background: 0 0% 100%;
+                --foreground: 222.2 84% 4.9%;
+                --card: 0 0% 100%;
+                --card-foreground: 222.2 84% 4.9%;
+                --popover: 0 0% 100%;
+                --popover-foreground: 222.2 84% 4.9%;
+                --primary: 179 100% 29%;
+                --primary-foreground: 210 40% 98%;
+                --secondary: 210 40% 96%;
+                --secondary-foreground: 222.2 84% 4.9%;
+                --muted: 210 40% 96%;
+                --muted-foreground: 215.4 16.3% 46.9%;
+                --accent: 210 40% 96%;
+                --accent-foreground: 222.2 84% 4.9%;
+                --destructive: 0 84.2% 60.2%;
+                --destructive-foreground: 210 40% 98%;
+                --border: 214.3 31.8% 91.4%;
+                --input: 214.3 31.8% 91.4%;
+                --ring: 179 100% 29%;
+                --radius: 0.5rem;
+                
+                --chart-1: 12 76% 61%;
+                --chart-2: 173 58% 39%;
+                --chart-3: 197 37% 24%;
+                --chart-4: 43 74% 66%;
+                --chart-5: 27 87% 67%;
+            }
+            
+            .dark {
+                --background: 222.2 84% 4.9%;
+                --foreground: 210 40% 98%;
+                --card: 222.2 84% 4.9%;
+                --card-foreground: 210 40% 98%;
+                --popover: 222.2 84% 4.9%;
+                --popover-foreground: 210 40% 98%;
+                --primary: 179 100% 29%;
+                --primary-foreground: 222.2 84% 4.9%;
+                --secondary: 217.2 32.6% 17.5%;
+                --secondary-foreground: 210 40% 98%;
+                --muted: 217.2 32.6% 17.5%;
+                --muted-foreground: 215 20.2% 65.1%;
+                --accent: 217.2 32.6% 17.5%;
+                --accent-foreground: 210 40% 98%;
+                --destructive: 0 62.8% 30.6%;
+                --destructive-foreground: 210 40% 98%;
+                --border: 217.2 32.6% 17.5%;
+                --input: 217.2 32.6% 17.5%;
+                --ring: 179 100% 29%;
+            }
+            
+            /* Layout principal */
+            .edit-layout {
+                display: grid;
+                grid-template-columns: 1fr 400px;
+                gap: 2rem;
+                padding: 2rem;
+                max-width: 1400px;
+                margin: 0 auto;
+            }
+            
+            .main-column {
+                min-width: 0;
+            }
+            
+            .sidebar-column {
+                min-width: 350px;
+            }
+            
+            .panel {
+                background: hsl(var(--card));
+                border: 1px solid hsl(var(--border));
+                border-radius: calc(var(--radius) * 1.5);
+                padding: 1.5rem;
+                margin-bottom: 1.5rem;
+                box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+            }
+            
+            .panel-title {
+                font-size: 1rem;
+                font-weight: 600;
+                color: hsl(var(--foreground));
+                margin-bottom: 1rem;
+                display: flex;
+                align-items: center;
+                gap: 0.5rem;
+            }
+            
+            .form-field {
+                margin-bottom: 1.5rem;
+            }
+            
+            .form-label {
+                display: block;
+                font-size: 0.875rem;
+                font-weight: 500;
+                color: hsl(var(--foreground));
+                margin-bottom: 0.5rem;
+            }
+            
+            .form-input, .form-textarea, .form-select {
+                width: 100%;
+                padding: 0.75rem;
+                border: 1px solid hsl(var(--border));
+                border-radius: calc(var(--radius));
+                background: hsl(var(--background));
+                color: hsl(var(--foreground));
+                font-size: 0.875rem;
+                transition: all 0.2s;
+            }
+            
+            .form-input:focus, .form-textarea:focus, .form-select:focus {
+                outline: none;
+                border-color: hsl(var(--ring));
+                box-shadow: 0 0 0 2px hsl(var(--ring) / 0.2);
+            }
+            
+            .form-textarea {
+                resize: vertical;
+                min-height: 120px;
+            }
+            
+            .btn {
+                padding: 0.75rem 1.5rem;
+                border-radius: calc(var(--radius));
+                font-weight: 500;
+                font-size: 0.875rem;
+                border: none;
+                cursor: pointer;
+                display: inline-flex;
+                align-items: center;
+                gap: 0.5rem;
+                transition: all 0.2s;
+                text-decoration: none;
+            }
+            
+            .btn-primary {
+                background: hsl(var(--primary));
+                color: hsl(var(--primary-foreground));
+            }
+            
+            .btn-primary:hover {
+                opacity: 0.9;
+            }
+            
+            .btn-primary:disabled {
+                opacity: 0.5;
+                cursor: not-allowed;
+                background: hsl(var(--muted));
+                color: hsl(var(--muted-foreground));
+                border: 1px solid hsl(var(--border));
+            }
+            
+            .btn-secondary {
+                background: transparent;
+                color: hsl(var(--muted-foreground));
+                border: 1px solid hsl(var(--border));
+            }
+            
+            .btn-secondary:hover {
+                background: hsl(var(--accent));
+                color: hsl(var(--accent-foreground));
+            }
+            
+            /* Drag and drop styles */
+            .upload-area {
+                border: 2px dashed hsl(var(--border));
+                border-radius: calc(var(--radius));
+                padding: 3rem;
+                text-align: center;
+                background: hsl(var(--muted) / 0.3);
+                transition: all 0.3s ease;
+                cursor: pointer;
+            }
+            
+            .upload-area:hover, .upload-area.drag-over {
+                border-color: hsl(var(--primary));
+                background: hsl(var(--primary) / 0.1);
+            }
+            
+            .file-item {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                padding: 0.75rem;
+                background: hsl(var(--card));
+                border: 1px solid hsl(var(--border));
+                border-radius: calc(var(--radius));
+                margin-bottom: 0.5rem;
+            }
+            
+            .file-item:hover {
+                background: hsl(var(--accent));
+            }
+        </style>
+    </head>
+    <body class="level-0 bg-background text-foreground">
+        <!-- Navbar -->
+        <nav class="ctei-navbar sticky top-0 z-50">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex justify-between h-16">
+                    <div class="flex items-center">
+                        <a href="/dashboard" class="flex items-center">
+                            <h1 class="text-xl font-bold text-foreground">
+                                <i class="fas fa-dna mr-2 text-primary"></i>
+                                CTeI-Manager
+                            </h1>
+                        </a>
+                    </div>
+                    <div class="flex items-center space-x-4">
+                        <!-- Toggle de modo oscuro -->
+                        <button id="theme-toggle" class="ctei-theme-toggle ml-4" title="Cambiar tema">
+                            <i class="fas fa-moon" id="theme-icon"></i>
+                        </button>
+                        
+                        <a href="/dashboard" class="ctei-btn-secondary">
+                            <i class="fas fa-arrow-left mr-2"></i>Volver al Dashboard
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Breadcrumb -->
+        <div class="bg-muted border-b">
+            <div class="max-w-6xl mx-auto px-4 py-3">
+                <nav class="flex" aria-label="Breadcrumb">
+                    <ol class="inline-flex items-center space-x-1 md:space-x-3">
+                        <li class="inline-flex items-center">
+                            <a href="/dashboard" class="text-muted-foreground hover:text-primary">Dashboard</a>
+                        </li>
+                        <li>
+                            <div class="flex items-center">
+                                <i class="fas fa-chevron-right text-muted-foreground mx-2"></i>
+                                <span class="text-muted-foreground">Mis Productos</span>
+                            </div>
+                        </li>
+                        <li aria-current="page">
+                            <div class="flex items-center">
+                                <i class="fas fa-chevron-right text-muted-foreground mx-2"></i>
+                                <span id="page-title" class="text-foreground font-medium">Editando Producto...</span>
+                            </div>
+                        </li>
+                    </ol>
+                </nav>
+            </div>
+        </div>
+
+        <!-- Header -->
+        <div class="bg-gradient-to-r from-primary/10 to-accent/10 py-8">
+            <div class="max-w-6xl mx-auto px-4">
+                <div class="flex justify-between items-center">
+                    <div>
+                        <h1 id="header-title" class="text-3xl font-bold text-foreground mb-2">
+                            <i class="fas fa-edit text-primary mr-3"></i>
+                            Editar Producto Científico
+                        </h1>
+                        <p class="text-muted-foreground">
+                            Modifica los detalles de tu producto científico y gestiona sus archivos
+                        </p>
+                    </div>
+                    <div class="flex items-center space-x-3">
+                        <button id="view-public-btn" class="btn btn-secondary" style="display: none;">
+                            <i class="fas fa-eye mr-2"></i>Ver Público
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Contenido Principal -->
+        <div class="edit-layout">
+            <!-- Columna Principal -->
+            <div class="main-column">
+                <!-- Panel de Información Básica -->
+                <div class="panel">
+                    <div class="panel-title">
+                        <i class="fas fa-info-circle text-primary"></i>
+                        Información General
+                    </div>
+                    
+                    <form id="edit-product-form">
+                        <div class="form-field">
+                            <label for="product-description" class="form-label">
+                                <i class="fas fa-align-left text-primary mr-2"></i>
+                                Descripción del Producto *
+                            </label>
+                            <textarea id="product-description" name="description" class="form-textarea" required
+                                placeholder="Describe detalladamente tu producto científico..."></textarea>
+                        </div>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div class="form-field">
+                                <label for="product-code" class="form-label">
+                                    <i class="fas fa-barcode text-primary mr-2"></i>
+                                    Código del Producto *
+                                </label>
+                                <input type="text" id="product-code" name="product_code" class="form-input" required
+                                    placeholder="Ej: ART-ML-001">
+                            </div>
+                            
+                            <div class="form-field">
+                                <label for="product-type" class="form-label">
+                                    <i class="fas fa-tags text-primary mr-2"></i>
+                                    Tipo de Producto *
+                                </label>
+                                <select id="product-type" name="product_type" class="form-select" required>
+                                    <option value="">Seleccione un tipo...</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div class="form-field">
+                                <label for="product-doi" class="form-label">
+                                    <i class="fas fa-link text-primary mr-2"></i>
+                                    DOI
+                                </label>
+                                <input type="text" id="product-doi" name="doi" class="form-input"
+                                    placeholder="10.1000/journal.2024.001">
+                            </div>
+                            
+                            <div class="form-field">
+                                <label for="product-url" class="form-label">
+                                    <i class="fas fa-globe text-primary mr-2"></i>
+                                    URL
+                                </label>
+                                <input type="url" id="product-url" name="url" class="form-input"
+                                    placeholder="https://ejemplo.com/producto">
+                            </div>
+                        </div>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div class="form-field">
+                                <label for="product-journal" class="form-label">
+                                    <i class="fas fa-book text-primary mr-2"></i>
+                                    Revista/Editorial
+                                </label>
+                                <input type="text" id="product-journal" name="journal" class="form-input"
+                                    placeholder="Nature, Science, IEEE, etc.">
+                            </div>
+                            
+                            <div class="form-field">
+                                <label for="product-publication-date" class="form-label">
+                                    <i class="fas fa-calendar text-primary mr-2"></i>
+                                    Fecha de Publicación
+                                </label>
+                                <input type="date" id="product-publication-date" name="publication_date" class="form-input">
+                            </div>
+                        </div>
+                        
+                        <div class="form-field">
+                            <label for="product-impact-factor" class="form-label">
+                                <i class="fas fa-star text-primary mr-2"></i>
+                                Factor de Impacto
+                            </label>
+                            <input type="number" id="product-impact-factor" name="impact_factor" step="0.001" min="0" class="form-input"
+                                placeholder="2.5">
+                        </div>
+                        
+                        <div class="flex justify-between items-center pt-4 border-t border-border">
+                            <button type="button" id="cancel-btn" class="btn btn-secondary">
+                                <i class="fas fa-times mr-2"></i>Cancelar
+                            </button>
+                            <button type="submit" id="save-btn" class="btn btn-primary" disabled>
+                                <i class="fas fa-save mr-2"></i>Guardar Cambios
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            <!-- Columna Lateral -->
+            <div class="sidebar-column">
+                <!-- Panel de Visibilidad -->
+                <div class="panel">
+                    <div class="panel-title">
+                        <i class="fas fa-eye text-primary"></i>
+                        Visibilidad
+                    </div>
+                    
+                    <div class="space-y-3">
+                        <div class="flex items-center">
+                            <input type="radio" id="visibility-public" name="visibility" value="public" class="mr-3">
+                            <label for="visibility-public" class="flex-1 cursor-pointer">
+                                <div class="font-medium">Público</div>
+                                <div class="text-xs text-muted-foreground">Visible para todos los usuarios</div>
+                            </label>
+                        </div>
+                        <div class="flex items-center">
+                            <input type="radio" id="visibility-private" name="visibility" value="private" class="mr-3" checked>
+                            <label for="visibility-private" class="flex-1 cursor-pointer">
+                                <div class="font-medium">Privado</div>
+                                <div class="text-xs text-muted-foreground">Solo visible para colaboradores</div>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Panel de Archivos -->
+                <div class="panel">
+                    <div class="panel-title">
+                        <i class="fas fa-paperclip text-primary"></i>
+                        Archivos del Producto
+                    </div>
+                    
+                    <!-- Área de carga de archivos -->
+                    <div id="file-upload-area" class="upload-area mb-4">
+                        <i class="fas fa-cloud-upload-alt text-4xl text-muted-foreground mb-3 block"></i>
+                        <p class="text-sm font-medium text-foreground mb-1">Arrastra archivos aquí</p>
+                        <p class="text-xs text-muted-foreground mb-3">o haz clic para seleccionar</p>
+                        <input type="file" id="file-input" multiple class="hidden">
+                        <button type="button" onclick="document.getElementById('file-input').click()" class="btn btn-secondary btn-sm">
+                            <i class="fas fa-plus mr-2"></i>Seleccionar Archivos
+                        </button>
+                    </div>
+                    
+                    <!-- Lista de archivos -->
+                    <div id="product-files-list">
+                        <div class="text-center text-muted-foreground py-4">
+                            <i class="fas fa-folder-open text-xl mb-2 block opacity-50"></i>
+                            <p class="text-xs">No hay archivos cargados</p>
+                        </div>
+                    </div>
+                    
+                    <!-- Progreso de carga -->
+                    <div id="upload-progress-area" style="display: none;" class="mt-4">
+                        <div class="text-sm font-medium text-foreground mb-2">Subiendo archivos...</div>
+                        <div id="upload-progress-list"></div>
+                    </div>
+                    
+                    <div class="text-xs text-muted-foreground mt-2">
+                        <i class="fas fa-info-circle mr-1"></i>
+                        Los archivos se almacenan de forma segura y solo son accesibles por colaboradores del producto.
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Loading overlay -->
+        <div id="loading-overlay" class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
+            <div class="bg-card p-6 rounded-lg flex items-center gap-4">
+                <i class="fas fa-spinner fa-spin text-primary text-xl"></i>
+                <span class="text-foreground">Cargando producto...</span>
+            </div>
+        </div>
+        
+        <script>
+            // Variables globales
+            const API_BASE = '/api';
+            const PRODUCT_ID = '${productId}';
+            let currentProduct = null;
+            let hasUnsavedChanges = false;
+            let productFiles = [];
+            
+            // Configuración de autenticación
+            let authToken = null;
+            
+            // Función para obtener y verificar token
+            function getAuthTokenFromStorage() {
+                const token = localStorage.getItem('auth_token');
+                
+                if (!token) {
+                    console.warn('No se encontró token de autenticación en localStorage');
+                    return null;
+                }
+                
+                return token;
+            }
+            
+            // Función para configurar cabeceras de autenticación
+            function setupAuthHeaders(token) {
+                if (!token) {
+                    console.warn('Intento de configurar cabeceras sin token');
+                    delete axios.defaults.headers.common['Authorization'];
+                    return false;
+                }
+                
+                axios.defaults.headers.common['Authorization'] = \`Bearer \${token}\`;
+                return true;
+            }
+            
+            // Elementos DOM
+            const form = document.getElementById('edit-product-form');
+            const saveBtn = document.getElementById('save-btn');
+            const cancelBtn = document.getElementById('cancel-btn');
+            const viewPublicBtn = document.getElementById('view-public-btn');
+            const pageTitle = document.getElementById('page-title');
+            const headerTitle = document.getElementById('header-title');
+            const loadingOverlay = document.getElementById('loading-overlay');
+            
+            // Inicialización
+            document.addEventListener('DOMContentLoaded', async () => {
+                console.log('=== INICIANDO PÁGINA DE EDICIÓN DE PRODUCTO ===');
+                console.log('Producto ID:', PRODUCT_ID);
+                
+                try {
+                    // Verificar autenticación y configurar cabeceras
+                    authToken = getAuthTokenFromStorage();
+                    if (!authToken) {
+                        showAuthError();
+                        return;
+                    }
+                    
+                    setupAuthHeaders(authToken);
+                    
+                    // Cargar datos del producto
+                    await loadProduct();
+                    
+                    // Inicializar componentes de la interfaz
+                    initializeForm();
+                    await loadProductTypes();
+                    await loadProductFiles();
+                    
+                    // Ocultar loading
+                    hideLoading();
+                    
+                } catch (error) {
+                    console.error('Error durante inicialización:', error);
+                    hideLoading();
+                }
+            });
+            
+            // Cargar datos del producto
+            async function loadProduct() {
+                try {
+                    const response = await axios.get(\`\${API_BASE}/private/products/\${PRODUCT_ID}\`);
+                    
+                    if (response.data.success) {
+                        currentProduct = response.data.data;
+                        console.log('📄 Datos del producto cargados:', currentProduct);
+                        
+                        populateForm();
+                        updatePageTitle();
+                    } else {
+                        throw new Error(response.data.message || 'Error al cargar el producto');
+                    }
+                } catch (error) {
+                    console.error('❌ Error cargando producto:', error);
+                    
+                    if (error.response) {
+                        const status = error.response.status;
+                        switch (status) {
+                            case 401:
+                                showSpecificError('auth', 'Token de autenticación inválido o expirado');
+                                break;
+                            case 403:
+                                showSpecificError('permission', 'No tienes permisos para editar este producto');
+                                break;
+                            case 404:
+                                showSpecificError('notfound', 'Producto no encontrado');
+                                break;
+                            default:
+                                showSpecificError('unknown', \`Error del servidor (\${status})\`);
+                        }
+                    } else {
+                        showSpecificError('network', 'Error de conexión');
+                    }
+                    
+                    throw error;
+                }
+            }
+            
+            // Poblar formulario con datos del producto
+            function populateForm() {
+                if (!currentProduct) return;
+                
+                document.getElementById('product-description').value = currentProduct.description || '';
+                document.getElementById('product-code').value = currentProduct.product_code || '';
+                document.getElementById('product-type').value = currentProduct.product_type || '';
+                document.getElementById('product-doi').value = currentProduct.doi || '';
+                document.getElementById('product-url').value = currentProduct.url || '';
+                document.getElementById('product-journal').value = currentProduct.journal || '';
+                document.getElementById('product-publication-date').value = currentProduct.publication_date || '';
+                document.getElementById('product-impact-factor').value = currentProduct.impact_factor || '';
+                
+                // Visibilidad
+                const isPublic = currentProduct.is_public === 1 || currentProduct.is_public === true;
+                document.getElementById('visibility-public').checked = isPublic;
+                document.getElementById('visibility-private').checked = !isPublic;
+            }
+            
+            // Actualizar título de la página
+            function updatePageTitle() {
+                if (currentProduct && currentProduct.description) {
+                    const shortTitle = currentProduct.description.substring(0, 50) + '...';
+                    pageTitle.textContent = \`Editando: \${shortTitle}\`;
+                    headerTitle.innerHTML = \`
+                        <i class="fas fa-edit text-primary mr-3"></i>
+                        Editar Producto: \${shortTitle}
+                    \`;
+                } else {
+                    pageTitle.textContent = \`Error al cargar producto (ID: \${PRODUCT_ID})\`;
+                }
+            }
+            
+            // Cargar tipos de productos
+            async function loadProductTypes() {
+                try {
+                    const response = await axios.get(\`\${API_BASE}/public/product-categories\`);
+                    
+                    if (response.data.success) {
+                        const categories = response.data.data.categories || [];
+                        const typeSelect = document.getElementById('product-type');
+                        
+                        categories.forEach(category => {
+                            const option = document.createElement('option');
+                            option.value = category.code;
+                            option.textContent = \`\${category.name} - \${category.description}\`;
+                            typeSelect.appendChild(option);
+                        });
+                        
+                        // Seleccionar tipo actual si existe
+                        if (currentProduct && currentProduct.product_type) {
+                            typeSelect.value = currentProduct.product_type;
+                        }
+                    }
+                } catch (error) {
+                    console.error('Error cargando tipos de producto:', error);
+                }
+            }
+            
+            // Cargar archivos del producto
+            async function loadProductFiles() {
+                try {
+                    const response = await axios.get(\`\${API_BASE}/private/products/\${PRODUCT_ID}/files\`);
+                    
+                    if (response.data.success) {
+                        productFiles = response.data.data.files || [];
+                        renderFilesList();
+                    }
+                } catch (error) {
+                    console.error('Error cargando archivos del producto:', error);
+                    productFiles = [];
+                    renderFilesList();
+                }
+            }
+            
+            // Renderizar lista de archivos
+            function renderFilesList() {
+                const filesList = document.getElementById('product-files-list');
+                if (!filesList) return;
+                
+                if (productFiles.length === 0) {
+                    filesList.innerHTML = \`
+                        <div class="text-center text-muted-foreground py-4">
+                            <i class="fas fa-folder-open text-xl mb-2 block opacity-50"></i>
+                            <p class="text-xs">No hay archivos cargados</p>
+                        </div>
+                    \`;
+                    return;
+                }
+                
+                const filesHTML = productFiles.map(file => {
+                    const fileIcon = getFileIcon(file.filename);
+                    const fileSize = formatFileSize(file.file_size);
+                    const uploadDate = new Date(file.uploaded_at).toLocaleDateString();
+                    
+                    return \`
+                        <div class="file-item">
+                            <div class="flex items-center">
+                                <i class="\${fileIcon} text-primary mr-3"></i>
+                                <div>
+                                    <div class="text-sm font-medium">\${file.filename}</div>
+                                    <div class="text-xs text-muted-foreground">\${fileSize} • \${uploadDate}</div>
+                                </div>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <button onclick="downloadFile('\${file.id}')" class="text-primary hover:text-primary-foreground text-sm" title="Descargar">
+                                    <i class="fas fa-download"></i>
+                                </button>
+                                <button onclick="deleteFile('\${file.id}')" class="text-destructive hover:text-destructive-foreground text-sm" title="Eliminar">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                    \`;
+                }).join('');
+                
+                filesList.innerHTML = filesHTML;
+            }
+            
+            // Inicializar formulario
+            function initializeForm() {
+                // Detectar cambios en el formulario
+                form.addEventListener('input', handleFormChange);
+                form.addEventListener('change', handleFormChange);
+                
+                // Manejar envío del formulario
+                form.addEventListener('submit', handleFormSubmit);
+                
+                // Botón cancelar
+                cancelBtn.addEventListener('click', handleCancel);
+                
+                // Prevenir salida accidental
+                window.addEventListener('beforeunload', handleBeforeUnload);
+                
+                // Inicializar carga de archivos
+                initializeFileUpload();
+                
+                // Resetear estado del botón de guardar
+                resetSaveButton();
+            }
+            
+            // Inicializar carga de archivos
+            function initializeFileUpload() {
+                const uploadArea = document.getElementById('file-upload-area');
+                const fileInput = document.getElementById('file-input');
+                
+                // Drag and drop
+                uploadArea.addEventListener('dragover', (e) => {
+                    e.preventDefault();
+                    uploadArea.classList.add('drag-over');
+                });
+                
+                uploadArea.addEventListener('dragleave', () => {
+                    uploadArea.classList.remove('drag-over');
+                });
+                
+                uploadArea.addEventListener('drop', (e) => {
+                    e.preventDefault();
+                    uploadArea.classList.remove('drag-over');
+                    
+                    const files = Array.from(e.dataTransfer.files);
+                    if (files.length > 0) {
+                        handleFileUpload(files);
+                    }
+                });
+                
+                // File input change
+                fileInput.addEventListener('change', (e) => {
+                    const files = Array.from(e.target.files);
+                    if (files.length > 0) {
+                        handleFileUpload(files);
+                    }
+                });
+            }
+            
+            // Manejar cambios en el formulario
+            function handleFormChange() {
+                hasUnsavedChanges = true;
+                enableSaveButton();
+            }
+            
+            // Manejar envío del formulario
+            async function handleFormSubmit(event) {
+                event.preventDefault();
+                
+                if (!hasUnsavedChanges) return;
+                
+                try {
+                    saveBtn.disabled = true;
+                    saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Guardando...';
+                    
+                    const formData = new FormData(form);
+                    
+                    const productData = {
+                        description: formData.get('description'),
+                        product_code: formData.get('product_code'),
+                        product_type: formData.get('product_type'),
+                        doi: formData.get('doi') || null,
+                        url: formData.get('url') || null,
+                        journal: formData.get('journal') || null,
+                        publication_date: formData.get('publication_date') || null,
+                        impact_factor: formData.get('impact_factor') || null,
+                        is_public: formData.get('visibility') === 'public'
+                    };
+                    
+                    const response = await axios.put(\`\${API_BASE}/private/products/\${PRODUCT_ID}\`, productData);
+                    
+                    if (response.data.success) {
+                        hasUnsavedChanges = false;
+                        showSuccess('Producto actualizado exitosamente');
+                        
+                        // Actualizar datos locales
+                        currentProduct = { ...currentProduct, ...productData };
+                        updatePageTitle();
+                        
+                        // Resetear botón de guardar
+                        resetSaveButton();
+                        saveBtn.innerHTML = '<i class="fas fa-save"></i> Guardar Cambios';
+                    } else {
+                        throw new Error(response.data.message || 'Error al actualizar el producto');
+                    }
+                } catch (error) {
+                    console.error('Error al guardar:', error);
+                    
+                    let errorMessage = 'Error al guardar el producto';
+                    if (error.response) {
+                        const status = error.response.status;
+                        const data = error.response.data;
+                        
+                        switch (status) {
+                            case 403:
+                                errorMessage = data.details || data.error || 'No tienes permisos para editar este producto';
+                                break;
+                            case 404:
+                                errorMessage = 'Producto no encontrado';
+                                break;
+                            case 400:
+                                errorMessage = data.error || 'Datos inválidos en el formulario';
+                                break;
+                            case 401:
+                                errorMessage = 'Tu sesión ha expirado. Por favor, inicia sesión nuevamente';
+                                setTimeout(() => {
+                                    window.location.href = '/login';
+                                }, 2000);
+                                break;
+                            default:
+                                errorMessage = data.error || \`Error del servidor (\${status})\`;
+                        }
+                    }
+                    
+                    showError(errorMessage);
+                    saveBtn.disabled = false;
+                    saveBtn.innerHTML = '<i class="fas fa-save"></i> Guardar Cambios';
+                }
+            }
+            
+            // Manejar cancelación
+            function handleCancel() {
+                if (hasUnsavedChanges) {
+                    if (confirm('¿Está seguro de que desea cancelar? Los cambios no guardados se perderán.')) {
+                        window.location.href = '/dashboard';
+                    }
+                } else {
+                    window.location.href = '/dashboard';
+                }
+            }
+            
+            // Prevenir salida accidental
+            function handleBeforeUnload(event) {
+                if (hasUnsavedChanges) {
+                    event.preventDefault();
+                    event.returnValue = '';
+                }
+            }
+            
+            // Manejar carga de archivos
+            async function handleFileUpload(files) {
+                if (files.length === 0) return;
+                
+                showUploadProgress();
+                
+                try {
+                    for (let i = 0; i < files.length; i++) {
+                        const file = files[i];
+                        addFileProgress(file.name, i + 1, files.length);
+                        
+                        const formData = new FormData();
+                        formData.append('file', file);
+                        
+                        try {
+                            const response = await axios.post(\`\${API_BASE}/private/products/\${PRODUCT_ID}/files\`, formData, {
+                                headers: {
+                                    'Content-Type': 'multipart/form-data'
+                                },
+                                onUploadProgress: (progressEvent) => {
+                                    const percentage = Math.round((progressEvent.loaded / progressEvent.total) * 100);
+                                    updateFileProgress(file.name, percentage);
+                                }
+                            });
+                            
+                            if (response.data.success) {
+                                completeFileProgress(file.name, true);
+                            } else {
+                                completeFileProgress(file.name, false, response.data.error || 'Error desconocido');
+                            }
+                        } catch (error) {
+                            console.error(\`Error subiendo archivo \${file.name}:\`, error);
+                            const errorMsg = error.response?.data?.error || error.message || 'Error de conexión';
+                            completeFileProgress(file.name, false, errorMsg);
+                        }
+                    }
+                    
+                    // Recargar lista de archivos
+                    setTimeout(() => {
+                        loadProductFiles();
+                        hideUploadProgress();
+                    }, 2000);
+                    
+                } catch (error) {
+                    console.error('Error en carga de archivos:', error);
+                    showUploadError('Error general en la carga de archivos');
+                    hideUploadProgress();
+                }
+            }
+            
+            // Funciones auxiliares
+            function hideLoading() {
+                loadingOverlay.style.display = 'none';
+            }
+            
+            function enableSaveButton() {
+                saveBtn.disabled = false;
+            }
+            
+            function resetSaveButton() {
+                saveBtn.disabled = true;
+            }
+            
+            function showSuccess(message) {
+                console.log('SUCCESS:', message);
+                showToast(message, 'success');
+            }
+            
+            function showError(message) {
+                console.error('ERROR:', message);
+                showToast(message, 'error');
+            }
+            
+            function showAuthError() {
+                pageTitle.textContent = \`Acceso Restringido - Producto ID: \${PRODUCT_ID}\`;
+                showSpecificError('auth', 'Sesión Requerida', 
+                    'Para editar productos necesitas iniciar sesión primero.');
+            }
+            
+            function showSpecificError(type, title, message = '') {
+                hideLoading();
+                // Implementar mostrar error específico
+                alert(\`\${title}: \${message}\`);
+            }
+            
+            function showToast(message, type = 'info', duration = 3000) {
+                // Sistema de toast simple
+                const toast = document.createElement('div');
+                toast.className = \`fixed top-4 right-4 z-50 p-4 rounded-lg text-white \${
+                    type === 'success' ? 'bg-green-500' : 
+                    type === 'error' ? 'bg-red-500' : 'bg-blue-500'
+                }\`;
+                toast.textContent = message;
+                
+                document.body.appendChild(toast);
+                
+                setTimeout(() => {
+                    toast.remove();
+                }, duration);
+            }
+            
+            // Funciones de archivos
+            function getFileIcon(filename) {
+                const ext = filename.split('.').pop().toLowerCase();
+                const iconMap = {
+                    pdf: 'fas fa-file-pdf',
+                    doc: 'fas fa-file-word',
+                    docx: 'fas fa-file-word',
+                    xls: 'fas fa-file-excel',
+                    xlsx: 'fas fa-file-excel',
+                    ppt: 'fas fa-file-powerpoint',
+                    pptx: 'fas fa-file-powerpoint',
+                    txt: 'fas fa-file-alt',
+                    jpg: 'fas fa-file-image',
+                    jpeg: 'fas fa-file-image',
+                    png: 'fas fa-file-image',
+                    gif: 'fas fa-file-image',
+                    zip: 'fas fa-file-archive',
+                    rar: 'fas fa-file-archive',
+                    mp4: 'fas fa-file-video',
+                    avi: 'fas fa-file-video',
+                    mp3: 'fas fa-file-audio',
+                    wav: 'fas fa-file-audio'
+                };
+                
+                return iconMap[ext] || 'fas fa-file';
+            }
+            
+            function formatFileSize(bytes) {
+                if (bytes === 0) return '0 Bytes';
+                
+                const k = 1024;
+                const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+                const i = Math.floor(Math.log(bytes) / Math.log(k));
+                
+                return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+            }
+            
+            function showUploadProgress() {
+                const progressArea = document.getElementById('upload-progress-area');
+                const progressList = document.getElementById('upload-progress-list');
+                
+                if (progressArea && progressList) {
+                    progressList.innerHTML = '';
+                    progressArea.style.display = 'block';
+                }
+            }
+            
+            function hideUploadProgress() {
+                const progressArea = document.getElementById('upload-progress-area');
+                if (progressArea) {
+                    setTimeout(() => {
+                        progressArea.style.display = 'none';
+                    }, 2000);
+                }
+            }
+            
+            function addFileProgress(filename, current, total) {
+                const progressList = document.getElementById('upload-progress-list');
+                if (!progressList) return;
+                
+                const progressId = \`progress-\${filename.replace(/[^a-zA-Z0-9]/g, '-')}\`;
+                const progressDiv = document.createElement('div');
+                progressDiv.id = progressId;
+                progressDiv.className = 'mb-2 p-2 border border-border rounded';
+                progressDiv.innerHTML = \`
+                    <div class="flex items-center justify-between mb-1">
+                        <span class="text-xs font-medium text-foreground truncate pr-2">\${filename}</span>
+                        <span class="text-xs text-muted-foreground">\${current}/\${total}</span>
+                    </div>
+                    <div class="w-full bg-muted rounded-full h-1.5">
+                        <div class="bg-primary h-1.5 rounded-full progress-bar transition-all duration-300" style="width: 0%"></div>
+                    </div>
+                    <div class="text-xs text-muted-foreground mt-1 status-text">Iniciando...</div>
+                \`;
+                
+                progressList.appendChild(progressDiv);
+            }
+            
+            function updateFileProgress(filename, percentage) {
+                const progressId = \`progress-\${filename.replace(/[^a-zA-Z0-9]/g, '-')}\`;
+                const progressDiv = document.getElementById(progressId);
+                
+                if (progressDiv) {
+                    const progressBar = progressDiv.querySelector('.progress-bar');
+                    const statusText = progressDiv.querySelector('.status-text');
+                    
+                    if (progressBar) progressBar.style.width = \`\${percentage}%\`;
+                    if (statusText) statusText.textContent = \`Subiendo... \${percentage}%\`;
+                }
+            }
+            
+            function completeFileProgress(filename, success, errorMessage = '') {
+                const progressId = \`progress-\${filename.replace(/[^a-zA-Z0-9]/g, '-')}\`;
+                const progressDiv = document.getElementById(progressId);
+                
+                if (progressDiv) {
+                    const progressBar = progressDiv.querySelector('.progress-bar');
+                    const statusText = progressDiv.querySelector('.status-text');
+                    
+                    if (success) {
+                        if (progressBar) {
+                            progressBar.style.width = '100%';
+                            progressBar.classList.remove('bg-primary');
+                            progressBar.classList.add('bg-green-500');
+                        }
+                        if (statusText) {
+                            statusText.textContent = '✅ Completado';
+                            statusText.classList.add('text-green-600');
+                        }
+                    } else {
+                        if (progressBar) {
+                            progressBar.classList.remove('bg-primary');
+                            progressBar.classList.add('bg-destructive');
+                        }
+                        if (statusText) {
+                            statusText.textContent = \`❌ Error: \${errorMessage}\`;
+                            statusText.classList.add('text-destructive');
+                        }
+                    }
+                }
+            }
+            
+            function showUploadError(message) {
+                console.error('❌ Error de subida:', message);
+                
+                const progressList = document.getElementById('upload-progress-list');
+                if (progressList) {
+                    const errorDiv = document.createElement('div');
+                    errorDiv.className = 'bg-destructive/10 border border-destructive/20 rounded p-2 mt-2';
+                    errorDiv.innerHTML = \`
+                        <div class="flex items-center gap-2">
+                            <i class="fas fa-exclamation-triangle text-destructive"></i>
+                            <span class="text-xs text-destructive">Error general: \${message}</span>
+                        </div>
+                    \`;
+                    progressList.appendChild(errorDiv);
+                }
+            }
+            
+            function downloadFile(fileId) {
+                window.open(\`\${API_BASE}/private/products/\${PRODUCT_ID}/files/\${fileId}/download\`, '_blank');
+            }
+            
+            async function deleteFile(fileId) {
+                if (!confirm('¿Está seguro de que desea eliminar este archivo?')) {
+                    return;
+                }
+                
+                try {
+                    const response = await axios.delete(\`\${API_BASE}/private/products/\${PRODUCT_ID}/files/\${fileId}\`);
+                    
+                    if (response.data.success) {
+                        showSuccess('Archivo eliminado correctamente');
+                        loadProductFiles();
+                    } else {
+                        throw new Error(response.data.message);
+                    }
+                } catch (error) {
+                    console.error('Error eliminando archivo:', error);
+                    showError('Error al eliminar el archivo');
+                }
+            }
+        </script>
+    </body>
+    </html>
+  `);
+})
+
 // Dashboard mejorado de clase mundial
 app.get('/dashboard-mejorado', (c) => {
   return c.html(`
