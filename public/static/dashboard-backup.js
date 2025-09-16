@@ -8411,6 +8411,24 @@ function getAlertStatusDisplayName(status) {
 
 
 
+// Función para mostrar detalles de alerta
+function showAlertDetails(alertId) {
+    showToast(`Mostrando detalles de la alerta ${alertId}`, 'info');
+    // Aquí se implementaría la lógica para mostrar detalles
+}
+
+// Función para editar proyecto
+function editProject(projectId) {
+    showToast(`Editando proyecto ${projectId}`, 'info');
+    // Aquí se implementaría la navegación a la edición
+}
+
+// Función para ver detalles de proyecto
+function viewProjectDetails(projectId) {
+    showToast(`Mostrando detalles del proyecto ${projectId}`, 'info');
+    // Aquí se implementaría la navegación a los detalles
+}
+
 // Función para ver detalles de producto
 function viewProductDetails(productId) {
     console.log('🔍 Viendo detalles del producto:', productId);

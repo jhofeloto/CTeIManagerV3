@@ -432,4 +432,35 @@ publicRoutes.get('/site-config', async (c) => {
   }
 });
 
+// ===== RUTA DE PRUEBA TEMPORAL PARA TESTING =====
+publicRoutes.get('/test-generate-token', async (c) => {
+  try {
+    // Generar token para usuario investigador (ID 2) para testing
+    const testUser = {
+      userId: 2,
+      email: "investigador@demo.com",
+      role: "INVESTIGATOR"
+    };
+    
+    const { generateJWT } = await import('../utils/jwt');
+    const token = await generateJWT(testUser);
+    
+    return c.json({
+      success: true,
+      data: { 
+        token,
+        user: testUser,
+        message: 'Token de prueba generado para Dr. Investigador Demo'
+      }
+    });
+    
+  } catch (error) {
+    console.error('Error generando token de prueba:', error);
+    return c.json({ 
+      success: false, 
+      error: 'Error generando token de prueba' 
+    }, 500);
+  }
+});
+
 export { publicRoutes };
