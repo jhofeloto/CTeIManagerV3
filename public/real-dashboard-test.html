@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Test - Editar Producto</title>
+    <script src="https://cdn.jsdelivr.net/npm/axios@1.6.0/dist/axios.min.js"></script>
+    <script src="/static/dashboard.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background: #f5f5f5; }
+        .container { max-width: 1200px; margin: 0 auto; background: white; padding: 20px; border-radius: 8px; }
+        .product-card { border: 1px solid #ddd; margin: 15px 0; padding: 20px; border-radius: 8px; background: #fff; }
+        .product-title { font-size: 18px; font-weight: bold; color: #333; margin-bottom: 10px; }
+        .product-meta { color: #666; margin-bottom: 15px; }
+        .actions { display: flex; gap: 10px; }
+        .btn { padding: 8px 15px; border: none; border-radius: 4px; cursor: pointer; font-size: 14px; }
+        .btn-edit { background: #007bff; color: white; }
+        .btn-edit:hover { background: #0056b3; }
+        .status { padding: 10px; margin: 10px 0; border-radius: 4px; }
+        .success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .info { background: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
+        h1 { color: #333; margin-bottom: 30px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 Test Dashboard - Mis Productos CTeI</h1>
+        
+        <div id="loginSection">
+            <h2>Paso 1: Login</h2>
+            <button onclick="doLogin()" class="btn btn-edit">🔑 Login Automático</button>
+            <div id="loginStatus" class="status info">Haga clic para hacer login</div>
+        </div>
+
+        <div id="dashboardSection" style="display:none;">
+            <h2>Paso 2: Mis Productos CTeI</h2>
+            <div id="productsContainer"></div>
+        </div>
+
+        <div id="testResults">
+            <h2>Paso 3: Resultados del Test</h2>
+            <div id="results"></div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = '/api';
+        let currentUser = null;
+        let userProducts = [];
+
+        function updateStatus(elementId, message, type) {
+            const element = document.getElementById(elementId);
+            element.className = `status ${type}`;
+            element.innerHTML = `[${new Date().toLocaleTimeString()}] ${message}`;
+            console.log(`[${type.toUpperCase()}] ${message}`);
+        }
+
+        function addResult(message, type = 'info') {
+            const results = document.getElementById('results');
+            const div = document.createElement('div');
+            div.className = `status ${type}`;
+            div.innerHTML = `[${new Date().toLocaleTimeString()}] ${message}`;
+            results.appendChild(div);
+            console.log(`[${type.toUpperCase()}] ${message}`);
+        }
+
+        async function doLogin() {
+            updateStatus('loginStatus', 'Intentando login...', 'info');
+            
+            try {
+                const response = await axios.post(`${API_BASE}/auth/login`, {
+                    email: 'test2@admin.com',
+                    password: 'password123'
+                });
+
+                if (response.data.success) {
+                    currentUser = response.data.data.user;
+                    const token = response.data.data.token;
+                    
+                    // Configurar axios globalmente
+                    axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+                    
+                    updateStatus('loginStatus', `✅ Login exitoso: ${currentUser.full_name}`, 'success');
+                    
+                    // Cargar productos
+                    await loadProducts();
+                    
+                } else {
+                    updateStatus('loginStatus', `❌ Error de login: ${response.data.error}`, 'error');
+                }
+                
+            } catch (error) {
+                updateStatus('loginStatus', `❌ Error de conexión: ${error.message}`, 'error');
+            }
+        }
+
+        async function loadProducts() {
+            try {
+                addResult('Cargando productos del usuario...', 'info');
+                
+                const response = await axios.get(`${API_BASE}/private/products`);
+                
+                if (response.data.success) {
+                    userProducts = response.data.data.products;
+                    addResult(`✅ ${userProducts.length} productos cargados`, 'success');
+                    
+                    // Mostrar dashboard
+                    document.getElementById('loginSection').style.display = 'none';
+                    document.getElementById('dashboardSection').style.display = 'block';
+                    
+                    renderProducts();
+                    
+                } else {
+                    addResult(`❌ Error cargando productos: ${response.data.error}`, 'error');
+                }
+                
+            } catch (error) {
+                addResult(`❌ Error de conexión: ${error.message}`, 'error');
+            }
+        }
+
+        function renderProducts() {
+            const container = document.getElementById('productsContainer');
+            
+            if (userProducts.length === 0) {
+                container.innerHTML = '<div class="status info">No hay productos disponibles</div>';
+                return;
+            }
+
+            container.innerHTML = userProducts.slice(0, 3).map(product => `
+                <div class="product-card">
+                    <div class="product-title">${product.description}</div>
+                    <div class="product-meta">
+                        <strong>ID:</strong> ${product.id} | 
+                        <strong>Código:</strong> ${product.product_code} | 
+                        <strong>Proyecto:</strong> ${product.project_title}
+                    </div>
+                    <div class="actions">
+                        <button 
+                            onclick="testEditProduct(${product.project_id}, ${product.id})"
+                            class="btn btn-edit"
+                            title="Probar función editProduct"
+                        >
+                            ✏️ Editar Producto (TEST)
+                        </button>
+                        <button 
+                            onclick="directNavigate(${product.id})"
+                            class="btn"
+                            style="background: #28a745; color: white;"
+                            title="Navegación directa"
+                        >
+                            🔗 Ir Directo
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+
+            addResult(`📋 ${userProducts.length} productos renderizados con botones de prueba`, 'success');
+        }
+
+        function testEditProduct(projectId, productId) {
+            addResult(`🧪 Ejecutando editProduct(${projectId}, ${productId})`, 'info');
+            
+            try {
+                // Verificar si la función editProduct existe globalmente
+                if (typeof window.editProduct === 'function') {
+                    addResult('✅ Función editProduct encontrada globalmente', 'success');
+                    
+                    // Llamar a la función real
+                    window.editProduct(projectId, productId);
+                    
+                    addResult('🔗 Función editProduct ejecutada - debería haber redirigido', 'success');
+                    
+                } else {
+                    addResult('❌ Función editProduct NO encontrada globalmente', 'error');
+                    
+                    // Intentar ejecutar manualmente la lógica
+                    const editURL = `/dashboard/productos/${productId}/editar`;
+                    addResult(`🔧 Ejecutando manualmente: window.location.href = "${editURL}"`, 'info');
+                    
+                    // NO redirigir realmente en el test
+                    // window.location.href = editURL;
+                    addResult('✅ Redirección simulada exitosa', 'success');
+                }
+                
+            } catch (error) {
+                addResult(`❌ Error ejecutando editProduct: ${error.message}`, 'error');
+            }
+        }
+
+        function directNavigate(productId) {
+            const editURL = `/dashboard/productos/${productId}/editar`;
+            addResult(`🔗 Navegando directamente a: ${editURL}`, 'info');
+            window.location.href = editURL;
+        }
+
+        // Ejecutar automáticamente
+        window.onload = function() {
+            addResult('🚀 Test iniciado - Dashboard simulado listo', 'info');
+            
+            // Verificar si las funciones del dashboard están disponibles
+            setTimeout(() => {
+                if (typeof window.editProduct === 'function') {
+                    addResult('✅ dashboard.js cargado correctamente - editProduct disponible', 'success');
+                } else {
+                    addResult('⚠️ dashboard.js no cargado o editProduct no disponible', 'error');
+                }
+            }, 1000);
+        };
+    </script>
+</body>
+</html>

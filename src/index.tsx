@@ -2772,6 +2772,179 @@ app.get('/producto/:id', async (c) => {
   }
 })
 
+// Página de Login
+app.get('/login', (c) => {
+  return c.html(`
+    <!DOCTYPE html>
+    <html lang="es" class="dark">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Iniciar Sesión - CTeI-Manager</title>
+        <script src="https://cdn.tailwindcss.com"></script>
+        <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
+        <link href="/static/styles.css" rel="stylesheet">
+        <script src="https://cdn.jsdelivr.net/npm/axios@1.6.0/dist/axios.min.js"></script>
+        
+        <!-- NO incluir app.js para evitar conflictos de redirección -->
+    </head>
+    <body class="level-0 bg-background">
+        <div class="min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+            <div class="max-w-md w-full space-y-8">
+                <div class="text-center">
+                    <h1 class="text-3xl font-bold text-foreground mb-2">
+                        <i class="fas fa-dna mr-2" style="color: var(--primary)"></i>
+                        CTeI-Manager
+                    </h1>
+                    <h2 class="text-xl text-muted-foreground">Iniciar Sesión</h2>
+                    <p class="mt-2 text-sm text-muted-foreground">
+                        Portal de Ciencia, Tecnología e Innovación
+                    </p>
+                </div>
+
+                <!-- Formulario de Login -->
+                <form id="loginForm" class="mt-8 space-y-6">
+                    <div class="space-y-4">
+                        <div>
+                            <label for="email" class="block text-sm font-medium text-foreground">
+                                Correo Electrónico
+                            </label>
+                            <input
+                                id="email"
+                                name="email"
+                                type="email"
+                                required
+                                class="mt-1 w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent bg-card text-foreground"
+                                placeholder="usuario@ejemplo.com"
+                            />
+                        </div>
+                        
+                        <div>
+                            <label for="password" class="block text-sm font-medium text-foreground">
+                                Contraseña
+                            </label>
+                            <input
+                                id="password"
+                                name="password"
+                                type="password"
+                                required
+                                class="mt-1 w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent bg-card text-foreground"
+                                placeholder="••••••••"
+                            />
+                        </div>
+                    </div>
+
+                    <!-- Mensaje de estado -->
+                    <div id="loginMessage" class="hidden p-3 rounded-lg text-sm"></div>
+
+                    <!-- Botones -->
+                    <div class="space-y-3">
+                        <button
+                            type="submit"
+                            id="loginButton"
+                            class="w-full flex justify-center py-2 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-primary-foreground bg-primary hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
+                        >
+                            <i class="fas fa-sign-in-alt mr-2"></i>
+                            Iniciar Sesión
+                        </button>
+                        
+                        <button
+                            type="button"
+                            onclick="window.location.href='/'"
+                            class="w-full flex justify-center py-2 px-4 border border-border rounded-lg shadow-sm text-sm font-medium text-foreground bg-card hover:bg-muted"
+                        >
+                            <i class="fas fa-home mr-2"></i>
+                            Volver al Portal
+                        </button>
+                    </div>
+
+                    <!-- Credenciales de prueba -->
+                    <div class="mt-6 p-4 bg-muted rounded-lg">
+                        <h4 class="text-sm font-medium text-foreground mb-2">
+                            <i class="fas fa-info-circle mr-1"></i>
+                            Credenciales de Prueba:
+                        </h4>
+                        <div class="text-xs text-muted-foreground space-y-1">
+                            <p><strong>Admin:</strong> test2@admin.com / password123</p>
+                            <p><strong>Email:</strong> admin@test.com / 123456</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <script>
+            const API_BASE = '/api';
+            
+            // Manejar envío del formulario
+            document.getElementById('loginForm').addEventListener('submit', async function(e) {
+                e.preventDefault();
+                
+                const email = document.getElementById('email').value;
+                const password = document.getElementById('password').value;
+                const messageDiv = document.getElementById('loginMessage');
+                const button = document.getElementById('loginButton');
+                
+                // Mostrar estado de carga
+                button.disabled = true;
+                button.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Iniciando sesión...';
+                
+                try {
+                    const response = await axios.post(\`\${API_BASE}/auth/login\`, {
+                        email,
+                        password
+                    });
+                    
+                    if (response.data.success) {
+                        const { token, user } = response.data.data;
+                        
+                        // Almacenar en localStorage
+                        localStorage.setItem('token', token);
+                        localStorage.setItem('user', JSON.stringify(user));
+                        
+                        // Mostrar éxito
+                        messageDiv.className = 'block p-3 rounded-lg text-sm bg-green-100 text-green-800 border border-green-200';
+                        messageDiv.innerHTML = '<i class="fas fa-check mr-2"></i>Login exitoso. Redirigiendo...';
+                        
+                        // Redirigir al dashboard
+                        setTimeout(() => {
+                            window.location.href = '/dashboard';
+                        }, 1000);
+                        
+                    } else {
+                        throw new Error(response.data.error || 'Error de autenticación');
+                    }
+                    
+                } catch (error) {
+                    // Mostrar error
+                    messageDiv.className = 'block p-3 rounded-lg text-sm bg-red-100 text-red-800 border border-red-200';
+                    messageDiv.innerHTML = '<i class="fas fa-exclamation-triangle mr-2"></i>' + 
+                                         (error.response?.data?.error || error.message || 'Error de conexión');
+                    
+                    // Restaurar botón
+                    button.disabled = false;
+                    button.innerHTML = '<i class="fas fa-sign-in-alt mr-2"></i>Iniciar Sesión';
+                }
+            });
+            
+            // Auto-llenar credenciales de prueba al hacer clic
+            document.addEventListener('click', function(e) {
+                if (e.target.textContent.includes('test2@admin.com')) {
+                    document.getElementById('email').value = 'test2@admin.com';
+                    document.getElementById('password').value = 'password123';
+                } else if (e.target.textContent.includes('admin@test.com')) {
+                    document.getElementById('email').value = 'admin@test.com';
+                    document.getElementById('password').value = '123456';
+                }
+            });
+            
+            console.log('🔐 Página de login inicializada');
+        </script>
+    </body>
+    </html>
+  `);
+});
+
 // Dashboard con dashboard.js - Versión corregida que carga los archivos correctos
 app.get('/dashboard', (c) => {
   return c.html(`

@@ -52,40 +52,33 @@
 
         // Función editProduct exactamente como está en dashboard.js
         function editProduct(projectId, productId) {
-            // Redirigir a la página independiente de edición de producto
             log('testResults', `🔗 editProduct llamada: projectId=${projectId}, productId=${productId}`, 'info');
             log('testResults', `🔗 URL generada: /dashboard/productos/${productId}/editar`, 'info');
             
-            // En lugar de redirigir realmente, vamos a verificar la URL
+            // Verificar la URL antes de redirigir
             fetch(`/dashboard/productos/${productId}/editar`, {
                 method: 'HEAD',
                 headers: {
                     'Authorization': `Bearer ${authToken}`
                 }
             }).then(response => {
-                log('testResults', `✅ Verificación URL: Status ${response.status} (${response.statusText})`, 
+                log('testResults', `✅ Verificación URL: Status ${response.status}`, 
                     response.ok || response.status === 302 ? 'success' : 'error');
                 
                 if (response.ok || response.status === 302) {
                     log('testResults', `🎉 ¡ÉXITO! El botón "Editar Producto" funciona correctamente`, 'success');
-                    log('testResults', `🔗 Para probar realmente, abrir: /dashboard/productos/${productId}/editar`, 'info');
                 }
             }).catch(error => {
-                log('testResults', `❌ Error verificando URL: ${error.message}`, 'error');
+                log('testResults', `❌ Error: ${error.message}`, 'error');
             });
-            
-            // NO redirigir para mantener la página de test
-            // window.location.href = `/dashboard/productos/${productId}/editar`;
         }
 
         async function autoLogin() {
             log('authInfo', '🔄 Configurando autenticación...', 'info');
             
             if (authToken) {
-                // Configurar axios con el token
                 axios.defaults.headers.common['Authorization'] = `Bearer ${authToken}`;
                 
-                // Verificar que el token funcione
                 try {
                     const response = await axios.get(`${API_BASE}/private/products`);
                     if (response.data.success) {
@@ -120,64 +113,20 @@
                 <div class="product">
                     <h4>${product.description || 'Producto sin descripción'}</h4>
                     <p><strong>ID:</strong> ${product.id} | <strong>Proyecto:</strong> ${product.project_id}</p>
-                    <p><strong>Tipo:</strong> ${product.product_type} | <strong>Código:</strong> ${product.product_code}</p>
                     <button 
                         onclick="editProduct(${product.project_id}, ${product.id})"
                         class="button"
-                        title="Editar producto"
                     >
                         ✏️ Editar Producto
-                    </button>
-                    <button 
-                        onclick="testEditURL(${product.id})"
-                        class="button"
-                        style="background: #28a745;"
-                        title="Test directo de URL"
-                    >
-                        🔗 Test URL
                     </button>
                 </div>
             `).join('');
 
-            log('testResults', `✅ ${userProducts.length} productos renderizados con botones "Editar Producto"`, 'success');
-        }
-
-        async function testEditURL(productId) {
-            log('testResults', `🔄 Probando URL de edición directamente...`, 'info');
-            
-            const editURL = `/dashboard/productos/${productId}/editar`;
-            
-            try {
-                const response = await fetch(editURL, {
-                    headers: {
-                        'Authorization': `Bearer ${authToken}`
-                    }
-                });
-                
-                log('testResults', `🔍 URL: ${editURL}`, 'info');
-                log('testResults', `📊 Status: ${response.status} (${response.statusText})`, 
-                    response.ok ? 'success' : (response.status === 302 ? 'info' : 'error'));
-                
-                if (response.ok) {
-                    const html = await response.text();
-                    const hasEditForm = html.includes('Editar Producto');
-                    const hasFileUpload = html.includes('file') || html.includes('upload');
-                    
-                    log('testResults', `✅ Página de edición accesible`, 'success');
-                    log('testResults', `📋 Contiene formulario: ${hasEditForm ? '✅' : '❌'}`, hasEditForm ? 'success' : 'error');
-                    log('testResults', `📁 Soporte archivos: ${hasFileUpload ? '✅' : '❌'}`, hasFileUpload ? 'success' : 'error');
-                } else if (response.status === 302) {
-                    log('testResults', `🔄 Redirección detectada (normal para rutas protegidas)`, 'info');
-                }
-                
-            } catch (error) {
-                log('testResults', `❌ Error accediendo a URL: ${error.message}`, 'error');
-            }
+            log('testResults', `✅ ${userProducts.length} productos renderizados`, 'success');
         }
 
         // Auto-ejecutar al cargar
         window.onload = function() {
-            log('authInfo', '🚀 Test iniciado. Token preconfigurado.', 'info');
             autoLogin();
         };
     </script>

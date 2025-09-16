@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Login y Dashboard Test</title>
+    <script src="https://cdn.jsdelivr.net/npm/axios@1.6.0/dist/axios.min.js"></script>
+</head>
+<body>
+    <h1>Autenticación Automática y Test Dashboard</h1>
+    <div id="log"></div>
+    
+    <script>
+        async function autoLoginAndRedirect() {
+            console.log('🔄 Iniciando login automático...');
+            
+            try {
+                const response = await axios.post('/api/auth/login', {
+                    email: 'test2@admin.com',
+                    password: 'password123'
+                });
+                
+                if (response.data.success) {
+                    const token = response.data.data.token;
+                    
+                    // Almacenar token en localStorage (como hace el sistema real)
+                    localStorage.setItem('token', token);
+                    localStorage.setItem('user', JSON.stringify(response.data.data.user));
+                    
+                    console.log('✅ Login exitoso, token almacenado');
+                    console.log('🔄 Redirigiendo al dashboard...');
+                    
+                    // Redirigir al dashboard
+                    setTimeout(() => {
+                        window.location.href = '/dashboard';
+                    }, 1000);
+                    
+                } else {
+                    console.log('❌ Error de login:', response.data.error);
+                }
+                
+            } catch (error) {
+                console.log('❌ Error:', error.message);
+            }
+        }
+        
+        // Ejecutar inmediatamente
+        autoLoginAndRedirect();
+    </script>
+</body>
+</html>

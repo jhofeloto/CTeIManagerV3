@@ -1583,6 +1583,7 @@ privateRoutes.get('/products', async (c) => {
 
 // Obtener producto específico por ID
 privateRoutes.get('/products/:productId', async (c) => {
+  console.log('🚀 ENDPOINT /products/:productId EJECUTADO!');
   try {
     const user = c.get('user')!;
     const productId = parseInt(c.req.param('productId'));
