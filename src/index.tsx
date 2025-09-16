@@ -5525,10 +5525,13 @@ app.get('/dashboard/proyectos/:id/editar', async (c) => {
             async function loadProjectFiles() {
                 if (!authToken) {
                     console.warn('⚠️ No hay token de autenticación para cargar archivos');
+                    showFilesError('Token de autenticación no disponible');
                     return;
                 }
                 
                 console.log('📁 Cargando archivos del proyecto:', PROJECT_ID);
+                console.log('🔑 Token presente:', authToken ? 'Sí' : 'No');
+                console.log('🌐 URL de solicitud:', \`\${API_BASE}/private/projects/\${PROJECT_ID}/files\`);
                 
                 try {
                     const response = await axios.get(
@@ -5540,17 +5543,48 @@ app.get('/dashboard/proyectos/:id/editar', async (c) => {
                         }
                     );
                     
+                    console.log('📥 Respuesta recibida:', response);
+                    console.log('📊 Status:', response.status);
+                    console.log('📋 Data:', response.data);
+                    
                     if (response.data.success) {
-                        projectFiles = response.data.data || [];
-                        console.log(\`✅ Archivos cargados: \${projectFiles.length}\`);
+                        // Verificar estructura de respuesta
+                        if (response.data.data && response.data.data.files) {
+                            projectFiles = response.data.data.files;
+                            console.log(\`✅ Archivos cargados correctamente: \${projectFiles.length} archivos\`);
+                            console.log('📂 Lista de archivos:', projectFiles);
+                        } else {
+                            console.warn('⚠️ Estructura de respuesta inesperada:', response.data);
+                            projectFiles = [];
+                        }
                         renderFilesList();
                     } else {
-                        throw new Error(response.data.error || 'Error desconocido');
+                        const errorMsg = response.data.error || 'Error desconocido del servidor';
+                        console.error('❌ Error del servidor:', errorMsg);
+                        throw new Error(errorMsg);
                     }
                     
                 } catch (error) {
-                    console.error('❌ Error cargando archivos:', error);
-                    showFilesError('No se pudieron cargar los archivos del proyecto');
+                    console.error('❌ Error completo cargando archivos:', error);
+                    console.error('📋 Detalles del error:', {
+                        message: error.message,
+                        status: error.response?.status,
+                        statusText: error.response?.statusText,
+                        data: error.response?.data
+                    });
+                    
+                    let userMessage = 'No se pudieron cargar los archivos del proyecto';
+                    if (error.response?.status === 401) {
+                        userMessage = 'Sesión expirada. Recarga la página e inicia sesión nuevamente';
+                    } else if (error.response?.status === 403) {
+                        userMessage = 'No tienes permisos para ver los archivos de este proyecto';
+                    } else if (error.response?.status === 404) {
+                        userMessage = 'Proyecto no encontrado';
+                    } else if (error.response?.data?.error) {
+                        userMessage = error.response.data.error;
+                    }
+                    
+                    showFilesError(userMessage);
                 }
             }
             
