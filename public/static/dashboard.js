@@ -274,15 +274,7 @@ function renderDashboard() {
                                 Evaluación y Scoring
                             </button>
                         </li>
-                        <li>
-                            <button 
-                                onclick="showView('files')" 
-                                class="nav-item w-full flex items-center px-3 py-2 text-left rounded-lg hover:bg-accent hover:text-accent-foreground transition-colors"
-                            >
-                                <i class="fas fa-folder-open mr-3"></i>
-                                Gestión de Archivos
-                            </button>
-                        </li>
+
                         <li>
                             <button 
                                 onclick="debugMonitoringView()" 
@@ -5985,32 +5977,29 @@ function renderFileManagerView() {
                 </div>
             </div>
             
-            <!-- Lista de archivos -->
-            <div id="filesContainer" class="level-1 p-6">
-                <div class="flex justify-between items-center mb-6">
-                    <h3 class="text-xl font-semibold">Todos los Archivos</h3>
-                    <div class="flex space-x-2">
-                        <button onclick="refreshFileList()" class="ctei-btn-secondary">
-                            <i class="fas fa-sync-alt mr-2"></i>
-                            Actualizar
+            <!-- Pestañas de navegación -->
+            <div class="mb-6">
+                <div class="border-b border-border">
+                    <nav class="flex space-x-8">
+                        <button onclick="setActiveFileManagerTab('all')" id="tab-manager-all" class="border-b-2 border-primary text-primary py-2 px-1 text-sm font-medium">
+                            <i class="fas fa-list mr-2"></i>Todos los Archivos
                         </button>
-                        <button onclick="showBulkUploadModal()" class="ctei-btn-primary">
-                            <i class="fas fa-upload mr-2"></i>
-                            Subir Archivos
+                        <button onclick="setActiveFileManagerTab('projects')" id="tab-manager-projects" class="border-b-2 border-transparent text-muted-foreground hover:text-foreground py-2 px-1 text-sm font-medium">
+                            <i class="fas fa-project-diagram mr-2"></i>Por Proyectos
                         </button>
-                    </div>
+                        <button onclick="setActiveFileManagerTab('products')" id="tab-manager-products" class="border-b-2 border-transparent text-muted-foreground hover:text-foreground py-2 px-1 text-sm font-medium">
+                            <i class="fas fa-cubes mr-2"></i>Por Productos
+                        </button>
+                    </nav>
                 </div>
-                
-                <div id="filesList" class="space-y-3">
-                    <div class="text-center py-8">
-                        <i class="fas fa-spinner fa-spin text-4xl text-muted-foreground mb-3"></i>
-                        <p class="text-muted-foreground">Cargando archivos...</p>
-                    </div>
-                </div>
-                
-                <!-- Paginación -->
-                <div id="filesPagination" class="mt-6 flex justify-center">
-                    <!-- Controles de paginación aparecerán aquí -->
+            </div>
+            
+            <!-- Contenido de pestañas -->
+            <div id="fileManagerTabContent" class="level-1 p-6">
+                <!-- El contenido se cargará dinámicamente según la pestaña seleccionada -->
+                <div class="text-center py-8">
+                    <i class="fas fa-spinner fa-spin text-4xl text-muted-foreground mb-3"></i>
+                    <p class="text-muted-foreground">Cargando archivos...</p>
                 </div>
             </div>
         </div>
@@ -6036,8 +6025,8 @@ function renderFileManagerView() {
         </div>
     `;
     
-    // Cargar datos iniciales
-    loadFileManagerData();
+    // Cargar pestaña inicial
+    setActiveFileManagerTab('all');
 }
 
 // Cargar datos del gestor de archivos
@@ -6082,6 +6071,480 @@ async function loadFileManagerData() {
                 <p>Error al cargar archivos: ${error.message}</p>
                 <button onclick="loadFileManagerData()" class="ctei-btn-secondary mt-3">
                     <i class="fas fa-sync-alt mr-2"></i>
+                    Reintentar
+                </button>
+            </div>
+        `;
+    }
+}
+
+// Cambiar pestaña activa en el gestor de archivos
+async function setActiveFileManagerTab(tab) {
+    try {
+        // Actualizar estado visual de las pestañas
+        document.querySelectorAll('[id^="tab-manager-"]').forEach(btn => {
+            btn.className = "border-b-2 border-transparent text-muted-foreground hover:text-foreground py-2 px-1 text-sm font-medium";
+        });
+        document.getElementById(`tab-manager-${tab}`).className = "border-b-2 border-primary text-primary py-2 px-1 text-sm font-medium";
+        
+        // Cargar contenido según la pestaña
+        const container = document.getElementById('fileManagerTabContent');
+        
+        switch (tab) {
+            case 'all':
+                await loadAllFilesTab();
+                break;
+            case 'projects':
+                await loadProjectsFilesTab();
+                break;
+            case 'products':
+                await loadProductsFilesTab();
+                break;
+        }
+        
+    } catch (error) {
+        console.error('Error cambiando pestaña:', error);
+        showNotification('Error al cargar la pestaña', 'error');
+    }
+}
+
+// Cargar pestaña de todos los archivos
+async function loadAllFilesTab() {
+    const container = document.getElementById('fileManagerTabContent');
+    
+    container.innerHTML = `
+        <div class="flex justify-between items-center mb-6">
+            <div>
+                <h3 class="text-xl font-semibold">Todos los Archivos</h3>
+                <p class="text-muted-foreground">Vista completa de todos tus archivos</p>
+            </div>
+            <div class="flex space-x-2">
+                <button onclick="loadFileManagerData()" class="ctei-btn-secondary">
+                    <i class="fas fa-sync-alt mr-2"></i>
+                    Actualizar
+                </button>
+                <button onclick="showBulkUploadModal()" class="ctei-btn-primary">
+                    <i class="fas fa-upload mr-2"></i>
+                    Subir Archivos
+                </button>
+            </div>
+        </div>
+        
+        <div id="filesList" class="space-y-3">
+            <div class="text-center py-8">
+                <i class="fas fa-spinner fa-spin text-4xl text-muted-foreground mb-3"></i>
+                <p class="text-muted-foreground">Cargando archivos...</p>
+            </div>
+        </div>
+    `;
+    
+    // Cargar los datos
+    await loadFileManagerData();
+}
+
+// Cargar pestaña de archivos por proyectos
+async function loadProjectsFilesTab() {
+    const container = document.getElementById('fileManagerTabContent');
+    
+    container.innerHTML = `
+        <div class="flex justify-between items-center mb-6">
+            <div>
+                <h3 class="text-xl font-semibold">Archivos por Proyectos</h3>
+                <p class="text-muted-foreground">Archivos organizados por proyecto</p>
+            </div>
+            <button onclick="loadProjectsFilesTab()" class="ctei-btn-secondary">
+                <i class="fas fa-sync-alt mr-2"></i>
+                Actualizar
+            </button>
+        </div>
+        
+        <div id="projectsFilesList">
+            <div class="text-center py-8">
+                <i class="fas fa-spinner fa-spin text-4xl text-muted-foreground mb-3"></i>
+                <p class="text-muted-foreground">Cargando proyectos...</p>
+            </div>
+        </div>
+    `;
+    
+    try {
+        // Cargar proyectos del usuario
+        const response = await axios.get(`${API_BASE}/me/projects`);
+        
+        if (!response.data.success) {
+            throw new Error('Error al cargar proyectos');
+        }
+        
+        const projects = response.data.data || [];
+        const listContainer = document.getElementById('projectsFilesList');
+        
+        if (projects.length === 0) {
+            listContainer.innerHTML = `
+                <div class="text-center py-12">
+                    <i class="fas fa-project-diagram text-5xl text-muted-foreground mb-4 opacity-50"></i>
+                    <p class="text-lg font-medium mb-2">No tienes proyectos</p>
+                    <p class="text-muted-foreground">Crea un proyecto para empezar a subir archivos</p>
+                </div>
+            `;
+            return;
+        }
+        
+        listContainer.innerHTML = projects.map(project => `
+            <div class="border border-border rounded-lg mb-4">
+                <div class="p-4 border-b border-border">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center space-x-3">
+                            <i class="fas fa-project-diagram text-xl text-primary"></i>
+                            <div>
+                                <h4 class="font-semibold text-foreground">${project.title}</h4>
+                                <p class="text-sm text-muted-foreground">${project.description || 'Sin descripción'}</p>
+                            </div>
+                        </div>
+                        <button 
+                            onclick="toggleProjectFilesView(${project.id})" 
+                            class="ctei-btn-secondary ctei-btn-sm"
+                            id="toggle-project-${project.id}"
+                        >
+                            <i class="fas fa-chevron-down mr-2"></i>
+                            Ver Archivos
+                        </button>
+                    </div>
+                </div>
+                <div id="project-files-container-${project.id}" class="hidden">
+                    <!-- Los archivos se cargarán aquí -->
+                </div>
+            </div>
+        `).join('');
+        
+    } catch (error) {
+        console.error('Error cargando proyectos:', error);
+        const listContainer = document.getElementById('projectsFilesList');
+        listContainer.innerHTML = `
+            <div class="text-center py-8 text-red-600">
+                <i class="fas fa-exclamation-triangle text-4xl mb-3"></i>
+                <p>Error al cargar proyectos: ${error.message}</p>
+                <button onclick="loadProjectsFilesTab()" class="ctei-btn-secondary mt-3">
+                    Reintentar
+                </button>
+            </div>
+        `;
+    }
+}
+
+// Cargar pestaña de archivos por productos  
+async function loadProductsFilesTab() {
+    const container = document.getElementById('fileManagerTabContent');
+    
+    container.innerHTML = `
+        <div class="flex justify-between items-center mb-6">
+            <div>
+                <h3 class="text-xl font-semibold">Archivos por Productos</h3>
+                <p class="text-muted-foreground">Archivos organizados por producto</p>
+            </div>
+            <button onclick="loadProductsFilesTab()" class="ctei-btn-secondary">
+                <i class="fas fa-sync-alt mr-2"></i>
+                Actualizar
+            </button>
+        </div>
+        
+        <div id="productsFilesList">
+            <div class="text-center py-8">
+                <i class="fas fa-spinner fa-spin text-4xl text-muted-foreground mb-3"></i>
+                <p class="text-muted-foreground">Cargando productos...</p>
+            </div>
+        </div>
+    `;
+    
+    try {
+        // Cargar todos los productos del usuario desde todos sus proyectos
+        const projectsResponse = await axios.get(`${API_BASE}/me/projects`);
+        
+        if (!projectsResponse.data.success) {
+            throw new Error('Error al cargar proyectos');
+        }
+        
+        const projects = projectsResponse.data.data || [];
+        let allProducts = [];
+        
+        // Obtener productos de cada proyecto
+        for (const project of projects) {
+            try {
+                const productsResponse = await axios.get(`${API_BASE}/me/projects/${project.id}/products`);
+                if (productsResponse.data.success) {
+                    const products = productsResponse.data.data.map(product => ({
+                        ...product,
+                        project_name: project.title,
+                        project_id: project.id
+                    }));
+                    allProducts.push(...products);
+                }
+            } catch (error) {
+                console.warn(`Error cargando productos del proyecto ${project.id}:`, error);
+            }
+        }
+        
+        const listContainer = document.getElementById('productsFilesList');
+        
+        if (allProducts.length === 0) {
+            listContainer.innerHTML = `
+                <div class="text-center py-12">
+                    <i class="fas fa-cubes text-5xl text-muted-foreground mb-4 opacity-50"></i>
+                    <p class="text-lg font-medium mb-2">No tienes productos</p>
+                    <p class="text-muted-foreground">Crea productos en tus proyectos para subir archivos</p>
+                </div>
+            `;
+            return;
+        }
+        
+        listContainer.innerHTML = allProducts.map(product => `
+            <div class="border border-border rounded-lg mb-4">
+                <div class="p-4 border-b border-border">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center space-x-3">
+                            <i class="fas fa-cubes text-xl text-primary"></i>
+                            <div>
+                                <h4 class="font-semibold text-foreground">${product.product_code}</h4>
+                                <p class="text-sm text-muted-foreground">
+                                    📁 ${product.project_name} • ${product.development_stage || 'Etapa no especificada'}
+                                </p>
+                                <p class="text-xs text-muted-foreground">${product.ctei_category || 'Sin categoría'}</p>
+                            </div>
+                        </div>
+                        <button 
+                            onclick="toggleProductFilesView(${product.project_id}, ${product.id})" 
+                            class="ctei-btn-secondary ctei-btn-sm"
+                            id="toggle-product-${product.id}"
+                        >
+                            <i class="fas fa-chevron-down mr-2"></i>
+                            Ver Archivos
+                        </button>
+                    </div>
+                </div>
+                <div id="product-files-container-${product.id}" class="hidden">
+                    <!-- Los archivos se cargarán aquí -->
+                </div>
+            </div>
+        `).join('');
+        
+    } catch (error) {
+        console.error('Error cargando productos:', error);
+        const listContainer = document.getElementById('productsFilesList');
+        listContainer.innerHTML = `
+            <div class="text-center py-8 text-red-600">
+                <i class="fas fa-exclamation-triangle text-4xl mb-3"></i>
+                <p>Error al cargar productos: ${error.message}</p>
+                <button onclick="loadProductsFilesTab()" class="ctei-btn-secondary mt-3">
+                    Reintentar
+                </button>
+            </div>
+        `;
+    }
+}
+
+// Alternar vista de archivos de proyecto
+async function toggleProjectFilesView(projectId) {
+    const container = document.getElementById(`project-files-container-${projectId}`);
+    const button = document.getElementById(`toggle-project-${projectId}`);
+    
+    if (container.classList.contains('hidden')) {
+        // Mostrar archivos
+        container.classList.remove('hidden');
+        button.innerHTML = '<i class="fas fa-chevron-up mr-2"></i>Ocultar Archivos';
+        
+        // Cargar archivos del proyecto si no están cargados
+        if (!container.hasAttribute('data-loaded')) {
+            await loadProjectFiles(projectId);
+            container.setAttribute('data-loaded', 'true');
+        }
+    } else {
+        // Ocultar archivos
+        container.classList.add('hidden');
+        button.innerHTML = '<i class="fas fa-chevron-down mr-2"></i>Ver Archivos';
+    }
+}
+
+// Alternar vista de archivos de producto
+async function toggleProductFilesView(projectId, productId) {
+    const container = document.getElementById(`product-files-container-${productId}`);
+    const button = document.getElementById(`toggle-product-${productId}`);
+    
+    if (container.classList.contains('hidden')) {
+        // Mostrar archivos
+        container.classList.remove('hidden');
+        button.innerHTML = '<i class="fas fa-chevron-up mr-2"></i>Ocultar Archivos';
+        
+        // Cargar archivos del producto si no están cargados
+        if (!container.hasAttribute('data-loaded')) {
+            await loadProductFilesForTab(projectId, productId);
+            container.setAttribute('data-loaded', 'true');
+        }
+    } else {
+        // Ocultar archivos
+        container.classList.add('hidden');
+        button.innerHTML = '<i class="fas fa-chevron-down mr-2"></i>Ver Archivos';
+    }
+}
+
+// Cargar archivos de un proyecto específico (para pestañas)
+async function loadProjectFiles(projectId) {
+    const container = document.getElementById(`project-files-container-${projectId}`);
+    
+    container.innerHTML = `
+        <div class="p-4 text-center">
+            <i class="fas fa-spinner fa-spin text-xl text-primary mb-2"></i>
+            <p class="text-muted-foreground">Cargando archivos del proyecto...</p>
+        </div>
+    `;
+    
+    try {
+        const response = await axios.get(`${API_BASE}/me/projects/${projectId}/files`);
+        
+        if (response.data.success) {
+            const files = response.data.data || [];
+            
+            if (files.length === 0) {
+                container.innerHTML = `
+                    <div class="p-4 text-center">
+                        <i class="fas fa-folder-open text-2xl text-muted-foreground mb-2"></i>
+                        <p class="text-muted-foreground">No hay archivos en este proyecto</p>
+                        <button onclick="showView('projects')" class="ctei-btn-primary mt-3">
+                            <i class="fas fa-plus mr-2"></i>
+                            Ir al Proyecto
+                        </button>
+                    </div>
+                `;
+                return;
+            }
+            
+            container.innerHTML = `
+                <div class="p-4">
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        ${files.map(file => `
+                            <div class="border border-border rounded-lg p-3 hover:bg-accent/50 transition-colors">
+                                <div class="flex items-start space-x-3">
+                                    <div class="flex-shrink-0">
+                                        ${FileManager.getFileIcon(file.mime_type)}
+                                    </div>
+                                    <div class="flex-1 min-w-0">
+                                        <p class="font-medium text-foreground truncate" title="${file.original_name}">
+                                            ${file.original_name}
+                                        </p>
+                                        <p class="text-sm text-muted-foreground">
+                                            ${FileManager.formatFileSize(file.file_size)}
+                                        </p>
+                                        <p class="text-xs text-muted-foreground">
+                                            ${new Date(file.uploaded_at).toLocaleDateString()}
+                                        </p>
+                                        <div class="flex space-x-2 mt-2">
+                                            <a href="${file.file_url}" target="_blank" class="text-primary hover:text-primary/80 text-sm">
+                                                <i class="fas fa-eye mr-1"></i>Ver
+                                            </a>
+                                            <a href="${file.file_url}" download="${file.original_name}" class="text-primary hover:text-primary/80 text-sm">
+                                                <i class="fas fa-download mr-1"></i>Descargar
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+            
+        } else {
+            throw new Error(response.data.error || 'Error al cargar archivos');
+        }
+        
+    } catch (error) {
+        console.error('Error cargando archivos del proyecto:', error);
+        container.innerHTML = `
+            <div class="p-4 text-center">
+                <i class="fas fa-exclamation-triangle text-xl text-red-600 mb-2"></i>
+                <p class="text-red-600 text-sm">Error al cargar archivos: ${error.message}</p>
+                <button onclick="loadProjectFiles(${projectId})" class="ctei-btn-secondary mt-3 ctei-btn-sm">
+                    Reintentar
+                </button>
+            </div>
+        `;
+    }
+}
+
+// Cargar archivos de un producto específico (para pestañas)
+async function loadProductFilesForTab(projectId, productId) {
+    const container = document.getElementById(`product-files-container-${productId}`);
+    
+    container.innerHTML = `
+        <div class="p-4 text-center">
+            <i class="fas fa-spinner fa-spin text-xl text-primary mb-2"></i>
+            <p class="text-muted-foreground">Cargando archivos del producto...</p>
+        </div>
+    `;
+    
+    try {
+        const response = await axios.get(`${API_BASE}/me/projects/${projectId}/products/${productId}/files`);
+        
+        if (response.data.success) {
+            const files = response.data.data || [];
+            
+            if (files.length === 0) {
+                container.innerHTML = `
+                    <div class="p-4 text-center">
+                        <i class="fas fa-folder-open text-2xl text-muted-foreground mb-2"></i>
+                        <p class="text-muted-foreground">No hay archivos en este producto</p>
+                        <button onclick="showView('my-products')" class="ctei-btn-primary mt-3">
+                            <i class="fas fa-plus mr-2"></i>
+                            Ir al Producto
+                        </button>
+                    </div>
+                `;
+                return;
+            }
+            
+            container.innerHTML = `
+                <div class="p-4">
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        ${files.map(file => `
+                            <div class="border border-border rounded-lg p-3 hover:bg-accent/50 transition-colors">
+                                <div class="flex items-start space-x-3">
+                                    <div class="flex-shrink-0">
+                                        ${FileManager.getFileIcon(file.mime_type)}
+                                    </div>
+                                    <div class="flex-1 min-w-0">
+                                        <p class="font-medium text-foreground truncate" title="${file.original_name}">
+                                            ${file.original_name}
+                                        </p>
+                                        <p class="text-sm text-muted-foreground">
+                                            ${FileManager.formatFileSize(file.file_size)}
+                                        </p>
+                                        <p class="text-xs text-muted-foreground">
+                                            ${new Date(file.uploaded_at).toLocaleDateString()}
+                                        </p>
+                                        <div class="flex space-x-2 mt-2">
+                                            <a href="${file.file_url}" target="_blank" class="text-primary hover:text-primary/80 text-sm">
+                                                <i class="fas fa-eye mr-1"></i>Ver
+                                            </a>
+                                            <a href="${file.file_url}" download="${file.original_name}" class="text-primary hover:text-primary/80 text-sm">
+                                                <i class="fas fa-download mr-1"></i>Descargar
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+            
+        } else {
+            throw new Error(response.data.error || 'Error al cargar archivos');
+        }
+        
+    } catch (error) {
+        console.error('Error cargando archivos del producto:', error);
+        container.innerHTML = `
+            <div class="p-4 text-center">
+                <i class="fas fa-exclamation-triangle text-xl text-red-600 mb-2"></i>
+                <p class="text-red-600 text-sm">Error al cargar archivos: ${error.message}</p>
+                <button onclick="loadProductFilesForTab(${projectId}, ${productId})" class="ctei-btn-secondary mt-3 ctei-btn-sm">
                     Reintentar
                 </button>
             </div>
