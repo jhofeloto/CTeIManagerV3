@@ -3985,4 +3985,190 @@ privateRoutes.delete('/action-lines/:id', requireRole('ADMIN'), async (c) => {
   }
 });
 
+// ===== GESTIÓN UNIFICADA DE ARCHIVOS =====
+
+// Obtener todos los archivos del usuario (proyectos y productos)
+privateRoutes.get('/files', async (c) => {
+  try {
+    const user = c.get('user')!;
+    
+    // Query unificada para obtener todos los archivos del usuario
+    const filesQuery = `
+      SELECT DISTINCT 
+        f.id,
+        f.filename,
+        f.original_name,
+        f.file_path,
+        f.file_url,
+        f.file_type,
+        f.file_size,
+        f.mime_type,
+        f.entity_type,
+        f.entity_id,
+        f.uploaded_by,
+        f.uploaded_at,
+        CASE 
+          WHEN f.entity_type = 'project' THEN p.title
+          WHEN f.entity_type = 'product' THEN pr.product_code
+          ELSE 'Sin entidad'
+        END as entity_name,
+        CASE
+          WHEN f.entity_type = 'project' THEN p.id
+          WHEN f.entity_type = 'product' THEN pr.project_id
+          ELSE NULL
+        END as project_id,
+        CASE
+          WHEN f.entity_type = 'project' THEN p.title
+          WHEN f.entity_type = 'product' THEN (
+            SELECT p2.title FROM projects p2 WHERE p2.id = pr.project_id
+          )
+          ELSE 'Sin proyecto'
+        END as project_name
+      FROM files f
+      LEFT JOIN projects p ON f.entity_type = 'project' AND f.entity_id = p.id
+      LEFT JOIN products pr ON f.entity_type = 'product' AND f.entity_id = pr.id
+      LEFT JOIN project_collaborators pc ON (
+        (f.entity_type = 'project' AND p.id = pc.project_id) OR
+        (f.entity_type = 'product' AND pr.project_id = pc.project_id)
+      ) AND pc.user_id = ?
+      WHERE (
+        -- Para archivos de proyectos
+        (f.entity_type = 'project' AND (p.owner_id = ? OR pc.user_id = ?)) OR
+        -- Para archivos de productos
+        (f.entity_type = 'product' AND (
+          pr.creator_id = ? OR 
+          EXISTS (
+            SELECT 1 FROM projects p3 
+            WHERE p3.id = pr.project_id AND (p3.owner_id = ? OR EXISTS (
+              SELECT 1 FROM project_collaborators pc2 
+              WHERE pc2.project_id = p3.id AND pc2.user_id = ?
+            ))
+          )
+        )) OR
+        -- Para archivos subidos directamente por el usuario
+        f.uploaded_by = ?
+      ) AND (
+        -- Verificar que la entidad aún existe
+        (f.entity_type = 'project' AND p.id IS NOT NULL) OR
+        (f.entity_type = 'product' AND pr.id IS NOT NULL)
+      )
+      ORDER BY f.uploaded_at DESC
+    `;
+
+    const files = await c.env.DB.prepare(filesQuery).bind(
+      user.userId, user.userId, user.userId, user.userId, 
+      user.userId, user.userId, user.userId
+    ).all();
+
+    // Calcular estadísticas
+    const stats = {
+      total: files.results?.length || 0,
+      project_files: files.results?.filter(f => f.entity_type === 'project').length || 0,
+      product_files: files.results?.filter(f => f.entity_type === 'product').length || 0,
+      total_size: files.results?.reduce((sum, file) => sum + (file.file_size || 0), 0) || 0,
+      types: {}
+    };
+
+    // Contar por tipos de archivo
+    files.results?.forEach(file => {
+      const type = file.file_type || 'unknown';
+      stats.types[type] = (stats.types[type] || 0) + 1;
+    });
+
+    return c.json({
+      success: true,
+      data: {
+        files: files.results || [],
+        stats: stats
+      }
+    });
+
+  } catch (error) {
+    console.error('Error obteniendo archivos del usuario:', error);
+    return c.json({ 
+      success: false, 
+      error: 'Error interno del servidor al obtener archivos' 
+    }, 500);
+  }
+});
+
+// Obtener detalles completos de un archivo específico
+privateRoutes.get('/files/:fileId/details', async (c) => {
+  try {
+    const user = c.get('user')!;
+    const fileId = parseInt(c.req.param('fileId'));
+
+    // Obtener información completa del archivo con permisos verificados
+    const fileQuery = `
+      SELECT DISTINCT 
+        f.*,
+        CASE 
+          WHEN f.entity_type = 'project' THEN p.title
+          WHEN f.entity_type = 'product' THEN pr.product_code
+          ELSE 'Sin entidad'
+        END as entity_name,
+        CASE
+          WHEN f.entity_type = 'project' THEN p.id
+          WHEN f.entity_type = 'product' THEN pr.project_id
+          ELSE NULL
+        END as project_id,
+        CASE
+          WHEN f.entity_type = 'project' THEN p.title
+          WHEN f.entity_type = 'product' THEN (
+            SELECT p2.title FROM projects p2 WHERE p2.id = pr.project_id
+          )
+          ELSE 'Sin proyecto'
+        END as project_name,
+        u.full_name as uploaded_by_name
+      FROM files f
+      LEFT JOIN projects p ON f.entity_type = 'project' AND f.entity_id = p.id
+      LEFT JOIN products pr ON f.entity_type = 'product' AND f.entity_id = pr.id
+      LEFT JOIN users u ON f.uploaded_by = u.id
+      LEFT JOIN project_collaborators pc ON (
+        (f.entity_type = 'project' AND p.id = pc.project_id) OR
+        (f.entity_type = 'product' AND pr.project_id = pc.project_id)
+      ) AND pc.user_id = ?
+      WHERE f.id = ? AND (
+        -- Verificar permisos del usuario
+        (f.entity_type = 'project' AND (p.owner_id = ? OR pc.user_id = ?)) OR
+        (f.entity_type = 'product' AND (
+          pr.creator_id = ? OR 
+          EXISTS (
+            SELECT 1 FROM projects p3 
+            WHERE p3.id = pr.project_id AND (p3.owner_id = ? OR EXISTS (
+              SELECT 1 FROM project_collaborators pc2 
+              WHERE pc2.project_id = p3.id AND pc2.user_id = ?
+            ))
+          )
+        )) OR
+        f.uploaded_by = ?
+      )
+    `;
+
+    const file = await c.env.DB.prepare(fileQuery).bind(
+      user.userId, fileId, user.userId, user.userId, 
+      user.userId, user.userId, user.userId, user.userId
+    ).first();
+
+    if (!file) {
+      return c.json({ 
+        success: false, 
+        error: 'Archivo no encontrado o sin permisos' 
+      }, 404);
+    }
+
+    return c.json({
+      success: true,
+      data: file
+    });
+
+  } catch (error) {
+    console.error('Error obteniendo detalles del archivo:', error);
+    return c.json({ 
+      success: false, 
+      error: 'Error interno del servidor' 
+    }, 500);
+  }
+});
+
 export { privateRoutes };

@@ -6043,85 +6043,45 @@ function renderFileManagerView() {
 // Cargar datos del gestor de archivos
 async function loadFileManagerData() {
     try {
-        // Cargar todos los proyectos del usuario para mostrar archivos
-        const projectsResponse = await axios.get(`${API_BASE}/me/projects`);
+        // Usar el nuevo endpoint unificado para obtener todos los archivos
+        const response = await axios.get(`${API_BASE}/private/files`);
         
-        if (!projectsResponse.data.success) {
-            throw new Error('Error al cargar proyectos');
+        if (!response.data.success) {
+            throw new Error('Error al cargar archivos');
         }
         
-        const projects = projectsResponse.data.data;
-        const allFiles = [];
-        let totalSize = 0;
-        let projectFilesCount = 0;
-        let productFilesCount = 0;
+        const data = response.data.data;
+        const allFiles = data.files || [];
+        const stats = data.stats || {};
         
-        // Cargar archivos de cada proyecto
-        for (const project of projects) {
-            try {
-                // Archivos del proyecto
-                const projectFilesResponse = await axios.get(`${API_BASE}/me/projects/${project.id}/files`);
-                if (projectFilesResponse.data.success) {
-                    const projectFiles = projectFilesResponse.data.data.map(file => ({
-                        ...file,
-                        entity_type: 'project',
-                        entity_name: project.title,
-                        project_id: project.id
-                    }));
-                    allFiles.push(...projectFiles);
-                    projectFilesCount += projectFiles.length;
-                    totalSize += projectFiles.reduce((sum, file) => sum + (file.file_size || 0), 0);
-                }
-                
-                // Archivos de productos del proyecto
-                const productsResponse = await axios.get(`${API_BASE}/me/projects/${project.id}/products`);
-                if (productsResponse.data.success) {
-                    const products = productsResponse.data.data;
-                    
-                    for (const product of products) {
-                        try {
-                            const productFilesResponse = await axios.get(`${API_BASE}/me/projects/${project.id}/products/${product.id}/files`);
-                            if (productFilesResponse.data.success) {
-                                const productFiles = productFilesResponse.data.data.map(file => ({
-                                    ...file,
-                                    entity_type: 'product',
-                                    entity_name: product.product_code,
-                                    project_id: project.id,
-                                    product_id: product.id
-                                }));
-                                allFiles.push(...productFiles);
-                                productFilesCount += productFiles.length;
-                                totalSize += productFiles.reduce((sum, file) => sum + (file.file_size || 0), 0);
-                            }
-                        } catch (error) {
-                            console.warn(`Error cargando archivos del producto ${product.id}:`, error);
-                        }
-                    }
-                }
-            } catch (error) {
-                console.warn(`Error cargando archivos del proyecto ${project.id}:`, error);
-            }
-        }
-        
-        // Actualizar estadísticas
-        document.getElementById('totalFiles').textContent = allFiles.length;
-        document.getElementById('projectFiles').textContent = projectFilesCount;
-        document.getElementById('productFiles').textContent = productFilesCount;
-        document.getElementById('totalSize').textContent = FileManager.formatFileSize(totalSize);
+        // Actualizar estadísticas con los datos del servidor
+        document.getElementById('totalFiles').textContent = stats.total || 0;
+        document.getElementById('projectFiles').textContent = stats.project_files || 0;
+        document.getElementById('productFiles').textContent = stats.product_files || 0;
+        document.getElementById('totalSize').textContent = FileManager.formatFileSize(stats.total_size || 0);
         
         // Almacenar archivos para filtrado
         window.allFilesData = allFiles;
+        window.fileStats = stats;
         
         // Mostrar lista inicial
         renderFilesList(allFiles);
         
+        console.log('✅ Archivos cargados exitosamente:', {
+            total: stats.total,
+            proyectos: stats.project_files,
+            productos: stats.product_files,
+            size: FileManager.formatFileSize(stats.total_size || 0)
+        });
+        
     } catch (error) {
-        console.error('Error cargando datos de archivos:', error);
+        console.error('❌ Error cargando datos de archivos:', error);
         document.getElementById('filesList').innerHTML = `
             <div class="text-center py-8 text-red-600">
                 <i class="fas fa-exclamation-triangle text-4xl mb-3"></i>
                 <p>Error al cargar archivos: ${error.message}</p>
                 <button onclick="loadFileManagerData()" class="ctei-btn-secondary mt-3">
+                    <i class="fas fa-sync-alt mr-2"></i>
                     Reintentar
                 </button>
             </div>
@@ -6135,32 +6095,57 @@ function renderFilesList(files) {
     
     if (!files || files.length === 0) {
         container.innerHTML = `
-            <div class="text-center py-8 text-muted-foreground">
-                <i class="fas fa-folder-open text-4xl mb-3"></i>
-                <p>No se encontraron archivos</p>
+            <div class="text-center py-12 text-muted-foreground">
+                <i class="fas fa-folder-open text-5xl mb-4 opacity-50"></i>
+                <p class="text-lg font-medium mb-2">No se encontraron archivos</p>
+                <p class="text-sm">Los archivos de tus proyectos y productos aparecerán aquí</p>
             </div>
         `;
         return;
     }
     
-    container.innerHTML = files.map(file => `
-        <div class="ctei-file-item">
+    container.innerHTML = files.map(file => {
+        const uploadDate = new Date(file.uploaded_at);
+        const isRecentFile = (Date.now() - uploadDate.getTime()) < (7 * 24 * 60 * 60 * 1000); // 7 días
+        
+        return `
+        <div class="ctei-file-item ${isRecentFile ? 'border-l-4 border-l-primary' : ''}">
             <div class="flex items-center justify-between">
                 <div class="flex items-center space-x-4">
                     <div class="ctei-file-icon">
                         ${FileManager.getFileIcon(file.mime_type)}
                     </div>
-                    <div>
-                        <div class="font-medium text-foreground">${file.original_name}</div>
-                        <div class="text-sm text-muted-foreground">
-                            ${file.entity_type === 'project' ? '📁' : '📦'} ${file.entity_name} • 
-                            ${FileManager.formatFileSize(file.file_size)} • 
-                            ${new Date(file.uploaded_at).toLocaleDateString()}
+                    <div class="flex-1">
+                        <div class="flex items-center space-x-2">
+                            <span class="font-medium text-foreground">${file.original_name}</span>
+                            ${isRecentFile ? '<span class="px-2 py-1 text-xs bg-primary/10 text-primary rounded-full font-medium">Nuevo</span>' : ''}
+                            <span class="px-2 py-1 text-xs rounded-full font-medium ${file.file_type === 'image' ? 'bg-green-100 text-green-800' : file.file_type === 'document' ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-800'}">${file.file_type || 'general'}</span>
                         </div>
-                        ${file.uploaded_by_name ? `<div class="text-xs text-muted-foreground">Por: ${file.uploaded_by_name}</div>` : ''}
+                        <div class="text-sm text-muted-foreground mt-1">
+                            ${file.entity_type === 'project' ? '📁 Proyecto:' : '📦 Producto:'} <span class="font-medium">${file.entity_name}</span>
+                            ${file.project_name && file.entity_type === 'product' ? ` (${file.project_name})` : ''}
+                        </div>
+                        <div class="text-xs text-muted-foreground mt-1 flex items-center space-x-3">
+                            <span><i class="fas fa-weight-hanging mr-1"></i>${FileManager.formatFileSize(file.file_size)}</span>
+                            <span><i class="fas fa-calendar mr-1"></i>${uploadDate.toLocaleDateString('es-ES', {
+                                year: 'numeric',
+                                month: 'short',
+                                day: 'numeric',
+                                hour: '2-digit',
+                                minute: '2-digit'
+                            })}</span>
+                            ${file.uploaded_by_name ? `<span><i class="fas fa-user mr-1"></i>${file.uploaded_by_name}</span>` : ''}
+                        </div>
                     </div>
                 </div>
                 <div class="flex items-center space-x-2">
+                    <button 
+                        onclick="viewFileDetails(${file.id})"
+                        class="ctei-btn-secondary ctei-btn-sm"
+                        title="Ver detalles"
+                    >
+                        <i class="fas fa-info-circle"></i>
+                    </button>
                     <a 
                         href="${file.file_url}" 
                         target="_blank" 
@@ -6178,7 +6163,7 @@ function renderFilesList(files) {
                         <i class="fas fa-download"></i>
                     </a>
                     <button 
-                        onclick="confirmDeleteFileFromManager(${file.id}, '${file.original_name}')"
+                        onclick="confirmDeleteFileFromManager(${file.id}, '${file.original_name.replace(/'/g, "\\'")}')"
                         class="ctei-btn-secondary ctei-btn-sm hover:bg-red-100 hover:text-red-700"
                         title="Eliminar archivo"
                     >
@@ -6187,7 +6172,8 @@ function renderFilesList(files) {
                 </div>
             </div>
         </div>
-    `).join('');
+        `;
+    }).join('');
 }
 
 // Filtrar archivos
@@ -6246,6 +6232,160 @@ async function deleteFileFromManager(fileId) {
         console.error('Error eliminando archivo:', error);
         showNotification(`Error al eliminar archivo: ${error.message}`, 'error');
     }
+}
+
+// Ver detalles completos de un archivo
+async function viewFileDetails(fileId) {
+    try {
+        const response = await axios.get(`${API_BASE}/private/files/${fileId}/details`);
+        
+        if (!response.data.success) {
+            throw new Error('No se pudieron obtener los detalles del archivo');
+        }
+        
+        const file = response.data.data;
+        showFileDetailsModal(file);
+        
+    } catch (error) {
+        console.error('Error obteniendo detalles del archivo:', error);
+        showNotification(`Error al obtener detalles: ${error.message}`, 'error');
+    }
+}
+
+// Modal con detalles completos del archivo
+function showFileDetailsModal(file) {
+    const uploadDate = new Date(file.uploaded_at);
+    
+    const modal = document.createElement('div');
+    modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';
+    modal.innerHTML = `
+        <div class="bg-background rounded-lg shadow-xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+            <div class="p-6 border-b">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <h3 class="text-xl font-bold text-foreground">${file.original_name}</h3>
+                        <p class="text-muted-foreground">Detalles del archivo</p>
+                    </div>
+                    <button 
+                        onclick="this.closest('.fixed').remove()"
+                        class="text-muted-foreground hover:text-foreground"
+                    >
+                        <i class="fas fa-times text-xl"></i>
+                    </button>
+                </div>
+            </div>
+            
+            <div class="p-6 space-y-6">
+                <!-- Información básica -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-muted-foreground mb-1">Nombre del archivo</label>
+                            <p class="text-foreground font-medium">${file.original_name}</p>
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium text-muted-foreground mb-1">Tipo de archivo</label>
+                            <div class="flex items-center space-x-2">
+                                ${FileManager.getFileIcon(file.mime_type)}
+                                <span class="px-2 py-1 text-xs rounded-full font-medium ${file.file_type === 'image' ? 'bg-green-100 text-green-800' : file.file_type === 'document' ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-800'}">${file.file_type || 'general'}</span>
+                                <span class="text-sm text-muted-foreground">(${file.mime_type})</span>
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium text-muted-foreground mb-1">Tamaño</label>
+                            <p class="text-foreground">${FileManager.formatFileSize(file.file_size)}</p>
+                        </div>
+                    </div>
+                    
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-muted-foreground mb-1">Entidad asociada</label>
+                            <p class="text-foreground">
+                                ${file.entity_type === 'project' ? '📁 Proyecto:' : '📦 Producto:'} 
+                                <span class="font-medium">${file.entity_name}</span>
+                            </p>
+                            ${file.project_name && file.entity_type === 'product' ? `<p class="text-sm text-muted-foreground">Del proyecto: ${file.project_name}</p>` : ''}
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium text-muted-foreground mb-1">Subido por</label>
+                            <p class="text-foreground">${file.uploaded_by_name || 'Usuario desconocido'}</p>
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium text-muted-foreground mb-1">Fecha de subida</label>
+                            <p class="text-foreground">${uploadDate.toLocaleDateString('es-ES', {
+                                weekday: 'long',
+                                year: 'numeric',
+                                month: 'long',
+                                day: 'numeric',
+                                hour: '2-digit',
+                                minute: '2-digit'
+                            })}</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Información técnica -->
+                <div class="border-t pt-4">
+                    <label class="block text-sm font-medium text-muted-foreground mb-2">Información técnica</label>
+                    <div class="bg-muted/50 rounded-lg p-4 space-y-2 text-sm">
+                        <div><strong>ID del archivo:</strong> ${file.id}</div>
+                        <div><strong>Nombre interno:</strong> ${file.filename}</div>
+                        <div><strong>Ruta:</strong> ${file.file_path}</div>
+                        <div><strong>URL:</strong> ${file.file_url}</div>
+                    </div>
+                </div>
+                
+                <!-- Acciones -->
+                <div class="border-t pt-4">
+                    <div class="flex flex-wrap gap-3">
+                        <a 
+                            href="${file.file_url}" 
+                            target="_blank" 
+                            class="ctei-btn-primary"
+                        >
+                            <i class="fas fa-eye mr-2"></i>
+                            Ver archivo
+                        </a>
+                        <a 
+                            href="${file.file_url}" 
+                            download="${file.original_name}"
+                            class="ctei-btn-secondary"
+                        >
+                            <i class="fas fa-download mr-2"></i>
+                            Descargar
+                        </a>
+                        <button 
+                            onclick="navigator.clipboard.writeText('${file.file_url}').then(() => showNotification('URL copiada al portapapeles', 'success'))"
+                            class="ctei-btn-secondary"
+                        >
+                            <i class="fas fa-copy mr-2"></i>
+                            Copiar URL
+                        </button>
+                        <button 
+                            onclick="confirmDeleteFileFromManager(${file.id}, '${file.original_name.replace(/'/g, "\\'")}'); this.closest('.fixed').remove()"
+                            class="ctei-btn-secondary hover:bg-red-100 hover:text-red-700"
+                        >
+                            <i class="fas fa-trash mr-2"></i>
+                            Eliminar
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+    
+    // Cerrar con Escape
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape' && modal.parentNode) {
+            modal.remove();
+        }
+    });
 }
 
 // Modal de subida masiva
