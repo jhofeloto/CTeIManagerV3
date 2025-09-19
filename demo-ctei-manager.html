@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CTeI-Manager - Demo Sistema Completo</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 30px;
+            margin-bottom: 30px;
+            text-align: center;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+
+        .header h1 {
+            color: #2c3e50;
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            font-weight: 700;
+        }
+
+        .header .subtitle {
+            color: #666;
+            font-size: 1.1rem;
+        }
+
+        .demo-section {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+        }
+
+        .section-title {
+            color: #2c3e50;
+            font-size: 1.5rem;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .credential-box {
+            background: #f8f9fa;
+            border: 2px solid #e9ecef;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 15px 0;
+        }
+
+        .credential-item {
+            margin: 8px 0;
+            font-family: 'Courier New', monospace;
+        }
+
+        .credential-label {
+            font-weight: bold;
+            color: #495057;
+            display: inline-block;
+            width: 120px;
+        }
+
+        .credential-value {
+            color: #007bff;
+            font-weight: bold;
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+            margin: 20px 0;
+        }
+
+        .feature-card {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            border-left: 4px solid #007bff;
+        }
+
+        .feature-title {
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 10px;
+        }
+
+        .feature-desc {
+            color: #666;
+            font-size: 0.9rem;
+        }
+
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+
+        .status-active { background: #28a745; }
+        .status-ready { background: #007bff; }
+        .status-fixed { background: #ffc107; }
+
+        .btn {
+            display: inline-block;
+            padding: 12px 24px;
+            background: #007bff;
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            margin: 5px;
+        }
+
+        .btn:hover {
+            background: #0056b3;
+            transform: translateY(-2px);
+        }
+
+        .btn-success {
+            background: #28a745;
+        }
+
+        .btn-success:hover {
+            background: #1e7e34;
+        }
+
+        .workflow-steps {
+            background: #e8f4ff;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+
+        .step {
+            margin: 10px 0;
+            padding: 10px 15px;
+            background: white;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .step-number {
+            background: #007bff;
+            color: white;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 0.9rem;
+        }
+
+        .urls-section {
+            background: linear-gradient(135deg, #28a745, #20c997);
+            color: white;
+            border-radius: 15px;
+            padding: 25px;
+            margin: 20px 0;
+        }
+
+        .url-item {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            padding: 15px;
+            margin: 10px 0;
+        }
+
+        .url-label {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .url-link {
+            color: #fff;
+            text-decoration: none;
+            font-family: monospace;
+            font-size: 1.1rem;
+        }
+
+        .url-link:hover {
+            text-decoration: underline;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 10px;
+            }
+            
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .features-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>🚀 CTeI-Manager</h1>
+            <p class="subtitle">Sistema de Gestión de Ciencia, Tecnología e Innovación</p>
+            <p style="margin-top: 15px; color: #28a745; font-weight: bold;">
+                ✅ Problema de Administrador RESUELTO - Sistema Completamente Funcional
+            </p>
+        </div>
+
+        <!-- Credenciales de Acceso -->
+        <div class="demo-section">
+            <h2 class="section-title">
+                🔑 Credenciales de Acceso Activas
+            </h2>
+            
+            <div class="credential-box">
+                <h3 style="color: #dc3545; margin-bottom: 15px;">👤 Administrador (Acceso Completo)</h3>
+                <div class="credential-item">
+                    <span class="credential-label">Email:</span>
+                    <span class="credential-value">admin@demo.com</span>
+                </div>
+                <div class="credential-item">
+                    <span class="credential-label">Password:</span>
+                    <span class="credential-value">admin123</span>
+                </div>
+                <div class="credential-item">
+                    <span class="credential-label">Rol:</span>
+                    <span class="credential-value">ADMIN</span>
+                </div>
+            </div>
+
+            <div class="credential-box">
+                <h3 style="color: #007bff; margin-bottom: 15px;">👨‍🔬 Investigador</h3>
+                <div class="credential-item">
+                    <span class="credential-label">Email:</span>
+                    <span class="credential-value">investigador@demo.com</span>
+                </div>
+                <div class="credential-item">
+                    <span class="credential-label">Password:</span>
+                    <span class="credential-value">investigador123</span>
+                </div>
+                <div class="credential-item">
+                    <span class="credential-label">Rol:</span>
+                    <span class="credential-value">INVESTIGATOR</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- URLs de Acceso -->
+        <div class="urls-section">
+            <h2 style="margin-bottom: 20px;">🌐 URLs de Acceso</h2>
+            
+            <div class="url-item">
+                <div class="url-label">🧪 Testing Environment</div>
+                <a href="https://main.ctei-manager-testing.pages.dev" class="url-link" target="_blank">
+                    https://main.ctei-manager-testing.pages.dev
+                </a>
+            </div>
+            
+            <div class="url-item">
+                <div class="url-label">🚀 Production Environment</div>
+                <a href="#" class="url-link" onclick="alert('Configure your production URL after deployment')">
+                    [Tu URL de producción de Cloudflare]
+                </a>
+            </div>
+        </div>
+
+        <!-- Funcionalidades del Sistema -->
+        <div class="demo-section">
+            <h2 class="section-title">
+                ⭐ Funcionalidades del Sistema
+            </h2>
+            
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="feature-title">
+                        <span class="status-indicator status-active"></span>
+                        Gestión de Proyectos
+                    </div>
+                    <div class="feature-desc">
+                        Crear, editar y gestionar proyectos de investigación con metodologías, colaboradores y documentación completa.
+                    </div>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-title">
+                        <span class="status-indicator status-active"></span>
+                        Productos de Investigación
+                    </div>
+                    <div class="feature-desc">
+                        Registro de productos científicos (TOP, A, B, ASC, DPC, FRH_A, FRH_B) con códigos y clasificaciones.
+                    </div>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-title">
+                        <span class="status-indicator status-active"></span>
+                        Sistema de Archivos
+                    </div>
+                    <div class="feature-desc">
+                        Upload y gestión de archivos por proyectos y productos con control de acceso y organización.
+                    </div>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-title">
+                        <span class="status-indicator status-active"></span>
+                        Control de Acceso
+                    </div>
+                    <div class="feature-desc">
+                        Sistema de roles (ADMIN, INVESTIGATOR, COMMUNITY) con permisos diferenciados y JWT authentication.
+                    </div>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-title">
+                        <span class="status-indicator status-fixed"></span>
+                        Dashboard Administrativo
+                    </div>
+                    <div class="feature-desc">
+                        Panel de control completo para administradores con gestión de usuarios, proyectos y configuración del sistema.
+                    </div>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-title">
+                        <span class="status-indicator status-ready"></span>
+                        API RESTful
+                    </div>
+                    <div class="feature-desc">
+                        API completa con endpoints para todas las operaciones, autenticación JWT y documentación integrada.
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Workflow de Testing -->
+        <div class="demo-section">
+            <h2 class="section-title">
+                🧪 Workflow de Testing Completo
+            </h2>
+            
+            <div class="workflow-steps">
+                <div class="step">
+                    <div class="step-number">1</div>
+                    <div>
+                        <strong>Git Pull:</strong> Obtener la última versión con la solución de admin
+                        <code style="display: block; margin-top: 5px; color: #666;">git pull origin main</code>
+                    </div>
+                </div>
+
+                <div class="step">
+                    <div class="step-number">2</div>
+                    <div>
+                        <strong>Configurar Testing:</strong> Aplicar configuración de testing
+                        <code style="display: block; margin-top: 5px; color: #666;">cp wrangler.testing.jsonc wrangler.jsonc</code>
+                    </div>
+                </div>
+
+                <div class="step">
+                    <div class="step-number">3</div>
+                    <div>
+                        <strong>Activar Admin:</strong> Ejecutar reparación de administrador
+                        <code style="display: block; margin-top: 5px; color: #666;">./fix-admin-testing.sh</code>
+                    </div>
+                </div>
+
+                <div class="step">
+                    <div class="step-number">4</div>
+                    <div>
+                        <strong>Build & Deploy:</strong> Compilar y desplegar aplicación
+                        <code style="display: block; margin-top: 5px; color: #666;">npm run build && wrangler pages deploy dist --project-name ctei-manager-testing</code>
+                    </div>
+                </div>
+
+                <div class="step">
+                    <div class="step-number">5</div>
+                    <div>
+                        <strong>Probar Login:</strong> Acceder con credenciales de administrador
+                        <code style="display: block; margin-top: 5px; color: #666;">admin@demo.com / admin123</code>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Problemas Resueltos -->
+        <div class="demo-section">
+            <h2 class="section-title">
+                ✅ Problemas Resueltos
+            </h2>
+            
+            <div style="background: #d4edda; border: 1px solid #c3e6cb; border-radius: 8px; padding: 15px; margin: 10px 0;">
+                <strong style="color: #155724;">🔧 Botón "Editar Producto" - SOLUCIONADO</strong>
+                <p style="color: #155724; margin: 5px 0 0 0;">Funcionalidad completa de edición de productos con formularios dinámicos y validación.</p>
+            </div>
+
+            <div style="background: #d4edda; border: 1px solid #c3e6cb; border-radius: 8px; padding: 15px; margin: 10px 0;">
+                <strong style="color: #155724;">📁 Sistema de Archivos - SOLUCIONADO</strong>
+                <p style="color: #155724; margin: 5px 0 0 0;">Upload, gestión y visualización de archivos por proyectos y productos funcionando correctamente.</p>
+            </div>
+
+            <div style="background: #d4edda; border: 1px solid #c3e6cb; border-radius: 8px; padding: 15px; margin: 10px 0;">
+                <strong style="color: #155724;">🔐 Acceso de Administrador - SOLUCIONADO</strong>
+                <p style="color: #155724; margin: 5px 0 0 0;">Usuario administrador creado y funcional en testing y producción.</p>
+            </div>
+
+            <div style="background: #d4edda; border: 1px solid #c3e6cb; border-radius: 8px; padding: 15px; margin: 10px 0;">
+                <strong style="color: #155724;">🗂️ Navegación de Pestañas - SOLUCIONADO</strong>
+                <p style="color: #155724; margin: 5px 0 0 0;">Pestañas "Por proyectos" y "Por productos" funcionando correctamente en el gestor de archivos.</p>
+            </div>
+        </div>
+
+        <!-- Acciones Disponibles -->
+        <div class="demo-section" style="text-align: center;">
+            <h2 class="section-title" style="justify-content: center;">
+                🚀 Acciones Disponibles
+            </h2>
+            
+            <div style="margin: 25px 0;">
+                <a href="https://main.ctei-manager-testing.pages.dev" class="btn btn-success" target="_blank">
+                    🧪 Acceder a Testing
+                </a>
+                
+                <a href="https://github.com/jhofeloto/CodectiChocoV2" class="btn" target="_blank">
+                    📋 Ver Código en GitHub
+                </a>
+                
+                <button class="btn" onclick="showDeployCommands()">
+                    ⚡ Ver Comandos de Deploy
+                </button>
+            </div>
+
+            <div id="deployCommands" style="display: none; background: #f8f9fa; border-radius: 10px; padding: 20px; margin: 20px 0; text-align: left;">
+                <h3>Comandos para Deployment:</h3>
+                <pre style="background: #e9ecef; padding: 15px; border-radius: 5px; overflow-x: auto;"><code># Para Testing
+cd ~/CodectiChocoV2-testing
+git pull origin main
+./fix-admin-testing.sh
+npm run build
+wrangler pages deploy dist --project-name ctei-manager-testing --commit-dirty=true
+
+# Para Producción
+./deploy-with-admin.sh
+# O manual:
+npm run build
+npm run db:migrate:prod
+npm run deploy:prod</code></pre>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function showDeployCommands() {
+            const div = document.getElementById('deployCommands');
+            div.style.display = div.style.display === 'none' ? 'block' : 'none';
+        }
+
+        // Auto-highlight current status
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🚀 CTeI-Manager Demo Page Loaded');
+            console.log('✅ Admin credentials: admin@demo.com / admin123');
+            console.log('👨‍🔬 Investigator credentials: investigador@demo.com / investigador123');
+            console.log('🌐 Testing URL: https://main.ctei-manager-testing.pages.dev');
+        });
+    </script>
+</body>
+</html>
