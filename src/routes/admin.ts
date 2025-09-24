@@ -943,7 +943,7 @@ adminRoutes.get('/projects', async (c) => {
       params.push(status);
     }
 
-    query += ` GROUP BY p.id ORDER BY p.last_activity_date DESC, p.updated_at DESC LIMIT ? OFFSET ?`;
+    query += ` GROUP BY p.id ORDER BY p.updated_at DESC LIMIT ? OFFSET ?`;
     params.push(limit, offset);
 
     const projects = await c.env.DB.prepare(query).bind(...params).all();
