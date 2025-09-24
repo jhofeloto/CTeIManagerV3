@@ -100,8 +100,8 @@ auth.post('/login', async (c) => {
       }, 401);
     }
 
-    // Verificar contraseña - Modo desarrollo: comparación directa
-    const isValidPassword = password === user.password_hash;
+    // Verificar contraseña usando bcrypt
+    const isValidPassword = await verifyPassword(password, user.password_hash);
     
     if (!isValidPassword) {
       return c.json<APIResponse>({ 
