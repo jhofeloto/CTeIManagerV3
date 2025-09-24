@@ -1621,7 +1621,7 @@ privateRoutes.get('/products/:productId', async (c) => {
           pc.name as category_name, pc.category_group, pc.impact_weight
         FROM products pr
         JOIN projects p ON pr.project_id = p.id
-        JOIN users u ON pr.creator_id = u.id
+        JOIN users u ON p.owner_id = u.id
         LEFT JOIN product_categories pc ON pr.product_type = pc.code
         LEFT JOIN project_collaborators pcol ON p.id = pcol.project_id AND pcol.user_id = ?
         WHERE pr.id = ? AND (pr.creator_id = ? OR p.owner_id = ? OR pcol.user_id = ? OR pr.is_public = 1)
