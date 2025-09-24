@@ -1,0 +1,468 @@
+import { Hono } from 'hono'
+import { jwt } from 'hono/jwt'
+import { mockDb } from '../utils/mockDb'
+import { logger } from '../monitoring/logger'
+
+const events = new Hono()
+
+// JWT middleware for authentication
+events.use('/*', jwt({
+  secret: 'your-secret-key',
+  cookie: 'auth-token'
+}))
+
+// GET /api/admin/events - Get all events with admin features
+events.get('/', async (c) => {
+  try {
+    const { 
+      search = '', 
+      status = '', 
+      category = '', 
+      type = '',
+      organizer = '',
+      sort = 'created_at', 
+      order = 'desc',
+      limit = '10', 
+      offset = '0' 
+    } = c.req.query()
+
+    const result = await mockDb.getEvents(
+      search,
+      status,
+      category,
+      type,
+      organizer,
+      sort,
+      order,
+      parseInt(limit),
+      parseInt(offset)
+    )
+
+    logger.info(
+      `Admin events list retrieved`,
+      { 
+        search, 
+        status, 
+        category, 
+        type, 
+        organizer, 
+        total: result.total,
+        returned: result.events.length,
+        userId: c.get('jwtPayload')?.userId
+      }
+    )
+
+    return c.json({
+      success: true,
+      data: result,
+      pagination: {
+        limit: parseInt(limit),
+        offset: parseInt(offset),
+        total: result.total,
+        pages: Math.ceil(result.total / parseInt(limit))
+      }
+    })
+  } catch (error) {
+    logger.error(
+      `Error retrieving admin events`,
+      {
+        userId: c.get('jwtPayload')?.userId,
+        error: error instanceof Error ? error.message : 'Unknown error'
+      }
+    )
+    
+    return c.json({
+      success: false,
+      error: 'Error retrieving events'
+    }, 500)
+  }
+})
+
+// GET /api/admin/events/stats - Get events statistics
+events.get('/stats', async (c) => {
+  try {
+    const stats = await mockDb.getEventsStats()
+
+    logger.info(
+      `Events stats retrieved`,
+      { userId: c.get('jwtPayload')?.userId }
+    )
+
+    return c.json({
+      success: true,
+      data: stats
+    })
+  } catch (error) {
+    logger.error(
+      `Error retrieving events stats`,
+      {
+        userId: c.get('jwtPayload')?.userId,
+        error: error instanceof Error ? error.message : 'Unknown error'
+      }
+    )
+    
+    return c.json({
+      success: false,
+      error: 'Error retrieving events statistics'
+    }, 500)
+  }
+})
+
+// GET /api/admin/events/categories - Get event categories
+events.get('/categories', async (c) => {
+  try {
+    const categories = await mockDb.getEventCategories()
+
+    return c.json({
+      success: true,
+      data: categories
+    })
+  } catch (error) {
+    await logger.log({
+      level: 'error',
+      message: `Error retrieving event categories`,
+      userId: c.get('jwtPayload')?.userId,
+      error: error instanceof Error ? error.message : 'Unknown error'
+    })
+    
+    return c.json({
+      success: false,
+      error: 'Error retrieving event categories'
+    }, 500)
+  }
+})
+
+// GET /api/admin/events/:id - Get event by ID
+events.get('/:id', async (c) => {
+  try {
+    const id = parseInt(c.req.param('id'))
+    const event = await mockDb.getEventById(id)
+    
+    if (!event) {
+      return c.json({
+        success: false,
+        error: 'Event not found'
+      }, 404)
+    }
+
+    await logger.log({
+      level: 'info',
+      message: `Event retrieved by ID`,
+      userId: c.get('jwtPayload')?.userId,
+      details: { eventId: id, eventTitle: event.title }
+    })
+
+    return c.json({
+      success: true,
+      data: event
+    })
+  } catch (error) {
+    await logger.log({
+      level: 'error',
+      message: `Error retrieving event`,
+      userId: c.get('jwtPayload')?.userId,
+      error: error instanceof Error ? error.message : 'Unknown error'
+    })
+    
+    return c.json({
+      success: false,
+      error: 'Error retrieving event'
+    }, 500)
+  }
+})
+
+// POST /api/admin/events - Create new event
+events.post('/', async (c) => {
+  try {
+    const payload = c.get('jwtPayload')
+    const data = await c.req.json()
+
+    // Validation
+    const requiredFields = [
+      'title', 'description', 'short_description', 'type', 
+      'category_id', 'start_date', 'end_date', 'registration_start', 
+      'registration_end', 'location', 'venue', 'address', 
+      'max_participants', 'target_audience'
+    ]
+    
+    for (const field of requiredFields) {
+      if (!data[field]) {
+        return c.json({
+          success: false,
+          error: `Field '${field}' is required`
+        }, 400)
+      }
+    }
+
+    // Convert boolean values
+    const eventData = {
+      ...data,
+      organizer_id: payload.userId,
+      is_virtual: Boolean(data.is_virtual),
+      is_hybrid: Boolean(data.is_hybrid),
+      registration_required: Boolean(data.registration_required),
+      is_free: Boolean(data.is_free),
+      is_featured: Boolean(data.is_featured),
+      is_public: Boolean(data.is_public),
+      max_participants: parseInt(data.max_participants),
+      registration_fee: data.is_free ? 0 : (parseFloat(data.registration_fee) || 0),
+      tags: Array.isArray(data.tags) ? data.tags : [],
+      status: data.status || 'draft'
+    }
+
+    const event = await mockDb.createEvent(eventData)
+
+    await logger.log({
+      level: 'info',
+      message: `New event created`,
+      userId: payload.userId,
+      details: { 
+        eventId: event.id, 
+        eventTitle: event.title,
+        type: event.type,
+        category: event.category_name,
+        status: event.status
+      }
+    })
+
+    return c.json({
+      success: true,
+      data: event,
+      message: 'Event created successfully'
+    }, 201)
+  } catch (error) {
+    await logger.log({
+      level: 'error',
+      message: `Error creating event`,
+      userId: c.get('jwtPayload')?.userId,
+      error: error instanceof Error ? error.message : 'Unknown error'
+    })
+    
+    return c.json({
+      success: false,
+      error: 'Error creating event'
+    }, 500)
+  }
+})
+
+// PUT /api/admin/events/:id - Update event
+events.put('/:id', async (c) => {
+  try {
+    const payload = c.get('jwtPayload')
+    const id = parseInt(c.req.param('id'))
+    const data = await c.req.json()
+
+    // Validation
+    const requiredFields = [
+      'title', 'description', 'short_description', 'type', 
+      'category_id', 'start_date', 'end_date', 'registration_start', 
+      'registration_end', 'location', 'venue', 'address', 
+      'max_participants', 'target_audience'
+    ]
+    
+    for (const field of requiredFields) {
+      if (!data[field]) {
+        return c.json({
+          success: false,
+          error: `Field '${field}' is required`
+        }, 400)
+      }
+    }
+
+    // Convert boolean values
+    const eventData = {
+      ...data,
+      is_virtual: Boolean(data.is_virtual),
+      is_hybrid: Boolean(data.is_hybrid),
+      registration_required: Boolean(data.registration_required),
+      is_free: Boolean(data.is_free),
+      is_featured: Boolean(data.is_featured),
+      is_public: Boolean(data.is_public),
+      max_participants: parseInt(data.max_participants),
+      registration_fee: data.is_free ? 0 : (parseFloat(data.registration_fee) || 0),
+      tags: Array.isArray(data.tags) ? data.tags : [],
+      category_id: parseInt(data.category_id)
+    }
+
+    const event = await mockDb.updateEvent(id, eventData)
+    
+    if (!event) {
+      return c.json({
+        success: false,
+        error: 'Event not found'
+      }, 404)
+    }
+
+    await logger.log({
+      level: 'info',
+      message: `Event updated`,
+      userId: payload.userId,
+      details: { 
+        eventId: id, 
+        eventTitle: event.title,
+        type: event.type,
+        status: event.status
+      }
+    })
+
+    return c.json({
+      success: true,
+      data: event,
+      message: 'Event updated successfully'
+    })
+  } catch (error) {
+    await logger.log({
+      level: 'error',
+      message: `Error updating event`,
+      userId: c.get('jwtPayload')?.userId,
+      error: error instanceof Error ? error.message : 'Unknown error'
+    })
+    
+    return c.json({
+      success: false,
+      error: 'Error updating event'
+    }, 500)
+  }
+})
+
+// DELETE /api/admin/events/:id - Delete event
+events.delete('/:id', async (c) => {
+  try {
+    const payload = c.get('jwtPayload')
+    const id = parseInt(c.req.param('id'))
+
+    const success = await mockDb.deleteEvent(id)
+    
+    if (!success) {
+      return c.json({
+        success: false,
+        error: 'Event not found'
+      }, 404)
+    }
+
+    await logger.log({
+      level: 'warning',
+      message: `Event deleted`,
+      userId: payload.userId,
+      details: { eventId: id }
+    })
+
+    return c.json({
+      success: true,
+      message: 'Event deleted successfully'
+    })
+  } catch (error) {
+    await logger.log({
+      level: 'error',
+      message: `Error deleting event`,
+      userId: c.get('jwtPayload')?.userId,
+      error: error instanceof Error ? error.message : 'Unknown error'
+    })
+    
+    return c.json({
+      success: false,
+      error: 'Error deleting event'
+    }, 500)
+  }
+})
+
+// GET /api/admin/events/:id/registrations - Get event registrations
+events.get('/:id/registrations', async (c) => {
+  try {
+    const eventId = parseInt(c.req.param('id'))
+    const { 
+      status = '', 
+      search = '', 
+      limit = '50', 
+      offset = '0' 
+    } = c.req.query()
+
+    const result = await mockDb.getEventRegistrations(
+      eventId,
+      status,
+      search,
+      parseInt(limit),
+      parseInt(offset)
+    )
+
+    await logger.log({
+      level: 'info',
+      message: `Event registrations retrieved`,
+      userId: c.get('jwtPayload')?.userId,
+      details: { 
+        eventId,
+        status,
+        search,
+        total: result.total,
+        returned: result.registrations.length 
+      }
+    })
+
+    return c.json({
+      success: true,
+      data: result,
+      pagination: {
+        limit: parseInt(limit),
+        offset: parseInt(offset),
+        total: result.total,
+        pages: Math.ceil(result.total / parseInt(limit))
+      }
+    })
+  } catch (error) {
+    await logger.log({
+      level: 'error',
+      message: `Error retrieving event registrations`,
+      userId: c.get('jwtPayload')?.userId,
+      error: error instanceof Error ? error.message : 'Unknown error'
+    })
+    
+    return c.json({
+      success: false,
+      error: 'Error retrieving event registrations'
+    }, 500)
+  }
+})
+
+// PUT /api/admin/events/:id/registrations/:regId/cancel - Cancel registration
+events.put('/:id/registrations/:regId/cancel', async (c) => {
+  try {
+    const payload = c.get('jwtPayload')
+    const eventId = parseInt(c.req.param('id'))
+    const regId = parseInt(c.req.param('regId'))
+
+    const success = await mockDb.cancelEventRegistration(regId)
+    
+    if (!success) {
+      return c.json({
+        success: false,
+        error: 'Registration not found'
+      }, 404)
+    }
+
+    await logger.log({
+      level: 'info',
+      message: `Event registration cancelled`,
+      userId: payload.userId,
+      details: { eventId, registrationId: regId }
+    })
+
+    return c.json({
+      success: true,
+      message: 'Registration cancelled successfully'
+    })
+  } catch (error) {
+    await logger.log({
+      level: 'error',
+      message: `Error cancelling event registration`,
+      userId: c.get('jwtPayload')?.userId,
+      error: error instanceof Error ? error.message : 'Unknown error'
+    })
+    
+    return c.json({
+      success: false,
+      error: 'Error cancelling registration'
+    }, 500)
+  }
+})
+
+export default events

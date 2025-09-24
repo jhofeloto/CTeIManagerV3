@@ -1,0 +1,17 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "codecti-platform",
+  "compatibility_date": "2025-09-09",
+  "pages_build_output_dir": "./dist",
+  "compatibility_flags": ["nodejs_compat"],
+  "main": "src/index.tsx",
+  
+  // D1 Database configuration for local development
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "webapp-production",
+      "database_id": "local-dev-db"
+    }
+  ]
+}

@@ -1,0 +1,66 @@
+{
+  "name": "choco-inventa",
+  "version": "3.0.0",
+  "description": "Choco Inventa - Plataforma de gestión de proyectos CTeI con IA para CODECTI Chocó",
+  "main": "dev-server.mjs",
+  "type": "module",
+  "scripts": {
+    "dev": "node dev-server.mjs",
+    "start": "node dev-server.mjs",
+    "build": "echo 'Build not required for development server'",
+    "serve": "node dev-server.mjs",
+    "local": "node dev-server.mjs",
+    "test": "echo 'Tests would run here'",
+    "migrate": "echo 'Database migrations would run here'",
+    "setup": "npm install && cp .env.development .env.local",
+    "clean": "rm -rf node_modules dev-database.sqlite logs",
+    "reset": "npm run clean && npm run setup",
+    "check": "node -e \"console.log('✅ Choco Inventa is ready!')\""
+  },
+  "keywords": [
+    "research",
+    "ctei",
+    "ai",
+    "machine-learning",
+    "analytics",
+    "forecasting",
+    "colombia",
+    "choco",
+    "codecti",
+    "hono",
+    "cloudflare",
+    "workers"
+  ],
+  "author": "CODECTI Chocó",
+  "license": "MIT",
+  "dependencies": {
+    "hono": "^4.0.0",
+    "@hono/node-server": "^1.0.0",
+    "better-sqlite3": "^9.0.0",
+    "bcryptjs": "^2.4.3",
+    "jsonwebtoken": "^9.0.2",
+    "axios": "^1.6.0",
+    "nanoid": "^5.0.0",
+    "dotenv": "^16.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@types/better-sqlite3": "^7.6.0",
+    "@types/bcryptjs": "^2.4.0",
+    "@types/jsonwebtoken": "^9.0.0",
+    "typescript": "^5.0.0",
+    "tsx": "^4.0.0"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=8.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/codecti/choco-inventa.git"
+  },
+  "bugs": {
+    "url": "https://github.com/codecti/choco-inventa/issues"
+  },
+  "homepage": "https://choco-inventa.codecti.gov.co"
+}

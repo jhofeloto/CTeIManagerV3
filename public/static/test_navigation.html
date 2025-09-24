@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Navigation - CODECTI</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
+</head>
+<body class="bg-gray-100 p-8">
+    <div class="max-w-4xl mx-auto">
+        <h1 class="text-3xl font-bold text-gray-800 mb-6">
+            <i class="fas fa-test-tube mr-2"></i>
+            Test de Navegación - Botones "Ver Detalles"
+        </h1>
+        
+        <div class="space-y-4">
+            <div class="bg-white p-4 rounded-lg shadow">
+                <h3 class="font-semibold mb-2">Paso 1: Autenticar Usuario</h3>
+                <button id="loginBtn" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
+                    Hacer Login
+                </button>
+                <span id="loginStatus" class="ml-4 text-sm"></span>
+            </div>
+            
+            <div class="bg-white p-4 rounded-lg shadow">
+                <h3 class="font-semibold mb-2">Paso 2: Cargar Proyectos</h3>
+                <button id="loadProjectsBtn" class="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600" disabled>
+                    Cargar Proyectos
+                </button>
+                <span id="projectsStatus" class="ml-4 text-sm"></span>
+            </div>
+            
+            <div class="bg-white p-4 rounded-lg shadow">
+                <h3 class="font-semibold mb-2">Paso 3: Lista de Proyectos</h3>
+                <div id="projectsList" class="space-y-2">
+                    <!-- Projects will be loaded here -->
+                </div>
+            </div>
+            
+            <div class="bg-white p-4 rounded-lg shadow">
+                <h3 class="font-semibold mb-2">Paso 4: Test de Navegación a Detalle</h3>
+                <div id="navigationResult" class="text-sm text-gray-600">
+                    Primero carga los proyectos para probar la navegación
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/axios@1.6.0/dist/axios.min.js"></script>
+    <script>
+        let authToken = null;
+        let projects = [];
+
+        // Set base URL
+        axios.defaults.baseURL = '/api';
+
+        document.getElementById('loginBtn').addEventListener('click', async () => {
+            const btn = document.getElementById('loginBtn');
+            const status = document.getElementById('loginStatus');
+            
+            btn.disabled = true;
+            btn.textContent = 'Autenticando...';
+            status.textContent = 'Enviando credenciales...';
+            
+            try {
+                const response = await axios.post('/auth/login', {
+                    email: 'investigador1@codecti.choco.gov.co',
+                    password: 'password123'
+                });
+                
+                if (response.data.success) {
+                    authToken = response.data.token;
+                    axios.defaults.headers.common['Authorization'] = `Bearer ${authToken}`;
+                    
+                    status.textContent = `✅ Autenticado como: ${response.data.user.name}`;
+                    status.className = 'ml-4 text-sm text-green-600';
+                    
+                    // Enable next step
+                    document.getElementById('loadProjectsBtn').disabled = false;
+                } else {
+                    throw new Error(response.data.message);
+                }
+            } catch (error) {
+                status.textContent = `❌ Error: ${error.response?.data?.message || error.message}`;
+                status.className = 'ml-4 text-sm text-red-600';
+                btn.disabled = false;
+                btn.textContent = 'Hacer Login';
+            }
+        });
+
+        document.getElementById('loadProjectsBtn').addEventListener('click', async () => {
+            const btn = document.getElementById('loadProjectsBtn');
+            const status = document.getElementById('projectsStatus');
+            const projectsList = document.getElementById('projectsList');
+            
+            btn.disabled = true;
+            btn.textContent = 'Cargando...';
+            status.textContent = 'Obteniendo proyectos...';
+            
+            try {
+                const response = await axios.get('/projects');
+                
+                if (response.data.success) {
+                    projects = response.data.projects;
+                    
+                    status.textContent = `✅ ${projects.length} proyectos cargados`;
+                    status.className = 'ml-4 text-sm text-green-600';
+                    
+                    // Render projects with test buttons
+                    projectsList.innerHTML = projects.map(project => `
+                        <div class="border rounded p-3 bg-gray-50">
+                            <div class="flex justify-between items-start">
+                                <div>
+                                    <h4 class="font-medium text-gray-900">${project.title}</h4>
+                                    <p class="text-sm text-gray-600">Responsable: ${project.responsible_person}</p>
+                                    <p class="text-xs text-gray-500 mt-1">${project.summary.substring(0, 100)}...</p>
+                                </div>
+                                <div class="flex space-x-2">
+                                    <button 
+                                        onclick="testNavigateToProject(${project.id})"
+                                        class="bg-blue-500 text-white px-3 py-1 rounded text-sm hover:bg-blue-600"
+                                    >
+                                        <i class="fas fa-eye mr-1"></i>
+                                        Ver Detalles
+                                    </button>
+                                    <button 
+                                        onclick="testDirectApi(${project.id})"
+                                        class="bg-purple-500 text-white px-3 py-1 rounded text-sm hover:bg-purple-600"
+                                    >
+                                        <i class="fas fa-api mr-1"></i>
+                                        Test API
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    `).join('');
+                } else {
+                    throw new Error(response.data.message);
+                }
+            } catch (error) {
+                status.textContent = `❌ Error: ${error.response?.data?.message || error.message}`;
+                status.className = 'ml-4 text-sm text-red-600';
+                btn.disabled = false;
+                btn.textContent = 'Cargar Proyectos';
+            }
+        });
+
+        // Test function for navigation
+        window.testNavigateToProject = async (projectId) => {
+            const result = document.getElementById('navigationResult');
+            result.innerHTML = `🔄 Probando navegación a proyecto ${projectId}...`;
+            
+            try {
+                // Test 1: Check if API works
+                const apiResponse = await axios.get(`/projects/${projectId}`);
+                
+                if (apiResponse.data.success) {
+                    result.innerHTML = `
+                        <div class="space-y-2">
+                            <div class="text-green-600">✅ API funciona correctamente</div>
+                            <div><strong>Título:</strong> ${apiResponse.data.project.title}</div>
+                            <div><strong>Responsable:</strong> ${apiResponse.data.project.responsible_person}</div>
+                            <div><strong>Estado:</strong> <span class="capitalize">${apiResponse.data.project.status}</span></div>
+                        </div>
+                    `;
+                    
+                    // Test 2: Try to navigate using the same method as the main app
+                    setTimeout(() => {
+                        result.innerHTML += `<div class="mt-2 text-blue-600">🔄 Intentando navegación con History API...</div>`;
+                        
+                        // Simulate the navigation function from the main app
+                        try {
+                            window.history.pushState({}, '', `/project/${projectId}`);
+                            
+                            result.innerHTML += `<div class="text-green-600">✅ History API funcionando. URL cambiada a: ${window.location.pathname}</div>`;
+                            
+                            // Check if the route handler would work
+                            if (window.location.pathname === `/project/${projectId}`) {
+                                result.innerHTML += `<div class="text-green-600">✅ Ruta correcta establecida</div>`;
+                                
+                                // Test if the page would have the correct container
+                                result.innerHTML += `<div class="text-amber-600">⚠️ Nota: En la aplicación real, se necesita el contenedor #project-detail-container en esta ruta</div>`;
+                            }
+                        } catch (navError) {
+                            result.innerHTML += `<div class="text-red-600">❌ Error de navegación: ${navError.message}</div>`;
+                        }
+                    }, 500);
+                } else {
+                    throw new Error(apiResponse.data.message);
+                }
+            } catch (error) {
+                result.innerHTML = `<div class="text-red-600">❌ Error de API: ${error.response?.data?.message || error.message}</div>`;
+            }
+        };
+
+        // Test function for direct API call
+        window.testDirectApi = async (projectId) => {
+            const result = document.getElementById('navigationResult');
+            result.innerHTML = `🔄 Probando API directa para proyecto ${projectId}...`;
+            
+            try {
+                const response = await axios.get(`/projects/${projectId}`);
+                
+                result.innerHTML = `
+                    <div class="space-y-2">
+                        <div class="text-green-600">✅ API Response exitosa</div>
+                        <pre class="bg-gray-100 p-2 rounded text-xs overflow-auto">${JSON.stringify(response.data, null, 2)}</pre>
+                    </div>
+                `;
+            } catch (error) {
+                result.innerHTML = `<div class="text-red-600">❌ Error: ${error.response?.data?.message || error.message}</div>`;
+            }
+        };
+    </script>
+</body>
+</html>

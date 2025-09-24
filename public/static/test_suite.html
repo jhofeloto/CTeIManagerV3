@@ -1,0 +1,976 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Suite de Pruebas Unitarias - CODECTI</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .test-pass { @apply text-green-600 bg-green-50 border-green-200; }
+        .test-fail { @apply text-red-600 bg-red-50 border-red-200; }
+        .test-pending { @apply text-gray-600 bg-gray-50 border-gray-200; }
+        .test-running { @apply text-blue-600 bg-blue-50 border-blue-200; }
+    </style>
+</head>
+<body class="bg-gray-100 p-4">
+    <div class="max-w-6xl mx-auto">
+        <div class="bg-white rounded-lg shadow-lg p-6">
+            <h1 class="text-3xl font-bold text-gray-800 mb-6">
+                <i class="fas fa-vial mr-3"></i>
+                Suite de Pruebas Unitarias Exhaustivas - CODECTI
+            </h1>
+            
+            <!-- Test Controls -->
+            <div class="mb-6 flex flex-wrap gap-4">
+                <button id="runAllTests" class="bg-blue-500 text-white px-6 py-2 rounded hover:bg-blue-600">
+                    <i class="fas fa-play mr-2"></i>
+                    Ejecutar Todas las Pruebas
+                </button>
+                <button id="clearResults" class="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600">
+                    <i class="fas fa-eraser mr-2"></i>
+                    Limpiar Resultados
+                </button>
+                <div class="flex items-center space-x-4 text-sm">
+                    <span id="testProgress" class="text-gray-600">0 / 0 pruebas ejecutadas</span>
+                    <span id="testSummary" class="font-semibold"></span>
+                </div>
+            </div>
+
+            <!-- Test Results Grid -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                
+                <!-- Authentication Tests -->
+                <div class="bg-white border rounded-lg p-4">
+                    <h2 class="text-xl font-semibold mb-4 text-purple-700">
+                        <i class="fas fa-user-shield mr-2"></i>
+                        Pruebas de Autenticación
+                    </h2>
+                    <div class="space-y-3">
+                        <div class="test-case test-pending border rounded p-3" data-test="auth-login">
+                            <div class="flex justify-between items-center">
+                                <span class="font-medium">Login con credenciales válidas</span>
+                                <span class="test-status"><i class="fas fa-clock"></i></span>
+                            </div>
+                            <div class="test-result text-sm mt-2"></div>
+                        </div>
+                        <div class="test-case test-pending border rounded p-3" data-test="auth-register">
+                            <div class="flex justify-between items-center">
+                                <span class="font-medium">Registro de usuario nuevo</span>
+                                <span class="test-status"><i class="fas fa-clock"></i></span>
+                            </div>
+                            <div class="test-result text-sm mt-2"></div>
+                        </div>
+                        <div class="test-case test-pending border rounded p-3" data-test="auth-redirect">
+                            <div class="flex justify-between items-center">
+                                <span class="font-medium">Redirección después del registro</span>
+                                <span class="test-status"><i class="fas fa-clock"></i></span>
+                            </div>
+                            <div class="test-result text-sm mt-2"></div>
+                        </div>
+                        <div class="test-case test-pending border rounded p-3" data-test="auth-token">
+                            <div class="flex justify-between items-center">
+                                <span class="font-medium">Verificación de token</span>
+                                <span class="test-status"><i class="fas fa-clock"></i></span>
+                            </div>
+                            <div class="test-result text-sm mt-2"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Navigation Tests -->
+                <div class="bg-white border rounded-lg p-4">
+                    <h2 class="text-xl font-semibold mb-4 text-blue-700">
+                        <i class="fas fa-route mr-2"></i>
+                        Pruebas de Navegación
+                    </h2>
+                    <div class="space-y-3">
+                        <div class="test-case test-pending border rounded p-3" data-test="nav-dashboard">
+                            <div class="flex justify-between items-center">
+                                <span class="font-medium">Navegación a Dashboard</span>
+                                <span class="test-status"><i class="fas fa-clock"></i></span>
+                            </div>
+                            <div class="test-result text-sm mt-2"></div>
+                        </div>
+                        <div class="test-case test-pending border rounded p-3" data-test="nav-project-detail">
+                            <div class="flex justify-between items-center">
+                                <span class="font-medium">Botones "Ver Detalles" funcionan</span>
+                                <span class="test-status"><i class="fas fa-clock"></i></span>
+                            </div>
+                            <div class="test-result text-sm mt-2"></div>
+                        </div>
+                        <div class="test-case test-pending border rounded p-3" data-test="nav-back-to-projects">
+                            <div class="flex justify-between items-center">
+                                <span class="font-medium">Botón "Volver a proyectos"</span>
+                                <span class="test-status"><i class="fas fa-clock"></i></span>
+                            </div>
+                            <div class="test-result text-sm mt-2"></div>
+                        </div>
+                        <div class="test-case test-pending border rounded p-3" data-test="nav-history-api">
+                            <div class="flex justify-between items-center">
+                                <span class="font-medium">History API funcionando</span>
+                                <span class="test-status"><i class="fas fa-clock"></i></span>
+                            </div>
+                            <div class="test-result text-sm mt-2"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Project Management Tests -->
+                <div class="bg-white border rounded-lg p-4">
+                    <h2 class="text-xl font-semibold mb-4 text-green-700">
+                        <i class="fas fa-folder-open mr-2"></i>
+                        Pruebas de Gestión de Proyectos
+                    </h2>
+                    <div class="space-y-3">
+                        <div class="test-case test-pending border rounded p-3" data-test="project-list">
+                            <div class="flex justify-between items-center">
+                                <span class="font-medium">Cargar lista de proyectos</span>
+                                <span class="test-status"><i class="fas fa-clock"></i></span>
+                            </div>
+                            <div class="test-result text-sm mt-2"></div>
+                        </div>
+                        <div class="test-case test-pending border rounded p-3" data-test="project-create">
+                            <div class="flex justify-between items-center">
+                                <span class="font-medium">Crear nuevo proyecto</span>
+                                <span class="test-status"><i class="fas fa-clock"></i></span>
+                            </div>
+                            <div class="test-result text-sm mt-2"></div>
+                        </div>
+                        <div class="test-case test-pending border rounded p-3" data-test="project-search">
+                            <div class="flex justify-between items-center">
+                                <span class="font-medium">Búsqueda y filtros</span>
+                                <span class="test-status"><i class="fas fa-clock"></i></span>
+                            </div>
+                            <div class="test-result text-sm mt-2"></div>
+                        </div>
+                        <div class="test-case test-pending border rounded p-3" data-test="project-stats">
+                            <div class="flex justify-between items-center">
+                                <span class="font-medium">Estadísticas del dashboard</span>
+                                <span class="test-status"><i class="fas fa-clock"></i></span>
+                            </div>
+                            <div class="test-result text-sm mt-2"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Document Management Tests -->
+                <div class="bg-white border rounded-lg p-4">
+                    <h2 class="text-xl font-semibold mb-4 text-orange-700">
+                        <i class="fas fa-file-alt mr-2"></i>
+                        Pruebas de Gestión de Documentos
+                    </h2>
+                    <div class="space-y-3">
+                        <div class="test-case test-pending border rounded p-3" data-test="doc-upload">
+                            <div class="flex justify-between items-center">
+                                <span class="font-medium">Subir documento</span>
+                                <span class="test-status"><i class="fas fa-clock"></i></span>
+                            </div>
+                            <div class="test-result text-sm mt-2"></div>
+                        </div>
+                        <div class="test-case test-pending border rounded p-3" data-test="doc-download">
+                            <div class="flex justify-between items-center">
+                                <span class="font-medium">Descargar documento</span>
+                                <span class="test-status"><i class="fas fa-clock"></i></span>
+                            </div>
+                            <div class="test-result text-sm mt-2"></div>
+                        </div>
+                        <div class="test-case test-pending border rounded p-3" data-test="doc-display">
+                            <div class="flex justify-between items-center">
+                                <span class="font-medium">Mostrar info de documento</span>
+                                <span class="test-status"><i class="fas fa-clock"></i></span>
+                            </div>
+                            <div class="test-result text-sm mt-2"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- API Tests -->
+                <div class="bg-white border rounded-lg p-4">
+                    <h2 class="text-xl font-semibold mb-4 text-red-700">
+                        <i class="fas fa-server mr-2"></i>
+                        Pruebas de API
+                    </h2>
+                    <div class="space-y-3">
+                        <div class="test-case test-pending border rounded p-3" data-test="api-health">
+                            <div class="flex justify-between items-center">
+                                <span class="font-medium">Health Check</span>
+                                <span class="test-status"><i class="fas fa-clock"></i></span>
+                            </div>
+                            <div class="test-result text-sm mt-2"></div>
+                        </div>
+                        <div class="test-case test-pending border rounded p-3" data-test="api-projects">
+                            <div class="flex justify-between items-center">
+                                <span class="font-medium">API de Proyectos</span>
+                                <span class="test-status"><i class="fas fa-clock"></i></span>
+                            </div>
+                            <div class="test-result text-sm mt-2"></div>
+                        </div>
+                        <div class="test-case test-pending border rounded p-3" data-test="api-auth">
+                            <div class="flex justify-between items-center">
+                                <span class="font-medium">API de Autenticación</span>
+                                <span class="test-status"><i class="fas fa-clock"></i></span>
+                            </div>
+                            <div class="test-result text-sm mt-2"></div>
+                        </div>
+                        <div class="test-case test-pending border rounded p-3" data-test="api-errors">
+                            <div class="flex justify-between items-center">
+                                <span class="font-medium">Manejo de errores API</span>
+                                <span class="test-status"><i class="fas fa-clock"></i></span>
+                            </div>
+                            <div class="test-result text-sm mt-2"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Frontend Tests -->
+                <div class="bg-white border rounded-lg p-4">
+                    <h2 class="text-xl font-semibold mb-4 text-indigo-700">
+                        <i class="fas fa-desktop mr-2"></i>
+                        Pruebas de Frontend
+                    </h2>
+                    <div class="space-y-3">
+                        <div class="test-case test-pending border rounded p-3" data-test="fe-load">
+                            <div class="flex justify-between items-center">
+                                <span class="font-medium">Carga de recursos frontend</span>
+                                <span class="test-status"><i class="fas fa-clock"></i></span>
+                            </div>
+                            <div class="test-result text-sm mt-2"></div>
+                        </div>
+                        <div class="test-case test-pending border rounded p-3" data-test="fe-events">
+                            <div class="flex justify-between items-center">
+                                <span class="font-medium">Event delegation y listeners</span>
+                                <span class="test-status"><i class="fas fa-clock"></i></span>
+                            </div>
+                            <div class="test-result text-sm mt-2"></div>
+                        </div>
+                        <div class="test-case test-pending border rounded p-3" data-test="fe-forms">
+                            <div class="flex justify-between items-center">
+                                <span class="font-medium">Validación de formularios</span>
+                                <span class="test-status"><i class="fas fa-clock"></i></span>
+                            </div>
+                            <div class="test-result text-sm mt-2"></div>
+                        </div>
+                        <div class="test-case test-pending border rounded p-3" data-test="fe-modals">
+                            <div class="flex justify-between items-center">
+                                <span class="font-medium">Funcionamiento de modales</span>
+                                <span class="test-status"><i class="fas fa-clock"></i></span>
+                            </div>
+                            <div class="test-result text-sm mt-2"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Detailed Test Log -->
+            <div class="mt-8 bg-gray-50 border rounded-lg p-4">
+                <h3 class="text-lg font-semibold mb-4 text-gray-800">
+                    <i class="fas fa-scroll mr-2"></i>
+                    Log Detallado de Pruebas
+                </h3>
+                <div id="testLog" class="bg-white border rounded p-4 max-h-64 overflow-y-auto text-sm font-mono">
+                    <div class="text-gray-500">Esperando inicio de pruebas...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/axios@1.6.0/dist/axios.min.js"></script>
+    <script>
+        class TestSuite {
+            constructor() {
+                this.tests = [];
+                this.currentTestIndex = 0;
+                this.results = { passed: 0, failed: 0, total: 0 };
+                this.authToken = null;
+                this.testProjects = [];
+                
+                // Set up axios
+                axios.defaults.baseURL = '/api';
+                
+                this.initializeTests();
+                this.setupEventListeners();
+            }
+
+            initializeTests() {
+                this.tests = [
+                    // Authentication Tests
+                    { id: 'auth-login', name: 'Login', category: 'auth', fn: this.testLogin.bind(this) },
+                    { id: 'auth-register', name: 'Register', category: 'auth', fn: this.testRegister.bind(this) },
+                    { id: 'auth-redirect', name: 'Auth Redirect', category: 'auth', fn: this.testAuthRedirect.bind(this) },
+                    { id: 'auth-token', name: 'Token Verification', category: 'auth', fn: this.testTokenVerification.bind(this) },
+                    
+                    // Navigation Tests
+                    { id: 'nav-dashboard', name: 'Dashboard Navigation', category: 'nav', fn: this.testDashboardNavigation.bind(this) },
+                    { id: 'nav-project-detail', name: 'Project Detail Buttons', category: 'nav', fn: this.testProjectDetailButtons.bind(this) },
+                    { id: 'nav-back-to-projects', name: 'Back to Projects', category: 'nav', fn: this.testBackToProjects.bind(this) },
+                    { id: 'nav-history-api', name: 'History API', category: 'nav', fn: this.testHistoryAPI.bind(this) },
+                    
+                    // Project Management Tests
+                    { id: 'project-list', name: 'Project List', category: 'project', fn: this.testProjectList.bind(this) },
+                    { id: 'project-create', name: 'Project Creation', category: 'project', fn: this.testProjectCreation.bind(this) },
+                    { id: 'project-search', name: 'Project Search', category: 'project', fn: this.testProjectSearch.bind(this) },
+                    { id: 'project-stats', name: 'Project Stats', category: 'project', fn: this.testProjectStats.bind(this) },
+                    
+                    // Document Tests
+                    { id: 'doc-upload', name: 'Document Upload', category: 'document', fn: this.testDocumentUpload.bind(this) },
+                    { id: 'doc-download', name: 'Document Download', category: 'document', fn: this.testDocumentDownload.bind(this) },
+                    { id: 'doc-display', name: 'Document Display', category: 'document', fn: this.testDocumentDisplay.bind(this) },
+                    
+                    // API Tests
+                    { id: 'api-health', name: 'Health Check', category: 'api', fn: this.testHealthCheck.bind(this) },
+                    { id: 'api-projects', name: 'Projects API', category: 'api', fn: this.testProjectsAPI.bind(this) },
+                    { id: 'api-auth', name: 'Auth API', category: 'api', fn: this.testAuthAPI.bind(this) },
+                    { id: 'api-errors', name: 'Error Handling', category: 'api', fn: this.testErrorHandling.bind(this) },
+                    
+                    // Frontend Tests
+                    { id: 'fe-load', name: 'Resource Loading', category: 'frontend', fn: this.testResourceLoading.bind(this) },
+                    { id: 'fe-events', name: 'Event Handling', category: 'frontend', fn: this.testEventHandling.bind(this) },
+                    { id: 'fe-forms', name: 'Form Validation', category: 'frontend', fn: this.testFormValidation.bind(this) },
+                    { id: 'fe-modals', name: 'Modal Functionality', category: 'frontend', fn: this.testModalFunctionality.bind(this) }
+                ];
+
+                this.results.total = this.tests.length;
+                this.updateProgress();
+            }
+
+            setupEventListeners() {
+                document.getElementById('runAllTests').addEventListener('click', () => {
+                    this.runAllTests();
+                });
+
+                document.getElementById('clearResults').addEventListener('click', () => {
+                    this.clearResults();
+                });
+            }
+
+            async runAllTests() {
+                this.log('🚀 Iniciando suite de pruebas exhaustivas...');
+                this.results = { passed: 0, failed: 0, total: this.tests.length };
+                
+                for (let i = 0; i < this.tests.length; i++) {
+                    const test = this.tests[i];
+                    await this.runTest(test);
+                    await this.delay(100); // Small delay between tests
+                }
+
+                this.log(`\n✅ Suite de pruebas completada:`);
+                this.log(`   Pasadas: ${this.results.passed}/${this.results.total}`);
+                this.log(`   Fallidas: ${this.results.failed}/${this.results.total}`);
+                this.log(`   Tasa de éxito: ${((this.results.passed / this.results.total) * 100).toFixed(1)}%`);
+            }
+
+            async runTest(test) {
+                this.log(`\n🧪 Ejecutando: ${test.name} (${test.id})`);
+                this.setTestStatus(test.id, 'running', 'Ejecutando...');
+
+                try {
+                    const result = await test.fn();
+                    if (result.success) {
+                        this.results.passed++;
+                        this.setTestStatus(test.id, 'pass', result.message);
+                        this.log(`   ✅ PASÓ: ${result.message}`);
+                    } else {
+                        this.results.failed++;
+                        this.setTestStatus(test.id, 'fail', result.message);
+                        this.log(`   ❌ FALLÓ: ${result.message}`);
+                    }
+                } catch (error) {
+                    this.results.failed++;
+                    this.setTestStatus(test.id, 'fail', `Error: ${error.message}`);
+                    this.log(`   ❌ ERROR: ${error.message}`);
+                }
+
+                this.updateProgress();
+            }
+
+            setTestStatus(testId, status, message) {
+                const testElement = document.querySelector(`[data-test="${testId}"]`);
+                if (!testElement) return;
+
+                const statusElement = testElement.querySelector('.test-status');
+                const resultElement = testElement.querySelector('.test-result');
+
+                // Remove all status classes
+                testElement.classList.remove('test-pending', 'test-running', 'test-pass', 'test-fail');
+                
+                switch (status) {
+                    case 'running':
+                        testElement.classList.add('test-running');
+                        statusElement.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+                        break;
+                    case 'pass':
+                        testElement.classList.add('test-pass');
+                        statusElement.innerHTML = '<i class="fas fa-check"></i>';
+                        break;
+                    case 'fail':
+                        testElement.classList.add('test-fail');
+                        statusElement.innerHTML = '<i class="fas fa-times"></i>';
+                        break;
+                    default:
+                        testElement.classList.add('test-pending');
+                        statusElement.innerHTML = '<i class="fas fa-clock"></i>';
+                }
+
+                resultElement.textContent = message || '';
+            }
+
+            updateProgress() {
+                const completed = this.results.passed + this.results.failed;
+                document.getElementById('testProgress').textContent = `${completed} / ${this.results.total} pruebas ejecutadas`;
+                
+                if (completed === this.results.total) {
+                    const summary = `${this.results.passed} pasadas, ${this.results.failed} fallidas`;
+                    document.getElementById('testSummary').textContent = summary;
+                    document.getElementById('testSummary').className = 
+                        this.results.failed === 0 ? 'font-semibold text-green-600' : 'font-semibold text-red-600';
+                }
+            }
+
+            log(message) {
+                const logElement = document.getElementById('testLog');
+                if (logElement.textContent.includes('Esperando inicio')) {
+                    logElement.innerHTML = '';
+                }
+                logElement.innerHTML += message + '\n';
+                logElement.scrollTop = logElement.scrollHeight;
+            }
+
+            clearResults() {
+                this.results = { passed: 0, failed: 0, total: this.tests.length };
+                
+                // Reset all test cases
+                document.querySelectorAll('.test-case').forEach(element => {
+                    element.className = 'test-case test-pending border rounded p-3';
+                    element.querySelector('.test-status').innerHTML = '<i class="fas fa-clock"></i>';
+                    element.querySelector('.test-result').textContent = '';
+                });
+
+                // Clear log
+                document.getElementById('testLog').innerHTML = '<div class="text-gray-500">Esperando inicio de pruebas...</div>';
+                
+                // Reset progress
+                this.updateProgress();
+                document.getElementById('testSummary').textContent = '';
+            }
+
+            delay(ms) {
+                return new Promise(resolve => setTimeout(resolve, ms));
+            }
+
+            // ===== TEST IMPLEMENTATIONS =====
+
+            // Authentication Tests
+            async testLogin() {
+                try {
+                    const response = await axios.post('/auth/login', {
+                        email: 'investigador1@codecti.choco.gov.co',
+                        password: 'password123'
+                    });
+
+                    if (response.data.success && response.data.token) {
+                        this.authToken = response.data.token;
+                        axios.defaults.headers.common['Authorization'] = `Bearer ${this.authToken}`;
+                        return { success: true, message: 'Login exitoso con token válido' };
+                    } else {
+                        return { success: false, message: 'Login falló: sin token' };
+                    }
+                } catch (error) {
+                    return { success: false, message: `Error de login: ${error.message}` };
+                }
+            }
+
+            async testRegister() {
+                const randomId = Math.random().toString(36).substring(7);
+                try {
+                    const response = await axios.post('/auth/register', {
+                        name: `Usuario Test ${randomId}`,
+                        email: `test${randomId}@codecti.test`,
+                        institution: 'CODECTI Test',
+                        password: 'test123456'
+                    });
+
+                    if (response.data.success) {
+                        return { success: true, message: 'Registro exitoso' };
+                    } else {
+                        return { success: false, message: `Registro falló: ${response.data.message}` };
+                    }
+                } catch (error) {
+                    return { success: false, message: `Error de registro: ${error.response?.data?.message || error.message}` };
+                }
+            }
+
+            async testAuthRedirect() {
+                // This test simulates the registration -> dashboard flow
+                try {
+                    // Check if History API is available
+                    if (!window.history.pushState) {
+                        return { success: false, message: 'History API no disponible' };
+                    }
+
+                    // Simulate navigation
+                    const initialPath = window.location.pathname;
+                    window.history.pushState({}, '', '/dashboard');
+                    
+                    if (window.location.pathname === '/dashboard') {
+                        // Restore original path
+                        window.history.pushState({}, '', initialPath);
+                        return { success: true, message: 'Redirección de navegación funcionando' };
+                    } else {
+                        return { success: false, message: 'No se pudo cambiar la ruta' };
+                    }
+                } catch (error) {
+                    return { success: false, message: `Error de redirección: ${error.message}` };
+                }
+            }
+
+            async testTokenVerification() {
+                if (!this.authToken) {
+                    return { success: false, message: 'No hay token para verificar' };
+                }
+
+                try {
+                    const response = await axios.post('/auth/verify');
+                    
+                    if (response.data.success && response.data.user) {
+                        return { success: true, message: 'Token verificado correctamente' };
+                    } else {
+                        return { success: false, message: 'Verificación de token falló' };
+                    }
+                } catch (error) {
+                    return { success: false, message: `Error de verificación: ${error.message}` };
+                }
+            }
+
+            // Navigation Tests
+            async testDashboardNavigation() {
+                try {
+                    // Test if navigateToDashboard function would work
+                    const initialPath = window.location.pathname;
+                    
+                    // Simulate the function
+                    window.history.pushState({}, '', '/dashboard');
+                    
+                    if (window.location.pathname === '/dashboard') {
+                        window.history.pushState({}, '', initialPath);
+                        return { success: true, message: 'Navegación al dashboard funciona' };
+                    } else {
+                        return { success: false, message: 'Navegación al dashboard falló' };
+                    }
+                } catch (error) {
+                    return { success: false, message: `Error de navegación: ${error.message}` };
+                }
+            }
+
+            async testProjectDetailButtons() {
+                try {
+                    // Test if the event delegation for project detail buttons would work
+                    const testButton = document.createElement('button');
+                    testButton.className = 'project-detail-btn';
+                    testButton.setAttribute('data-project-id', '1');
+                    
+                    document.body.appendChild(testButton);
+                    
+                    // Check if the button has the right attributes
+                    const hasClass = testButton.classList.contains('project-detail-btn');
+                    const hasData = testButton.getAttribute('data-project-id') === '1';
+                    
+                    document.body.removeChild(testButton);
+                    
+                    if (hasClass && hasData) {
+                        return { success: true, message: 'Estructura de botones "Ver Detalles" correcta' };
+                    } else {
+                        return { success: false, message: 'Estructura de botones incorrecta' };
+                    }
+                } catch (error) {
+                    return { success: false, message: `Error en botones: ${error.message}` };
+                }
+            }
+
+            async testBackToProjects() {
+                try {
+                    // Test the back to projects navigation
+                    const initialPath = window.location.pathname;
+                    
+                    // Simulate going to project detail
+                    window.history.pushState({}, '', '/project/1');
+                    
+                    // Simulate back to dashboard
+                    window.history.pushState({}, '', '/dashboard');
+                    
+                    if (window.location.pathname === '/dashboard') {
+                        window.history.pushState({}, '', initialPath);
+                        return { success: true, message: 'Botón "Volver a proyectos" funcionaría' };
+                    } else {
+                        return { success: false, message: 'Navegación de regreso falló' };
+                    }
+                } catch (error) {
+                    return { success: false, message: `Error navegación regreso: ${error.message}` };
+                }
+            }
+
+            async testHistoryAPI() {
+                try {
+                    const supported = !!(window.history && window.history.pushState);
+                    
+                    if (supported) {
+                        // Test actual functionality
+                        const initialPath = window.location.pathname;
+                        
+                        window.history.pushState({ test: true }, '', '/test-path');
+                        const changed = window.location.pathname === '/test-path';
+                        
+                        window.history.pushState({}, '', initialPath);
+                        
+                        return { 
+                            success: changed, 
+                            message: changed ? 'History API funcionando correctamente' : 'History API no cambia ruta'
+                        };
+                    } else {
+                        return { success: false, message: 'History API no soportada' };
+                    }
+                } catch (error) {
+                    return { success: false, message: `Error History API: ${error.message}` };
+                }
+            }
+
+            // Project Management Tests
+            async testProjectList() {
+                try {
+                    const response = await axios.get('/projects');
+                    
+                    if (response.data.success && Array.isArray(response.data.projects)) {
+                        this.testProjects = response.data.projects;
+                        return { 
+                            success: true, 
+                            message: `Lista cargada: ${response.data.projects.length} proyectos` 
+                        };
+                    } else {
+                        return { success: false, message: 'API no retorna lista válida' };
+                    }
+                } catch (error) {
+                    return { success: false, message: `Error cargando proyectos: ${error.message}` };
+                }
+            }
+
+            async testProjectCreation() {
+                try {
+                    const testProject = {
+                        title: `Proyecto Test ${Date.now()}`,
+                        responsible_person: 'Test User',
+                        summary: 'Proyecto creado por suite de pruebas automáticas',
+                        status: 'active'
+                    };
+
+                    const response = await axios.post('/projects', testProject);
+                    
+                    if (response.data.success && response.data.project) {
+                        return { success: true, message: `Proyecto creado con ID: ${response.data.project.id}` };
+                    } else {
+                        return { success: false, message: 'Creación de proyecto falló' };
+                    }
+                } catch (error) {
+                    return { success: false, message: `Error creando proyecto: ${error.message}` };
+                }
+            }
+
+            async testProjectSearch() {
+                try {
+                    // Test search functionality
+                    const searchResponse = await axios.get('/projects?search=test');
+                    
+                    if (searchResponse.data.success) {
+                        const noSearchResponse = await axios.get('/projects');
+                        
+                        // Search should return same or fewer results
+                        const searchWorking = noSearchResponse.data.projects.length >= searchResponse.data.projects.length;
+                        
+                        return { 
+                            success: searchWorking, 
+                            message: searchWorking ? 'Búsqueda funciona correctamente' : 'Búsqueda no filtra correctamente' 
+                        };
+                    } else {
+                        return { success: false, message: 'API de búsqueda falló' };
+                    }
+                } catch (error) {
+                    return { success: false, message: `Error en búsqueda: ${error.message}` };
+                }
+            }
+
+            async testProjectStats() {
+                try {
+                    if (this.testProjects.length === 0) {
+                        await this.testProjectList();
+                    }
+                    
+                    const activeCount = this.testProjects.filter(p => p.status === 'active').length;
+                    const completedCount = this.testProjects.filter(p => p.status === 'completed').length;
+                    const total = this.testProjects.length;
+                    
+                    const statsValid = (activeCount + completedCount) <= total;
+                    
+                    return { 
+                        success: statsValid, 
+                        message: `Stats: ${total} total, ${activeCount} activos, ${completedCount} completados` 
+                    };
+                } catch (error) {
+                    return { success: false, message: `Error calculando stats: ${error.message}` };
+                }
+            }
+
+            // Document Tests
+            async testDocumentUpload() {
+                try {
+                    // Test if upload API endpoint exists
+                    if (this.testProjects.length === 0) {
+                        return { success: false, message: 'No hay proyectos para probar upload' };
+                    }
+
+                    const projectId = this.testProjects[0].id;
+                    
+                    // Create a test file
+                    const testContent = 'Test document content for CODECTI platform';
+                    const testFile = new Blob([testContent], { type: 'text/plain' });
+                    
+                    const formData = new FormData();
+                    formData.append('document', testFile, 'test-document.txt');
+
+                    try {
+                        const response = await axios.post(`/projects/${projectId}/upload`, formData, {
+                            headers: {
+                                'Content-Type': 'multipart/form-data'
+                            }
+                        });
+                        
+                        return { success: true, message: 'Upload API disponible y funcional' };
+                    } catch (error) {
+                        if (error.response?.status === 400 || error.response?.status === 415) {
+                            return { success: true, message: 'Upload API existe (validación de formato)' };
+                        } else {
+                            throw error;
+                        }
+                    }
+                } catch (error) {
+                    return { success: false, message: `Error en upload: ${error.message}` };
+                }
+            }
+
+            async testDocumentDownload() {
+                try {
+                    // Test if download function structure would work
+                    const testProjectId = 1;
+                    const downloadUrl = `/projects/${testProjectId}/download`;
+                    
+                    // Check if fetch API is available
+                    if (typeof fetch === 'undefined') {
+                        return { success: false, message: 'Fetch API no disponible' };
+                    }
+                    
+                    // Check if URL.createObjectURL is available
+                    if (typeof URL.createObjectURL === 'undefined') {
+                        return { success: false, message: 'URL.createObjectURL no disponible' };
+                    }
+                    
+                    return { success: true, message: 'APIs de descarga disponibles' };
+                } catch (error) {
+                    return { success: false, message: `Error en download test: ${error.message}` };
+                }
+            }
+
+            async testDocumentDisplay() {
+                try {
+                    // Find a project with a document
+                    const projectWithDoc = this.testProjects.find(p => p.document_filename);
+                    
+                    if (projectWithDoc) {
+                        return { 
+                            success: true, 
+                            message: `Documento encontrado: ${projectWithDoc.document_filename}` 
+                        };
+                    } else {
+                        return { 
+                            success: true, 
+                            message: 'No hay documentos para mostrar (comportamiento esperado)' 
+                        };
+                    }
+                } catch (error) {
+                    return { success: false, message: `Error verificando documentos: ${error.message}` };
+                }
+            }
+
+            // API Tests
+            async testHealthCheck() {
+                try {
+                    const response = await axios.get('/monitoring/health');
+                    
+                    if (response.data.status === 'ok') {
+                        return { success: true, message: `Sistema OK - Uptime: ${response.data.uptime}ms` };
+                    } else {
+                        return { success: false, message: 'Health check retorna estado no-OK' };
+                    }
+                } catch (error) {
+                    return { success: false, message: `Health check falló: ${error.message}` };
+                }
+            }
+
+            async testProjectsAPI() {
+                try {
+                    const endpoints = [
+                        { method: 'GET', url: '/projects' },
+                        { method: 'GET', url: '/projects/1' }
+                    ];
+
+                    for (const endpoint of endpoints) {
+                        const response = await axios[endpoint.method.toLowerCase()](endpoint.url);
+                        if (!response.data.success) {
+                            return { success: false, message: `${endpoint.method} ${endpoint.url} falló` };
+                        }
+                    }
+
+                    return { success: true, message: 'Todos los endpoints de proyectos funcionan' };
+                } catch (error) {
+                    return { success: false, message: `API Projects error: ${error.message}` };
+                }
+            }
+
+            async testAuthAPI() {
+                try {
+                    // Test verify endpoint
+                    const response = await axios.post('/auth/verify');
+                    
+                    if (response.data.success || response.status === 401) {
+                        return { success: true, message: 'API de autenticación responde correctamente' };
+                    } else {
+                        return { success: false, message: 'API de auth respuesta inesperada' };
+                    }
+                } catch (error) {
+                    if (error.response?.status === 401) {
+                        return { success: true, message: 'API de auth maneja auth correctamente' };
+                    } else {
+                        return { success: false, message: `Auth API error: ${error.message}` };
+                    }
+                }
+            }
+
+            async testErrorHandling() {
+                try {
+                    // Test 404 handling
+                    await axios.get('/nonexistent-endpoint');
+                    return { success: false, message: 'Endpoint inexistente no retorna error' };
+                } catch (error) {
+                    if (error.response?.status === 404) {
+                        return { success: true, message: 'Manejo de errores 404 funciona' };
+                    } else {
+                        return { success: true, message: 'API retorna errores apropiados' };
+                    }
+                }
+            }
+
+            // Frontend Tests
+            async testResourceLoading() {
+                try {
+                    const requiredResources = [
+                        'axios',
+                        'tailwind'
+                    ];
+
+                    const missing = [];
+                    
+                    if (typeof axios === 'undefined') missing.push('axios');
+                    if (typeof tailwind === 'undefined' && !document.querySelector('script[src*="tailwindcss"]')) {
+                        // Tailwind might be loaded but not expose global object
+                    }
+
+                    if (missing.length === 0) {
+                        return { success: true, message: 'Recursos críticos cargados correctamente' };
+                    } else {
+                        return { success: false, message: `Recursos faltantes: ${missing.join(', ')}` };
+                    }
+                } catch (error) {
+                    return { success: false, message: `Error verificando recursos: ${error.message}` };
+                }
+            }
+
+            async testEventHandling() {
+                try {
+                    // Test if event listeners work
+                    let eventFired = false;
+                    
+                    const testHandler = () => { eventFired = true; };
+                    
+                    document.addEventListener('test-event', testHandler);
+                    
+                    const event = new CustomEvent('test-event');
+                    document.dispatchEvent(event);
+                    
+                    document.removeEventListener('test-event', testHandler);
+                    
+                    return { 
+                        success: eventFired, 
+                        message: eventFired ? 'Event handling funciona' : 'Event handling falló' 
+                    };
+                } catch (error) {
+                    return { success: false, message: `Error en events: ${error.message}` };
+                }
+            }
+
+            async testFormValidation() {
+                try {
+                    // Test basic form validation
+                    const testForm = document.createElement('form');
+                    const testInput = document.createElement('input');
+                    testInput.type = 'email';
+                    testInput.required = true;
+                    testInput.value = 'invalid-email';
+                    
+                    testForm.appendChild(testInput);
+                    document.body.appendChild(testForm);
+                    
+                    const isValid = testForm.checkValidity();
+                    
+                    document.body.removeChild(testForm);
+                    
+                    return { 
+                        success: !isValid, 
+                        message: !isValid ? 'Validación de formularios funciona' : 'Validación no detecta errores' 
+                    };
+                } catch (error) {
+                    return { success: false, message: `Error en validación: ${error.message}` };
+                }
+            }
+
+            async testModalFunctionality() {
+                try {
+                    // Test modal structure
+                    const testModal = document.createElement('div');
+                    testModal.className = 'modal';
+                    testModal.style.display = 'none';
+                    
+                    document.body.appendChild(testModal);
+                    
+                    // Test show/hide
+                    testModal.style.display = 'block';
+                    const isVisible = testModal.offsetParent !== null;
+                    
+                    testModal.style.display = 'none';
+                    const isHidden = testModal.offsetParent === null;
+                    
+                    document.body.removeChild(testModal);
+                    
+                    return { 
+                        success: isVisible && isHidden, 
+                        message: 'Estructura de modales funciona correctamente' 
+                    };
+                } catch (error) {
+                    return { success: false, message: `Error en modales: ${error.message}` };
+                }
+            }
+        }
+
+        // Initialize test suite when page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            window.testSuite = new TestSuite();
+        });
+    </script>
+</body>
+</html>

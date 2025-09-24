@@ -1,0 +1,25 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "codecti-platform",
+  "compatibility_date": "2025-09-09",
+  "pages_build_output_dir": "./dist",
+  "compatibility_flags": ["nodejs_compat"],
+  "main": "src/index.tsx"
+  
+  // D1 Database configuration - DESHABILITADO TEMPORALMENTE PARA DESPLIEGUE
+  // Descomenta y actualiza con el ID real de D1 después de crear la base de datos:
+  // 
+  // "d1_databases": [
+  //   {
+  //     "binding": "DB", 
+  //     "database_name": "webapp-production",
+  //     "database_id": "REEMPLAZA-CON-EL-ID-REAL-DE-TU-BASE-DE-DATOS-D1"
+  //   }
+  // ]
+  //
+  // Para crear la base de datos D1:
+  // 1. npx wrangler d1 create webapp-production
+  // 2. Copiar el database_id de la salida
+  // 3. Reemplazar arriba y descommentar
+  // 4. npx wrangler d1 migrations apply webapp-production
+}

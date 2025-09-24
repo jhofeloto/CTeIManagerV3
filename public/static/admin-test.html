@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Button Test - CODECTI</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
+</head>
+<body class="bg-gray-100 p-8">
+    <div class="max-w-4xl mx-auto">
+        <h1 class="text-3xl font-bold mb-6">Test: Botón de Administración</h1>
+        
+        <div class="bg-white p-6 rounded-lg shadow-md mb-6">
+            <h2 class="text-xl font-semibold mb-4">Simulación de Usuario Admin Logueado</h2>
+            <p class="text-gray-600 mb-4">Esta página simula estar logueado como admin para probar el botón de administración.</p>
+            
+            <div id="userInfo" class="mb-4 p-4 bg-green-50 border border-green-200 rounded-md">
+                <p><strong>Usuario:</strong> test@admin.com</p>
+                <p><strong>Rol:</strong> admin</p>
+                <p><strong>Estado:</strong> Logueado</p>
+            </div>
+            
+            <!-- Simular el botón del dashboard -->
+            <div class="flex gap-4">
+                <button 
+                    onclick="App.navigateToAdmin();"
+                    class="btn bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+                    title="Panel de Administración"
+                >
+                    <i class="fas fa-cog mr-1"></i>
+                    <span>Admin Panel</span>
+                </button>
+                
+                <button 
+                    onclick="testAppAvailability();"
+                    class="btn bg-gray-600 text-white px-4 py-2 rounded hover:bg-gray-700"
+                >
+                    <i class="fas fa-check mr-1"></i>
+                    Test window.App
+                </button>
+            </div>
+        </div>
+        
+        <div id="console" class="bg-black text-green-400 p-4 rounded-lg font-mono text-sm h-64 overflow-y-auto">
+            <div id="console-content">Console output will appear here...</div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/axios@1.6.0/dist/axios.min.js"></script>
+    <script src="/static/app.js"></script>
+    <script>
+        // Override console.log to display in our custom console
+        const originalLog = console.log;
+        const consoleDiv = document.getElementById('console-content');
+        
+        function addToConsole(message, type = 'log') {
+            const timestamp = new Date().toLocaleTimeString();
+            const div = document.createElement('div');
+            const color = {
+                'log': 'text-green-400',
+                'error': 'text-red-400', 
+                'warn': 'text-yellow-400',
+                'info': 'text-blue-400'
+            }[type] || 'text-green-400';
+            
+            div.className = color;
+            div.textContent = `[${timestamp}] ${message}`;
+            consoleDiv.appendChild(div);
+            consoleDiv.scrollTop = consoleDiv.scrollHeight;
+        }
+        
+        console.log = function(...args) {
+            originalLog.apply(console, args);
+            addToConsole(args.join(' '), 'log');
+        };
+        
+        console.error = function(...args) {
+            console.error.apply(console, args);
+            addToConsole(args.join(' '), 'error');
+        };
+        
+        console.warn = function(...args) {
+            console.warn.apply(console, args);
+            addToConsole(args.join(' '), 'warn');
+        };
+        
+        // Wait for App to be loaded, then simulate admin login
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('Test page loaded, waiting for App...');
+            
+            // Wait for App to initialize
+            setTimeout(() => {
+                if (typeof window.App !== 'undefined') {
+                    console.log('✅ window.App is available');
+                    console.log('App object:', window.App);
+                    
+                    // Simulate admin user login
+                    window.App.user = {
+                        id: 1,
+                        email: 'test@admin.com',
+                        name: 'Test Admin User',
+                        role: 'admin',
+                        institution: 'CODECTI'
+                    };
+                    
+                    // Set token simulation
+                    window.App.token = 'fake-admin-token-for-testing';
+                    
+                    console.log('✅ Simulated admin user login');
+                    console.log('Current user:', window.App.user);
+                    
+                    // Test navigateToAdmin function exists
+                    if (typeof window.App.navigateToAdmin === 'function') {
+                        console.log('✅ navigateToAdmin function is available');
+                    } else {
+                        console.log('❌ navigateToAdmin function not found');
+                    }
+                } else {
+                    console.log('❌ window.App is not available');
+                }
+            }, 2000);
+        });
+        
+        function testAppAvailability() {
+            console.log('=== Testing App Availability ===');
+            console.log('typeof window.App:', typeof window.App);
+            console.log('window.App:', window.App);
+            
+            if (window.App) {
+                console.log('App.user:', window.App.user);
+                console.log('App.navigateToAdmin:', typeof window.App.navigateToAdmin);
+                
+                if (window.App.user && window.App.user.role === 'admin') {
+                    console.log('✅ User has admin role');
+                } else {
+                    console.log('❌ User does not have admin role');
+                }
+            }
+        }
+        
+        // Override showNotification for testing
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                if (window.App && typeof window.App.showNotification === 'function') {
+                    const originalShowNotification = window.App.showNotification;
+                    window.App.showNotification = function(message, type) {
+                        console.log(`NOTIFICATION [${type}]: ${message}`);
+                        return originalShowNotification.call(this, message, type);
+                    };
+                }
+            }, 3000);
+        });
+    </script>
+</body>
+</html>

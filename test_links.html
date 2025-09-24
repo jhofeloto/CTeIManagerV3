@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Links Landing Page</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .test { margin: 20px 0; padding: 15px; border: 1px solid #ddd; }
+        .success { background: #d4edda; border-color: #c3e6cb; }
+        .info { background: #d1ecf1; border-color: #bee5eb; }
+        .warning { background: #fff3cd; border-color: #ffeaa7; }
+        a { color: #007bff; text-decoration: underline; margin: 10px; display: inline-block; }
+    </style>
+</head>
+<body>
+    <h1>🔗 Test: Enlaces de Landing Page</h1>
+    
+    <div class="test info">
+        <h2>📋 Enlaces Problemáticos Reportados</h2>
+        <p><strong>1. Enlace a Features:</strong> <a href="https://3000-i4am2qf41l47ryie80zbh-6532622b.e2b.dev/#features" target="_blank">#features</a></p>
+        <p><strong>2. Enlace a Docs:</strong> <a href="https://3000-i4am2qf41l47ryie80zbh-6532622b.e2b.dev/docs" target="_blank">/docs</a></p>
+        <p><strong>3. Enlace a Soporte:</strong> <a href="https://3000-i4am2qf41l47ryie80zbh-6532622b.e2b.dev/soporte" target="_blank">/soporte</a></p>
+    </div>
+    
+    <div class="test success">
+        <h2>✅ Enlaces de Prueba Local</h2>
+        <p><strong>1. Features (hash link):</strong> <a href="http://localhost:3000/#features" target="_blank">http://localhost:3000/#features</a></p>
+        <p><strong>2. Documentación:</strong> <a href="http://localhost:3000/docs" target="_blank">http://localhost:3000/docs</a></p>
+        <p><strong>3. Soporte:</strong> <a href="http://localhost:3000/soporte" target="_blank">http://localhost:3000/soporte</a></p>
+    </div>
+    
+    <div class="test warning">
+        <h2>🔧 Soluciones Aplicadas</h2>
+        <ul>
+            <li>✅ <strong>Agregado <code>id="features"</code></strong> a la sección de características en <code>/home/user/webapp/src/index.tsx</code></li>
+            <li>✅ <strong>Verificado que las rutas <code>/docs</code> y <code>/soporte</code></strong> existen y devuelven HTTP 200</li>
+            <li>✅ <strong>Confirmado que no hay JavaScript</strong> interceptando los enlaces de navegación</li>
+        </ul>
+    </div>
+    
+    <div class="test info">
+        <h2>🧪 Pruebas de Funcionamiento</h2>
+        <ol>
+            <li><strong>Ir a landing page:</strong> <a href="http://localhost:3000/" target="_blank">http://localhost:3000/</a></li>
+            <li><strong>Scroll hacia abajo</strong> y hacer clic en los enlaces del footer</li>
+            <li><strong>Verificar navegación:</strong>
+                <ul>
+                    <li>"Características" → debe hacer scroll a la sección features</li>
+                    <li>"Documentación" → debe navegar a /docs</li>
+                    <li>"Soporte" → debe navegar a /soporte</li>
+                </ul>
+            </li>
+        </ol>
+    </div>
+    
+    <div class="test info">
+        <h2>🔍 Análisis Técnico</h2>
+        <p><strong>Estructura actualizada del HTML:</strong></p>
+        <pre>&lt;!-- Features Section --&gt;
+&lt;section id="features" className="features-section"&gt;
+  &lt;!-- Contenido de características --&gt;
+&lt;/section&gt;</pre>
+        
+        <p><strong>Enlaces del footer:</strong></p>
+        <pre>&lt;a href="#features"&gt;Características&lt;/a&gt;
+&lt;a href="/docs"&gt;Documentación&lt;/a&gt;
+&lt;a href="/soporte"&gt;Soporte&lt;/a&gt;</pre>
+        
+        <p><strong>Rutas del servidor verificadas:</strong></p>
+        <ul>
+            <li><code>app.get('/docs', ...)</code> ✅</li>
+            <li><code>app.get('/soporte', ...)</code> ✅</li>
+        </ul>
+    </div>
+    
+    <div class="test success">
+        <h2>✅ Estado Final</h2>
+        <p>Los tres enlaces de la landing page ahora deberían funcionar correctamente:</p>
+        <ol>
+            <li><strong>#features:</strong> Hace scroll suave a la sección de características</li>
+            <li><strong>/docs:</strong> Navega a la página de documentación</li>
+            <li><strong>/soporte:</strong> Navega a la página de soporte técnico</li>
+        </ol>
+    </div>
+
+    <script>
+        // Test the links programmatically
+        console.log('🔗 Testing links...');
+        
+        // Test if features section exists
+        const featuresSection = document.querySelector('#features');
+        if (featuresSection) {
+            console.log('✅ Features section found with id="features"');
+        } else {
+            console.log('❌ Features section with id="features" NOT found');
+        }
+        
+        // Test API endpoints
+        fetch('/docs')
+            .then(response => {
+                if (response.ok) {
+                    console.log('✅ /docs endpoint responds with:', response.status);
+                } else {
+                    console.log('❌ /docs endpoint error:', response.status);
+                }
+            })
+            .catch(err => console.log('❌ /docs fetch error:', err));
+            
+        fetch('/soporte')
+            .then(response => {
+                if (response.ok) {
+                    console.log('✅ /soporte endpoint responds with:', response.status);
+                } else {
+                    console.log('❌ /soporte endpoint error:', response.status);
+                }
+            })
+            .catch(err => console.log('❌ /soporte fetch error:', err));
+    </script>
+</body>
+</html>

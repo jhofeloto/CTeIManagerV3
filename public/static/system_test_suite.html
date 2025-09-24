@@ -1,0 +1,1050 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Suite de Pruebas Completas - Choco Inventa</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/axios@1.6.0/dist/axios.min.js"></script>
+    <style>
+        .test-pass { @apply bg-green-100 border-green-500 text-green-700; }
+        .test-fail { @apply bg-red-100 border-red-500 text-red-700; }
+        .test-pending { @apply bg-yellow-100 border-yellow-500 text-yellow-700; }
+        .test-running { @apply bg-blue-100 border-blue-500 text-blue-700; }
+    </style>
+</head>
+<body class="bg-gray-50 p-6">
+    <div class="max-w-6xl mx-auto">
+        <header class="mb-8">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h1 class="text-3xl font-bold text-gray-900">
+                        <i class="fas fa-vial mr-2 text-blue-600"></i>
+                        Suite de Pruebas Completas
+                    </h1>
+                    <p class="text-gray-600 mt-1">Validación integral del sistema Choco Inventa - CODECTI</p>
+                </div>
+                <div class="flex space-x-4">
+                    <button id="runAllTests" class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors">
+                        <i class="fas fa-play mr-2"></i>Ejecutar Todas
+                    </button>
+                    <button id="clearResults" class="bg-gray-600 text-white px-6 py-2 rounded-lg hover:bg-gray-700 transition-colors">
+                        <i class="fas fa-eraser mr-2"></i>Limpiar
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Summary Stats -->
+        <div id="summaryStats" class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+            <div class="bg-white p-4 rounded-lg shadow">
+                <div class="text-2xl font-bold text-gray-900" id="totalTests">0</div>
+                <div class="text-sm text-gray-600">Total de Pruebas</div>
+            </div>
+            <div class="bg-white p-4 rounded-lg shadow">
+                <div class="text-2xl font-bold text-green-600" id="passedTests">0</div>
+                <div class="text-sm text-gray-600">Exitosas</div>
+            </div>
+            <div class="bg-white p-4 rounded-lg shadow">
+                <div class="text-2xl font-bold text-red-600" id="failedTests">0</div>
+                <div class="text-sm text-gray-600">Fallidas</div>
+            </div>
+            <div class="bg-white p-4 rounded-lg shadow">
+                <div class="text-2xl font-bold text-blue-600" id="successRate">0%</div>
+                <div class="text-sm text-gray-600">Tasa de Éxito</div>
+            </div>
+        </div>
+
+        <!-- Test Categories -->
+        <div class="space-y-6">
+            <!-- 1. Health & Infrastructure Tests -->
+            <div class="bg-white rounded-lg shadow">
+                <div class="p-4 border-b border-gray-200">
+                    <h2 class="text-xl font-semibold text-gray-900">
+                        <i class="fas fa-heartbeat mr-2 text-red-500"></i>
+                        1. Salud e Infraestructura del Sistema
+                    </h2>
+                    <p class="text-gray-600 text-sm">Verificación de servicios básicos y conectividad</p>
+                </div>
+                <div class="p-4 space-y-2" id="healthTests">
+                    <div class="test-item border rounded p-3 test-pending" data-test="health-basic">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center">
+                                <i class="fas fa-circle text-yellow-500 mr-2"></i>
+                                <span>Health Check Básico</span>
+                            </div>
+                            <div class="test-result text-sm">Pendiente</div>
+                        </div>
+                        <div class="test-details text-xs text-gray-500 mt-1 hidden"></div>
+                    </div>
+                    <div class="test-item border rounded p-3 test-pending" data-test="health-detailed">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center">
+                                <i class="fas fa-circle text-yellow-500 mr-2"></i>
+                                <span>Health Check Detallado</span>
+                            </div>
+                            <div class="test-result text-sm">Pendiente</div>
+                        </div>
+                        <div class="test-details text-xs text-gray-500 mt-1 hidden"></div>
+                    </div>
+                    <div class="test-item border rounded p-3 test-pending" data-test="logo-settings">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center">
+                                <i class="fas fa-circle text-yellow-500 mr-2"></i>
+                                <span>API de Configuración de Logo</span>
+                            </div>
+                            <div class="test-result text-sm">Pendiente</div>
+                        </div>
+                        <div class="test-details text-xs text-gray-500 mt-1 hidden"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 2. Authentication Tests -->
+            <div class="bg-white rounded-lg shadow">
+                <div class="p-4 border-b border-gray-200">
+                    <h2 class="text-xl font-semibold text-gray-900">
+                        <i class="fas fa-key mr-2 text-blue-500"></i>
+                        2. Sistema de Autenticación
+                    </h2>
+                    <p class="text-gray-600 text-sm">Login, registro y verificación de tokens JWT</p>
+                </div>
+                <div class="p-4 space-y-2" id="authTests">
+                    <div class="test-item border rounded p-3 test-pending" data-test="auth-admin-login">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center">
+                                <i class="fas fa-circle text-yellow-500 mr-2"></i>
+                                <span>Login de Administrador</span>
+                            </div>
+                            <div class="test-result text-sm">Pendiente</div>
+                        </div>
+                        <div class="test-details text-xs text-gray-500 mt-1 hidden"></div>
+                    </div>
+                    <div class="test-item border rounded p-3 test-pending" data-test="auth-collaborator-login">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center">
+                                <i class="fas fa-circle text-yellow-500 mr-2"></i>
+                                <span>Login de Colaborador</span>
+                            </div>
+                            <div class="test-result text-sm">Pendiente</div>
+                        </div>
+                        <div class="test-details text-xs text-gray-500 mt-1 hidden"></div>
+                    </div>
+                    <div class="test-item border rounded p-3 test-pending" data-test="auth-verify">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center">
+                                <i class="fas fa-circle text-yellow-500 mr-2"></i>
+                                <span>Verificación de Token JWT</span>
+                            </div>
+                            <div class="test-result text-sm">Pendiente</div>
+                        </div>
+                        <div class="test-details text-xs text-gray-500 mt-1 hidden"></div>
+                    </div>
+                    <div class="test-item border rounded p-3 test-pending" data-test="auth-invalid-credentials">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center">
+                                <i class="fas fa-circle text-yellow-500 mr-2"></i>
+                                <span>Rechazo de Credenciales Inválidas</span>
+                            </div>
+                            <div class="test-result text-sm">Pendiente</div>
+                        </div>
+                        <div class="test-details text-xs text-gray-500 mt-1 hidden"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 3. Projects Management Tests -->
+            <div class="bg-white rounded-lg shadow">
+                <div class="p-4 border-b border-gray-200">
+                    <h2 class="text-xl font-semibold text-gray-900">
+                        <i class="fas fa-project-diagram mr-2 text-green-500"></i>
+                        3. Gestión de Proyectos
+                    </h2>
+                    <p class="text-gray-600 text-sm">CRUD de proyectos, filtros y búsqueda</p>
+                </div>
+                <div class="p-4 space-y-2" id="projectTests">
+                    <div class="test-item border rounded p-3 test-pending" data-test="projects-list">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center">
+                                <i class="fas fa-circle text-yellow-500 mr-2"></i>
+                                <span>Listado de Proyectos</span>
+                            </div>
+                            <div class="test-result text-sm">Pendiente</div>
+                        </div>
+                        <div class="test-details text-xs text-gray-500 mt-1 hidden"></div>
+                    </div>
+                    <div class="test-item border rounded p-3 test-pending" data-test="projects-filter-status">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center">
+                                <i class="fas fa-circle text-yellow-500 mr-2"></i>
+                                <span>Filtro por Estado (activo/completado)</span>
+                            </div>
+                            <div class="test-result text-sm">Pendiente</div>
+                        </div>
+                        <div class="test-details text-xs text-gray-500 mt-1 hidden"></div>
+                    </div>
+                    <div class="test-item border rounded p-3 test-pending" data-test="projects-filter-sort">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center">
+                                <i class="fas fa-circle text-yellow-500 mr-2"></i>
+                                <span>Filtro de Ordenamiento</span>
+                            </div>
+                            <div class="test-result text-sm">Pendiente</div>
+                        </div>
+                        <div class="test-details text-xs text-gray-500 mt-1 hidden"></div>
+                    </div>
+                    <div class="test-item border rounded p-3 test-pending" data-test="projects-search">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center">
+                                <i class="fas fa-circle text-yellow-500 mr-2"></i>
+                                <span>Búsqueda de Proyectos</span>
+                            </div>
+                            <div class="test-result text-sm">Pendiente</div>
+                        </div>
+                        <div class="test-details text-xs text-gray-500 mt-1 hidden"></div>
+                    </div>
+                    <div class="test-item border rounded p-3 test-pending" data-test="projects-detail">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center">
+                                <i class="fas fa-circle text-yellow-500 mr-2"></i>
+                                <span>Detalles de Proyecto Individual</span>
+                            </div>
+                            <div class="test-result text-sm">Pendiente</div>
+                        </div>
+                        <div class="test-details text-xs text-gray-500 mt-1 hidden"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 4. User Management Tests -->
+            <div class="bg-white rounded-lg shadow">
+                <div class="p-4 border-b border-gray-200">
+                    <h2 class="text-xl font-semibold text-gray-900">
+                        <i class="fas fa-users mr-2 text-purple-500"></i>
+                        4. Gestión de Usuarios (Solo Admins)
+                    </h2>
+                    <p class="text-gray-600 text-sm">CRUD de usuarios y administración de roles</p>
+                </div>
+                <div class="p-4 space-y-2" id="userTests">
+                    <div class="test-item border rounded p-3 test-pending" data-test="users-list">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center">
+                                <i class="fas fa-circle text-yellow-500 mr-2"></i>
+                                <span>Listado de Usuarios</span>
+                            </div>
+                            <div class="test-result text-sm">Pendiente</div>
+                        </div>
+                        <div class="test-details text-xs text-gray-500 mt-1 hidden"></div>
+                    </div>
+                    <div class="test-item border rounded p-3 test-pending" data-test="users-filter">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center">
+                                <i class="fas fa-circle text-yellow-500 mr-2"></i>
+                                <span>Filtros de Usuario (rol, estado)</span>
+                            </div>
+                            <div class="test-result text-sm">Pendiente</div>
+                        </div>
+                        <div class="test-details text-xs text-gray-500 mt-1 hidden"></div>
+                    </div>
+                    <div class="test-item border rounded p-3 test-pending" data-test="users-search">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center">
+                                <i class="fas fa-circle text-yellow-500 mr-2"></i>
+                                <span>Búsqueda de Usuarios</span>
+                            </div>
+                            <div class="test-result text-sm">Pendiente</div>
+                        </div>
+                        <div class="test-details text-xs text-gray-500 mt-1 hidden"></div>
+                    </div>
+                    <div class="test-item border rounded p-3 test-pending" data-test="users-non-admin-access">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center">
+                                <i class="fas fa-circle text-yellow-500 mr-2"></i>
+                                <span>Restricción de Acceso No-Admin</span>
+                            </div>
+                            <div class="test-result text-sm">Pendiente</div>
+                        </div>
+                        <div class="test-details text-xs text-gray-500 mt-1 hidden"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 5. Admin Dashboard Tests -->
+            <div class="bg-white rounded-lg shadow">
+                <div class="p-4 border-b border-gray-200">
+                    <h2 class="text-xl font-semibold text-gray-900">
+                        <i class="fas fa-tachometer-alt mr-2 text-orange-500"></i>
+                        5. Panel de Administración
+                    </h2>
+                    <p class="text-gray-600 text-sm">Monitoreo, logs, errores y configuración</p>
+                </div>
+                <div class="p-4 space-y-2" id="adminTests">
+                    <div class="test-item border rounded p-3 test-pending" data-test="admin-status">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center">
+                                <i class="fas fa-circle text-yellow-500 mr-2"></i>
+                                <span>Estado del Sistema</span>
+                            </div>
+                            <div class="test-result text-sm">Pendiente</div>
+                        </div>
+                        <div class="test-details text-xs text-gray-500 mt-1 hidden"></div>
+                    </div>
+                    <div class="test-item border rounded p-3 test-pending" data-test="admin-metrics">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center">
+                                <i class="fas fa-circle text-yellow-500 mr-2"></i>
+                                <span>Métricas de Performance</span>
+                            </div>
+                            <div class="test-result text-sm">Pendiente</div>
+                        </div>
+                        <div class="test-details text-xs text-gray-500 mt-1 hidden"></div>
+                    </div>
+                    <div class="test-item border rounded p-3 test-pending" data-test="admin-logs">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center">
+                                <i class="fas fa-circle text-yellow-500 mr-2"></i>
+                                <span>Sistema de Logs</span>
+                            </div>
+                            <div class="test-result text-sm">Pendiente</div>
+                        </div>
+                        <div class="test-details text-xs text-gray-500 mt-1 hidden"></div>
+                    </div>
+                    <div class="test-item border rounded p-3 test-pending" data-test="admin-errors">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center">
+                                <i class="fas fa-circle text-yellow-500 mr-2"></i>
+                                <span>Monitor de Errores</span>
+                            </div>
+                            <div class="test-result text-sm">Pendiente</div>
+                        </div>
+                        <div class="test-details text-xs text-gray-500 mt-1 hidden"></div>
+                    </div>
+                    <div class="test-item border rounded p-3 test-pending" data-test="admin-logo-config">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center">
+                                <i class="fas fa-circle text-yellow-500 mr-2"></i>
+                                <span>Configuración de Logo</span>
+                            </div>
+                            <div class="test-result text-sm">Pendiente</div>
+                        </div>
+                        <div class="test-details text-xs text-gray-500 mt-1 hidden"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 6. Frontend Integration Tests -->
+            <div class="bg-white rounded-lg shadow">
+                <div class="p-4 border-b border-gray-200">
+                    <h2 class="text-xl font-semibold text-gray-900">
+                        <i class="fas fa-desktop mr-2 text-indigo-500"></i>
+                        6. Integración Frontend
+                    </h2>
+                    <p class="text-gray-600 text-sm">Navegación, páginas y componentes visuales</p>
+                </div>
+                <div class="p-4 space-y-2" id="frontendTests">
+                    <div class="test-item border rounded p-3 test-pending" data-test="frontend-landing">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center">
+                                <i class="fas fa-circle text-yellow-500 mr-2"></i>
+                                <span>Landing Page</span>
+                            </div>
+                            <div class="test-result text-sm">Pendiente</div>
+                        </div>
+                        <div class="test-details text-xs text-gray-500 mt-1 hidden"></div>
+                    </div>
+                    <div class="test-item border rounded p-3 test-pending" data-test="frontend-dashboard">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center">
+                                <i class="fas fa-circle text-yellow-500 mr-2"></i>
+                                <span>Dashboard Principal</span>
+                            </div>
+                            <div class="test-result text-sm">Pendiente</div>
+                        </div>
+                        <div class="test-details text-xs text-gray-500 mt-1 hidden"></div>
+                    </div>
+                    <div class="test-item border rounded p-3 test-pending" data-test="frontend-admin">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center">
+                                <i class="fas fa-circle text-yellow-500 mr-2"></i>
+                                <span>Panel de Admin</span>
+                            </div>
+                            <div class="test-result text-sm">Pendiente</div>
+                        </div>
+                        <div class="test-details text-xs text-gray-500 mt-1 hidden"></div>
+                    </div>
+                    <div class="test-item border rounded p-3 test-pending" data-test="frontend-static-assets">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center">
+                                <i class="fas fa-circle text-yellow-500 mr-2"></i>
+                                <span>Recursos Estáticos (CSS, JS, Imágenes)</span>
+                            </div>
+                            <div class="test-result text-sm">Pendiente</div>
+                        </div>
+                        <div class="test-details text-xs text-gray-500 mt-1 hidden"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Detailed Test Log -->
+        <div class="bg-white rounded-lg shadow mt-8">
+            <div class="p-4 border-b border-gray-200">
+                <h2 class="text-xl font-semibold text-gray-900">
+                    <i class="fas fa-list-alt mr-2 text-gray-600"></i>
+                    Log Detallado de Ejecución
+                </h2>
+            </div>
+            <div class="p-4">
+                <div id="testLog" class="bg-gray-50 p-4 rounded text-sm font-mono max-h-96 overflow-y-auto">
+                    <div class="text-gray-500">Haga clic en "Ejecutar Todas" para comenzar las pruebas...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const TestRunner = {
+            tests: [],
+            currentToken: null,
+            stats: {
+                total: 0,
+                passed: 0,
+                failed: 0,
+                pending: 0
+            },
+
+            init() {
+                this.initializeTests();
+                this.setupEventListeners();
+                this.updateStats();
+            },
+
+            setupEventListeners() {
+                document.getElementById('runAllTests').addEventListener('click', () => {
+                    this.runAllTests();
+                });
+
+                document.getElementById('clearResults').addEventListener('click', () => {
+                    this.clearResults();
+                });
+            },
+
+            initializeTests() {
+                this.tests = [
+                    // Health & Infrastructure Tests
+                    { id: 'health-basic', category: 'health', name: 'Health Check Básico', func: this.testHealthBasic.bind(this) },
+                    { id: 'health-detailed', category: 'health', name: 'Health Check Detallado', func: this.testHealthDetailed.bind(this) },
+                    { id: 'logo-settings', category: 'health', name: 'API de Configuración de Logo', func: this.testLogoSettings.bind(this) },
+                    
+                    // Authentication Tests
+                    { id: 'auth-admin-login', category: 'auth', name: 'Login de Administrador', func: this.testAuthAdminLogin.bind(this) },
+                    { id: 'auth-collaborator-login', category: 'auth', name: 'Login de Colaborador', func: this.testAuthCollaboratorLogin.bind(this) },
+                    { id: 'auth-verify', category: 'auth', name: 'Verificación de Token JWT', func: this.testAuthVerify.bind(this) },
+                    { id: 'auth-invalid-credentials', category: 'auth', name: 'Rechazo de Credenciales Inválidas', func: this.testAuthInvalidCredentials.bind(this) },
+                    
+                    // Projects Management Tests
+                    { id: 'projects-list', category: 'projects', name: 'Listado de Proyectos', func: this.testProjectsList.bind(this) },
+                    { id: 'projects-filter-status', category: 'projects', name: 'Filtro por Estado', func: this.testProjectsFilterStatus.bind(this) },
+                    { id: 'projects-filter-sort', category: 'projects', name: 'Filtro de Ordenamiento', func: this.testProjectsFilterSort.bind(this) },
+                    { id: 'projects-search', category: 'projects', name: 'Búsqueda de Proyectos', func: this.testProjectsSearch.bind(this) },
+                    { id: 'projects-detail', category: 'projects', name: 'Detalles de Proyecto', func: this.testProjectsDetail.bind(this) },
+                    
+                    // User Management Tests
+                    { id: 'users-list', category: 'users', name: 'Listado de Usuarios', func: this.testUsersList.bind(this) },
+                    { id: 'users-filter', category: 'users', name: 'Filtros de Usuario', func: this.testUsersFilter.bind(this) },
+                    { id: 'users-search', category: 'users', name: 'Búsqueda de Usuarios', func: this.testUsersSearch.bind(this) },
+                    { id: 'users-non-admin-access', category: 'users', name: 'Restricción de Acceso No-Admin', func: this.testUsersNonAdminAccess.bind(this) },
+                    
+                    // Admin Dashboard Tests
+                    { id: 'admin-status', category: 'admin', name: 'Estado del Sistema', func: this.testAdminStatus.bind(this) },
+                    { id: 'admin-metrics', category: 'admin', name: 'Métricas de Performance', func: this.testAdminMetrics.bind(this) },
+                    { id: 'admin-logs', category: 'admin', name: 'Sistema de Logs', func: this.testAdminLogs.bind(this) },
+                    { id: 'admin-errors', category: 'admin', name: 'Monitor de Errores', func: this.testAdminErrors.bind(this) },
+                    { id: 'admin-logo-config', category: 'admin', name: 'Configuración de Logo', func: this.testAdminLogoConfig.bind(this) },
+                    
+                    // Frontend Integration Tests
+                    { id: 'frontend-landing', category: 'frontend', name: 'Landing Page', func: this.testFrontendLanding.bind(this) },
+                    { id: 'frontend-dashboard', category: 'frontend', name: 'Dashboard Principal', func: this.testFrontendDashboard.bind(this) },
+                    { id: 'frontend-admin', category: 'frontend', name: 'Panel de Admin', func: this.testFrontendAdmin.bind(this) },
+                    { id: 'frontend-static-assets', category: 'frontend', name: 'Recursos Estáticos', func: this.testFrontendStaticAssets.bind(this) }
+                ];
+
+                this.stats.total = this.tests.length;
+            },
+
+            log(message, type = 'info') {
+                const logContainer = document.getElementById('testLog');
+                const timestamp = new Date().toLocaleTimeString();
+                const logEntry = document.createElement('div');
+                
+                const colorClass = {
+                    'info': 'text-blue-600',
+                    'success': 'text-green-600', 
+                    'error': 'text-red-600',
+                    'warning': 'text-yellow-600'
+                }[type] || 'text-gray-600';
+                
+                logEntry.className = `mb-1 ${colorClass}`;
+                logEntry.innerHTML = `[${timestamp}] ${message}`;
+                logContainer.appendChild(logEntry);
+                logContainer.scrollTop = logContainer.scrollHeight;
+            },
+
+            updateTestUI(testId, status, details = '') {
+                const testElement = document.querySelector(`[data-test="${testId}"]`);
+                if (!testElement) return;
+
+                // Update visual status
+                testElement.className = `test-item border rounded p-3 test-${status}`;
+                
+                // Update icon
+                const icon = testElement.querySelector('i');
+                const iconClasses = {
+                    'pending': 'fas fa-circle text-yellow-500',
+                    'running': 'fas fa-spinner fa-spin text-blue-500',
+                    'pass': 'fas fa-check-circle text-green-500',
+                    'fail': 'fas fa-times-circle text-red-500'
+                };
+                icon.className = iconClasses[status] + ' mr-2';
+
+                // Update result text
+                const result = testElement.querySelector('.test-result');
+                const resultTexts = {
+                    'pending': 'Pendiente',
+                    'running': 'Ejecutando...',
+                    'pass': 'EXITOSA',
+                    'fail': 'FALLIDA'
+                };
+                result.textContent = resultTexts[status];
+                result.className = `test-result text-sm font-semibold ${status === 'pass' ? 'text-green-600' : status === 'fail' ? 'text-red-600' : 'text-gray-600'}`;
+
+                // Update details
+                const detailsElement = testElement.querySelector('.test-details');
+                if (details) {
+                    detailsElement.textContent = details;
+                    detailsElement.classList.remove('hidden');
+                } else {
+                    detailsElement.classList.add('hidden');
+                }
+            },
+
+            updateStats() {
+                document.getElementById('totalTests').textContent = this.stats.total;
+                document.getElementById('passedTests').textContent = this.stats.passed;
+                document.getElementById('failedTests').textContent = this.stats.failed;
+                
+                const successRate = this.stats.total > 0 ? Math.round((this.stats.passed / this.stats.total) * 100) : 0;
+                document.getElementById('successRate').textContent = successRate + '%';
+            },
+
+            async runTest(test) {
+                try {
+                    this.log(`🧪 Iniciando: ${test.name}`, 'info');
+                    this.updateTestUI(test.id, 'running');
+                    
+                    const result = await test.func();
+                    
+                    if (result.success) {
+                        this.stats.passed++;
+                        this.updateTestUI(test.id, 'pass', result.details);
+                        this.log(`✅ EXITOSA: ${test.name} - ${result.details}`, 'success');
+                    } else {
+                        this.stats.failed++;
+                        this.updateTestUI(test.id, 'fail', result.details);
+                        this.log(`❌ FALLIDA: ${test.name} - ${result.details}`, 'error');
+                    }
+                } catch (error) {
+                    this.stats.failed++;
+                    this.updateTestUI(test.id, 'fail', error.message);
+                    this.log(`💥 ERROR: ${test.name} - ${error.message}`, 'error');
+                }
+                
+                this.updateStats();
+            },
+
+            async runAllTests() {
+                this.clearResults();
+                this.log('🚀 Iniciando suite completa de pruebas...', 'info');
+                
+                for (const test of this.tests) {
+                    await this.runTest(test);
+                    // Small delay between tests
+                    await new Promise(resolve => setTimeout(resolve, 100));
+                }
+                
+                this.log(`🏁 Pruebas completadas. Exitosas: ${this.stats.passed}/${this.stats.total}`, 'info');
+            },
+
+            clearResults() {
+                this.stats = { total: this.tests.length, passed: 0, failed: 0, pending: this.tests.length };
+                this.currentToken = null;
+                
+                // Reset UI
+                this.tests.forEach(test => {
+                    this.updateTestUI(test.id, 'pending');
+                });
+                
+                document.getElementById('testLog').innerHTML = '<div class="text-gray-500">Log limpiado. Listo para nuevas pruebas...</div>';
+                this.updateStats();
+            },
+
+            // Health Tests
+            async testHealthBasic() {
+                const response = await fetch('/api/monitoring/health');
+                const data = await response.json();
+                
+                if (response.ok && data.status === 'ok') {
+                    return { success: true, details: `Uptime: ${Math.round(data.uptime/1000)}s` };
+                }
+                return { success: false, details: `Estado: ${data.status}` };
+            },
+
+            async testHealthDetailed() {
+                try {
+                    const response = await axios.get('/api/monitoring/admin/status', {
+                        headers: this.currentToken ? { 'Authorization': `Bearer ${this.currentToken}` } : {}
+                    });
+                    
+                    if (response.data.success) {
+                        return { success: true, details: 'Sistema monitoreado correctamente' };
+                    }
+                    return { success: false, details: response.data.message };
+                } catch (error) {
+                    // If no token, this is expected
+                    if (error.response?.status === 401) {
+                        return { success: true, details: 'Requiere autenticación (esperado)' };
+                    }
+                    return { success: false, details: error.message };
+                }
+            },
+
+            async testLogoSettings() {
+                const response = await fetch('/api/settings/logo');
+                const data = await response.json();
+                
+                if (response.ok && data.success && data.data) {
+                    return { success: true, details: `Logo habilitado: ${data.data.enabled}` };
+                }
+                return { success: false, details: 'Configuración de logo no disponible' };
+            },
+
+            // Authentication Tests
+            async testAuthAdminLogin() {
+                try {
+                    const response = await axios.post('/api/auth/login', {
+                        email: 'admin@codecti.choco.gov.co',
+                        password: 'password123'
+                    });
+                    
+                    if (response.data.success && response.data.user.role === 'admin') {
+                        this.currentToken = response.data.token;
+                        return { success: true, details: `Usuario: ${response.data.user.name}` };
+                    }
+                    return { success: false, details: 'Login fallido o rol incorrecto' };
+                } catch (error) {
+                    return { success: false, details: error.response?.data?.message || error.message };
+                }
+            },
+
+            async testAuthCollaboratorLogin() {
+                try {
+                    const response = await axios.post('/api/auth/login', {
+                        email: 'investigador1@codecti.choco.gov.co', 
+                        password: 'password123'
+                    });
+                    
+                    if (response.data.success && response.data.user.role === 'collaborator') {
+                        return { success: true, details: `Usuario: ${response.data.user.name}` };
+                    }
+                    return { success: false, details: 'Login fallido o rol incorrecto' };
+                } catch (error) {
+                    return { success: false, details: error.response?.data?.message || error.message };
+                }
+            },
+
+            async testAuthVerify() {
+                if (!this.currentToken) {
+                    return { success: false, details: 'No hay token disponible' };
+                }
+                
+                try {
+                    const response = await axios.post('/api/auth/verify', {}, {
+                        headers: { 'Authorization': `Bearer ${this.currentToken}` }
+                    });
+                    
+                    if (response.data.success && response.data.user) {
+                        return { success: true, details: `Token válido para ${response.data.user.email}` };
+                    }
+                    return { success: false, details: 'Token inválido' };
+                } catch (error) {
+                    return { success: false, details: error.response?.data?.message || error.message };
+                }
+            },
+
+            async testAuthInvalidCredentials() {
+                try {
+                    await axios.post('/api/auth/login', {
+                        email: 'invalid@example.com',
+                        password: 'wrongpassword'
+                    });
+                    return { success: false, details: 'Debería haber rechazado credenciales inválidas' };
+                } catch (error) {
+                    if (error.response?.status === 401) {
+                        return { success: true, details: 'Credenciales inválidas rechazadas correctamente' };
+                    }
+                    return { success: false, details: error.message };
+                }
+            },
+
+            // Projects Tests
+            async testProjectsList() {
+                if (!this.currentToken) {
+                    return { success: false, details: 'Token requerido' };
+                }
+                
+                try {
+                    const response = await axios.get('/api/projects', {
+                        headers: { 'Authorization': `Bearer ${this.currentToken}` }
+                    });
+                    
+                    if (response.data.success && Array.isArray(response.data.projects)) {
+                        return { success: true, details: `${response.data.projects.length} proyectos encontrados` };
+                    }
+                    return { success: false, details: 'Formato de respuesta incorrecto' };
+                } catch (error) {
+                    return { success: false, details: error.response?.data?.message || error.message };
+                }
+            },
+
+            async testProjectsFilterStatus() {
+                if (!this.currentToken) {
+                    return { success: false, details: 'Token requerido' };
+                }
+                
+                try {
+                    const response = await axios.get('/api/projects?status=active', {
+                        headers: { 'Authorization': `Bearer ${this.currentToken}` }
+                    });
+                    
+                    if (response.data.success) {
+                        return { success: true, details: 'Filtro por estado funcional' };
+                    }
+                    return { success: false, details: 'Filtro no funciona' };
+                } catch (error) {
+                    return { success: false, details: error.response?.data?.message || error.message };
+                }
+            },
+
+            async testProjectsFilterSort() {
+                if (!this.currentToken) {
+                    return { success: false, details: 'Token requerido' };
+                }
+                
+                try {
+                    const response = await axios.get('/api/projects?sort=date', {
+                        headers: { 'Authorization': `Bearer ${this.currentToken}` }
+                    });
+                    
+                    if (response.data.success) {
+                        return { success: true, details: 'Filtro de ordenamiento funcional' };
+                    }
+                    return { success: false, details: 'Ordenamiento no funciona' };
+                } catch (error) {
+                    return { success: false, details: error.response?.data?.message || error.message };
+                }
+            },
+
+            async testProjectsSearch() {
+                if (!this.currentToken) {
+                    return { success: false, details: 'Token requerido' };
+                }
+                
+                try {
+                    const response = await axios.get('/api/projects?search=research', {
+                        headers: { 'Authorization': `Bearer ${this.currentToken}` }
+                    });
+                    
+                    if (response.data.success) {
+                        return { success: true, details: 'Búsqueda funcional' };
+                    }
+                    return { success: false, details: 'Búsqueda no funciona' };
+                } catch (error) {
+                    return { success: false, details: error.response?.data?.message || error.message };
+                }
+            },
+
+            async testProjectsDetail() {
+                if (!this.currentToken) {
+                    return { success: false, details: 'Token requerido' };
+                }
+                
+                try {
+                    const response = await axios.get('/api/projects/1', {
+                        headers: { 'Authorization': `Bearer ${this.currentToken}` }
+                    });
+                    
+                    if (response.data.success && response.data.project) {
+                        return { success: true, details: `Proyecto: ${response.data.project.title}` };
+                    }
+                    return { success: false, details: 'Proyecto no encontrado' };
+                } catch (error) {
+                    return { success: false, details: error.response?.data?.message || error.message };
+                }
+            },
+
+            // Users Tests
+            async testUsersList() {
+                if (!this.currentToken) {
+                    return { success: false, details: 'Token requerido' };
+                }
+                
+                try {
+                    const response = await axios.get('/api/users', {
+                        headers: { 'Authorization': `Bearer ${this.currentToken}` }
+                    });
+                    
+                    if (response.data.success && Array.isArray(response.data.users)) {
+                        return { success: true, details: `${response.data.users.length} usuarios encontrados` };
+                    }
+                    return { success: false, details: 'Formato de respuesta incorrecto' };
+                } catch (error) {
+                    return { success: false, details: error.response?.data?.message || error.message };
+                }
+            },
+
+            async testUsersFilter() {
+                if (!this.currentToken) {
+                    return { success: false, details: 'Token requerido' };
+                }
+                
+                try {
+                    const response = await axios.get('/api/users?role=admin', {
+                        headers: { 'Authorization': `Bearer ${this.currentToken}` }
+                    });
+                    
+                    if (response.data.success) {
+                        return { success: true, details: 'Filtro por rol funcional' };
+                    }
+                    return { success: false, details: 'Filtro no funciona' };
+                } catch (error) {
+                    return { success: false, details: error.response?.data?.message || error.message };
+                }
+            },
+
+            async testUsersSearch() {
+                if (!this.currentToken) {
+                    return { success: false, details: 'Token requerido' };
+                }
+                
+                try {
+                    const response = await axios.get('/api/users?search=admin', {
+                        headers: { 'Authorization': `Bearer ${this.currentToken}` }
+                    });
+                    
+                    if (response.data.success) {
+                        return { success: true, details: 'Búsqueda de usuarios funcional' };
+                    }
+                    return { success: false, details: 'Búsqueda no funciona' };
+                } catch (error) {
+                    return { success: false, details: error.response?.data?.message || error.message };
+                }
+            },
+
+            async testUsersNonAdminAccess() {
+                try {
+                    // Test with collaborator token
+                    const loginResponse = await axios.post('/api/auth/login', {
+                        email: 'investigador1@codecti.choco.gov.co',
+                        password: 'password123'
+                    });
+                    
+                    const collabToken = loginResponse.data.token;
+                    
+                    try {
+                        await axios.get('/api/users', {
+                            headers: { 'Authorization': `Bearer ${collabToken}` }
+                        });
+                        return { success: false, details: 'No debería permitir acceso a no-admins' };
+                    } catch (error) {
+                        if (error.response?.status === 403) {
+                            return { success: true, details: 'Acceso correctamente restringido' };
+                        }
+                        return { success: false, details: 'Error inesperado' };
+                    }
+                } catch (error) {
+                    return { success: false, details: error.message };
+                }
+            },
+
+            // Admin Tests
+            async testAdminStatus() {
+                if (!this.currentToken) {
+                    return { success: false, details: 'Token requerido' };
+                }
+                
+                try {
+                    const response = await axios.get('/api/monitoring/admin/status', {
+                        headers: { 'Authorization': `Bearer ${this.currentToken}` }
+                    });
+                    
+                    if (response.data.success && response.data.data) {
+                        return { success: true, details: 'Estado del sistema disponible' };
+                    }
+                    return { success: false, details: 'Estado no disponible' };
+                } catch (error) {
+                    return { success: false, details: error.response?.data?.message || error.message };
+                }
+            },
+
+            async testAdminMetrics() {
+                if (!this.currentToken) {
+                    return { success: false, details: 'Token requerido' };
+                }
+                
+                try {
+                    const response = await axios.get('/api/monitoring/admin/metrics', {
+                        headers: { 'Authorization': `Bearer ${this.currentToken}` }
+                    });
+                    
+                    if (response.data.success) {
+                        return { success: true, details: 'Métricas disponibles' };
+                    }
+                    return { success: false, details: 'Métricas no disponibles' };
+                } catch (error) {
+                    return { success: false, details: error.response?.data?.message || error.message };
+                }
+            },
+
+            async testAdminLogs() {
+                if (!this.currentToken) {
+                    return { success: false, details: 'Token requerido' };
+                }
+                
+                try {
+                    const response = await axios.get('/api/monitoring/admin/logs', {
+                        headers: { 'Authorization': `Bearer ${this.currentToken}` }
+                    });
+                    
+                    if (response.data.success) {
+                        return { success: true, details: 'Sistema de logs funcional' };
+                    }
+                    return { success: false, details: 'Logs no disponibles' };
+                } catch (error) {
+                    return { success: false, details: error.response?.data?.message || error.message };
+                }
+            },
+
+            async testAdminErrors() {
+                if (!this.currentToken) {
+                    return { success: false, details: 'Token requerido' };
+                }
+                
+                try {
+                    const response = await axios.get('/api/monitoring/admin/errors', {
+                        headers: { 'Authorization': `Bearer ${this.currentToken}` }
+                    });
+                    
+                    if (response.data.success) {
+                        return { success: true, details: 'Monitor de errores funcional' };
+                    }
+                    return { success: false, details: 'Monitor de errores no disponible' };
+                } catch (error) {
+                    return { success: false, details: error.response?.data?.message || error.message };
+                }
+            },
+
+            async testAdminLogoConfig() {
+                if (!this.currentToken) {
+                    return { success: false, details: 'Token requerido' };
+                }
+                
+                try {
+                    const response = await axios.put('/api/settings/logo', {
+                        enabled: true,
+                        url: '/static/logo-choco-inventa.png',
+                        alt: 'Test Logo',
+                        fallbackText: 'Test Fallback'
+                    }, {
+                        headers: { 'Authorization': `Bearer ${this.currentToken}` }
+                    });
+                    
+                    if (response.data.success) {
+                        return { success: true, details: 'Configuración de logo funcional' };
+                    }
+                    return { success: false, details: 'Configuración falló' };
+                } catch (error) {
+                    return { success: false, details: error.response?.data?.message || error.message };
+                }
+            },
+
+            // Frontend Tests
+            async testFrontendLanding() {
+                const response = await fetch('/');
+                if (response.ok) {
+                    const html = await response.text();
+                    if (html.includes('Choco Inventa') && html.includes('CODECTI')) {
+                        return { success: true, details: 'Landing page carga correctamente' };
+                    }
+                    return { success: false, details: 'Contenido incorrecto en landing page' };
+                }
+                return { success: false, details: `HTTP ${response.status}` };
+            },
+
+            async testFrontendDashboard() {
+                const response = await fetch('/dashboard');
+                if (response.ok) {
+                    const html = await response.text();
+                    if (html.includes('dashboard') || html.includes('Dashboard')) {
+                        return { success: true, details: 'Dashboard carga correctamente' };
+                    }
+                    return { success: false, details: 'Contenido de dashboard incorrecto' };
+                }
+                return { success: false, details: `HTTP ${response.status}` };
+            },
+
+            async testFrontendAdmin() {
+                const response = await fetch('/admin');
+                if (response.ok) {
+                    const html = await response.text();
+                    if (html.includes('admin') || html.includes('Admin')) {
+                        return { success: true, details: 'Panel de admin carga correctamente' };
+                    }
+                    return { success: false, details: 'Contenido de admin incorrecto' };
+                }
+                return { success: false, details: `HTTP ${response.status}` };
+            },
+
+            async testFrontendStaticAssets() {
+                const assets = [
+                    '/static/app.js',
+                    '/static/styles.css', 
+                    '/static/logo-choco-inventa.png',
+                    '/static/admin-dashboard.js',
+                    '/static/logo-manager.js'
+                ];
+                
+                let successCount = 0;
+                for (const asset of assets) {
+                    try {
+                        const response = await fetch(asset);
+                        if (response.ok) successCount++;
+                    } catch (e) {
+                        // Asset not available
+                    }
+                }
+                
+                if (successCount === assets.length) {
+                    return { success: true, details: `${successCount}/${assets.length} recursos cargados` };
+                }
+                return { success: false, details: `Solo ${successCount}/${assets.length} recursos disponibles` };
+            }
+        };
+
+        // Initialize when DOM is loaded
+        document.addEventListener('DOMContentLoaded', () => {
+            TestRunner.init();
+        });
+    </script>
+</body>
+</html>
