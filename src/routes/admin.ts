@@ -1638,7 +1638,7 @@ adminRoutes.get('/monitoring/real-time-stats', async (c) => {
     const actionLinesDistribution = await c.env.DB.prepare(`
       SELECT
         al.name,
-        al.id as code,
+        al.code,
         COUNT(p.id) as project_count,
         COALESCE(AVG(ps.total_score), 0) as avg_score
       FROM action_lines al

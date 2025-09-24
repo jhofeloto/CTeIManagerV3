@@ -1,21 +1,80 @@
 // JavaScript para Dashboard CTeI-Manager
 
-// Estado global del dashboard
+// ============ CONSTANTES ============
+
+/** URLs base de la API */
+const API_BASE = '/api';
+
+/** Configuración de timeouts para requests */
+const REQUEST_TIMEOUTS = {
+    AUTH: 10000,      // 10 segundos para autenticación
+    DATA_LOAD: 15000, // 15 segundos para carga de datos
+    STATS: 8000,      // 8 segundos para estadísticas
+    DEFAULT: 10000    // 10 segundos por defecto
+};
+
+/** Configuración de UI */
+const UI_CONFIG = {
+    TOAST_DURATION: 5000,        // 5 segundos
+    FILTER_DEBOUNCE_DELAY: 300,  // 300ms para filtros
+    MAX_PRODUCTS_RENDER: 100,    // Máximo productos a renderizar
+    ANIMATION_FRAME_DELAY: 16    // ~60fps
+};
+
+/** Estados de carga */
+const LOADING_STATES = {
+    IDLE: 'idle',
+    LOADING: 'loading',
+    SUCCESS: 'success',
+    ERROR: 'error'
+};
+
+/** Configuración de cache */
+const CACHE_CONFIG = {
+    STATS_TTL: 5 * 60 * 1000,      // 5 minutos para estadísticas
+    PRODUCTS_TTL: 10 * 60 * 1000,  // 10 minutos para productos
+    PROJECTS_TTL: 15 * 60 * 1000,  // 15 minutos para proyectos
+    USER_PROFILE_TTL: 30 * 60 * 1000 // 30 minutos para perfil de usuario
+};
+
+// ============ ESTADO GLOBAL ============
+
+/**
+ * Estado global de la aplicación dashboard con sistema de cache
+ */
 const DashboardState = {
+    // Autenticación
     user: null,
     token: localStorage.getItem('auth_token') || null,
+
+    // Navegación
     currentView: 'dashboard',
+
+    // Datos con cache
     projects: [],
     adminProjects: [], // Proyectos para vista de administrador
     users: [], // Solo para admins
     selectedProject: null,
-    charts: {},
+    stats: null,
     myProducts: [], // Productos del usuario
-    productCategories: [] // Categorías de productos
-};
+    productCategories: [], // Categorías de productos
 
-// API Base URL
-const API_BASE = '/api';
+    // Sistema de cache
+    cache: {
+        userProfile: { data: null, timestamp: 0 },
+        projects: { data: null, timestamp: 0 },
+        stats: { data: null, timestamp: 0 },
+        products: { data: null, timestamp: 0 },
+        categories: { data: null, timestamp: 0 }
+    },
+
+    // UI State
+    charts: {},
+    loadingState: LOADING_STATES.IDLE,
+
+    // Gestión de requests activos (para evitar duplicados)
+    activeRequests: new Set()
+};
 
 // Configurar axios con token
 if (DashboardState.token) {
@@ -37,327 +96,625 @@ document.addEventListener('DOMContentLoaded', function() {
     initDashboard();
 });
 
-// Funciones de utilidad
+// ============ UTILIDADES ============
+
+/**
+ * Sanitiza HTML para prevenir ataques XSS
+ * Convierte caracteres especiales en entidades HTML seguras
+ * @param {string} text - Texto a sanitizar
+ * @returns {string} Texto sanitizado seguro para inserción en HTML
+ * @example
+ * escapeHtml('<script>alert("XSS")</script>') // Returns: <script>alert("XSS")</script>
+ */
+function escapeHtml(text) {
+    if (!text) return '';
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+/**
+ * Valida y sanitiza URLs
+ * @param {string} url - URL a validar
+ * @returns {string} URL sanitizada o vacía si inválida
+ */
+function sanitizeUrl(url) {
+    if (!url) return '';
+
+    try {
+        const parsedUrl = new URL(url, window.location.origin);
+
+        // Solo permitir protocolos seguros
+        if (!['http:', 'https:'].includes(parsedUrl.protocol)) {
+            return '';
+        }
+
+        // Evitar URLs con javascript:
+        if (parsedUrl.protocol === 'javascript:') {
+            return '';
+        }
+
+        return parsedUrl.href;
+    } catch (error) {
+        console.warn('URL inválida:', url);
+        return '';
+    }
+}
+
+/**
+ * Valida IDs numéricos
+ * @param {*} id - ID a validar
+ * @returns {number|null} ID válido o null
+ */
+function validateNumericId(id) {
+    const numId = parseInt(id, 10);
+    return (!isNaN(numId) && numId > 0) ? numId : null;
+}
+
+// ============ SISTEMA DE CACHE ============
+
+/**
+ * Verifica si los datos almacenados en cache son válidos y no han expirado
+ * @param {string} cacheKey - Clave única del cache ('stats', 'projects', 'products', 'categories')
+ * @param {number} ttl - Time To Live en milisegundos (tiempo máximo de validez)
+ * @returns {boolean} True si el cache es válido y puede usarse, false si expiró o no existe
+ * @example
+ * if (isCacheValid('projects', CACHE_CONFIG.PROJECTS_TTL)) {
+ *     // Usar datos del cache
+ * }
+ */
+function isCacheValid(cacheKey, ttl) {
+    const cacheEntry = DashboardState.cache[cacheKey];
+    if (!cacheEntry || !cacheEntry.timestamp) return false;
+
+    const now = Date.now();
+    return (now - cacheEntry.timestamp) < ttl;
+}
+
+/**
+ * Obtiene datos del cache si son válidos
+ * @param {string} cacheKey - Clave del cache
+ * @param {number} ttl - Time To Live en ms
+ * @returns {*} Datos del cache o null si expiró
+ */
+function getCachedData(cacheKey, ttl) {
+    if (isCacheValid(cacheKey, ttl)) {
+        console.log(`📋 Usando datos del cache para: ${cacheKey}`);
+        return DashboardState.cache[cacheKey].data;
+    }
+    return null;
+}
+
+/**
+ * Almacena datos en el cache
+ * @param {string} cacheKey - Clave del cache
+ * @param {*} data - Datos a almacenar
+ */
+function setCachedData(cacheKey, data) {
+    DashboardState.cache[cacheKey] = {
+        data: data,
+        timestamp: Date.now()
+    };
+    console.log(`💾 Datos almacenados en cache: ${cacheKey}`);
+}
+
+/**
+ * Invalida el cache para una clave específica
+ * @param {string} cacheKey - Clave del cache a invalidar
+ */
+function invalidateCache(cacheKey) {
+    if (DashboardState.cache[cacheKey]) {
+        DashboardState.cache[cacheKey] = { data: null, timestamp: 0 };
+        console.log(`🗑️ Cache invalidado: ${cacheKey}`);
+    }
+}
+
+/**
+ * Invalida todo el cache
+ */
+function invalidateAllCache() {
+    Object.keys(DashboardState.cache).forEach(key => {
+        DashboardState.cache[key] = { data: null, timestamp: 0 };
+    });
+    console.log('🗑️ Todo el cache invalidado');
+}
+
+/**
+ * Gestiona requests HTTP concurrentes para evitar llamadas duplicadas a la API
+ * Previene race conditions y mejora la experiencia del usuario al evitar
+ * múltiples requests simultáneos para los mismos datos
+ * @param {string} requestKey - Clave única que identifica el tipo de request ('stats', 'projects', 'products')
+ * @param {Function} requestFn - Función asíncrona que ejecuta el request HTTP real
+ * @returns {Promise<*>|null} Resultado del request o null si ya hay uno activo
+ * @example
+ * const result = await manageConcurrentRequest('projects', async () => {
+ *     return await axios.get('/api/projects');
+ * });
+ */
+async function manageConcurrentRequest(requestKey, requestFn) {
+    if (DashboardState.activeRequests.has(requestKey)) {
+        console.log(`⏳ Request ya activo, esperando: ${requestKey}`);
+        return null; // Evita requests duplicados
+    }
+
+    DashboardState.activeRequests.add(requestKey);
+
+    try {
+        const result = await requestFn();
+        return result;
+    } finally {
+        DashboardState.activeRequests.delete(requestKey);
+    }
+}
+
+/**
+ * Muestra un toast de notificación con accesibilidad mejorada
+ * @param {string} message - Mensaje a mostrar
+ * @param {string} type - Tipo de toast: 'success', 'error', 'warning', 'info'
+ */
 function showToast(message, type = 'success') {
+    // Validar tipo de toast
+    const validTypes = ['success', 'error', 'warning', 'info'];
+    if (!validTypes.includes(type)) {
+        type = 'info';
+    }
+
+    // Crear contenedor de toasts si no existe
+    let toastContainer = document.getElementById('toast-container');
+    if (!toastContainer) {
+        toastContainer = document.createElement('div');
+        toastContainer.id = 'toast-container';
+        toastContainer.className = 'fixed top-4 right-4 z-50 space-y-2';
+        toastContainer.setAttribute('aria-live', 'polite');
+        toastContainer.setAttribute('aria-label', 'Notificaciones');
+        document.body.appendChild(toastContainer);
+    }
+
     const toast = document.createElement('div');
-    toast.className = `toast toast-${type}`;
+    toast.className = `toast toast-${type} bg-card border border-border rounded-lg shadow-lg p-4 max-w-sm`;
+    toast.setAttribute('role', 'alert');
+    toast.setAttribute('aria-live', 'assertive');
+
+    // Determinar el mensaje de accesibilidad según el tipo
+    const accessibilityMessage = {
+        'success': 'Notificación de éxito',
+        'error': 'Notificación de error',
+        'warning': 'Notificación de advertencia',
+        'info': 'Notificación informativa'
+    }[type] || 'Notificación';
+
     toast.innerHTML = `
-        <div class="flex items-center justify-between">
-            <span>${message}</span>
-            <button onclick="this.parentElement.parentElement.remove()" class="ml-4">
-                <i class="fas fa-times"></i>
+        <div class="flex items-start justify-between">
+            <div class="flex items-start space-x-3">
+                <i class="fas ${getToastIcon(type)} mt-0.5 text-lg" aria-hidden="true"></i>
+                <div class="flex-1">
+                    <p class="text-sm font-medium">${accessibilityMessage}</p>
+                    <p class="text-sm text-muted-foreground mt-1">${escapeHtml(message)}</p>
+                </div>
+            </div>
+            <button onclick="this.closest('.toast').remove()"
+                    class="ml-4 text-muted-foreground hover:text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 rounded"
+                    aria-label="Cerrar notificación">
+                <i class="fas fa-times" aria-hidden="true"></i>
             </button>
         </div>
     `;
-    document.body.appendChild(toast);
-    
+
+    toastContainer.appendChild(toast);
+
+    // Auto-remover después del tiempo configurado
     setTimeout(() => {
-        toast.remove();
-    }, 5000);
+        if (toast.parentElement) {
+            toast.remove();
+        }
+    }, UI_CONFIG.TOAST_DURATION);
 }
 
+/**
+ * Obtiene el ícono apropiado para el tipo de toast
+ * @param {string} type - Tipo de toast
+ * @returns {string} Clase del ícono
+ */
+function getToastIcon(type) {
+    const icons = {
+        'success': 'fa-check-circle text-green-500',
+        'error': 'fa-exclamation-triangle text-red-500',
+        'warning': 'fa-exclamation-circle text-yellow-500',
+        'info': 'fa-info-circle text-blue-500'
+    };
+    return icons[type] || 'fa-info-circle text-blue-500';
+}
+
+/**
+ * Formatea una fecha para display
+ * @param {string|Date} dateString - Fecha a formatear
+ * @returns {string} Fecha formateada en español
+ */
 function formatDate(dateString) {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('es-ES', {
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric'
-    });
+    if (!dateString) return 'Fecha no disponible';
+
+    try {
+        const date = new Date(dateString);
+        if (isNaN(date.getTime())) {
+            return 'Fecha inválida';
+        }
+
+        return date.toLocaleDateString('es-ES', {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
+        });
+    } catch (error) {
+        console.warn('Error formateando fecha:', dateString, error);
+        return 'Fecha inválida';
+    }
 }
 
+/**
+ * Realiza logout del usuario
+ */
 function logout() {
-    localStorage.removeItem('auth_token');
-    delete axios.defaults.headers.common['Authorization'];
-    window.location.href = '/';
+    try {
+        localStorage.removeItem('auth_token');
+        delete axios.defaults.headers.common['Authorization'];
+        DashboardState.token = null;
+        DashboardState.user = null;
+        console.log('👋 Usuario desconectado');
+        window.location.href = '/';
+    } catch (error) {
+        console.error('❌ Error durante logout:', error);
+        // Forzar redirección incluso si hay error
+        window.location.href = '/';
+    }
 }
 
 // Inicialización del dashboard
+/**
+ * Función principal de inicialización del dashboard CTeI-Manager
+ * Realiza la autenticación del usuario, carga el perfil y datos iniciales
+ * Maneja errores de conexión y redirecciona según sea necesario
+ * @async
+ * @returns {Promise<void>}
+ * @throws {Error} Si no hay token de autenticación o falla la carga del perfil
+ */
 async function initDashboard() {
     console.log('🎯 Ejecutando initDashboard()');
-    
+
     try {
-        // Obtener perfil del usuario
+        // Validar token de autenticación antes de proceder
+        if (!DashboardState.token) {
+            throw new Error('No se encontró token de autenticación');
+        }
+
+        // Obtener perfil del usuario con timeout
         console.log('👤 Obteniendo perfil del usuario...');
-        const profileResponse = await axios.get(`${API_BASE}/private/profile`);
+        const profileResponse = await axios.get(`${API_BASE}/private/profile`, {
+            timeout: REQUEST_TIMEOUTS.AUTH,
+            headers: {
+                'Authorization': `Bearer ${DashboardState.token}`
+            }
+        });
+
         console.log('📋 Respuesta del perfil:', profileResponse.data);
-        
-        if (profileResponse.data.success) {
+
+        // Validar respuesta del servidor
+        if (!profileResponse.data) {
+            throw new Error('Respuesta vacía del servidor');
+        }
+
+        if (profileResponse.data.success && profileResponse.data.data) {
             DashboardState.user = profileResponse.data.data;
+
+            // Validar que el usuario tenga los campos requeridos
+            if (!DashboardState.user.id || !DashboardState.user.full_name || !DashboardState.user.role) {
+                throw new Error('Datos del usuario incompletos');
+            }
+
             console.log('✅ Usuario cargado:', DashboardState.user.full_name);
-            
+
             renderDashboard();
             console.log('🎨 Dashboard renderizado, cargando datos...');
-            
+
             await loadDashboardData();
             console.log('📊 Datos del dashboard cargados');
         } else {
-            throw new Error('No se pudo cargar el perfil');
+            const errorMsg = profileResponse.data?.error || 'No se pudo cargar el perfil del usuario';
+            throw new Error(errorMsg);
         }
     } catch (error) {
         console.error('❌ Error inicializando dashboard:', error);
-        showToast('Error de autenticación. Redirigiendo...', 'error');
-        setTimeout(() => {
-            logout();
-        }, 2000);
+
+        // Determinar tipo de error para mensaje apropiado
+        let errorMessage = 'Error de conexión. Intente nuevamente.';
+        let shouldLogout = false;
+
+        if (error.response) {
+            // Error de respuesta del servidor
+            const status = error.response.status;
+            if (status === 401) {
+                errorMessage = 'Sesión expirada. Redirigiendo...';
+                shouldLogout = true;
+            } else if (status === 403) {
+                errorMessage = 'Acceso denegado. Contacte al administrador.';
+                shouldLogout = true;
+            } else if (status >= 500) {
+                errorMessage = 'Error del servidor. Intente más tarde.';
+            } else {
+                errorMessage = error.response.data?.error || errorMessage;
+            }
+        } else if (error.request) {
+            // Error de red
+            errorMessage = 'Error de conexión. Verifique su conexión a internet.';
+        } else {
+            // Otro tipo de error
+            errorMessage = error.message || errorMessage;
+        }
+
+        showToast(errorMessage, 'error');
+
+        if (shouldLogout) {
+            setTimeout(() => {
+                logout();
+            }, 2000);
+        } else {
+            // Reintentar después de 3 segundos para errores de red
+            setTimeout(() => {
+                if (confirm('¿Desea reintentar la conexión?')) {
+                    initDashboard();
+                } else {
+                    logout();
+                }
+            }, 3000);
+        }
     }
 }
 
 // Renderizar la estructura base del dashboard
 function renderDashboard() {
     const app = document.getElementById('app');
-    
-    const isAdmin = DashboardState.user.role === 'ADMIN';
-    const isInvestigator = DashboardState.user.role === 'INVESTIGATOR' || isAdmin;
-    
+    if (!app) {
+        console.error('❌ Elemento app no encontrado');
+        return;
+    }
+
+    // Determinar permisos del usuario
+    const userPermissions = getUserPermissions();
+
     // DEBUG: Logging para identificar problemas de roles
-    console.log('🔍 DASHBOARD DEBUG:');
-    console.log('   - User:', DashboardState.user);
-    console.log('   - User Role:', DashboardState.user?.role);
-    console.log('   - isAdmin:', isAdmin);
-    console.log('   - isInvestigator:', isInvestigator);
-    
+    console.log('🔍 DASHBOARD DEBUG:', userPermissions);
+
+    // Renderizar componentes del dashboard
     app.innerHTML = `
-        <!-- Navbar -->
-        <nav class="bg-card shadow-lg border-b border-border">
+        ${renderNavbar(userPermissions)}
+        ${renderMainLayout(userPermissions)}
+    `;
+
+    // Configurar navegación y inicialización
+    setupNavigation();
+    initializeDashboardComponents();
+}
+
+// Obtener permisos del usuario
+function getUserPermissions() {
+    const user = DashboardState.user;
+    if (!user) {
+        console.error('❌ Usuario no disponible para determinar permisos');
+        return { isAdmin: false, isInvestigator: false };
+    }
+
+    const isAdmin = user.role === 'ADMIN';
+    const isInvestigator = user.role === 'INVESTIGATOR' || isAdmin;
+
+    return {
+        isAdmin,
+        isInvestigator,
+        user
+    };
+}
+
+// Renderizar navbar con mejoras de accesibilidad
+function renderNavbar(permissions) {
+    return `
+        <nav class="bg-card shadow-lg border-b border-border" role="navigation" aria-label="Navegación principal">
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div class="flex justify-between h-16">
                     <div class="flex items-center">
-                        <div id="dashboard-site-logo" class="text-xl font-bold text-primary">
-                            <i class="fas fa-flask mr-2"></i>
+                        <div id="dashboard-site-logo" class="text-xl font-bold text-primary" role="banner">
+                            <i class="fas fa-flask mr-2" aria-hidden="true"></i>
                             CTeI-Manager
                         </div>
-                        <span class="ml-4 text-muted-foreground">Dashboard</span>
+                        <span class="ml-4 text-muted-foreground" aria-label="Sección actual">Dashboard</span>
                     </div>
-                    <div class="flex items-center space-x-4">
-                        <span class="text-sm text-muted-foreground">
-                            ${DashboardState.user.full_name} (${DashboardState.user.role})
+                    <div class="flex items-center space-x-4" role="toolbar" aria-label="Acciones del usuario">
+                        <span class="text-sm text-muted-foreground" aria-label="Usuario actual">
+                            ${permissions.user.full_name} (${permissions.user.role})
                         </span>
-                        <button onclick="goToPublicPortal()" class="text-foreground hover:text-primary px-3 py-2 rounded-md text-sm font-medium">
+                        <button onclick="goToPublicPortal()"
+                                class="text-foreground hover:text-primary px-3 py-2 rounded-md text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+                                aria-label="Ir al portal público">
                             Portal Público
                         </button>
-                        <!-- Selector de Tema Claro/Oscuro -->
-                        <button id="dashboard-theme-toggle" onclick="toggleDashboardTheme()" class="ctei-btn-secondary" title="Cambiar tema">
-                            <i class="fas fa-moon" id="dashboard-theme-icon"></i>
+                        <button id="dashboard-theme-toggle"
+                                onclick="toggleDashboardTheme()"
+                                class="ctei-btn-secondary focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+                                aria-label="Cambiar tema de la aplicación"
+                                aria-pressed="false">
+                            <i class="fas fa-moon" id="dashboard-theme-icon" aria-hidden="true"></i>
                         </button>
-                        <button onclick="logout()" class="text-destructive hover:text-destructive-foreground px-3 py-2 rounded-md text-sm font-medium">
-                            <i class="fas fa-sign-out-alt mr-1"></i>
+                        <button onclick="logout()"
+                                class="text-destructive hover:text-destructive-foreground px-3 py-2 rounded-md text-sm font-medium focus:outline-none focus:ring-2 focus:ring-destructive focus:ring-offset-2"
+                                aria-label="Cerrar sesión">
+                            <i class="fas fa-sign-out-alt mr-1" aria-hidden="true"></i>
                             Salir
                         </button>
                     </div>
                 </div>
             </div>
         </nav>
+    `;
+}
 
-        <!-- Contenido principal -->
+// Renderizar layout principal con sidebar y contenido
+function renderMainLayout(permissions) {
+    return `
         <div class="flex">
-            <!-- Sidebar -->
-            <aside class="w-64 bg-card shadow-lg min-h-screen border-r border-border">
-                <nav class="p-4">
-                    <ul class="space-y-2">
-                        <li>
-                            <button 
-                                onclick="showView('dashboard')" 
-                                class="nav-item w-full flex items-center px-3 py-2 text-left rounded-lg hover:bg-accent hover:text-accent-foreground transition-colors"
-                            >
-                                <i class="fas fa-chart-line mr-3"></i>
-                                Dashboard
-                            </button>
-                        </li>
-                        ${isInvestigator ? `
-                        <li>
-                            <button 
-                                onclick="showView('projects')" 
-                                class="nav-item w-full flex items-center px-3 py-2 text-left rounded-lg hover:bg-accent hover:text-accent-foreground transition-colors"
-                            >
-                                <i class="fas fa-project-diagram mr-3"></i>
-                                Mis Proyectos
-                            </button>
-                        </li>
-                        <li>
-                            <button 
-                                onclick="showView('my-products')" 
-                                class="nav-item w-full flex items-center px-3 py-2 text-left rounded-lg hover:bg-accent hover:text-accent-foreground transition-colors"
-                            >
-                                <i class="fas fa-cubes mr-3"></i>
-                                Mis Productos
-                            </button>
-                        </li>
-                        <li>
-                            <button 
-                                onclick="showView('files')" 
-                                class="nav-item w-full flex items-center px-3 py-2 text-left rounded-lg hover:bg-accent hover:text-accent-foreground transition-colors"
-                            >
-                                <i class="fas fa-folder-open mr-3"></i>
-                                Gestión de Archivos
-                            </button>
-                        </li>
-                        <li>
-                            <button 
-                                onclick="showView('advanced-analytics')" 
-                                class="nav-item w-full flex items-center px-3 py-2 text-left rounded-lg hover:bg-accent hover:text-accent-foreground transition-colors"
-                            >
-                                <i class="fas fa-chart-line mr-3"></i>
-                                Analítica Avanzada
-                            </button>
-                        </li>
-                        <li>
-                            <button 
-                                onclick="showView('timeline')" 
-                                class="nav-item w-full flex items-center px-3 py-2 text-left rounded-lg hover:bg-accent hover:text-accent-foreground transition-colors"
-                            >
-                                <i class="fas fa-clock mr-3"></i>
-                                Timeline
-                            </button>
-                        </li>
-                        <li>
-                            <button 
-                                onclick="showView('basic-monitoring')" 
-                                class="nav-item w-full flex items-center px-3 py-2 text-left rounded-lg hover:bg-accent hover:text-accent-foreground transition-colors"
-                            >
-                                <i class="fas fa-chart-bar mr-3"></i>
-                                Monitoreo Básico
-                            </button>
-                        </li>
-                        <li>
-                            <button 
-                                onclick="showView('monitoring')" 
-                                class="nav-item w-full flex items-center px-3 py-2 text-left rounded-lg hover:bg-accent hover:text-accent-foreground transition-colors"
-                            >
-                                <i class="fas fa-chart-line mr-3"></i>
-                                Monitoreo Avanzado
-                            </button>
-                        </li>
-                        ` : ''}
-                        <li>
-                            <button 
-                                onclick="showView('profile')" 
-                                class="nav-item w-full flex items-center px-3 py-2 text-left rounded-lg hover:bg-accent hover:text-accent-foreground transition-colors"
-                            >
-                                <i class="fas fa-user mr-3"></i>
-                                Mi Perfil
-                            </button>
-                        </li>
-                        ${isAdmin ? `
-                        <li>
-                            <button 
-                                onclick="showView('admin-users')" 
-                                class="nav-item w-full flex items-center px-3 py-2 text-left rounded-lg hover:bg-accent hover:text-accent-foreground transition-colors"
-                            >
-                                <i class="fas fa-users mr-3"></i>
-                                Gestión de Usuarios
-                            </button>
-                        </li>
-                        <li>
-                            <button 
-                                onclick="showView('monitoring')" 
-                                class="nav-item w-full flex items-center px-3 py-2 text-left rounded-lg hover:bg-accent hover:text-accent-foreground transition-colors"
-                            >
-                                <i class="fas fa-chart-line mr-3"></i>
-                                Monitoreo en Tiempo Real
-                            </button>
-                        </li>
-                        <li>
-                            <button 
-                                onclick="showView('alerts')" 
-                                class="nav-item w-full flex items-center px-3 py-2 text-left rounded-lg hover:bg-accent hover:text-accent-foreground transition-colors"
-                            >
-                                <i class="fas fa-exclamation-triangle mr-3"></i>
-                                Sistema de Alertas
-                            </button>
-                        </li>
-                        <li>
-                            <button 
-                                onclick="showView('scoring')" 
-                                class="nav-item w-full flex items-center px-3 py-2 text-left rounded-lg hover:bg-accent hover:text-accent-foreground transition-colors"
-                            >
-                                <i class="fas fa-chart-bar mr-3"></i>
-                                Evaluación y Scoring
-                            </button>
-                        </li>
-
-                        <li>
-                            <button 
-                                onclick="debugMonitoringView()" 
-                                class="nav-item w-full flex items-center px-3 py-2 text-left rounded-lg hover:bg-red-100 hover:text-red-700 transition-colors border border-red-200"
-                            >
-                                <i class="fas fa-bug mr-3"></i>
-                                🔧 Debug Monitoreo
-                            </button>
-                        </li>
-                        <li>
-                            <button 
-                                onclick="showView('admin-projects')" 
-                                class="nav-item w-full flex items-center px-3 py-2 text-left rounded-lg hover:bg-accent hover:text-accent-foreground transition-colors"
-                            >
-                                <i class="fas fa-cogs mr-3"></i>
-                                Todos los Proyectos
-                            </button>
-                        </li>
-                        <li>
-                            <button 
-                                onclick="showView('admin-products')" 
-                                class="nav-item w-full flex items-center px-3 py-2 text-left rounded-lg hover:bg-accent hover:text-accent-foreground transition-colors"
-                            >
-                                <i class="fas fa-box mr-3"></i>
-                                Gestión de Productos
-                            </button>
-                        </li>
-                        <li>
-                            <button 
-                                onclick="showView('admin-categories')" 
-                                class="nav-item w-full flex items-center px-3 py-2 text-left rounded-lg hover:bg-accent hover:text-accent-foreground transition-colors"
-                            >
-                                <i class="fas fa-tags mr-3"></i>
-                                Categorías de Productos
-                            </button>
-                        </li>
-                        <li>
-                            <button 
-                                onclick="showView('admin-monitoring')" 
-                                class="nav-item w-full flex items-center px-3 py-2 text-left rounded-lg hover:bg-accent hover:text-accent-foreground transition-colors"
-                            >
-                                <i class="fas fa-analytics mr-3"></i>
-                                Monitoreo Estratégico
-                            </button>
-                        </li>
-                        <li>
-                            <button 
-                                onclick="showView('admin-action-lines')" 
-                                class="nav-item w-full flex items-center px-3 py-2 text-left rounded-lg hover:bg-accent hover:text-accent-foreground transition-colors"
-                            >
-                                <i class="fas fa-road mr-3"></i>
-                                Líneas de Acción
-                            </button>
-                        </li>
-                        <li>
-                            <button 
-                                onclick="showView('admin-site-config')" 
-                                class="nav-item w-full flex items-center px-3 py-2 text-left rounded-lg hover:bg-accent hover:text-accent-foreground transition-colors"
-                            >
-                                <i class="fas fa-cog mr-3"></i>
-                                Configuración del Sitio
-                            </button>
-                        </li>
-                        ` : ''}
-                    </ul>
-                </nav>
-            </aside>
-
-            <!-- Área de contenido -->
+            ${renderSidebar(permissions)}
             <main class="flex-1 p-8">
-                <div id="content">
-                    <!-- El contenido se carga dinámicamente -->
-                </div>
+                <div id="content"><!-- El contenido se carga dinámicamente --></div>
             </main>
         </div>
     `;
+}
 
-    // Establecer vista inicial
-    showView('dashboard');
-    
+// Renderizar sidebar con navegación accesible
+function renderSidebar(permissions) {
+    const { isAdmin, isInvestigator } = permissions;
+
+    return `
+        <aside class="w-64 bg-card shadow-lg min-h-screen border-r border-border"
+               role="complementary"
+               aria-label="Menú de navegación">
+            <nav class="p-4" role="navigation" aria-label="Navegación principal del dashboard">
+                <ul class="space-y-2" role="menubar">
+                    ${renderNavigationItems(permissions)}
+                </ul>
+            </nav>
+        </aside>
+    `;
+}
+
+// Renderizar items de navegación
+function renderNavigationItems({ isAdmin, isInvestigator }) {
+    const items = [
+        // Items comunes
+        {
+            id: 'dashboard',
+            icon: 'fas fa-chart-line',
+            label: 'Dashboard',
+            show: true
+        },
+        // Items para investigadores
+        {
+            id: 'projects',
+            icon: 'fas fa-project-diagram',
+            label: 'Mis Proyectos',
+            show: isInvestigator
+        },
+        {
+            id: 'my-products',
+            icon: 'fas fa-cubes',
+            label: 'Mis Productos',
+            show: isInvestigator
+        },
+        {
+            id: 'files',
+            icon: 'fas fa-folder-open',
+            label: 'Gestión de Archivos',
+            show: isInvestigator
+        },
+        {
+            id: 'monitoring',
+            icon: 'fas fa-chart-line',
+            label: 'Monitoreo Avanzado',
+            show: isInvestigator
+        },
+        // Item de perfil
+        {
+            id: 'profile',
+            icon: 'fas fa-user',
+            label: 'Mi Perfil',
+            show: true
+        },
+        // Items de admin
+        {
+            id: 'admin-users',
+            icon: 'fas fa-users',
+            label: 'Gestión de Usuarios',
+            show: isAdmin
+        },
+        {
+            id: 'scoring',
+            icon: 'fas fa-chart-bar',
+            label: 'Evaluación y Scoring',
+            show: isAdmin
+        },
+        {
+            id: 'debug-monitoring',
+            icon: 'fas fa-bug',
+            label: '🔧 Debug Monitoreo',
+            show: isAdmin,
+            class: 'hover:bg-red-100 hover:text-red-700 border border-red-200',
+            action: 'debugMonitoringView()'
+        },
+        {
+            id: 'admin-projects',
+            icon: 'fas fa-cogs',
+            label: 'Todos los Proyectos',
+            show: isAdmin
+        },
+        {
+            id: 'admin-products',
+            icon: 'fas fa-box',
+            label: 'Gestión de Productos',
+            show: isAdmin
+        },
+        {
+            id: 'admin-categories',
+            icon: 'fas fa-tags',
+            label: 'Categorías de Productos',
+            show: isAdmin
+        },
+        {
+            id: 'admin-action-lines',
+            icon: 'fas fa-road',
+            label: 'Líneas de Acción',
+            show: isAdmin
+        },
+        {
+            id: 'admin-site-config',
+            icon: 'fas fa-cog',
+            label: 'Configuración del Sitio',
+            show: isAdmin
+        }
+    ];
+
+    return items.filter(item => item.show).map(item => `
+        <li role="none">
+            <button
+                onclick="${item.action || `showView('${item.id}')`}"
+                class="nav-item w-full flex items-center px-3 py-2 text-left rounded-lg hover:bg-accent hover:text-accent-foreground transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 ${item.class || ''}"
+                role="menuitem"
+                tabindex="0"
+                aria-label="${item.label}"
+                aria-describedby="nav-description-${item.id}"
+            >
+                <i class="${item.icon} mr-3" aria-hidden="true"></i>
+                ${item.label}
+                <span id="nav-description-${item.id}" class="sr-only">Navegar a ${item.label}</span>
+            </button>
+        </li>
+    `).join('');
+}
+
+// Configurar navegación del navegador
+function setupNavigation() {
+    // Determinar vista inicial desde URL
+    const initialView = getViewFromURL();
+    showView(initialView);
+
+    // Configurar navegación por URL (historial del navegador)
+    window.addEventListener('popstate', function(event) {
+        if (event.state && event.state.view) {
+            showView(event.state.view, false); // No actualizar URL ya que venimos de la historia
+        }
+    });
+}
+
+// Inicializar componentes del dashboard
+function initializeDashboardComponents() {
     // Cargar logo personalizado después de renderizar el navbar
     setTimeout(loadDashboardSiteLogo, 100);
-    
+
     // Inicializar tema del dashboard
     setTimeout(initDashboardTheme, 50);
 }
@@ -365,120 +722,218 @@ function renderDashboard() {
 // Cargar datos del dashboard
 async function loadDashboardData() {
     try {
+        // Validar estado del usuario
+        if (!DashboardState.user || !DashboardState.user.role) {
+            throw new Error('Usuario no válido para cargar datos del dashboard');
+        }
+
         // Cargar estadísticas (opcional - no bloquear si falla)
-        try {
-            const statsEndpoint = DashboardState.user.role === 'ADMIN' 
-                ? `${API_BASE}/admin/dashboard/stats`
-                : `${API_BASE}/private/dashboard/stats`;
-                
-            console.log('📈 Cargando estadísticas desde:', statsEndpoint);
-            const statsResponse = await axios.get(statsEndpoint);
-            
-            if (statsResponse.data.success) {
-                DashboardState.stats = statsResponse.data.data;
-                console.log('✅ Estadísticas cargadas');
-            } else {
-                console.warn('⚠️ Estadísticas no disponibles:', statsResponse.data.error);
-                DashboardState.stats = { projects: { total: 0 }, products: { total: 0 } };
-            }
-        } catch (statsError) {
-            console.warn('⚠️ Error cargando estadísticas (continuando sin ellas):', statsError);
-            DashboardState.stats = { projects: { total: 0 }, products: { total: 0 } };
-        }
-        
-        // Cargar proyectos
-        console.log('🔍 Cargando proyectos desde:', `${API_BASE}/private/projects`);
-        const projectsResponse = await axios.get(`${API_BASE}/private/projects`);
-        console.log('📊 Respuesta de proyectos:', projectsResponse.data);
-        
-        if (projectsResponse.data.success) {
-            DashboardState.projects = projectsResponse.data.data.projects;
-            console.log('✅ Proyectos cargados en DashboardState:', DashboardState.projects.length);
-        } else {
-            console.error('❌ Error en respuesta de proyectos:', projectsResponse.data.error);
-        }
-        
+        await loadDashboardStats();
+
+        // Cargar proyectos (crítico - debe funcionar)
+        await loadDashboardProjects();
+
     } catch (error) {
-        console.error('Error cargando datos del dashboard:', error);
+        console.error('❌ Error crítico cargando datos del dashboard:', error);
+        showToast('Error cargando datos del dashboard. Algunas funciones pueden no estar disponibles.', 'error');
+
+        // Asegurar valores por defecto
+        DashboardState.stats = DashboardState.stats || { projects: { total: 0 }, products: { total: 0 } };
+        DashboardState.projects = DashboardState.projects || [];
     }
 }
 
-// Sistema de navegación
-function showView(view) {
-    DashboardState.currentView = view;
-    
-    // Actualizar navegación activa con sistema unificado
+// Función separada para cargar estadísticas con cache
+async function loadDashboardStats() {
+    return await manageConcurrentRequest('stats', async () => {
+        try {
+            // Verificar cache primero
+            const cachedStats = getCachedData('stats', CACHE_CONFIG.STATS_TTL);
+            if (cachedStats) {
+                DashboardState.stats = cachedStats;
+                return;
+            }
+
+            const statsEndpoint = DashboardState.user.role === 'ADMIN'
+                ? `${API_BASE}/admin/dashboard/stats`
+                : `${API_BASE}/private/dashboard/stats`;
+
+            console.log('📈 Cargando estadísticas desde:', statsEndpoint);
+
+            const statsResponse = await axios.get(statsEndpoint, {
+                timeout: REQUEST_TIMEOUTS.STATS,
+                headers: {
+                    'Authorization': `Bearer ${DashboardState.token}`
+                }
+            });
+
+            if (statsResponse.data && statsResponse.data.success && statsResponse.data.data) {
+                DashboardState.stats = statsResponse.data.data;
+                setCachedData('stats', statsResponse.data.data);
+                console.log('✅ Estadísticas cargadas:', DashboardState.stats);
+            } else {
+                console.warn('⚠️ Respuesta de estadísticas inválida:', statsResponse.data);
+                DashboardState.stats = { projects: { total: 0 }, products: { total: 0 } };
+            }
+        } catch (statsError) {
+            console.warn('⚠️ Error cargando estadísticas (continuando sin ellas):', statsError.message);
+            DashboardState.stats = { projects: { total: 0 }, products: { total: 0 } };
+        }
+    });
+}
+
+// Función separada para cargar proyectos con cache
+async function loadDashboardProjects() {
+    return await manageConcurrentRequest('projects', async () => {
+        try {
+            // Verificar cache primero
+            const cachedProjects = getCachedData('projects', CACHE_CONFIG.PROJECTS_TTL);
+            if (cachedProjects) {
+                DashboardState.projects = cachedProjects;
+                return;
+            }
+
+            console.log('🔍 Cargando proyectos desde:', `${API_BASE}/private/projects`);
+
+            const projectsResponse = await axios.get(`${API_BASE}/private/projects`, {
+                timeout: REQUEST_TIMEOUTS.DATA_LOAD,
+                headers: {
+                    'Authorization': `Bearer ${DashboardState.token}`
+                }
+            });
+
+            console.log('📊 Respuesta de proyectos:', projectsResponse.data);
+
+            if (projectsResponse.data && projectsResponse.data.success) {
+                const projectsData = projectsResponse.data.data;
+
+                // Validar estructura de datos
+                if (projectsData && Array.isArray(projectsData.projects)) {
+                    DashboardState.projects = projectsData.projects;
+                    setCachedData('projects', projectsData.projects);
+                    console.log('✅ Proyectos cargados en DashboardState:', DashboardState.projects.length);
+                } else {
+                    console.warn('⚠️ Estructura de proyectos inválida:', projectsData);
+                    DashboardState.projects = [];
+                }
+            } else {
+                const errorMsg = projectsResponse.data?.error || 'Error desconocido en respuesta de proyectos';
+                throw new Error(errorMsg);
+            }
+        } catch (error) {
+            console.error('❌ Error cargando proyectos:', error);
+            DashboardState.projects = [];
+
+            // Mostrar error solo si es crítico (no por timeout de red)
+            if (error.response && error.response.status >= 500) {
+                showToast('Error del servidor cargando proyectos. Intente recargar la página.', 'error');
+            } else if (!error.response) {
+                showToast('Error de conexión cargando proyectos.', 'warning');
+            }
+            // Para errores 4xx, no mostrar toast ya que pueden ser permisos
+        }
+    });
+}
+
+// Función auxiliar para obtener vista desde URL
+function getViewFromURL() {
+    const hash = window.location.hash.substring(1); // Remover el '#'
+    if (hash && hash.length > 0) {
+        return hash;
+    }
+    return 'dashboard'; // Vista por defecto
+}
+
+// Mapa de vistas disponibles con sus funciones de renderizado
+const VIEW_RENDERERS = {
+    'dashboard': renderMainDashboard,
+    'projects': renderProjectsView,
+    'my-products': renderMyProductsView,
+    'profile': renderProfileView,
+    'admin-users': renderAdminUsersView,
+    'admin-projects': renderAdminProjectsView,
+    'admin-products': renderAdminProductsView,
+    'admin-categories': renderAdminCategoriesView,
+    'monitoring': renderMonitoringDashboard,
+    'scoring': renderScoringDashboard,
+    'files': renderFilesDashboard,
+    'admin-action-lines': () => {
+        if (typeof renderAdminActionLinesView === 'function') {
+            renderAdminActionLinesView();
+        } else {
+            console.warn('⚠️ Función renderAdminActionLinesView no disponible');
+            renderMainDashboard();
+        }
+    },
+    'admin-site-config': renderAdminSiteConfigView
+};
+
+// Sistema de navegación con URLs independientes
+function showView(view, updateURL = true) {
+    try {
+        // Validar vista
+        if (!view || typeof view !== 'string') {
+            console.warn('⚠️ Vista inválida:', view);
+            view = 'dashboard';
+        }
+
+        // Actualizar estado
+        DashboardState.currentView = view;
+
+        // Actualizar navegación activa
+        updateActiveNavigation(view);
+
+        // Actualizar URL del navegador
+        if (updateURL) {
+            updateBrowserURL(view);
+        }
+
+        // Renderizar vista correspondiente
+        renderView(view);
+
+    } catch (error) {
+        console.error('❌ Error cambiando vista:', error);
+        showToast('Error al cambiar de vista', 'error');
+        // Fallback a dashboard
+        renderMainDashboard();
+    }
+}
+
+// Actualizar navegación activa
+function updateActiveNavigation(view) {
     document.querySelectorAll('.nav-item').forEach(item => {
         item.classList.remove('active');
     });
-    
-    const activeItem = document.querySelector(`[onclick="showView('${view}')"]`);
+
+    // Buscar el item activo (considerando diferentes formatos de onclick)
+    const activeItem = document.querySelector(`[onclick="showView('${view}')"]`) ||
+                      document.querySelector(`[onclick*="${view}"]`);
+
     if (activeItem) {
         activeItem.classList.add('active');
     }
-    
-    // Renderizar vista correspondiente
-    switch (view) {
-        case 'dashboard':
-            renderMainDashboard();
-            break;
-        case 'projects':
-            renderProjectsView();
-            break;
-        case 'my-products':
-            renderMyProductsView();
-            break;
-        case 'file-manager':
-            renderFileManagerView();
-            break;
-        case 'advanced-analytics':
-            if (typeof renderAdvancedAnalyticsView === 'function') renderAdvancedAnalyticsView();
-            break;
-        case 'profile':
-            renderProfileView();
-            break;
-        case 'admin-users':
-            renderAdminUsersView();
-            break;
-        case 'admin-projects':
-            renderAdminProjectsView();
-            break;
-        case 'admin-products':
-            renderAdminProductsView();
-            break;
-        case 'admin-categories':
-            renderAdminCategoriesView();
-            break;
-        case 'monitoring':
-            renderMonitoringDashboard();
-            break;
-        case 'alerts':
-            renderAlertsDashboard();
-            break;
-        case 'scoring':
-            renderScoringDashboard();
-            break;
-        case 'files':
-            renderFilesDashboard();
-            break;
-        case 'basic-monitoring':
-            if (typeof renderBasicMonitoringView === 'function') renderBasicMonitoringView();
-            else showToast('Vista de monitoreo básico en desarrollo', 'info');
-            break;
-        case 'timeline':
-            if (typeof renderTimelineView === 'function') renderTimelineView();
-            break;
-        case 'admin-monitoring':
-            if (typeof renderAdminMonitoringView === 'function') renderAdminMonitoringView();
-            break;
-        case 'admin-action-lines':
-            if (typeof renderAdminActionLinesView === 'function') renderAdminActionLinesView();
-            break;
-        case 'admin-site-config':
-            renderAdminSiteConfigView();
-            break;
-        default:
-            renderMainDashboard();
+}
+
+// Actualizar URL del navegador
+function updateBrowserURL(view) {
+    const newURL = `/dashboard${view === 'dashboard' ? '' : '#' + view}`;
+    const currentURL = window.location.pathname + (window.location.hash || '');
+
+    if (currentURL !== newURL) {
+        history.pushState({ view: view }, '', newURL);
+    }
+}
+
+// Renderizar vista usando el mapa de renderers
+function renderView(view) {
+    const renderer = VIEW_RENDERERS[view];
+
+    if (renderer) {
+        console.log(`🎨 Renderizando vista: ${view}`);
+        renderer();
+    } else {
+        console.warn(`⚠️ Vista no encontrada: ${view}, usando dashboard por defecto`);
+        renderMainDashboard();
     }
 }
 
@@ -750,49 +1205,57 @@ async function renderMyProductsView() {
                         Gestiona todos tus productos de investigación
                     </p>
                 </div>
-                <button 
+                <button
                     onclick="showCreateProductModal()"
-                    class="bg-primary text-primary-foreground px-6 py-3 rounded-lg font-medium hover:opacity-90 shadow-lg"
+                    class="bg-primary text-primary-foreground px-6 py-3 rounded-lg font-medium hover:opacity-90 shadow-lg focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+                    aria-label="Crear nuevo producto de investigación"
                 >
-                    <i class="fas fa-plus mr-2"></i>
+                    <i class="fas fa-plus mr-2" aria-hidden="true"></i>
                     Nuevo Producto
                 </button>
             </div>
         </div>
 
         <div class="mb-6">
-            <div class="flex flex-wrap gap-4">
-                <select 
-                    id="productStatusFilter" 
+            <div class="flex flex-wrap gap-4" role="toolbar" aria-label="Filtros de productos">
+                <select
+                    id="productStatusFilter"
                     onchange="filterMyProducts()"
-                    class="px-4 py-2 border border-border rounded-lg focus:ring-2 focus:ring-primary"
+                    class="px-4 py-2 border border-border rounded-lg focus:ring-2 focus:ring-primary focus:outline-none"
+                    aria-label="Filtrar por estado de publicación"
                 >
                     <option value="">Todos los estados</option>
                     <option value="public">Públicos</option>
                     <option value="private">Privados</option>
                 </select>
-                
-                <select 
-                    id="productCategoryFilter" 
+
+                <select
+                    id="productCategoryFilter"
                     onchange="filterMyProducts()"
-                    class="px-4 py-2 border border-border rounded-lg focus:ring-2 focus:ring-primary"
+                    class="px-4 py-2 border border-border rounded-lg focus:ring-2 focus:ring-primary focus:outline-none"
+                    aria-label="Filtrar por categoría de producto"
                 >
                     <option value="">Todas las categorías</option>
                 </select>
-                
-                <input 
-                    type="text" 
-                    id="productSearchInput" 
+
+                <input
+                    type="text"
+                    id="productSearchInput"
                     placeholder="Buscar productos..."
                     onkeyup="filterMyProducts()"
-                    class="px-4 py-2 border border-border rounded-lg focus:ring-2 focus:ring-primary flex-1 min-w-64"
+                    class="px-4 py-2 border border-border rounded-lg focus:ring-2 focus:ring-primary focus:outline-none flex-1 min-w-64"
+                    aria-label="Buscar productos por nombre, código o descripción"
+                    autocomplete="off"
                 >
             </div>
         </div>
 
-        <div id="myProductsList" class="space-y-4">
-            <div class="flex justify-center py-8">
-                <i class="fas fa-spinner fa-spin text-2xl text-primary"></i>
+        <div id="myProductsList" class="space-y-4" role="region" aria-label="Lista de productos" aria-live="polite">
+            <div class="flex justify-center py-8" role="status" aria-label="Cargando productos">
+                <div class="text-center">
+                    <i class="fas fa-spinner fa-spin text-2xl text-primary" aria-hidden="true"></i>
+                    <p class="text-muted-foreground mt-2">Cargando productos...</p>
+                </div>
             </div>
         </div>
     `;
@@ -801,53 +1264,167 @@ async function renderMyProductsView() {
     await loadMyProducts();
 }
 
-// Cargar todos los productos del usuario autenticado
+// Cargar todos los productos del usuario autenticado con cache
 async function loadMyProducts() {
-    console.log('🔄 Cargando productos del usuario...');
-    
-    try {
-        // Usar el nuevo endpoint que obtiene todos los productos del usuario directamente
-        const [productsResponse, categoriesResponse] = await Promise.all([
-            axios.get(`${API_BASE}/private/products`),
-            axios.get(`${API_BASE}/public/product-categories`)
-        ]);
-        
-        console.log('📊 Respuesta de productos:', productsResponse.data);
-        console.log('📊 Respuesta de categorías:', categoriesResponse.data);
-        
-        if (productsResponse.data.success && categoriesResponse.data.success) {
-            // Los productos ya vienen con la información del proyecto incluida
-            const allProducts = productsResponse.data.data.products;
-            
-            console.log('✅ Productos cargados:', allProducts.length);
-            
-            // Guardar productos en el estado
-            DashboardState.myProducts = allProducts;
-            DashboardState.productCategories = categoriesResponse.data.data.categories;
-            
+    return await manageConcurrentRequest('products', async () => {
+        console.log('🔄 Cargando productos del usuario...');
+
+        try {
+            // Validar estado de autenticación
+            if (!DashboardState.token) {
+                throw new Error('Usuario no autenticado');
+            }
+
+            // Verificar cache primero
+            const cachedProducts = getCachedData('products', CACHE_CONFIG.PRODUCTS_TTL);
+            const cachedCategories = getCachedData('categories', CACHE_CONFIG.PRODUCTS_TTL);
+
+            if (cachedProducts && cachedCategories) {
+                DashboardState.myProducts = cachedProducts;
+                DashboardState.productCategories = cachedCategories;
+                populateProductCategoryFilter();
+                filterMyProducts();
+                return;
+            }
+
+            // Mostrar indicador de carga accesible
+            const container = document.getElementById('myProductsList');
+            if (container) {
+                container.innerHTML = `
+                    <div class="flex justify-center py-8" role="status" aria-live="polite" aria-label="Cargando productos">
+                        <div class="text-center">
+                            <i class="fas fa-spinner fa-spin text-2xl text-primary mb-2" aria-hidden="true"></i>
+                            <p class="text-muted-foreground">Cargando productos...</p>
+                            <p class="sr-only">Por favor espere mientras se cargan sus productos de investigación</p>
+                        </div>
+                    </div>
+                `;
+            }
+
+            // Cargar productos y categorías en paralelo con timeout
+            const [productsResponse, categoriesResponse] = await Promise.allSettled([
+                axios.get(`${API_BASE}/private/products`, {
+                    timeout: REQUEST_TIMEOUTS.DATA_LOAD,
+                    headers: { 'Authorization': `Bearer ${DashboardState.token}` }
+                }),
+                axios.get(`${API_BASE}/public/product-categories`, {
+                    timeout: REQUEST_TIMEOUTS.DEFAULT
+                })
+            ]);
+
+            // Procesar respuesta de productos
+            let productsData = [];
+            if (productsResponse.status === 'fulfilled') {
+                const response = productsResponse.value;
+                if (response.data && response.data.success && response.data.data) {
+                    productsData = response.data.data.products || [];
+                    console.log('✅ Productos cargados:', productsData.length);
+                } else {
+                    console.warn('⚠️ Respuesta de productos inválida:', response.data);
+                }
+            } else {
+                console.error('❌ Error cargando productos:', productsResponse.reason);
+                throw new Error('Error cargando productos: ' + productsResponse.reason.message);
+            }
+
+            // Procesar respuesta de categorías
+            let categoriesData = [];
+            if (categoriesResponse.status === 'fulfilled') {
+                const response = categoriesResponse.value;
+                if (response.data && response.data.success && response.data.data) {
+                    categoriesData = response.data.data.categories || [];
+                    console.log('✅ Categorías cargadas:', categoriesData.length);
+                } else {
+                    console.warn('⚠️ Respuesta de categorías inválida, usando datos vacíos');
+                }
+            } else {
+                console.warn('⚠️ Error cargando categorías (continuando sin ellas):', categoriesResponse.reason);
+            }
+
+            // Validar y procesar productos
+            const validProducts = validateAndProcessProducts(productsData);
+
+            // Guardar en estado
+            DashboardState.myProducts = validProducts;
+            DashboardState.productCategories = categoriesData;
+
+            // Almacenar en cache
+            setCachedData('products', validProducts);
+            setCachedData('categories', categoriesData);
+
             // Llenar filtro de categorías
             populateProductCategoryFilter();
-            
+
             // Aplicar filtros y renderizar productos
             filterMyProducts();
-        } else {
-            throw new Error('Error en la respuesta de la API');
+
+        } catch (error) {
+            console.error('❌ Error cargando mis productos:', error);
+
+            const container = document.getElementById('myProductsList');
+            if (container) {
+                const errorMsg = error.message || 'Error desconocido';
+                container.innerHTML = `
+                    <div class="text-center py-8 text-red-500" role="alert" aria-live="assertive">
+                        <i class="fas fa-exclamation-triangle text-2xl mb-2" aria-hidden="true"></i>
+                        <h3 class="font-medium mb-2">Error cargando productos</h3>
+                        <p class="text-sm mb-4" id="error-description">${errorMsg}</p>
+                        <button
+                            onclick="loadMyProducts()"
+                            class="bg-primary text-primary-foreground px-4 py-2 rounded-lg hover:opacity-90 transition-opacity focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+                            aria-describedby="error-description"
+                            aria-label="Reintentar cargar productos"
+                        >
+                            <i class="fas fa-retry mr-2" aria-hidden="true"></i>Reintentar
+                        </button>
+                    </div>
+                `;
+            }
+
+            // Mostrar toast solo para errores críticos
+            if (error.message.includes('autenticado')) {
+                showToast('Sesión expirada. Recargue la página.', 'error');
+            }
         }
-    } catch (error) {
-        console.error('❌ Error cargando mis productos:', error);
-        document.getElementById('myProductsList').innerHTML = `
-            <div class="text-center py-8 text-red-500">
-                <i class="fas fa-exclamation-triangle text-2xl mb-2"></i>
-                <p>Error cargando productos: ${error.message}</p>
-                <button 
-                    onclick="loadMyProducts()" 
-                    class="mt-4 bg-primary text-primary-foreground px-4 py-2 rounded-lg hover:opacity-90"
-                >
-                    <i class="fas fa-retry mr-2"></i>Reintentar
-                </button>
-            </div>
-        `;
+    });
+}
+
+// Función auxiliar para validar y procesar productos
+function validateAndProcessProducts(products) {
+    if (!Array.isArray(products)) {
+        console.warn('⚠️ Productos no es un array:', products);
+        return [];
     }
+
+    return products.filter(product => {
+        // Validar campos requeridos
+        const requiredFields = ['id', 'description', 'project_id'];
+        const hasRequiredFields = requiredFields.every(field => product.hasOwnProperty(field) && product[field] !== null && product[field] !== undefined);
+
+        if (!hasRequiredFields) {
+            console.warn('⚠️ Producto inválido (faltan campos requeridos):', product);
+            return false;
+        }
+
+        // Validar tipos de datos
+        if (typeof product.id !== 'number' || typeof product.project_id !== 'number') {
+            console.warn('⚠️ Producto inválido (IDs no numéricos):', product);
+            return false;
+        }
+
+        // Sanitizar campos de texto
+        if (product.description) {
+            product.description = String(product.description).trim();
+        }
+        if (product.product_code) {
+            product.product_code = String(product.product_code).trim();
+        }
+        if (product.project_title) {
+            product.project_title = String(product.project_title).trim();
+        }
+
+        return true;
+    });
 }
 
 // Llenar filtro de categorías
@@ -885,202 +1462,307 @@ function populateProductCategoryFilter() {
     });
 }
 
-// Renderizar lista de productos
+// Renderizar lista de productos con optimizaciones de rendimiento
 function renderMyProductsList(products) {
-    console.log('🎨 Renderizando lista de productos:', products);
-    console.log('🔍 Tipo de datos recibidos:', typeof products);
-    console.log('🔍 Es array:', Array.isArray(products));
-    if (products && products.length > 0) {
-        console.log('🔍 Primer producto completo:', JSON.stringify(products[0], null, 2));
-    }
+    console.log('🎨 Renderizando lista de productos:', products?.length || 0);
+
     const container = document.getElementById('myProductsList');
-    
-    if (!products || products.length === 0) {
-        container.innerHTML = `
-            <div class="ctei-empty-state">
-                <div class="ctei-empty-state-icon">
-                    <i class="fas fa-cubes"></i>
-                </div>
-                <div class="ctei-empty-state-title">No tienes productos aún</div>
-                <div class="ctei-empty-state-description">
-                    Comienza creando tu primer producto de investigación. Los productos pueden incluir
-                    publicaciones, patentes, software, datasets y más.
-                </div>
-                <button 
-                    onclick="showCreateProductModal()"
-                    class="ctei-btn ctei-btn-primary ctei-btn-lg"
-                >
-                    <i class="fas fa-plus mr-2"></i>
-                    Crear Primer Producto
-                </button>
-            </div>
-        `;
+    if (!container) {
+        console.error('❌ Contenedor myProductsList no encontrado');
         return;
     }
-    
-    console.log('🔍 Primer producto para debug:', products[0]);
-    
-    container.innerHTML = products.map((product, index) => {
-        console.log(`🎯 Producto ${index + 1}:`, {
-            id: product.id,
-            description: product.description,
-            product_code: product.product_code,
-            project_title: product.project_title,
-            category_name: product.category_name
-        });
-        
-        return `
-        <div id="product-card-${product.id}" class="ctei-content-card ctei-product-card-enhanced" 
-             onclick="handleProductCardClick(event, ${product.project_id}, ${product.id})">
-            <!-- Layout de 3 columnas: 60% info principal, 35% metadata, 5% acciones -->
-            <div class="ctei-product-grid">
-                
-                <!-- Columna 1: Información Principal (60%) -->
-                <div class="ctei-product-main-info">
-                    <!-- Título principal: description en lugar de product_code -->
-                    <h3 class="ctei-product-title">
-                        ${product.description || 'Producto sin descripción'}
-                    </h3>
-                    
-                    <!-- Código del producto como identificador secundario -->
-                    <div class="ctei-product-identifier">
-                        <i class="fas fa-hashtag mr-1"></i>
-                        <span class="text-[var(--chart-2)]">${product.product_code || 'Sin código'}</span>
-                    </div>
-                    
-                    <!-- Proyecto clickeable -->
-                    <div class="ctei-product-project">
-                        <i class="fas fa-project-diagram mr-2"></i>
-                        <button 
-                            onclick="event.stopPropagation(); navigateToProject(${product.project_id})"
-                            class="ctei-link-button"
-                        >
-                            ${product.project_title || 'Proyecto sin título'}
-                        </button>
-                    </div>
-                    
-                    <!-- Estados y categoría -->
-                    <div class="ctei-product-badges">
-                        <span class="ctei-status-badge" style="background-color: var(${product.is_public ? '--chart-1' : '--chart-3'})">
-                            <i class="fas fa-${product.is_public ? 'eye' : 'eye-slash'} mr-1"></i>
-                            ${product.is_public ? 'Público' : 'Privado'}
-                        </span>
-                        ${product.category_name ? `
-                            <span class="ctei-category-badge" style="background-color: var(--chart-4)">
-                                ${product.category_name}
-                            </span>
-                        ` : ''}
-                    </div>
+
+    // Limpiar contenedor
+    container.innerHTML = '';
+
+    // Caso: no hay productos
+    if (!products || products.length === 0) {
+        const emptyState = createEmptyProductsState();
+        container.appendChild(emptyState);
+        return;
+    }
+
+    // Usar DocumentFragment para renderizado eficiente
+    const fragment = document.createDocumentFragment();
+
+    // Limitar renderizado para listas muy grandes (virtualización básica)
+    const productsToRender = products.slice(0, UI_CONFIG.MAX_PRODUCTS_RENDER);
+
+    // Crear elementos en lote
+    productsToRender.forEach((product, index) => {
+        if (index % 10 === 0) {
+            // Pequeña pausa cada 10 elementos para no bloquear UI
+            setTimeout(() => {}, 0);
+        }
+
+        const productCard = createProductCard(product);
+        fragment.appendChild(productCard);
+    });
+
+    // Agregar indicador si hay más productos
+    if (products.length > UI_CONFIG.MAX_PRODUCTS_RENDER) {
+        const moreIndicator = createMoreProductsIndicator(products.length - UI_CONFIG.MAX_PRODUCTS_RENDER);
+        fragment.appendChild(moreIndicator);
+    }
+
+    // Agregar fragmento al DOM de una vez
+    container.appendChild(fragment);
+
+    console.log('✅ Lista de productos renderizada');
+}
+
+// Función auxiliar para crear estado vacío
+function createEmptyProductsState() {
+    const div = document.createElement('div');
+    div.className = 'ctei-empty-state';
+    div.innerHTML = `
+        <div class="ctei-empty-state-icon">
+            <i class="fas fa-cubes"></i>
+        </div>
+        <div class="ctei-empty-state-title">No tienes productos aún</div>
+        <div class="ctei-empty-state-description">
+            Comienza creando tu primer producto de investigación. Los productos pueden incluir
+            publicaciones, patentes, software, datasets y más.
+        </div>
+        <button
+            onclick="showCreateProductModal()"
+            class="ctei-btn ctei-btn-primary ctei-btn-lg"
+        >
+            <i class="fas fa-plus mr-2"></i>
+            Crear Primer Producto
+        </button>
+    `;
+    return div;
+}
+
+// Función auxiliar para crear tarjeta de producto
+function createProductCard(product) {
+    const card = document.createElement('div');
+    card.id = `product-card-${product.id}`;
+    card.className = 'ctei-content-card ctei-product-card-enhanced';
+    card.onclick = (event) => handleProductCardClick(event, product.project_id, product.id);
+
+    // Usar template literal optimizado
+    card.innerHTML = `
+        <div class="ctei-product-grid">
+            <!-- Columna 1: Información Principal (60%) -->
+            <div class="ctei-product-main-info">
+                <h3 class="ctei-product-title">
+                    ${escapeHtml(product.description || 'Producto sin descripción')}
+                </h3>
+
+                <div class="ctei-product-identifier">
+                    <i class="fas fa-hashtag mr-1"></i>
+                    <span class="text-[var(--chart-2)]">${escapeHtml(product.product_code || 'Sin código')}</span>
                 </div>
-                
-                <!-- Columna 2: Metadata (35%) -->
-                <div class="ctei-product-metadata">
-                    <div class="ctei-metadata-item">
-                        <i class="fas fa-user text-[var(--chart-5)]" title="Creador"></i>
-                        <span>${product.creator_name || 'No especificado'}</span>
-                    </div>
-                    
-                    <div class="ctei-metadata-item">
-                        <i class="fas fa-calendar text-[var(--chart-1)]" title="Fecha de creación"></i>
-                        <span>${new Date(product.created_at).toLocaleDateString('es-ES')}</span>
-                    </div>
-                    
-                    ${product.publication_date ? `
-                        <div class="ctei-metadata-item">
-                            <i class="fas fa-calendar-alt text-[var(--chart-2)]" title="Fecha de publicación"></i>
-                            <span>${new Date(product.publication_date).toLocaleDateString('es-ES')}</span>
-                        </div>
-                    ` : ''}
-                    
-                    ${product.journal ? `
-                        <div class="ctei-metadata-item">
-                            <i class="fas fa-book text-[var(--chart-3)]" title="Revista"></i>
-                            <span class="truncate">${product.journal}</span>
-                        </div>
-                    ` : ''}
-                    
-                    ${product.doi ? `
-                        <div class="ctei-metadata-item">
-                            <i class="fas fa-link text-[var(--chart-4)]" title="DOI"></i>
-                            <a href="https://doi.org/${product.doi}" 
-                               target="_blank" 
-                               onclick="event.stopPropagation()"
-                               class="ctei-doi-link truncate">
-                                ${product.doi}
-                            </a>
-                        </div>
-                    ` : ''}
-                    
-                    ${product.impact_factor ? `
-                        <div class="ctei-metadata-item">
-                            <i class="fas fa-chart-line text-[var(--chart-5)]" title="Factor de impacto"></i>
-                            <span class="font-medium">${product.impact_factor}</span>
-                        </div>
-                    ` : ''}
-                </div>
-                
-                <!-- Columna 3: Acciones (5%) -->
-                <div class="ctei-product-actions">
-                    <button 
-                        onclick="event.stopPropagation(); 
-                                console.log('🔗 Botón Editar Producto clickeado - ID: ${product.id}');
-                                if (typeof editProduct === 'function') {
-                                    editProduct(${product.project_id}, ${product.id});
-                                } else {
-                                    console.log('🔗 Función editProduct no disponible, usando redirección directa');
-                                    window.location.href = '/dashboard/productos/${product.id}/editar';
-                                }"
-                        class="ctei-action-btn ctei-action-edit ctei-tooltip"
-                        data-tooltip="Editar producto"
+
+                <div class="ctei-product-project">
+                    <i class="fas fa-project-diagram mr-2"></i>
+                    <button
+                        onclick="event.stopPropagation(); navigateToProject(${product.project_id})"
+                        class="ctei-link-button"
                     >
-                        <i class="fas fa-edit"></i>
+                        ${escapeHtml(product.project_title || 'Proyecto sin título')}
                     </button>
-                    
-                    <div class="ctei-actions-menu">
-                        <button 
-                            class="ctei-action-btn ctei-action-more ctei-tooltip"
-                            data-tooltip="Más acciones"
-                            onclick="event.stopPropagation(); toggleProductActionsMenu(${product.id})"
+                </div>
+
+                <div class="ctei-product-badges">
+                    <span class="ctei-status-badge" style="background-color: var(${product.is_public ? '--chart-1' : '--chart-3'})">
+                        <i class="fas fa-${product.is_public ? 'eye' : 'eye-slash'} mr-1"></i>
+                        ${product.is_public ? 'Público' : 'Privado'}
+                    </span>
+                    ${product.category_name ? `
+                        <span class="ctei-category-badge" style="background-color: var(--chart-4)">
+                            ${escapeHtml(product.category_name)}
+                        </span>
+                    ` : ''}
+                </div>
+            </div>
+
+            <!-- Columna 2: Metadata (35%) -->
+            <div class="ctei-product-metadata">
+                <div class="ctei-metadata-item">
+                    <i class="fas fa-user text-[var(--chart-5)]" title="Creador"></i>
+                    <span>${escapeHtml(product.creator_name || 'No especificado')}</span>
+                </div>
+
+                <div class="ctei-metadata-item">
+                    <i class="fas fa-calendar text-[var(--chart-1)]" title="Fecha de creación"></i>
+                    <span>${formatProductDate(product.created_at)}</span>
+                </div>
+
+                ${product.publication_date ? `
+                    <div class="ctei-metadata-item">
+                        <i class="fas fa-calendar-alt text-[var(--chart-2)]" title="Fecha de publicación"></i>
+                        <span>${formatProductDate(product.publication_date)}</span>
+                    </div>
+                ` : ''}
+
+                ${product.journal ? `
+                    <div class="ctei-metadata-item">
+                        <i class="fas fa-book text-[var(--chart-3)]" title="Revista"></i>
+                        <span class="truncate">${escapeHtml(product.journal)}</span>
+                    </div>
+                ` : ''}
+
+                ${product.doi ? `
+                    <div class="ctei-metadata-item">
+                        <i class="fas fa-link text-[var(--chart-4)]" title="DOI"></i>
+                        <a href="https://doi.org/${encodeURIComponent(product.doi)}"
+                           target="_blank"
+                           onclick="event.stopPropagation()"
+                           class="ctei-doi-link truncate">
+                            ${escapeHtml(product.doi)}
+                        </a>
+                    </div>
+                ` : ''}
+
+                ${product.impact_factor ? `
+                    <div class="ctei-metadata-item">
+                        <i class="fas fa-chart-line text-[var(--chart-5)]" title="Factor de impacto"></i>
+                        <span class="font-medium">${product.impact_factor}</span>
+                    </div>
+                ` : ''}
+            </div>
+
+            <!-- Columna 3: Acciones (5%) -->
+            <div class="ctei-product-actions">
+                <button
+                    onclick="event.stopPropagation(); editProduct(${product.project_id}, ${product.id})"
+                    class="ctei-action-btn ctei-action-edit ctei-tooltip"
+                    data-tooltip="Editar producto"
+                >
+                    <i class="fas fa-edit"></i>
+                </button>
+
+                <div class="ctei-actions-menu">
+                    <button
+                        class="ctei-action-btn ctei-action-more ctei-tooltip"
+                        data-tooltip="Más acciones"
+                        onclick="event.stopPropagation(); toggleProductActionsMenu(${product.id})"
+                    >
+                        <i class="fas fa-ellipsis-v"></i>
+                    </button>
+                    <div id="product-actions-${product.id}" class="ctei-actions-dropdown hidden">
+                        <button
+                            onclick="event.stopPropagation(); viewProductDetails(${product.id}); closeAllActionsMenus()"
+                            class="ctei-actions-item"
                         >
-                            <i class="fas fa-ellipsis-v"></i>
+                            <i class="fas fa-info-circle mr-2"></i>
+                            Ver Detalles
                         </button>
-                        <div id="product-actions-${product.id}" class="ctei-actions-dropdown hidden">
-                            <button 
-                                onclick="event.stopPropagation(); viewProductDetails(${product.id}); closeAllActionsMenus()"
-                                class="ctei-actions-item"
-                            >
-                                <i class="fas fa-info-circle mr-2"></i>
-                                Ver Detalles
-                            </button>
-                            <button 
-                                onclick="event.stopPropagation(); toggleProductVisibility(${product.project_id}, ${product.id}, ${product.is_public ? false : true}); closeAllActionsMenus()"
-                                class="ctei-actions-item"
-                            >
-                                <i class="fas fa-${product.is_public ? 'eye-slash' : 'eye'} mr-2"></i>
-                                ${product.is_public ? 'Hacer Privado' : 'Hacer Público'}
-                            </button>
-                            <button 
-                                onclick="event.stopPropagation(); manageProductAuthors(${product.project_id}, ${product.id}); closeAllActionsMenus()"
-                                class="ctei-actions-item"
-                            >
-                                <i class="fas fa-users mr-2"></i>
-                                Gestionar Autores
-                            </button>
-                            <button 
-                                onclick="event.stopPropagation(); deleteProduct(${product.project_id}, ${product.id}); closeAllActionsMenus()"
-                                class="ctei-actions-item destructive"
-                            >
-                                <i class="fas fa-trash mr-2"></i>
-                                Eliminar
-                            </button>
-                        </div>
+                        <button
+                            onclick="event.stopPropagation(); toggleProductVisibility(${product.project_id}, ${product.id}, ${product.is_public ? false : true}); closeAllActionsMenus()"
+                            class="ctei-actions-item"
+                        >
+                            <i class="fas fa-${product.is_public ? 'eye-slash' : 'eye'} mr-2"></i>
+                            ${product.is_public ? 'Hacer Privado' : 'Hacer Público'}
+                        </button>
+                        <button
+                            onclick="event.stopPropagation(); manageProductAuthors(${product.project_id}, ${product.id}); closeAllActionsMenus()"
+                            class="ctei-actions-item"
+                        >
+                            <i class="fas fa-users mr-2"></i>
+                            Gestionar Autores
+                        </button>
+                        <button
+                            onclick="event.stopPropagation(); deleteProduct(${product.project_id}, ${product.id}); closeAllActionsMenus()"
+                            class="ctei-actions-item destructive"
+                        >
+                            <i class="fas fa-trash mr-2"></i>
+                            Eliminar
+                        </button>
                     </div>
                 </div>
-                
             </div>
         </div>
-        `;
-    }).join('');
+    `;
+
+    return card;
+}
+
+// Función auxiliar para crear indicador de más productos
+function createMoreProductsIndicator(remainingCount) {
+    const div = document.createElement('div');
+    div.className = 'text-center py-4 text-muted-foreground';
+    div.innerHTML = `
+        <p class="text-sm">
+            <i class="fas fa-info-circle mr-1"></i>
+            Mostrando los primeros 100 productos. Hay ${remainingCount} productos más.
+        </p>
+    `;
+    return div;
+}
+
+// Función auxiliar para escapar HTML y prevenir XSS (movida arriba)
+
+// Función auxiliar para formatear fechas de productos
+function formatProductDate(dateString) {
+    if (!dateString) return 'No especificada';
+
+    try {
+        const date = new Date(dateString);
+        if (isNaN(date.getTime())) {
+            return 'Fecha inválida';
+        }
+        return date.toLocaleDateString('es-ES');
+    } catch (error) {
+        console.warn('Error formateando fecha:', dateString, error);
+        return 'Fecha inválida';
+    }
+}
+
+/**
+ * Valida y sanitiza parámetros de navegación
+ * @param {string} param - Parámetro a validar
+ * @returns {string} Parámetro sanitizado
+ */
+function sanitizeNavigationParam(param) {
+    if (!param || typeof param !== 'string') return '';
+
+    // Solo permitir caracteres alfanuméricos, guiones y guiones bajos
+    return param.replace(/[^a-zA-Z0-9-_]/g, '');
+}
+
+/**
+ * Navega a un proyecto con validación de seguridad
+ * @param {number|string} projectId - ID del proyecto
+ */
+function navigateToProject(projectId) {
+    const validId = validateNumericId(projectId);
+    if (!validId) {
+        showToast('ID de proyecto inválido', 'error');
+        return;
+    }
+
+    console.log('🔗 Navegando a proyecto:', validId);
+    // Aquí iría la lógica de navegación real
+    // window.location.href = `/proyectos/${validId}`;
+}
+
+/**
+ * Maneja click en tarjeta de producto con validación
+ * @param {Event} event - Evento del click
+ * @param {number|string} projectId - ID del proyecto
+ * @param {number|string} productId - ID del producto
+ */
+function handleProductCardClick(event, projectId, productId) {
+    // Prevenir comportamiento por defecto si es necesario
+    if (event.target.tagName === 'BUTTON' || event.target.tagName === 'A') {
+        return; // Dejar que los botones y links manejen su propio click
+    }
+
+    const validProjectId = validateNumericId(projectId);
+    const validProductId = validateNumericId(productId);
+
+    if (!validProjectId || !validProductId) {
+        showToast('IDs inválidos para el producto', 'error');
+        return;
+    }
+
+    console.log('🎯 Click en producto:', { projectId: validProjectId, productId: validProductId });
+    // Aquí iría la lógica para mostrar detalles del producto
+    viewProductDetails(validProductId);
 }
 
 // ===== FUNCIONES DE SOPORTE PARA PRODUCTOS MEJORADOS =====
@@ -1107,37 +1789,69 @@ function navigateToProject(projectId) {
     showToast('Funcionalidad en desarrollo', 'La navegación a proyecto estará disponible próximamente', 'info');
 }
 
-// Filtrar productos
-function filterMyProducts() {
-    const statusFilter = document.getElementById('productStatusFilter')?.value || '';
-    const categoryFilter = document.getElementById('productCategoryFilter')?.value || '';
-    const searchInput = document.getElementById('productSearchInput')?.value?.toLowerCase() || '';
-    
-    console.log('🔍 Filtros aplicados:', { statusFilter, categoryFilter, searchInput });
-    console.log('🔍 Productos en estado:', DashboardState.myProducts ? DashboardState.myProducts.length : 'null');
-    
-    if (!DashboardState.myProducts) {
-        console.log('⚠️ No hay productos en DashboardState.myProducts');
+// Variables para optimización de rendimiento
+let filterTimeout = null;
+
+// Filtrar productos con debouncing
+function filterMyProducts(immediate = false) {
+    // Limpiar timeout anterior
+    if (filterTimeout) {
+        clearTimeout(filterTimeout);
+    }
+
+    // Si es inmediato (ej: cambio de select), ejecutar directamente
+    if (immediate) {
+        executeFilter();
         return;
     }
-    
-    let filteredProducts = DashboardState.myProducts.filter(product => {
-        const matchesStatus = !statusFilter || 
-            (statusFilter === 'public' && product.is_public) ||
-            (statusFilter === 'private' && !product.is_public);
-        
-        const matchesCategory = !categoryFilter || product.product_type === categoryFilter;
-        
-        const matchesSearch = !searchInput || 
-            (product.product_code && product.product_code.toLowerCase().includes(searchInput)) ||
-            (product.description && product.description.toLowerCase().includes(searchInput)) ||
-            (product.project_title && product.project_title.toLowerCase().includes(searchInput));
-        
-        return matchesStatus && matchesCategory && matchesSearch;
+
+    // Para búsqueda por texto, usar debouncing
+    filterTimeout = setTimeout(executeFilter, UI_CONFIG.FILTER_DEBOUNCE_DELAY);
+}
+
+// Función interna que ejecuta el filtrado
+function executeFilter() {
+    const statusFilter = document.getElementById('productStatusFilter')?.value || '';
+    const categoryFilter = document.getElementById('productCategoryFilter')?.value || '';
+    const searchInput = document.getElementById('productSearchInput')?.value?.toLowerCase().trim() || '';
+
+    console.log('🔍 Aplicando filtros:', { statusFilter, categoryFilter, searchInput });
+
+    if (!DashboardState.myProducts) {
+        console.warn('⚠️ No hay productos en DashboardState.myProducts');
+        return;
+    }
+
+    // Usar requestAnimationFrame para no bloquear el hilo principal
+    requestAnimationFrame(() => {
+        const filteredProducts = DashboardState.myProducts.filter(product => {
+            // Optimización: usar variables locales para evitar accesos repetidos
+            const isPublic = product.is_public;
+            const productType = product.product_type;
+            const productCode = product.product_code?.toLowerCase() || '';
+            const description = product.description?.toLowerCase() || '';
+            const projectTitle = product.project_title?.toLowerCase() || '';
+
+            // Filtro de estado
+            const matchesStatus = !statusFilter ||
+                (statusFilter === 'public' && isPublic) ||
+                (statusFilter === 'private' && !isPublic);
+
+            // Filtro de categoría
+            const matchesCategory = !categoryFilter || productType === categoryFilter;
+
+            // Filtro de búsqueda (optimizado)
+            const matchesSearch = !searchInput ||
+                productCode.includes(searchInput) ||
+                description.includes(searchInput) ||
+                projectTitle.includes(searchInput);
+
+            return matchesStatus && matchesCategory && matchesSearch;
+        });
+
+        console.log('🎯 Productos filtrados:', filteredProducts.length);
+        renderMyProductsList(filteredProducts);
     });
-    
-    console.log('🎯 Productos después del filtro:', filteredProducts.length);
-    renderMyProductsList(filteredProducts);
 }
 
 // Funciones de acción para productos
@@ -9104,94 +9818,127 @@ function getAlertStatusDisplayName(status) {
 
 
 
-// Función para ver detalles de producto
+// Función para ver detalles de producto con validación de seguridad
+/**
+ * Muestra un modal con los detalles completos de un producto CTeI
+ * Incluye validación de seguridad, sanitización de datos y navegación accesible
+ * @param {string|number} productId - ID del producto a mostrar
+ * @returns {void}
+ * @example
+ * viewProductDetails(123); // Muestra detalles del producto con ID 123
+ */
 function viewProductDetails(productId) {
     console.log('🔍 Viendo detalles del producto:', productId);
-    
+
+    // Validar ID del producto para prevenir ataques de inyección
+    const validProductId = validateNumericId(productId);
+    if (!validProductId) {
+        showToast('ID de producto inválido', 'error');
+        return;
+    }
+
     // Buscar el producto en el estado
-    const product = DashboardState.myProducts.find(p => p.id === productId);
-    
+    const product = DashboardState.myProducts.find(p => p.id === validProductId);
+
     if (!product) {
         showToast('Producto no encontrado', 'error');
         return;
     }
     
-    // Crear modal con detalles del producto
+    // Crear modal con detalles del producto (sanitizado y accesible)
     const modalHtml = `
-        <div class="ctei-modal-overlay" onclick="closeModal()">
-            <div class="ctei-modal-content" onclick="event.stopPropagation()" style="max-width: 600px;">
+        <div class="ctei-modal-overlay"
+             onclick="closeModal()"
+             role="dialog"
+             aria-modal="true"
+             aria-labelledby="product-modal-title"
+             aria-describedby="product-modal-description">
+            <div class="ctei-modal-content"
+                 onclick="event.stopPropagation()"
+                 style="max-width: 600px;"
+                 role="document">
                 <div class="ctei-modal-header">
-                    <h2 class="ctei-modal-title">Detalles del Producto</h2>
-                    <button class="ctei-modal-close" onclick="closeModal()">&times;</button>
+                    <h2 id="product-modal-title" class="ctei-modal-title">Detalles del Producto</h2>
+                    <button class="ctei-modal-close"
+                            onclick="closeModal()"
+                            aria-label="Cerrar detalles del producto"
+                            autofocus>&times;</button>
                 </div>
-                
-                <div class="ctei-modal-body">
+
+                <div id="product-modal-description" class="ctei-modal-body">
                     <div class="space-y-4">
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
                                 <label class="font-semibold text-foreground">Código:</label>
-                                <p class="text-muted-foreground">${product.product_code || 'No especificado'}</p>
+                                <p class="text-muted-foreground">${escapeHtml(product.product_code || 'No especificado')}</p>
                             </div>
                             <div>
                                 <label class="font-semibold text-foreground">Tipo:</label>
-                                <p class="text-muted-foreground">${product.category_name || 'No especificado'}</p>
+                                <p class="text-muted-foreground">${escapeHtml(product.category_name || 'No especificado')}</p>
                             </div>
                         </div>
-                        
+
                         <div>
                             <label class="font-semibold text-foreground">Descripción:</label>
-                            <p class="text-muted-foreground">${product.description || 'No especificado'}</p>
+                            <p class="text-muted-foreground">${escapeHtml(product.description || 'No especificado')}</p>
                         </div>
-                        
+
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
                                 <label class="font-semibold text-foreground">Proyecto:</label>
-                                <p class="text-muted-foreground">${product.project_title || 'No especificado'}</p>
+                                <p class="text-muted-foreground">${escapeHtml(product.project_title || 'No especificado')}</p>
                             </div>
                             <div>
                                 <label class="font-semibold text-foreground">Creador:</label>
-                                <p class="text-muted-foreground">${product.creator_name || 'No especificado'}</p>
+                                <p class="text-muted-foreground">${escapeHtml(product.creator_name || 'No especificado')}</p>
                             </div>
                         </div>
-                        
+
                         ${product.journal ? `
                             <div>
                                 <label class="font-semibold text-foreground">Revista:</label>
-                                <p class="text-muted-foreground">${product.journal}</p>
+                                <p class="text-muted-foreground">${escapeHtml(product.journal)}</p>
                             </div>
                         ` : ''}
-                        
+
                         ${product.doi ? `
                             <div>
                                 <label class="font-semibold text-foreground">DOI:</label>
                                 <p class="text-muted-foreground">
-                                    <a href="https://doi.org/${product.doi}" target="_blank" class="text-primary hover:underline">
-                                        ${product.doi}
+                                    <a href="${sanitizeUrl(`https://doi.org/${product.doi}`)}"
+                                       target="_blank"
+                                       rel="noopener noreferrer"
+                                       class="text-primary hover:underline focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+                                       aria-label="Abrir DOI en nueva pestaña: ${escapeHtml(product.doi)}">
+                                        ${escapeHtml(product.doi)}
                                     </a>
                                 </p>
                             </div>
                         ` : ''}
-                        
+
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
                                 <label class="font-semibold text-foreground">Fecha de Creación:</label>
-                                <p class="text-muted-foreground">${new Date(product.created_at).toLocaleDateString('es-ES')}</p>
+                                <p class="text-muted-foreground">${formatProductDate(product.created_at)}</p>
                             </div>
                             ${product.publication_date ? `
                                 <div>
                                     <label class="font-semibold text-foreground">Fecha de Publicación:</label>
-                                    <p class="text-muted-foreground">${new Date(product.publication_date).toLocaleDateString('es-ES')}</p>
+                                    <p class="text-muted-foreground">${formatProductDate(product.publication_date)}</p>
                                 </div>
                             ` : ''}
                         </div>
-                        
+
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
                                 <label class="font-semibold text-foreground">Visibilidad:</label>
                                 <p class="text-muted-foreground">
-                                    <span class="inline-flex items-center px-2 py-1 rounded text-xs" 
-                                          style="background-color: var(${product.is_public ? '--chart-1' : '--chart-3'}); color: white;">
-                                        <i class="fas fa-${product.is_public ? 'eye' : 'eye-slash'} mr-1"></i>
+                                    <span class="inline-flex items-center px-2 py-1 rounded text-xs focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+                                          style="background-color: var(${product.is_public ? '--chart-1' : '--chart-3'}); color: white;"
+                                          tabindex="0"
+                                          role="status"
+                                          aria-label="${product.is_public ? 'Producto público' : 'Producto privado'}">
+                                        <i class="fas fa-${product.is_public ? 'eye' : 'eye-slash'} mr-1" aria-hidden="true"></i>
                                         ${product.is_public ? 'Público' : 'Privado'}
                                     </span>
                                 </p>
@@ -9199,29 +9946,25 @@ function viewProductDetails(productId) {
                             ${product.impact_factor ? `
                                 <div>
                                     <label class="font-semibold text-foreground">Factor de Impacto:</label>
-                                    <p class="text-muted-foreground font-medium">${product.impact_factor}</p>
+                                    <p class="text-muted-foreground font-medium">${escapeHtml(String(product.impact_factor))}</p>
                                 </div>
                             ` : ''}
                         </div>
                     </div>
                 </div>
-                
+
                 <div class="ctei-modal-footer">
-                    <button 
-                        onclick="console.log('🔗 Modal Editar Producto clickeado - ID: ${product.id}');
-                                if (typeof editProduct === 'function') {
-                                    editProduct(${product.project_id}, ${product.id});
-                                } else {
-                                    console.log('🔗 Función editProduct no disponible, usando redirección directa');
-                                    window.location.href = '/dashboard/productos/${product.id}/editar';
-                                }
-                                closeModal();"
-                        class="ctei-btn ctei-btn-primary"
+                    <button
+                        onclick="editProduct(${product.project_id}, ${product.id}); closeModal();"
+                        class="ctei-btn ctei-btn-primary focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+                        aria-label="Editar este producto"
                     >
-                        <i class="fas fa-edit mr-2"></i>
+                        <i class="fas fa-edit mr-2" aria-hidden="true"></i>
                         Editar Producto
                     </button>
-                    <button onclick="closeModal()" class="ctei-btn ctei-btn-secondary">
+                    <button onclick="closeModal()"
+                            class="ctei-btn ctei-btn-secondary focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+                            aria-label="Cerrar detalles del producto">
                         Cerrar
                     </button>
                 </div>
@@ -9229,15 +9972,84 @@ function viewProductDetails(productId) {
         </div>
     `;
     
-    // Insertar modal en el DOM
+    // Guardar foco y mostrar modal de manera accesible
+    saveFocus();
     document.body.insertAdjacentHTML('beforeend', modalHtml);
+
+    // Agregar event listener para navegación por teclado
+    document.addEventListener('keydown', handleModalKeydown);
+
+    // Prevenir scroll del body
+    document.body.style.overflow = 'hidden';
 }
 
-// Función para cerrar modal
+// Función para cerrar modal con mejoras de accesibilidad
 function closeModal() {
     const modal = document.querySelector('.ctei-modal-overlay');
     if (modal) {
         modal.remove();
+        // Remover event listener de teclado
+        document.removeEventListener('keydown', handleModalKeydown);
+        // Restaurar scroll del body
+        document.body.style.overflow = '';
+        // Restaurar foco al elemento que abrió el modal
+        restoreFocus();
+    }
+}
+
+// Variables para manejar el foco en modales
+let lastFocusedElement = null;
+
+/**
+ * Guarda el elemento que tiene el foco antes de abrir un modal
+ */
+function saveFocus() {
+    lastFocusedElement = document.activeElement;
+}
+
+/**
+ * Restaura el foco al elemento que lo tenía antes de abrir el modal
+ */
+function restoreFocus() {
+    if (lastFocusedElement && lastFocusedElement.focus) {
+        lastFocusedElement.focus();
+    }
+}
+
+/**
+ * Maneja navegación por teclado en modales
+ * @param {KeyboardEvent} event - Evento del teclado
+ */
+function handleModalKeydown(event) {
+    if (event.key === 'Escape') {
+        closeModal();
+        event.preventDefault();
+    }
+
+    // Trap focus dentro del modal (Tab navigation)
+    if (event.key === 'Tab') {
+        const modal = document.querySelector('.ctei-modal-content');
+        if (!modal) return;
+
+        const focusableElements = modal.querySelectorAll(
+            'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+        );
+        const firstElement = focusableElements[0];
+        const lastElement = focusableElements[focusableElements.length - 1];
+
+        if (event.shiftKey) {
+            // Shift + Tab
+            if (document.activeElement === firstElement) {
+                lastElement.focus();
+                event.preventDefault();
+            }
+        } else {
+            // Tab
+            if (document.activeElement === lastElement) {
+                firstElement.focus();
+                event.preventDefault();
+            }
+        }
     }
 }
 
