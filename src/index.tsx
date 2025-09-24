@@ -4258,14 +4258,19 @@ app.get('/dashboard/proyectos/:id/editar', async (c) => {
             function getAuthTokenFromStorage() {
                 // Intentar obtener token de localStorage
                 const token = localStorage.getItem('auth_token');
-                
+
                 if (!token) {
                     console.warn('No se encontró token de autenticación en localStorage');
                     return null;
                 }
-                
+
                 console.log('Token encontrado en localStorage:', token ? 'Presente' : 'Ausente');
                 return token;
+            }
+
+            // Función para obtener token de autenticación (alias para compatibilidad)
+            function getAuthToken() {
+                return getAuthTokenFromStorage();
             }
             
             // Función para configurar cabeceras de autenticación
