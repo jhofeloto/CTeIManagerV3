@@ -1,0 +1,594 @@
+[
+  {
+    "id": "TC001",
+    "title": "User Registration with Valid Data",
+    "description": "Verify that a new user can register successfully with valid information and receives appropriate role assignment.",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to the user registration page."
+      },
+      {
+        "type": "action",
+        "description": "Fill out the registration form with valid user data and select a valid role (ADMIN, INVESTIGATOR or COMMUNITY)."
+      },
+      {
+        "type": "action",
+        "description": "Submit the registration form."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify that the system creates the user account successfully and assigns the selected role."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify that a confirmation message or email is sent if applicable."
+      }
+    ]
+  },
+  {
+    "id": "TC002",
+    "title": "User Login with Correct Credentials",
+    "description": "Check that a registered user can login successfully using valid credentials and receive a JWT token.",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to the login page."
+      },
+      {
+        "type": "action",
+        "description": "Input correct username/email and password."
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify that login is successful and a valid JWT token is issued."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify that user role information is included in the token and properly accessible."
+      }
+    ]
+  },
+  {
+    "id": "TC003",
+    "title": "Failed Login with Incorrect Credentials",
+    "description": "Ensure login fails with an appropriate error message when user enters invalid username or password.",
+    "category": "error handling",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Go to the login page."
+      },
+      {
+        "type": "action",
+        "description": "Enter invalid username/email or password."
+      },
+      {
+        "type": "action",
+        "description": "Attempt to login."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify that login is rejected and an error message is displayed."
+      }
+    ]
+  },
+  {
+    "id": "TC004",
+    "title": "Role-Based Access Control Verification",
+    "description": "Verify that users can access only features permitted for their assigned role (ADMIN, INVESTIGATOR, COMMUNITY).",
+    "category": "security",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Login as ADMIN."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify ADMIN can access user management, project management, and system settings."
+      },
+      {
+        "type": "action",
+        "description": "Logout and login as INVESTIGATOR."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify INVESTIGATOR can create and manage own projects and scientific products but not user management."
+      },
+      {
+        "type": "action",
+        "description": "Logout and login as COMMUNITY."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify COMMUNITY role has limited access, mainly to view and collaborate but cannot edit projects or manage users."
+      }
+    ]
+  },
+  {
+    "id": "TC005",
+    "title": "Create Research Project with Valid Data",
+    "description": "Ensure an authorized user can create a new research project specifying all required fields including state, dates, budget, collaborators, and associated products.",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Login as ADMIN or INVESTIGATOR."
+      },
+      {
+        "type": "action",
+        "description": "Navigate to project creation interface."
+      },
+      {
+        "type": "action",
+        "description": "Fill out the project creation form with valid data."
+      },
+      {
+        "type": "action",
+        "description": "Submit the form to create the project."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the project is created correctly with all fields stored."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify collaborators and associated scientific products are linked properly."
+      }
+    ]
+  },
+  {
+    "id": "TC006",
+    "title": "Update Existing Project Data",
+    "description": "Verify that authorized users can update details of an existing project, including state changes, budget, dates and collaborator roles.",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Login with ADMIN or INVESTIGATOR credentials."
+      },
+      {
+        "type": "action",
+        "description": "Select an existing project from the project list."
+      },
+      {
+        "type": "action",
+        "description": "Edit project fields such as state, budget, deadlines, and collaborators."
+      },
+      {
+        "type": "action",
+        "description": "Save changes."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify that updated details are persisted accurately."
+      }
+    ]
+  },
+  {
+    "id": "TC007",
+    "title": "Delete Research Project",
+    "description": "Validate that authorized users can delete a research project and that associated entities handle deletion gracefully.",
+    "category": "functional",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Login as ADMIN."
+      },
+      {
+        "type": "action",
+        "description": "Choose an existing project eligible for deletion."
+      },
+      {
+        "type": "action",
+        "description": "Delete the project."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the project no longer appears in listings."
+      },
+      {
+        "type": "assertion",
+        "description": "Ensure that related scientific products and collaborator links are either reassigned, archived or deleted according to system rules."
+      }
+    ]
+  },
+  {
+    "id": "TC008",
+    "title": "Upload and Organize Files in Cloudflare R2",
+    "description": "Test the file upload system supports multiple document formats, stores files correctly in Cloudflare R2, and associates files properly with projects or products.",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Login as INVESTIGATOR or ADMIN."
+      },
+      {
+        "type": "action",
+        "description": "Navigate to file upload interface linked to a project or scientific product."
+      },
+      {
+        "type": "action",
+        "description": "Upload files of varying types (PDF, DOCX, images)."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify files are stored on Cloudflare R2 successfully."
+      },
+      {
+        "type": "assertion",
+        "description": "Check that metadata including upload date, uploader, and association are recorded accurately."
+      },
+      {
+        "type": "action",
+        "description": "Download a previously uploaded file."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify file downloads correctly and matches the uploaded content."
+      }
+    ]
+  },
+  {
+    "id": "TC009",
+    "title": "Scientific Product Management with Multiple Authorship Roles",
+    "description": "Validate creation, update, and association of scientific products with correct metadata and multiple authorship roles (author, co-author, editor, reviewer).",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Login as INVESTIGATOR."
+      },
+      {
+        "type": "action",
+        "description": "Create a new scientific product and input all required metadata."
+      },
+      {
+        "type": "action",
+        "description": "Assign multiple contributors with various authorship roles."
+      },
+      {
+        "type": "action",
+        "description": "Submit and save the product."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the product is listed with proper metadata and authorship roles."
+      },
+      {
+        "type": "action",
+        "description": "Edit the product to update metadata and contributor roles."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify updates are applied correctly."
+      }
+    ]
+  },
+  {
+    "id": "TC010",
+    "title": "Automated Evaluation and Scoring of Research Projects",
+    "description": "Confirm the scoring system automatically evaluates projects based on criteria such as completeness, collaboration, productivity, impact, innovation, and timeline, producing accurate scores and AI recommendations.",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Ensure at least one research project exists with various states and data completeness."
+      },
+      {
+        "type": "action",
+        "description": "Trigger evaluation algorithm via system interface or API."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the system generates scores reflecting project completeness and other criteria."
+      },
+      {
+        "type": "assertion",
+        "description": "Check for AI-generated recommendations or advisories related to project improvements or risks."
+      }
+    ]
+  },
+  {
+    "id": "TC011",
+    "title": "Smart Alert System Generates Proper Notifications",
+    "description": "Verify that the alert engine monitors project statuses and triggers appropriate alerts for risk conditions, productivity issues, and improvement opportunities.",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Create or simulate projects with risk factors or milestones overdue."
+      },
+      {
+        "type": "action",
+        "description": "Allow alert system to evaluate project data."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify that alerts are generated and visible on dashboards for authorized users."
+      },
+      {
+        "type": "assertion",
+        "description": "Confirm alert notifications respect user role permissions and deliver actionable information."
+      }
+    ]
+  },
+  {
+    "id": "TC012",
+    "title": "Real-Time Dashboard Auto-refresh and Metrics Accuracy",
+    "description": "Ensure the system dashboard refreshes automatically every 2 minutes and displays accurate, up-to-date metrics on projects, evaluations, alerts, and system status.",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Login to dashboard as authorized user."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify that dashboard data refreshes automatically every 2 minutes without user intervention."
+      },
+      {
+        "type": "action",
+        "description": "Change project data externally (via API or admin tools)."
+      },
+      {
+        "type": "assertion",
+        "description": "Confirm updated data appears on the dashboard after refresh."
+      }
+    ]
+  },
+  {
+    "id": "TC013",
+    "title": "Collaborator Management with Role Assignments and Permissions",
+    "description": "Validate that users with permissions can add, update, and remove collaborators on projects and assign appropriate roles with defined permissions.",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Login as ADMIN or INVESTIGATOR."
+      },
+      {
+        "type": "action",
+        "description": "Select a project and access collaborator management."
+      },
+      {
+        "type": "action",
+        "description": "Add a new collaborator and assign a role."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the collaborator is added with correct role and permissions."
+      },
+      {
+        "type": "action",
+        "description": "Modify collaborator's role."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify role changes and respective permissions update correctly."
+      },
+      {
+        "type": "action",
+        "description": "Remove a collaborator."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the collaborator no longer has access to the project."
+      }
+    ]
+  },
+  {
+    "id": "TC014",
+    "title": "RESTful API Security and Coverage",
+    "description": "Ensure all RESTful API endpoints enforce authentication and authorization using JWT, support CRUD operations for users, projects, products, alerts, and scoring, and return appropriate status codes and error messages.",
+    "category": "security",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Attempt access to secured API endpoints without authentication."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify accesses are denied with 401 Unauthorized response."
+      },
+      {
+        "type": "action",
+        "description": "Login to obtain JWT token."
+      },
+      {
+        "type": "action",
+        "description": "Access API endpoints with valid token for each user role."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify each role can only access permitted endpoints and actions."
+      },
+      {
+        "type": "action",
+        "description": "Perform CRUD operations for projects, products, alerts, and scoring via API."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify responses include correct data, status codes, and error handling."
+      }
+    ]
+  },
+  {
+    "id": "TC015",
+    "title": "Frontend UI Responsiveness and Usability",
+    "description": "Verify the frontend interface built with React, TypeScript, and TailwindCSS is responsive across devices and user-friendly for all roles.",
+    "category": "ui",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Open the application UI on desktop, tablet, and mobile devices."
+      },
+      {
+        "type": "assertion",
+        "description": "Check that layouts adapt appropriately to different screen sizes."
+      },
+      {
+        "type": "action",
+        "description": "Log in as different user roles and navigate dashboards and forms."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify UI elements are accessible, intuitive, and features render correctly."
+      },
+      {
+        "type": "action",
+        "description": "Perform common actions such as creating projects, uploading files, and managing collaborators."
+      },
+      {
+        "type": "assertion",
+        "description": "Ensure no visual bugs or usability issues appear."
+      }
+    ]
+  },
+  {
+    "id": "TC016",
+    "title": "TypeScript Type Safety Enforcement",
+    "description": "Confirm that all TypeScript type definitions and interfaces for core entities (users, projects, products) are accurately used throughout the system to prevent runtime type errors.",
+    "category": "functional",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Review compiled application for TypeScript errors or warnings."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify no type mismatches occur in communication between frontend, backend, and data entities."
+      },
+      {
+        "type": "action",
+        "description": "Manipulate data using interfaces and attempt invalid data inputs."
+      },
+      {
+        "type": "assertion",
+        "description": "Ensure type validations prevent invalid data processing."
+      }
+    ]
+  },
+  {
+    "id": "TC017",
+    "title": "Error Handling on File Upload Failure",
+    "description": "Verify proper error messages and recovery options are presented when file uploads to Cloudflare R2 fail due to network or format issues.",
+    "category": "error handling",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Attempt to upload a corrupted or unsupported file format."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify a clear error message is shown describing the issue."
+      },
+      {
+        "type": "action",
+        "description": "Simulate network failure during file upload."
+      },
+      {
+        "type": "assertion",
+        "description": "Ensure upload fails gracefully and retry or cancel options are offered."
+      }
+    ]
+  },
+  {
+    "id": "TC018",
+    "title": "Project Timeline and Budget Edge Case Testing",
+    "description": "Test project creation and update handling of edge cases for dates (past, future, invalid ordering) and budgets (zero, negative, very large values).",
+    "category": "error handling",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Try creating a project with start date after end date."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify validation prevents submission and shows appropriate error."
+      },
+      {
+        "type": "action",
+        "description": "Try inputting budget as zero, negative, and very large number."
+      },
+      {
+        "type": "assertion",
+        "description": "Confirm that budget validations accept or reject values according to rules."
+      }
+    ]
+  },
+  {
+    "id": "TC019",
+    "title": "API Rate Limiting and Request Throttling",
+    "description": "Validate that the API enforces rate limiting to protect system resources and prevent abuse.",
+    "category": "security",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Send a high volume of API requests in short time from a single client."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the system responds with HTTP 429 Too Many Requests or appropriate error after threshold is met."
+      },
+      {
+        "type": "assertion",
+        "description": "Check that service remains stable and recovers after throttling."
+      }
+    ]
+  },
+  {
+    "id": "TC020",
+    "title": "Collaborator Authorization Boundary Testing",
+    "description": "Ensure collaborators cannot perform actions outside their assigned permissions or access data from projects they are not part of.",
+    "category": "security",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Login as a collaborator with restricted permissions."
+      },
+      {
+        "type": "action",
+        "description": "Attempt to access or modify projects where the user is not assigned."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify access is denied and actions cannot be performed."
+      },
+      {
+        "type": "action",
+        "description": "Attempt to escalate permissions via API calls."
+      },
+      {
+        "type": "assertion",
+        "description": "Confirm unauthorized permission changes are rejected."
+      }
+    ]
+  }
+]

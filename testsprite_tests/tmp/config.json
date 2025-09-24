@@ -1,0 +1,18 @@
+{
+  "status": "commited",
+  "type": "frontend",
+  "scope": "codebase",
+  "localEndpoint": "http://localhost:3000",
+  "loginUser": "admin@demo.com",
+  "loginPassword": "admin123",
+  "executionArgs": {
+    "projectName": "CTeIManagerV3",
+    "projectPath": "/Users/jhofeloto/Library/CloudStorage/GoogleDrive-jhofeloto@41gu5.com/Unidades compartidas/DEV/chocoInventa docs/Lab movil +Plataforma/Codigo fuente/CTeIManagerV3",
+    "testIds": [],
+    "additionalInstruction": "Ejecutar todas las pruebas del plan de pruebas frontend generado para verificar la funcionalidad completa del sistema CTeI-Manager",
+    "envs": {
+      "API_KEY": "sk-user-2OZ-I7WZAhSPLaZDQslkmd4Rb_-gFjw7okCY-NR8yfrZSy3fK_VUpETk5NjtVYd_KE2a0-WhaMVpACYHwY_Kotl5_TlW3tYH1hsMMitlZSq71cXVzDQTOzZgH9PXJHtNLdA"
+    }
+  },
+  "proxy": "http://76e29d42-05c7-45b1-a7ab-13727cfd9115:OQNnGsB3wLRUpnvuqUiGbKICxGhHWHbg@tun.testsprite.com:8080"
+}

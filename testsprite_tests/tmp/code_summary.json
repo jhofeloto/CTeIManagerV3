@@ -1,0 +1,119 @@
+{
+  "tech_stack": [
+    "TypeScript",
+    "React",
+    "Hono",
+    "Cloudflare Workers",
+    "Cloudflare Pages",
+    "Cloudflare D1",
+    "Cloudflare R2",
+    "Cloudflare KV",
+    "Vite",
+    "TailwindCSS",
+    "JWT",
+    "bcrypt"
+  ],
+  "features": [
+    {
+      "name": "Sistema de Autenticación",
+      "description": "Sistema completo de autenticación con JWT, registro de usuarios, login y control de roles (ADMIN, INVESTIGATOR, COMMUNITY)",
+      "files": [
+        "src/routes/auth.ts",
+        "src/middleware/auth.ts",
+        "src/utils/jwt.ts"
+      ]
+    },
+    {
+      "name": "Gestión de Proyectos",
+      "description": "CRUD completo para proyectos de investigación con estados, fechas, presupuesto, colaboradores y productos asociados",
+      "files": [
+        "src/routes/private.ts",
+        "src/routes/admin.ts"
+      ]
+    },
+    {
+      "name": "Gestión de Productos Científicos",
+      "description": "Sistema para registrar y gestionar productos científicos (artículos, software, patentes, etc.) con metadatos y autoría",
+      "files": [
+        "src/routes/private.ts",
+        "src/routes/admin.ts"
+      ]
+    },
+    {
+      "name": "Panel de Administración",
+      "description": "Dashboard administrativo con estadísticas, gestión de usuarios, proyectos, productos y configuración del sistema",
+      "files": [
+        "src/routes/admin.ts"
+      ]
+    },
+    {
+      "name": "Sistema de Archivos",
+      "description": "Gestión de archivos con Cloudflare R2, subida, descarga y organización por entidades (proyectos/productos)",
+      "files": [
+        "src/routes/admin.ts"
+      ]
+    },
+    {
+      "name": "Sistema de Scoring y Evaluación",
+      "description": "Algoritmo automatizado de evaluación de proyectos basado en completitud, colaboración, productividad, impacto e innovación",
+      "files": [
+        "src/routes/admin.ts"
+      ]
+    },
+    {
+      "name": "Sistema de Alertas Inteligentes",
+      "description": "Motor de alertas automáticas para monitoreo de riesgos, productividad y oportunidades de mejora",
+      "files": [
+        "src/routes/admin.ts"
+      ]
+    },
+    {
+      "name": "Dashboard de Monitoreo",
+      "description": "Panel de monitoreo en tiempo real con métricas del sistema, estadísticas y tendencias",
+      "files": [
+        "src/routes/admin.ts"
+      ]
+    },
+    {
+      "name": "Gestión de Colaboradores",
+      "description": "Sistema para asignar colaboradores a proyectos con roles específicos y permisos diferenciados",
+      "files": [
+        "src/routes/private.ts"
+      ]
+    },
+    {
+      "name": "Sistema de Autoría",
+      "description": "Gestión de autoría de productos científicos con roles de autor, co-autor, editor y revisor",
+      "files": [
+        "src/routes/private.ts"
+      ]
+    },
+    {
+      "name": "API RESTful",
+      "description": "API completa con endpoints para todas las funcionalidades del sistema, autenticación y autorización",
+      "files": [
+        "src/index.tsx",
+        "src/routes/auth.ts",
+        "src/routes/private.ts",
+        "src/routes/public.ts",
+        "src/routes/admin.ts"
+      ]
+    },
+    {
+      "name": "Frontend React",
+      "description": "Interfaz de usuario moderna con React, TypeScript y TailwindCSS para dashboard y gestión de contenido",
+      "files": [
+        "src/index.tsx",
+        "src/renderer.tsx"
+      ]
+    },
+    {
+      "name": "Tipos y Interfaces",
+      "description": "Definiciones de tipos TypeScript para todas las entidades del sistema (User, Project, Product, etc.)",
+      "files": [
+        "src/types/index.ts",
+        "src/types.d.ts"
+      ]
+    }
+  ]
+}

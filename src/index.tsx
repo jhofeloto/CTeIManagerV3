@@ -2169,6 +2169,63 @@ app.get('/', (c) => {
         <link href="/static/styles.css" rel="stylesheet">
         <script src="https://cdn.jsdelivr.net/npm/axios@1.6.0/dist/axios.min.js"></script>
         <script>
+        // Función para manejar registro de usuarios
+        async function handleRegister(event) {
+            event.preventDefault();
+
+            const name = document.getElementById('registerName').value.trim();
+            const email = document.getElementById('registerEmail').value.trim();
+            const password = document.getElementById('registerPassword').value.trim();
+            const role = document.getElementById('registerRole').value;
+
+            if (!name || !email || !password) {
+                showToast('Por favor complete todos los campos', 'error');
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/auth/register', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        full_name: name,
+                        email: email,
+                        password: password,
+                        role: role
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    showToast('Usuario registrado exitosamente', 'success');
+                    // Cerrar modal y redirigir a login
+                    document.getElementById('registerModal').classList.add('hidden');
+                    document.getElementById('loginModal').classList.remove('hidden');
+                } else {
+                    showToast(data.error || 'Error al registrar usuario', 'error');
+                }
+            } catch (error) {
+                console.error('Error en registro:', error);
+                showToast('Error de conexión', 'error');
+            }
+        }
+
+        function showToast(message, type = 'info') {
+            const toast = document.createElement('div');
+            toast.className = `fixed top-4 right-4 px-4 py-2 rounded-md text-white z-50 ${
+                type === 'success' ? 'bg-green-500' :
+                type === 'error' ? 'bg-red-500' :
+                'bg-blue-500'
+            }`;
+            toast.textContent = message;
+            document.body.appendChild(toast);
+            setTimeout(() => toast.remove(), 3000);
+        }
+        </script>
+        <script>
           tailwind.config = {
             theme: {
               extend: {
@@ -2587,6 +2644,7 @@ app.get('/', (c) => {
         <script src="https://cdn.jsdelivr.net/npm/axios@1.6.0/dist/axios.min.js"></script>
         <script src="/static/phase1-enhancements.js?v=20240912-2"></script>
         
+
         <!-- Script para cargar logo dinámico -->
         <script>
         // Cargar configuración del sitio y aplicar logo
@@ -4385,14 +4443,17 @@ app.get('/dashboard/proyectos/:id/editar', async (c) => {
             document.addEventListener('DOMContentLoaded', async () => {
                 console.log('=== INICIANDO PÁGINA DE EDICIÓN DE PROYECTO ===');
                 console.log('Proyecto ID:', PROJECT_ID);
-                
+                console.log('DOM completamente cargado');
+
                 try {
                     // PASO 1: Verificar autenticación y configurar cabeceras
                     console.log('Paso 1: Verificando autenticación...');
                     if (!checkAuthentication()) {
                         console.error('Autenticación fallida - Deteniendo inicialización');
+                        console.log('checkAuthentication() devolvió false');
                         return; // showAuthError() ya se llamó en checkAuthentication()
                     }
+                    console.log('Autenticación exitosa, continuando con carga de datos...');
                     
                     // PASO 2: Verificar permisos de edición
                     console.log('Paso 2: Verificando permisos de edición...');
@@ -5045,21 +5106,21 @@ app.get('/dashboard/proyectos/:id/editar', async (c) => {
                     const introductionText = htmlToMarkdown(introduction);
                     const methodologyText = htmlToMarkdown(methodology);
 
-                    const markdown = '# ' + title + '\n\n' +
-                        '## Información General\n' +
-                        '- **Estado**: ' + status + '\n' +
-                        '- **Visibilidad**: ' + visibility + '\n' +
-                        '- **Palabras Clave**: ' + keywordsList + '\n' +
-                        '- **Fecha de Creación**: ' + (currentProject?.created_at ? new Date(currentProject.created_at).toLocaleDateString('es-ES') : 'N/A') + '\n\n' +
-                        '## Resumen\n' + abstract + '\n\n' +
-                        '## Introducción\n' + introductionText + '\n\n' +
-                        '## Metodología\n' + methodologyText + '\n\n' +
-                        '## Objetivos Específicos\n' + objectives + '\n\n' +
-                        '## Resultados Esperados\n' + expectedResults + '\n\n' +
-                        '## Equipo de Trabajo\n' + team + '\n\n' +
-                        '## Presupuesto\n' + budgetBreakdown + '\n\n' +
-                        '## Impacto Esperado\n' + expectedImpact + '\n\n' +
-                        '## Sostenibilidad\n' + sustainability + '\n\n' +
+                    const markdown = '# ' + title + '\\n\\n' +
+                        '## Información General\\n' +
+                        '- **Estado**: ' + status + '\\n' +
+                        '- **Visibilidad**: ' + visibility + '\\n' +
+                        '- **Palabras Clave**: ' + keywordsList + '\\n' +
+                        '- **Fecha de Creación**: ' + (currentProject?.created_at ? new Date(currentProject.created_at).toLocaleDateString('es-ES') : 'N/A') + '\\n\\n' +
+                        '## Resumen\\n' + abstract + '\\n\\n' +
+                        '## Introducción\\n' + introductionText + '\\n\\n' +
+                        '## Metodología\\n' + methodologyText + '\\n\\n' +
+                        '## Objetivos Específicos\\n' + objectives + '\\n\\n' +
+                        '## Resultados Esperados\\n' + expectedResults + '\\n\\n' +
+                        '## Equipo de Trabajo\\n' + team + '\\n\\n' +
+                        '## Presupuesto\\n' + budgetBreakdown + '\\n\\n' +
+                        '## Impacto Esperado\\n' + expectedImpact + '\\n\\n' +
+                        '## Sostenibilidad\\n' + sustainability + '\\n\\n' +
                         '---\n' +
                         '*Documento generado automáticamente por CTeI-Manager el ' + new Date().toLocaleString('es-ES') + '*';
 
@@ -7249,6 +7310,20 @@ app.get('/dashboard/productos/:id/editar', async (c) => {
         <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
         <script src="https://cdn.quilljs.com/1.3.6/quill.min.js"></script>
         <script>
+          console.log('JavaScript cargado correctamente');
+          // Indicador visual simple
+          document.addEventListener('DOMContentLoaded', function() {
+            console.log('DOM Content Loaded - JavaScript funcionando');
+            const body = document.body;
+            if (body) {
+              const indicator = document.createElement('div');
+              indicator.id = 'js-indicator';
+              indicator.style.cssText = 'position:fixed;top:10px;right:10px;background:green;color:white;padding:5px;border-radius:3px;font-size:12px;z-index:9999;';
+              indicator.textContent = 'JS: OK';
+              body.appendChild(indicator);
+              setTimeout(function() { indicator.remove(); }, 3000);
+            }
+          });
           tailwind.config = {
             theme: {
               extend: {
