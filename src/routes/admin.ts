@@ -1617,13 +1617,13 @@ adminRoutes.get('/monitoring/real-time-stats', async (c) => {
 
     // Productos creados por mes (simplificado)
     const productionTrend = await c.env.DB.prepare(`
-      SELECT 
+      SELECT
         strftime('%Y-%m', created_at) as month,
-        category,
+        product_type as category,
         COUNT(*) as count
       FROM products
       WHERE DATE(created_at) >= DATE('now', '-' || ? || ' days')
-      GROUP BY month, category
+      GROUP BY month, product_type
       ORDER BY month ASC
     `).bind(timeframe).all();
 
@@ -1636,15 +1636,15 @@ adminRoutes.get('/monitoring/real-time-stats', async (c) => {
 
     // Distribución por líneas de acción con proyectos activos
     const actionLinesDistribution = await c.env.DB.prepare(`
-      SELECT 
+      SELECT
         al.name,
-        al.code,
+        al.id as code,
         COUNT(p.id) as project_count,
         COALESCE(AVG(ps.total_score), 0) as avg_score
       FROM action_lines al
       LEFT JOIN projects p ON al.id = p.action_line_id AND p.status = 'ACTIVE'
       LEFT JOIN project_scores ps ON p.id = ps.project_id AND ps.is_current = 1
-      GROUP BY al.id, al.name, al.code
+      GROUP BY al.id, al.name
       ORDER BY project_count DESC
     `).all();
 
