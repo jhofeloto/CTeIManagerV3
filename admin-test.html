@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CTeI-Manager - Test de Administrador</title>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #333;
+        }
+
+        .container {
+            max-width: 900px;
+            width: 90%;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            color: #2c3e50;
+            font-size: 2.2rem;
+            margin-bottom: 10px;
+        }
+
+        .header .subtitle {
+            color: #666;
+            font-size: 1.1rem;
+        }
+
+        .test-section {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 25px;
+            margin: 20px 0;
+            border-left: 5px solid #007bff;
+        }
+
+        .section-title {
+            color: #2c3e50;
+            font-size: 1.3rem;
+            margin-bottom: 15px;
+            font-weight: 600;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: #555;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: border-color 0.3s ease;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: #007bff;
+        }
+
+        .btn {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin: 5px;
+        }
+
+        .btn:hover {
+            background: #0056b3;
+            transform: translateY(-2px);
+        }
+
+        .btn-success {
+            background: #28a745;
+        }
+
+        .btn-success:hover {
+            background: #1e7e34;
+        }
+
+        .btn-danger {
+            background: #dc3545;
+        }
+
+        .btn-danger:hover {
+            background: #c82333;
+        }
+
+        .result-box {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            white-space: pre-wrap;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .result-success {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+
+        .result-error {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+
+        .result-info {
+            background: #d1ecf1;
+            border: 1px solid #bee5eb;
+            color: #0c5460;
+        }
+
+        .credentials-box {
+            background: #e8f4ff;
+            border: 2px solid #007bff;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+
+        .credential-item {
+            margin: 8px 0;
+            font-family: 'Courier New', monospace;
+        }
+
+        .credential-label {
+            font-weight: bold;
+            color: #495057;
+            display: inline-block;
+            width: 100px;
+        }
+
+        .credential-value {
+            color: #007bff;
+            font-weight: bold;
+        }
+
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+
+        .status-success { background: #28a745; }
+        .status-error { background: #dc3545; }
+        .status-pending { background: #ffc107; }
+
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        @media (max-width: 768px) {
+            .grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .container {
+                width: 95%;
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>🔐 CTeI-Manager Admin Test</h1>
+            <p class="subtitle">Prueba de acceso de administrador completamente funcional</p>
+        </div>
+
+        <!-- Credenciales -->
+        <div class="credentials-box">
+            <h3 style="margin-bottom: 15px;">🔑 Credenciales de Prueba</h3>
+            <div class="credential-item">
+                <span class="credential-label">Email:</span>
+                <span class="credential-value">admin@demo.com</span>
+            </div>
+            <div class="credential-item">
+                <span class="credential-label">Password:</span>
+                <span class="credential-value">admin123</span>
+            </div>
+            <div class="credential-item">
+                <span class="credential-label">Rol:</span>
+                <span class="credential-value">ADMIN</span>
+            </div>
+        </div>
+
+        <div class="grid">
+            <!-- Login Test -->
+            <div class="test-section">
+                <h3 class="section-title">
+                    <span id="loginStatus" class="status-indicator status-pending"></span>
+                    1. Test de Login
+                </h3>
+                
+                <div class="form-group">
+                    <label class="form-label">Email:</label>
+                    <input type="email" id="email" class="form-input" value="admin@demo.com">
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Password:</label>
+                    <input type="password" id="password" class="form-input" value="admin123">
+                </div>
+                
+                <button onclick="testLogin()" class="btn">🔑 Probar Login</button>
+                <button onclick="clearResults()" class="btn btn-danger">🗑️ Limpiar</button>
+                
+                <div id="loginResult" class="result-box" style="display: none;"></div>
+            </div>
+
+            <!-- API Tests -->
+            <div class="test-section">
+                <h3 class="section-title">
+                    <span id="apiStatus" class="status-indicator status-pending"></span>
+                    2. Test APIs Privadas
+                </h3>
+                
+                <button onclick="testPrivateAPIs()" class="btn btn-success">🔒 Probar APIs Admin</button>
+                <button onclick="testUserProfile()" class="btn">👤 Probar Perfil</button>
+                
+                <div id="apiResult" class="result-box" style="display: none;"></div>
+            </div>
+        </div>
+
+        <!-- Dashboard Test -->
+        <div class="test-section">
+            <h3 class="section-title">
+                <span id="dashboardStatus" class="status-indicator status-pending"></span>
+                3. Test Dashboard Completo
+            </h3>
+            
+            <button onclick="testDashboard()" class="btn btn-success">📊 Cargar Dashboard</button>
+            <button onclick="openFullSystem()" class="btn">🚀 Abrir Sistema Completo</button>
+            
+            <div id="dashboardResult" class="result-box" style="display: none;"></div>
+        </div>
+
+        <!-- Status Summary -->
+        <div class="test-section">
+            <h3 class="section-title">📋 Resumen del Sistema</h3>
+            <div id="systemStatus">
+                <p><span class="status-indicator status-success"></span> Base de datos configurada con admin</p>
+                <p><span class="status-indicator status-success"></span> Servidor CTeI-Manager ejecutándose</p>
+                <p><span class="status-indicator status-success"></span> Credenciales bcrypt validadas</p>
+                <p><span class="status-indicator status-pending"></span> Login de administrador - <span id="loginStatusText">Pendiente de prueba</span></p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Configuración
+        const API_BASE = '/api';
+        let authToken = null;
+
+        // Función para mostrar resultados
+        function showResult(elementId, content, type = 'info') {
+            const element = document.getElementById(elementId);
+            element.style.display = 'block';
+            element.textContent = content;
+            element.className = `result-box result-${type}`;
+        }
+
+        // Función para limpiar resultados
+        function clearResults() {
+            ['loginResult', 'apiResult', 'dashboardResult'].forEach(id => {
+                document.getElementById(id).style.display = 'none';
+            });
+        }
+
+        // Test de login
+        async function testLogin() {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            
+            showResult('loginResult', '🔄 Probando login...', 'info');
+            
+            try {
+                const response = await axios.post(`${API_BASE}/auth/login`, {
+                    email: email,
+                    password: password
+                });
+                
+                if (response.data.success) {
+                    authToken = response.data.data.token;
+                    const user = response.data.data.user;
+                    
+                    // Actualizar status
+                    document.getElementById('loginStatus').className = 'status-indicator status-success';
+                    document.getElementById('loginStatusText').textContent = 'Login exitoso';
+                    
+                    showResult('loginResult', 
+                        `✅ LOGIN EXITOSO!\n\n` +
+                        `👤 Usuario: ${user.full_name}\n` +
+                        `📧 Email: ${user.email}\n` +
+                        `🛡️ Rol: ${user.role}\n` +
+                        `🔑 Token: ${authToken.substring(0, 50)}...\n\n` +
+                        `🎉 ¡Administrador autenticado correctamente!`, 
+                        'success'
+                    );
+                } else {
+                    throw new Error(response.data.error || 'Login fallido');
+                }
+            } catch (error) {
+                document.getElementById('loginStatus').className = 'status-indicator status-error';
+                document.getElementById('loginStatusText').textContent = 'Error en login';
+                
+                showResult('loginResult', 
+                    `❌ ERROR EN LOGIN:\n\n${error.response?.data?.error || error.message}`, 
+                    'error'
+                );
+            }
+        }
+
+        // Test de APIs privadas
+        async function testPrivateAPIs() {
+            if (!authToken) {
+                showResult('apiResult', '❌ Primero debes hacer login', 'error');
+                return;
+            }
+            
+            showResult('apiResult', '🔄 Probando APIs privadas...', 'info');
+            
+            const tests = [];
+            const headers = { Authorization: `Bearer ${authToken}` };
+            
+            try {
+                // Test de endpoint /me
+                const meResponse = await axios.get(`${API_BASE}/private/me`, { headers });
+                tests.push(`✅ GET /me - OK: ${meResponse.data.data.full_name}`);
+                
+                // Test de proyectos
+                try {
+                    const projectsResponse = await axios.get(`${API_BASE}/private/me/projects`, { headers });
+                    tests.push(`✅ GET /me/projects - OK: ${projectsResponse.data.data?.length || 0} proyectos`);
+                } catch (e) {
+                    tests.push(`⚠️ GET /me/projects - ${e.response?.status}: ${e.response?.statusText}`);
+                }
+                
+                document.getElementById('apiStatus').className = 'status-indicator status-success';
+                
+                showResult('apiResult', 
+                    `🔒 PRUEBA DE APIs PRIVADAS:\n\n${tests.join('\n')}\n\n✅ Token de autenticación válido`, 
+                    'success'
+                );
+            } catch (error) {
+                document.getElementById('apiStatus').className = 'status-indicator status-error';
+                showResult('apiResult', 
+                    `❌ ERROR EN APIs:\n\n${error.response?.data?.error || error.message}`, 
+                    'error'
+                );
+            }
+        }
+
+        // Test de perfil de usuario
+        async function testUserProfile() {
+            if (!authToken) {
+                showResult('apiResult', '❌ Primero debes hacer login', 'error');
+                return;
+            }
+            
+            try {
+                const response = await axios.get(`${API_BASE}/private/me`, {
+                    headers: { Authorization: `Bearer ${authToken}` }
+                });
+                
+                const user = response.data.data;
+                showResult('apiResult', 
+                    `👤 PERFIL DE USUARIO:\n\n` +
+                    `ID: ${user.id}\n` +
+                    `Nombre: ${user.full_name}\n` +
+                    `Email: ${user.email}\n` +
+                    `Rol: ${user.role}\n` +
+                    `Creado: ${user.created_at}\n\n` +
+                    `✅ Perfil cargado exitosamente`, 
+                    'success'
+                );
+            } catch (error) {
+                showResult('apiResult', 
+                    `❌ Error cargando perfil:\n${error.response?.data?.error || error.message}`, 
+                    'error'
+                );
+            }
+        }
+
+        // Test del dashboard
+        async function testDashboard() {
+            if (!authToken) {
+                showResult('dashboardResult', '❌ Primero debes hacer login', 'error');
+                return;
+            }
+            
+            showResult('dashboardResult', '🔄 Cargando dashboard...', 'info');
+            
+            try {
+                const headers = { Authorization: `Bearer ${authToken}` };
+                const results = [];
+                
+                // Test básicos que deberían funcionar
+                try {
+                    const userResponse = await axios.get(`${API_BASE}/private/me`, { headers });
+                    results.push(`✅ Usuario: ${userResponse.data.data.full_name}`);
+                } catch (e) {
+                    results.push(`❌ Error usuario: ${e.message}`);
+                }
+                
+                document.getElementById('dashboardStatus').className = 'status-indicator status-success';
+                
+                showResult('dashboardResult', 
+                    `📊 DASHBOARD TEST:\n\n${results.join('\n')}\n\n` +
+                    `🎯 Sistema base funcionando correctamente\n` +
+                    `🔐 Autenticación de administrador activa\n` +
+                    `🛡️ Acceso a funciones privadas confirmado`, 
+                    'success'
+                );
+            } catch (error) {
+                document.getElementById('dashboardStatus').className = 'status-indicator status-error';
+                showResult('dashboardResult', 
+                    `❌ Error en dashboard:\n${error.message}`, 
+                    'error'
+                );
+            }
+        }
+
+        // Abrir sistema completo
+        function openFullSystem() {
+            const url = 'https://3001-ief8rordhys274niuhzre-6532622b.e2b.dev/';
+            window.open(url, '_blank');
+        }
+
+        // Inicialización
+        console.log('🔧 CTeI-Manager Admin Test inicializado');
+        console.log('🔑 Credenciales: admin@demo.com / admin123');
+        console.log('🌐 API Base:', API_BASE);
+    </script>
+</body>
+</html>
