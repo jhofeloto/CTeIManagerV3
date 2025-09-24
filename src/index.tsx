@@ -4333,14 +4333,44 @@ app.get('/dashboard/proyectos/:id/editar', async (c) => {
             
             // Mostrar error de autenticación
             function showAuthError() {
+                // Ocultar loading overlay primero
+                hideLoading();
+
                 // Actualizar título con información del error
                 const pageTitle = document.getElementById('page-title');
                 if (pageTitle) {
                     pageTitle.textContent = \`Acceso Restringido - Proyecto ID: \${PROJECT_ID}\`;
                 }
-                
-                showSpecificError('auth', 'Sesión Requerida', 
-                    'Para editar proyectos necesitas iniciar sesión primero. Por favor, autentícate con tu cuenta de CTeI-Manager.');
+
+                // Mostrar mensaje de error más amigable
+                const mainContent = document.querySelector('.edit-page-container');
+                if (mainContent) {
+                    mainContent.innerHTML = \`
+                        <div class="min-h-screen flex items-center justify-center">
+                            <div class="bg-card p-8 rounded-lg shadow-lg max-w-md w-full text-center">
+                                <div class="mb-4">
+                                    <i class="fas fa-lock text-4xl text-muted-foreground"></i>
+                                </div>
+                                <h2 class="text-xl font-semibold text-foreground mb-2">Acceso Restringido</h2>
+                                <p class="text-muted-foreground mb-6">
+                                    Para editar proyectos necesitas iniciar sesión primero.
+                                </p>
+                                <div class="space-y-3">
+                                    <a href="/login" class="block w-full bg-primary text-primary-foreground py-2 px-4 rounded hover:bg-primary/90 transition-colors">
+                                        <i class="fas fa-sign-in-alt mr-2"></i>Iniciar Sesión
+                                    </a>
+                                    <a href="/" class="block w-full bg-secondary text-secondary-foreground py-2 px-4 rounded hover:bg-secondary/80 transition-colors">
+                                        <i class="fas fa-home mr-2"></i>Volver al Inicio
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    \`;
+                } else {
+                    // Fallback: mostrar alert si no se puede modificar el DOM
+                    alert('Para editar proyectos necesitas iniciar sesión primero. Redirigiendo al login...');
+                    window.location.href = '/login';
+                }
             }
             
             // Elementos DOM
