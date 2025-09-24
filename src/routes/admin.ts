@@ -991,7 +991,6 @@ adminRoutes.get('/projects', async (c) => {
           totalPages: Math.ceil(total / limit)
         },
         filters: {
-          risk_level,
           status,
           is_public,
           search

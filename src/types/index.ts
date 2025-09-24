@@ -36,6 +36,14 @@ export interface Project {
   funding_source?: string;
   budget?: number;
   project_code?: string;
+  action_line_id?: number;
+  // Nuevos campos adicionales
+  objectives?: string;
+  expected_results?: string;
+  budget_breakdown?: string;
+  team?: string;
+  expected_impact?: string;
+  sustainability?: string;
   created_at: string;
   updated_at: string;
   owner?: User;
@@ -157,6 +165,15 @@ export interface UpdateProjectRequest {
   funding_source?: string;
   budget?: number;
   project_code?: string;
+  action_line_id?: number;
+  progress_percentage?: number;
+  // Nuevos campos adicionales
+  objectives?: string;
+  expected_results?: string;
+  budget_breakdown?: string;
+  team?: string;
+  expected_impact?: string;
+  sustainability?: string;
 }
 
 export interface CreateProductRequest {

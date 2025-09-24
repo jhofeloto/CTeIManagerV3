@@ -3567,9 +3567,185 @@ app.get('/dashboard/proyectos/:id/editar', async (c) => {
                             </div>
                         </div>
                     </div>
+
+                    <!-- Campos Adicionales del Proyecto -->
+                    <div class="panel">
+                        <div class="panel-title">
+                            <i class="fas fa-plus-circle text-primary"></i>
+                            Información Adicional del Proyecto
+                        </div>
+
+                        <div class="form-field">
+                            <label for="project-objectives" class="form-label">
+                                <i class="fas fa-bullseye text-primary mr-2"></i>
+                                Objetivos Específicos
+                            </label>
+                            <textarea
+                                id="project-objectives"
+                                name="objectives"
+                                class="form-textarea"
+                                placeholder="Describa los objetivos específicos del proyecto..."
+                                rows="4"
+                            ></textarea>
+                            <div class="text-xs text-muted-foreground mt-1">
+                                <i class="fas fa-lightbulb mr-1"></i>
+                                Detalle los objetivos concretos y medibles que se pretenden alcanzar.
+                            </div>
+                        </div>
+
+                        <div class="form-field">
+                            <label for="project-expected-results" class="form-label">
+                                <i class="fas fa-trophy text-primary mr-2"></i>
+                                Resultados Esperados
+                            </label>
+                            <textarea
+                                id="project-expected-results"
+                                name="expected_results"
+                                class="form-textarea"
+                                placeholder="¿Qué resultados se esperan obtener?..."
+                                rows="4"
+                            ></textarea>
+                            <div class="text-xs text-muted-foreground mt-1">
+                                <i class="fas fa-chart-line mr-1"></i>
+                                Describa los resultados, productos o impactos esperados del proyecto.
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div class="form-field">
+                                <label for="project-budget-breakdown" class="form-label">
+                                    <i class="fas fa-dollar-sign text-primary mr-2"></i>
+                                    Desglose del Presupuesto
+                                </label>
+                                <textarea
+                                    id="project-budget-breakdown"
+                                    name="budget_breakdown"
+                                    class="form-textarea"
+                                    placeholder="Personal: $X&#10;Equipos: $Y&#10;Viajes: $Z&#10;Otros: $W"
+                                    rows="6"
+                                ></textarea>
+                            </div>
+
+                            <div class="form-field">
+                                <label for="project-team" class="form-label">
+                                    <i class="fas fa-users text-primary mr-2"></i>
+                                    Equipo de Trabajo
+                                </label>
+                                <textarea
+                                    id="project-team"
+                                    name="team"
+                                    class="form-textarea"
+                                    placeholder="Investigador Principal: Nombre&#10;Co-investigadores: Lista&#10;Asistentes: Lista&#10;Colaboradores externos: Lista"
+                                    rows="6"
+                                ></textarea>
+                            </div>
+                        </div>
+
+                        <div class="form-field">
+                            <label for="project-expected-impact" class="form-label">
+                                <i class="fas fa-star text-primary mr-2"></i>
+                                Impacto Esperado
+                            </label>
+                            <textarea
+                                id="project-expected-impact"
+                                name="expected_impact"
+                                class="form-textarea"
+                                placeholder="Describa el impacto científico, tecnológico, económico o social esperado..."
+                                rows="3"
+                            ></textarea>
+                        </div>
+
+                        <div class="form-field">
+                            <label for="project-sustainability" class="form-label">
+                                <i class="fas fa-leaf text-primary mr-2"></i>
+                                Sostenibilidad y Continuidad
+                            </label>
+                            <textarea
+                                id="project-sustainability"
+                                name="sustainability"
+                                class="form-textarea"
+                                placeholder="¿Cómo se garantizará la sostenibilidad de los resultados?..."
+                                rows="3"
+                            ></textarea>
+                        </div>
+                    </div>
+
+                    <!-- Exportación e Importación Markdown -->
+                    <div class="panel">
+                        <div class="panel-title">
+                            <i class="fas fa-file-export text-primary"></i>
+                            Exportación e Importación Markdown
+                        </div>
+
+                        <div class="form-field">
+                            <label class="form-label">
+                                <i class="fas fa-markdown text-primary mr-2"></i>
+                                Documento Completo en Markdown
+                            </label>
+                            <textarea
+                                id="project-markdown"
+                                name="markdown_content"
+                                class="form-textarea font-mono text-sm"
+                                placeholder="# Título del Proyecto
+
+## Resumen
+[Contenido del resumen]
+
+## Introducción
+[Contenido de la introducción]
+
+## Metodología
+[Contenido de la metodología]
+
+## Objetivos
+[Objetivos específicos]
+
+## Resultados Esperados
+[Resultados esperados]
+
+## Equipo
+[Equipo de trabajo]
+
+## Presupuesto
+[Desglose del presupuesto]
+
+## Impacto
+[Impacto esperado]
+
+## Sostenibilidad
+[Plan de sostenibilidad]"
+                                rows="20"
+                            ></textarea>
+                            <div class="text-xs text-muted-foreground mt-1">
+                                <i class="fas fa-info-circle mr-1"></i>
+                                Use este campo para importar/exportar toda la información del proyecto en formato Markdown. Los cambios aquí se sincronizarán con los campos del formulario.
+                            </div>
+                        </div>
+
+                        <div class="flex gap-3 mt-4">
+                            <button type="button" id="export-markdown-btn" class="btn btn-secondary flex-1">
+                                <i class="fas fa-download mr-2"></i>
+                                Exportar a Markdown
+                            </button>
+                            <button type="button" id="import-markdown-btn" class="btn btn-outline flex-1">
+                                <i class="fas fa-upload mr-2"></i>
+                                Importar desde Markdown
+                            </button>
+                            <button type="button" id="preview-markdown-btn" class="btn btn-outline">
+                                <i class="fas fa-eye mr-2"></i>
+                                Vista Previa
+                            </button>
+                        </div>
+
+                        <div class="text-xs text-muted-foreground mt-2">
+                            <i class="fas fa-lightbulb mr-1"></i>
+                            <strong>Exportar:</strong> Genera un documento Markdown completo con toda la información del proyecto.
+                            <strong>Importar:</strong> Carga datos desde un documento Markdown existente.
+                        </div>
+                    </div>
                 </form>
             </div>
-            
+
             <!-- Barra lateral: Metadatos y asociaciones -->
             <div class="sidebar-column">
                 <!-- Panel de Estado -->
@@ -4375,17 +4551,25 @@ app.get('/dashboard/proyectos/:id/editar', async (c) => {
                 }
                 
                 document.getElementById('project-status').value = currentProject.status || 'DRAFT';
-                
+
                 // Visibilidad
                 const isPublic = currentProject.is_public === 1 || currentProject.is_public === true;
                 document.getElementById('visibility-public').checked = isPublic;
                 document.getElementById('visibility-private').checked = !isPublic;
-                
+
                 // Keywords
                 if (currentProject.keywords) {
                     keywords = currentProject.keywords.split(',').map(k => k.trim()).filter(k => k);
                     renderKeywords();
                 }
+
+                // Nuevos campos adicionales
+                document.getElementById('project-objectives').value = currentProject.objectives || '';
+                document.getElementById('project-expected-results').value = currentProject.expected_results || '';
+                document.getElementById('project-budget-breakdown').value = currentProject.budget_breakdown || '';
+                document.getElementById('project-team').value = currentProject.team || '';
+                document.getElementById('project-expected-impact').value = currentProject.expected_impact || '';
+                document.getElementById('project-sustainability').value = currentProject.sustainability || '';
                 
                 // Inicializar gestión de archivos después de cargar el proyecto
                 console.log('🚀 Inicializando gestión de archivos después de poblar formulario');
@@ -4567,6 +4751,9 @@ app.get('/dashboard/proyectos/:id/editar', async (c) => {
                 
                 // Inicializar editores de texto enriquecido
                 initializeRichTextEditors();
+
+                // Configurar botones de Markdown
+                configureMarkdownButtons();
             }
             
             // Configurar botones de productos
@@ -4704,7 +4891,14 @@ app.get('/dashboard/proyectos/:id/editar', async (c) => {
                         status: formData.get('status'),
                         keywords: keywords.join(', ') || null,
                         is_public: formData.get('visibility') === 'public',
-                        action_line_id: formData.get('action_line_id') || null
+                        action_line_id: formData.get('action_line_id') || null,
+                        // Nuevos campos adicionales
+                        objectives: formData.get('objectives') || null,
+                        expected_results: formData.get('expected_results') || null,
+                        budget_breakdown: formData.get('budget_breakdown') || null,
+                        team: formData.get('team') || null,
+                        expected_impact: formData.get('expected_impact') || null,
+                        sustainability: formData.get('sustainability') || null
                     };
                     
                     const response = await axios.put(\`\${API_BASE}/private/projects/\${PROJECT_ID}\`, projectData);
@@ -4785,6 +4979,263 @@ app.get('/dashboard/proyectos/:id/editar', async (c) => {
                 if (hasUnsavedChanges) {
                     event.preventDefault();
                     event.returnValue = '';
+                }
+            }
+
+            // ===== FUNCIONES DE EXPORTACIÓN E IMPORTACIÓN MARKDOWN =====
+
+            // Exportar proyecto a formato Markdown
+            function exportToMarkdown() {
+                try {
+                    const formData = new FormData(form);
+
+                    // Sincronizar editores Quill
+                    if (introductionEditor) {
+                        document.getElementById('project-introduction').value = introductionEditor.root.innerHTML;
+                    }
+                    if (methodologyEditor) {
+                        document.getElementById('project-methodology').value = methodologyEditor.root.innerHTML;
+                    }
+
+                    const title = formData.get('title') || 'Sin título';
+                    const abstract = formData.get('abstract') || '';
+                    const introduction = formData.get('introduction') || '';
+                    const methodology = formData.get('methodology') || '';
+                    const objectives = formData.get('objectives') || '';
+                    const expectedResults = formData.get('expected_results') || '';
+                    const budgetBreakdown = formData.get('budget_breakdown') || '';
+                    const team = formData.get('team') || '';
+                    const expectedImpact = formData.get('expected_impact') || '';
+                    const sustainability = formData.get('sustainability') || '';
+                    const status = formData.get('status') || '';
+                    const visibility = formData.get('visibility') === 'public' ? 'Público' : 'Privado';
+                    const keywordsList = keywords.length > 0 ? keywords.join(', ') : '';
+
+                    // Convertir HTML a texto plano para Markdown
+                    const introductionText = htmlToMarkdown(introduction);
+                    const methodologyText = htmlToMarkdown(methodology);
+
+                    const markdown = '# ' + title + '\n\n' +
+                        '## Información General\n' +
+                        '- **Estado**: ' + status + '\n' +
+                        '- **Visibilidad**: ' + visibility + '\n' +
+                        '- **Palabras Clave**: ' + keywordsList + '\n' +
+                        '- **Fecha de Creación**: ' + (currentProject?.created_at ? new Date(currentProject.created_at).toLocaleDateString('es-ES') : 'N/A') + '\n\n' +
+                        '## Resumen\n' + abstract + '\n\n' +
+                        '## Introducción\n' + introductionText + '\n\n' +
+                        '## Metodología\n' + methodologyText + '\n\n' +
+                        '## Objetivos Específicos\n' + objectives + '\n\n' +
+                        '## Resultados Esperados\n' + expectedResults + '\n\n' +
+                        '## Equipo de Trabajo\n' + team + '\n\n' +
+                        '## Presupuesto\n' + budgetBreakdown + '\n\n' +
+                        '## Impacto Esperado\n' + expectedImpact + '\n\n' +
+                        '## Sostenibilidad\n' + sustainability + '\n\n' +
+                        '---\n' +
+                        '*Documento generado automáticamente por CTeI-Manager el ' + new Date().toLocaleString('es-ES') + '*';
+
+                    // Actualizar el textarea de Markdown
+                    document.getElementById('project-markdown').value = markdown;
+
+                    showSuccess('Proyecto exportado a Markdown exitosamente');
+                } catch (error) {
+                    console.error('Error exportando a Markdown:', error);
+                    showError('Error al exportar el proyecto a Markdown');
+                }
+            }
+
+            // Importar desde Markdown
+            function importFromMarkdown() {
+                try {
+                    const markdownText = document.getElementById('project-markdown').value;
+
+                    if (!markdownText.trim()) {
+                        showError('El campo de Markdown está vacío');
+                        return;
+                    }
+
+                    const parsed = parseMarkdownToProject(markdownText);
+
+                    // Actualizar formulario con los datos parseados
+                    if (parsed.title) document.getElementById('project-title').value = parsed.title;
+                    if (parsed.abstract) document.getElementById('project-abstract').value = parsed.abstract;
+                    if (parsed.introduction) {
+                        document.getElementById('project-introduction').value = parsed.introduction;
+                        if (introductionEditor) introductionEditor.root.innerHTML = parsed.introduction;
+                    }
+                    if (parsed.methodology) {
+                        document.getElementById('project-methodology').value = parsed.methodology;
+                        if (methodologyEditor) methodologyEditor.root.innerHTML = parsed.methodology;
+                    }
+                    if (parsed.objectives) document.getElementById('project-objectives').value = parsed.objectives;
+                    if (parsed.expectedResults) document.getElementById('project-expected-results').value = parsed.expectedResults;
+                    if (parsed.budgetBreakdown) document.getElementById('project-budget-breakdown').value = parsed.budgetBreakdown;
+                    if (parsed.team) document.getElementById('project-team').value = parsed.team;
+                    if (parsed.expectedImpact) document.getElementById('project-expected-impact').value = parsed.expectedImpact;
+                    if (parsed.sustainability) document.getElementById('project-sustainability').value = parsed.sustainability;
+
+                    // Actualizar keywords si existen
+                    if (parsed.keywords && parsed.keywords.length > 0) {
+                        keywords = parsed.keywords;
+                        renderKeywords();
+                    }
+
+                    // Marcar como con cambios
+                    handleFormChange();
+
+                    showSuccess('Proyecto importado desde Markdown exitosamente');
+                } catch (error) {
+                    console.error('Error importando desde Markdown:', error);
+                    showError('Error al importar el proyecto desde Markdown. Verifica el formato.');
+                }
+            }
+
+            // Vista previa del Markdown
+            function previewMarkdown() {
+                const markdownText = document.getElementById('project-markdown').value;
+
+                if (!markdownText.trim()) {
+                    showError('No hay contenido Markdown para previsualizar');
+                    return;
+                }
+
+                // Crear una ventana modal para la vista previa
+                const modal = document.createElement('div');
+                modal.className = 'fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4';
+                modal.innerHTML = \`
+                    <div class="bg-card rounded-lg shadow-xl max-w-4xl w-full max-h-[80vh] overflow-hidden">
+                        <div class="flex items-center justify-between p-4 border-b">
+                            <h3 class="text-lg font-semibold text-foreground">Vista Previa del Documento</h3>
+                            <button onclick="this.closest('.fixed').remove()" class="text-muted-foreground hover:text-foreground">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                        <div class="p-6 overflow-y-auto max-h-[60vh]">
+                            <div class="prose prose-sm max-w-none">
+                                \${markdownToHtml(markdownText)}
+                            </div>
+                        </div>
+                    </div>
+                \`;
+
+                document.body.appendChild(modal);
+            }
+
+            // Convertir HTML a Markdown simple
+            function htmlToMarkdown(html) {
+                if (!html) return '';
+
+                // Convertir elementos básicos
+                let markdown = html
+                    .replace(/<h1[^>]*>(.*?)<\/h1>/gi, '# $1\\n')
+                    .replace(/<h2[^>]*>(.*?)<\/h2>/gi, '## $1\\n')
+                    .replace(/<h3[^>]*>(.*?)<\/h3>/gi, '### $1\\n')
+                    .replace(/<h4[^>]*>(.*?)<\/h4>/gi, '#### $1\\n')
+                    .replace(/<p[^>]*>(.*?)<\/p>/gi, '$1\\n\\n')
+                    .replace(/<br[^>]*>/gi, '\\n')
+                    .replace(/<strong[^>]*>(.*?)<\/strong>/gi, '**$1**')
+                    .replace(/<b[^>]*>(.*?)<\/b>/gi, '**$1**')
+                    .replace(/<em[^>]*>(.*?)<\/em>/gi, '*$1*')
+                    .replace(/<i[^>]*>(.*?)<\/i>/gi, '*$1*')
+                    .replace(/<ul[^>]*>(.*?)<\/ul>/gi, '$1\\n')
+                    .replace(/<ol[^>]*>(.*?)<\/ol>/gi, '$1\\n')
+                    .replace(/<li[^>]*>(.*?)<\/li>/gi, '- $1\\n')
+                    .replace(/<[^>]+>/g, '') // Remover otras etiquetas HTML
+                    .trim();
+
+                return markdown;
+            }
+
+            // Convertir Markdown a HTML simple para vista previa
+            function markdownToHtml(markdown) {
+                if (!markdown) return '';
+
+                return markdown
+                    .replace(/^# (.*$)/gim, '<h1 class="text-2xl font-bold mb-4">$1</h1>')
+                    .replace(/^## (.*$)/gim, '<h2 class="text-xl font-semibold mb-3 mt-6">$1</h2>')
+                    .replace(/^### (.*$)/gim, '<h3 class="text-lg font-medium mb-2 mt-4">$1</h3>')
+                    .replace(/^#### (.*$)/gim, '<h4 class="text-base font-medium mb-2 mt-3">$1</h4>')
+                    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                    .replace(/\*(.*?)\*/g, '<em>$1</em>')
+                    .replace(/^- (.*$)/gim, '<li class="ml-4">$1</li>')
+                    .replace(/\\n\\n/g, '</p><p>')
+                    .replace(/\\n/g, '<br>')
+                    .replace(/^([^<].*)$/gm, '<p>$1</p>');
+            }
+
+            // Parsear Markdown a estructura de proyecto
+            function parseMarkdownToProject(markdown) {
+                const sections = {};
+                const lines = markdown.split('\\n');
+                let currentSection = '';
+                let currentContent = [];
+
+                for (const line of lines) {
+                    if (line.startsWith('# ')) {
+                        if (currentSection) {
+                            sections[currentSection] = currentContent.join('\\n').trim();
+                        }
+                        currentSection = 'title';
+                        currentContent = [line.substring(2).trim()];
+                    } else if (line.startsWith('## ')) {
+                        if (currentSection) {
+                            sections[currentSection] = currentContent.join('\\n').trim();
+                        }
+                        const sectionName = line.substring(3).trim().toLowerCase()
+                            .replace(/ /g, '_')
+                            .replace(/á/g, 'a').replace(/é/g, 'e').replace(/í/g, 'i')
+                            .replace(/ó/g, 'o').replace(/ú/g, 'u').replace(/ñ/g, 'n');
+                        currentSection = sectionName;
+                        currentContent = [];
+                    } else if (line.startsWith('- **') && line.includes('**:')) {
+                        // Parsear metadatos como "- **Estado**: Activo"
+                        const match = line.match(/- \*\*(.*?)\*\*:\s*(.*)/);
+                        if (match) {
+                            const key = match[1].toLowerCase().replace(/ /g, '_');
+                            const value = match[2];
+                            sections[key] = value;
+                        } else {
+                            currentContent.push(line);
+                        }
+                    } else if (currentSection) {
+                        currentContent.push(line);
+                    }
+                }
+
+                if (currentSection) {
+                    sections[currentSection] = currentContent.join('\\n').trim();
+                }
+
+                return {
+                    title: sections.title || '',
+                    abstract: sections.resumen || sections.resumen || '',
+                    introduction: sections.introduccion || sections.introducción || '',
+                    methodology: sections.metodologia || sections.metodología || '',
+                    objectives: sections.objetivos_especificos || sections.objetivos || '',
+                    expectedResults: sections.resultados_esperados || sections.resultados || '',
+                    budgetBreakdown: sections.presupuesto || '',
+                    team: sections.equipo_de_trabajo || sections.equipo || '',
+                    expectedImpact: sections.impacto_esperado || sections.impacto || '',
+                    sustainability: sections.sostenibilidad || '',
+                    keywords: sections.palabras_clave ? sections.palabras_clave.split(',').map(k => k.trim()) : []
+                };
+            }
+
+            // Configurar botones de Markdown
+            function configureMarkdownButtons() {
+                const exportBtn = document.getElementById('export-markdown-btn');
+                const importBtn = document.getElementById('import-markdown-btn');
+                const previewBtn = document.getElementById('preview-markdown-btn');
+
+                if (exportBtn) {
+                    exportBtn.addEventListener('click', exportToMarkdown);
+                }
+
+                if (importBtn) {
+                    importBtn.addEventListener('click', importFromMarkdown);
+                }
+
+                if (previewBtn) {
+                    previewBtn.addEventListener('click', previewMarkdown);
                 }
             }
             

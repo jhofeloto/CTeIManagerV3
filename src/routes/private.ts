@@ -246,7 +246,7 @@ privateRoutes.get('/projects/:id', requireRole('INVESTIGATOR', 'ADMIN'), async (
 
     // Obtener datos completos del proyecto
     const project = await c.env.DB.prepare(`
-      SELECT 
+      SELECT
         p.*,
         u.full_name as owner_name,
         u.email as owner_email
@@ -347,6 +347,43 @@ privateRoutes.put('/projects/:id', requireRole('INVESTIGATOR', 'ADMIN'), async (
     if (body.institution !== undefined) {
       updateFields.push('institution = ?');
       params.push(body.institution);
+    }
+    if (body.funding_source !== undefined) {
+      updateFields.push('funding_source = ?');
+      params.push(body.funding_source);
+    }
+    if (body.budget !== undefined) {
+      updateFields.push('budget = ?');
+      params.push(body.budget);
+    }
+    if (body.project_code !== undefined) {
+      updateFields.push('project_code = ?');
+      params.push(body.project_code);
+    }
+    // Nuevos campos adicionales
+    if (body.objectives !== undefined) {
+      updateFields.push('objectives = ?');
+      params.push(body.objectives);
+    }
+    if (body.expected_results !== undefined) {
+      updateFields.push('expected_results = ?');
+      params.push(body.expected_results);
+    }
+    if (body.budget_breakdown !== undefined) {
+      updateFields.push('budget_breakdown = ?');
+      params.push(body.budget_breakdown);
+    }
+    if (body.team !== undefined) {
+      updateFields.push('team = ?');
+      params.push(body.team);
+    }
+    if (body.expected_impact !== undefined) {
+      updateFields.push('expected_impact = ?');
+      params.push(body.expected_impact);
+    }
+    if (body.sustainability !== undefined) {
+      updateFields.push('sustainability = ?');
+      params.push(body.sustainability);
     }
     if (body.funding_source !== undefined) {
       updateFields.push('funding_source = ?');
@@ -1914,12 +1951,12 @@ privateRoutes.delete('/products/:productId/files/:fileId', requireRole('INVESTIG
 privateRoutes.get('/action-lines', async (c) => {
   try {
     const actionLines = await c.env.DB.prepare(`
-      SELECT 
-        id, code, name, description, department, priority, 
-        status, color_code, created_at
-      FROM action_lines 
-      WHERE status = 'ACTIVE'
-      ORDER BY priority DESC, name ASC
+      SELECT
+        id, code, name, description, icon, color, is_active,
+        display_order, created_at
+      FROM action_lines
+      WHERE is_active = 1
+      ORDER BY display_order ASC, name ASC
     `).all();
 
     return c.json<APIResponse<any>>({
