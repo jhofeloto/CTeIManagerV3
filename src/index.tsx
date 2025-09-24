@@ -2215,11 +2215,10 @@ app.get('/', (c) => {
 
         function showToast(message, type = 'info') {
             const toast = document.createElement('div');
-            toast.className = `fixed top-4 right-4 px-4 py-2 rounded-md text-white z-50 ${
-                type === 'success' ? 'bg-green-500' :
+            toast.className = 'fixed top-4 right-4 px-4 py-2 rounded-md text-white z-50 ' +
+                (type === 'success' ? 'bg-green-500' :
                 type === 'error' ? 'bg-red-500' :
-                'bg-blue-500'
-            }`;
+                'bg-blue-500');
             toast.textContent = message;
             document.body.appendChild(toast);
             setTimeout(() => toast.remove(), 3000);
