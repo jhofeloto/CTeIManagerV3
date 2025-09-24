@@ -1,8 +1,8 @@
 -- Migración 0010: Agregar columna 'code' a tabla action_lines
 -- Agrega columna 'code' requerida por el frontend
 
--- Agregar columna code a la tabla action_lines
-ALTER TABLE action_lines ADD COLUMN code TEXT UNIQUE;
+-- Agregar columna code a la tabla action_lines (sin UNIQUE inicialmente)
+ALTER TABLE action_lines ADD COLUMN code TEXT;
 
 -- Actualizar las líneas de acción existentes con códigos únicos
 UPDATE action_lines SET code = 'MENTALIDAD_CULTURA' WHERE name = 'Mentalidad y Cultura';
