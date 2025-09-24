@@ -96,6 +96,14 @@ document.addEventListener('DOMContentLoaded', function() {
     initDashboard();
 });
 
+/**
+ * Obtiene el token de autenticación del almacenamiento local
+ * @returns {string|null} Token de autenticación o null si no existe
+ */
+function getAuthToken() {
+    return getAuthTokenFromStorage();
+}
+
 // ============ UTILIDADES ============
 
 /**
