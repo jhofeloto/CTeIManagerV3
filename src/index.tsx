@@ -3039,6 +3039,7 @@ app.get('/dashboard', (c) => {
 // Página de edición de proyecto mejorada con interfaz de pestañas
 app.get('/dashboard/proyectos/:id/editar', async (c) => {
   const projectId = c.req.param('id');
+  return c.redirect(`/edit-project.html?id=${projectId}`);
 
   return c.html(`<!DOCTYPE html>
 <html lang="es" id="dashboard-html">

@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Editar Proyecto - CTeI-Manager</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="/static/styles.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/axios@1.6.0/dist/axios.min.js"></script>
+</head>
+<body class="bg-background text-foreground">
+    <!-- Navbar -->
+    <nav class="ctei-navbar">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <div class="flex items-center">
+                    <a href="/" class="flex items-center">
+                        <h1 class="text-xl font-bold text-foreground">
+                            <i class="fas fa-dna mr-2 text-primary"></i>
+                            CTeI-Manager
+                        </h1>
+                    </a>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <a href="/dashboard" class="ctei-btn-secondary">
+                        <i class="fas fa-arrow-left mr-2"></i>Dashboard
+                    </a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Breadcrumb -->
+    <div class="bg-muted py-3">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <nav class="flex" aria-label="Breadcrumb">
+                <ol class="flex items-center space-x-4">
+                    <li><a href="/" class="text-muted-foreground hover:text-primary">Inicio</a></li>
+                    <li><i class="fas fa-chevron-right text-muted-foreground"></i></li>
+                    <li><a href="/dashboard" class="text-muted-foreground hover:text-primary">Dashboard</a></li>
+                    <li><i class="fas fa-chevron-right text-muted-foreground"></i></li>
+                    <li><span class="text-foreground">Editar Proyecto</span></li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div class="bg-card rounded-lg shadow">
+            <div class="px-6 py-4 border-b border-border">
+                <h1 class="text-2xl font-bold text-foreground">
+                    <i class="fas fa-edit mr-2 text-primary"></i>
+                    Editar Proyecto
+                </h1>
+                <p class="text-muted-foreground mt-1">Complete todos los campos recomendados para una gestión óptima</p>
+            </div>
+
+            <!-- Tabs -->
+            <div class="border-b border-border">
+                <nav class="flex space-x-8 px-6" aria-label="Tabs">
+                    <button onclick="showTab('general')" class="tab-button active border-b-2 border-primary py-4 px-1 text-sm font-medium">
+                        <i class="fas fa-info-circle mr-2"></i>General
+                    </button>
+                    <button onclick="showTab('collaborators')" class="tab-button border-b-2 border-transparent py-4 px-1 text-sm font-medium text-muted-foreground hover:text-foreground hover:border-gray-300">
+                        <i class="fas fa-users mr-2"></i>Colaboradores
+                    </button>
+                    <button onclick="showTab('products')" class="tab-button border-b-2 border-transparent py-4 px-1 text-sm font-medium text-muted-foreground hover:text-foreground hover:border-gray-300">
+                        <i class="fas fa-flask mr-2"></i>Productos
+                    </button>
+                    <button onclick="showTab('files')" class="tab-button border-b-2 border-transparent py-4 px-1 text-sm font-medium text-muted-foreground hover:text-foreground hover:border-gray-300">
+                        <i class="fas fa-file-upload mr-2"></i>Archivos
+                    </button>
+                    <button onclick="showTab('monitoring')" class="tab-button border-b-2 border-transparent py-4 px-1 text-sm font-medium text-muted-foreground hover:text-foreground hover:border-gray-300">
+                        <i class="fas fa-chart-line mr-2"></i>Monitoreo
+                    </button>
+                </nav>
+            </div>
+
+            <!-- Tab Content -->
+            <div class="p-6">
+                <!-- General Tab -->
+                <div id="general-tab" class="tab-content">
+                    <form id="projectForm" onsubmit="saveProject(event)">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <label for="title" class="block text-sm font-medium text-foreground mb-2">Título del Proyecto</label>
+                                <input type="text" id="title" class="form-input" required>
+                            </div>
+                            <div>
+                                <label for="status" class="block text-sm font-medium text-foreground mb-2">Estado del Proyecto</label>
+                                <select id="status" class="form-input">
+                                    <option value="PLANNING">Planificación</option>
+                                    <option value="ACTIVE">Activo</option>
+                                    <option value="COMPLETED">Completado</option>
+                                    <option value="CANCELLED">Cancelado</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="mt-6">
+                            <label for="description" class="block text-sm font-medium text-foreground mb-2">Descripción</label>
+                            <textarea id="description" rows="4" class="form-input" required></textarea>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6">
+                            <div>
+                                <label for="budget" class="block text-sm font-medium text-foreground mb-2">Presupuesto Total</label>
+                                <input type="number" id="budget" class="form-input" required>
+                            </div>
+                            <div>
+                                <label for="start_date" class="block text-sm font-medium text-foreground mb-2">Fecha de Inicio</label>
+                                <input type="date" id="start_date" class="form-input" required>
+                            </div>
+                            <div>
+                                <label for="end_date" class="block text-sm font-medium text-foreground mb-2">Fecha de Fin</label>
+                                <input type="date" id="end_date" class="form-input" required>
+                            </div>
+                        </div>
+
+                        <!-- Campos Recomendados -->
+                        <div class="mt-8 border-t border-border pt-6">
+                            <h3 class="text-lg font-semibold mb-4 text-foreground">
+                                <i class="fas fa-plus-circle mr-2 text-primary"></i>Campos Recomendados
+                            </h3>
+
+                            <!-- Desglose de Presupuesto -->
+                            <div class="mb-6">
+                                <h4 class="text-md font-medium mb-3 text-foreground">Desglose de Presupuesto por Fases</h4>
+                                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                                    <div>
+                                        <label for="budget_research" class="block text-sm font-medium text-foreground mb-1">Investigación</label>
+                                        <input type="number" id="budget_research" class="form-input" placeholder="Monto">
+                                    </div>
+                                    <div>
+                                        <label for="budget_development" class="block text-sm font-medium text-foreground mb-1">Desarrollo</label>
+                                        <input type="number" id="budget_development" class="form-input" placeholder="Monto">
+                                    </div>
+                                    <div>
+                                        <label for="budget_implementation" class="block text-sm font-medium text-foreground mb-1">Implementación</label>
+                                        <input type="number" id="budget_implementation" class="form-input" placeholder="Monto">
+                                    </div>
+                                    <div>
+                                        <label for="budget_evaluation" class="block text-sm font-medium text-foreground mb-1">Evaluación</label>
+                                        <input type="number" id="budget_evaluation" class="form-input" placeholder="Monto">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Hitos del Cronograma -->
+                            <div class="mb-6">
+                                <h4 class="text-md font-medium mb-3 text-foreground">Hitos del Cronograma</h4>
+                                <div id="milestones" class="space-y-3">
+                                    <div class="flex gap-3 items-end">
+                                        <div class="flex-1">
+                                            <label class="block text-sm font-medium text-foreground mb-1">Descripción</label>
+                                            <input type="text" class="form-input" placeholder="Descripción del hito">
+                                        </div>
+                                        <div>
+                                            <label class="block text-sm font-medium text-foreground mb-1">Fecha</label>
+                                            <input type="date" class="form-input">
+                                        </div>
+                                        <button type="button" onclick="removeMilestone(this)" class="ctei-btn-danger">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                <button type="button" onclick="addMilestone()" class="mt-3 ctei-btn-secondary">
+                                    <i class="fas fa-plus mr-2"></i>Agregar Hito
+                                </button>
+                            </div>
+
+                            <!-- Evaluación de Riesgos -->
+                            <div class="mb-6">
+                                <h4 class="text-md font-medium mb-3 text-foreground">Evaluación de Riesgos</h4>
+                                <div id="risks" class="space-y-3">
+                                    <div class="flex gap-3 items-end">
+                                        <div class="flex-1">
+                                            <label class="block text-sm font-medium text-foreground mb-1">Descripción del Riesgo</label>
+                                            <input type="text" class="form-input" placeholder="Descripción del riesgo">
+                                        </div>
+                                        <div>
+                                            <label class="block text-sm font-medium text-foreground mb-1">Nivel</label>
+                                            <select class="form-input">
+                                                <option value="low">Bajo</option>
+                                                <option value="medium">Medio</option>
+                                                <option value="high">Alto</option>
+                                            </select>
+                                        </div>
+                                        <button type="button" onclick="removeRisk(this)" class="ctei-btn-danger">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                <button type="button" onclick="addRisk()" class="mt-3 ctei-btn-secondary">
+                                    <i class="fas fa-plus mr-2"></i>Agregar Riesgo
+                                </button>
+                            </div>
+
+                            <!-- Stakeholders -->
+                            <div class="mb-6">
+                                <h4 class="text-md font-medium mb-3 text-foreground">Stakeholders</h4>
+                                <div id="stakeholders" class="space-y-3">
+                                    <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                                        <div>
+                                            <label class="block text-sm font-medium text-foreground mb-1">Nombre</label>
+                                            <input type="text" class="form-input" placeholder="Nombre completo">
+                                        </div>
+                                        <div>
+                                            <label class="block text-sm font-medium text-foreground mb-1">Rol</label>
+                                            <input type="text" class="form-input" placeholder="Rol en el proyecto">
+                                        </div>
+                                        <div class="flex items-end gap-2">
+                                            <div class="flex-1">
+                                                <label class="block text-sm font-medium text-foreground mb-1">Email</label>
+                                                <input type="email" class="form-input" placeholder="email@ejemplo.com">
+                                            </div>
+                                            <button type="button" onclick="removeStakeholder(this)" class="ctei-btn-danger">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                                <button type="button" onclick="addStakeholder()" class="mt-3 ctei-btn-secondary">
+                                    <i class="fas fa-plus mr-2"></i>Agregar Stakeholder
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Submit Buttons -->
+                        <div class="mt-8 flex justify-end space-x-4">
+                            <a href="/dashboard" class="ctei-btn-secondary">
+                                <i class="fas fa-times mr-2"></i>Cancelar
+                            </a>
+                            <button type="submit" class="ctei-btn-primary">
+                                <i class="fas fa-save mr-2"></i>Guardar Cambios
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Collaborators Tab -->
+                <div id="collaborators-tab" class="tab-content hidden">
+                    <div class="text-center py-12">
+                        <i class="fas fa-users text-6xl text-muted-foreground mb-4"></i>
+                        <h3 class="text-lg font-medium text-foreground mb-2">Gestión de Colaboradores</h3>
+                        <p class="text-muted-foreground">Funcionalidad en desarrollo</p>
+                    </div>
+                </div>
+
+                <!-- Products Tab -->
+                <div id="products-tab" class="tab-content hidden">
+                    <div class="text-center py-12">
+                        <i class="fas fa-flask text-6xl text-muted-foreground mb-4"></i>
+                        <h3 class="text-lg font-medium text-foreground mb-2">Productos Científicos</h3>
+                        <p class="text-muted-foreground">Funcionalidad en desarrollo</p>
+                    </div>
+                </div>
+
+                <!-- Files Tab -->
+                <div id="files-tab" class="tab-content hidden">
+                    <div class="text-center py-12">
+                        <i class="fas fa-file-upload text-6xl text-muted-foreground mb-4"></i>
+                        <h3 class="text-lg font-medium text-foreground mb-2">Gestión de Archivos</h3>
+                        <p class="text-muted-foreground">Funcionalidad en desarrollo</p>
+                    </div>
+                </div>
+
+                <!-- Monitoring Tab -->
+                <div id="monitoring-tab" class="tab-content hidden">
+                    <div class="text-center py-12">
+                        <i class="fas fa-chart-line text-6xl text-muted-foreground mb-4"></i>
+                        <h3 class="text-lg font-medium text-foreground mb-2">Monitoreo Estratégico</h3>
+                        <p class="text-muted-foreground">Funcionalidad en desarrollo</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script>
+        // Tab Navigation
+        function showTab(tabName) {
+            // Hide all tabs
+            document.querySelectorAll('.tab-content').forEach(tab => tab.classList.add('hidden'));
+            // Show selected tab
+            document.getElementById(tabName + '-tab').classList.remove('hidden');
+            // Update active tab button
+            document.querySelectorAll('.tab-button').forEach(btn => {
+                btn.classList.remove('active', 'border-primary', 'text-foreground');
+                btn.classList.add('border-transparent', 'text-muted-foreground');
+            });
+            event.target.classList.add('active', 'border-primary', 'text-foreground');
+            event.target.classList.remove('border-transparent', 'text-muted-foreground');
+        }
+
+        // Dynamic Fields Functions
+        function addMilestone() {
+            const container = document.getElementById('milestones');
+            const div = document.createElement('div');
+            div.className = 'flex gap-3 items-end';
+            div.innerHTML = `
+                <div class="flex-1">
+                    <input type="text" class="form-input" placeholder="Descripción del hito">
+                </div>
+                <div>
+                    <input type="date" class="form-input">
+                </div>
+                <button type="button" onclick="removeMilestone(this)" class="ctei-btn-danger">
+                    <i class="fas fa-trash"></i>
+                </button>
+            `;
+            container.appendChild(div);
+        }
+
+        function removeMilestone(button) {
+            button.parentElement.remove();
+        }
+
+        function addRisk() {
+            const container = document.getElementById('risks');
+            const div = document.createElement('div');
+            div.className = 'flex gap-3 items-end';
+            div.innerHTML = `
+                <div class="flex-1">
+                    <input type="text" class="form-input" placeholder="Descripción del riesgo">
+                </div>
+                <div>
+                    <select class="form-input">
+                        <option value="low">Bajo</option>
+                        <option value="medium">Medio</option>
+                        <option value="high">Alto</option>
+                    </select>
+                </div>
+                <button type="button" onclick="removeRisk(this)" class="ctei-btn-danger">
+                    <i class="fas fa-trash"></i>
+                </button>
+            `;
+            container.appendChild(div);
+        }
+
+        function removeRisk(button) {
+            button.parentElement.remove();
+        }
+
+        function addStakeholder() {
+            const container = document.getElementById('stakeholders');
+            const div = document.createElement('div');
+            div.className = 'grid grid-cols-1 md:grid-cols-3 gap-3';
+            div.innerHTML = `
+                <input type="text" class="form-input" placeholder="Nombre completo">
+                <input type="text" class="form-input" placeholder="Rol en el proyecto">
+                <div class="flex gap-2">
+                    <input type="email" class="form-input flex-1" placeholder="email@ejemplo.com">
+                    <button type="button" onclick="removeStakeholder(this)" class="ctei-btn-danger">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+            `;
+            container.appendChild(div);
+        }
+
+        function removeStakeholder(button) {
+            button.closest('.grid').remove();
+        }
+
+        // Form Handling
+        async function saveProject(event) {
+            event.preventDefault();
+
+            const formData = new FormData();
+            formData.append('title', document.getElementById('title').value);
+            formData.append('description', document.getElementById('description').value);
+            formData.append('budget', document.getElementById('budget').value);
+            formData.append('start_date', document.getElementById('start_date').value);
+            formData.append('end_date', document.getElementById('end_date').value);
+            formData.append('status', document.getElementById('status').value);
+
+            // Add recommended fields
+            formData.append('budget_research', document.getElementById('budget_research').value);
+            formData.append('budget_development', document.getElementById('budget_development').value);
+            formData.append('budget_implementation', document.getElementById('budget_implementation').value);
+            formData.append('budget_evaluation', document.getElementById('budget_evaluation').value);
+
+            // Collect dynamic fields
+            const milestones = [];
+            document.querySelectorAll('#milestones > div').forEach(div => {
+                const inputs = div.querySelectorAll('input');
+                if (inputs[0].value && inputs[1].value) {
+                    milestones.push({
+                        description: inputs[0].value,
+                        date: inputs[1].value
+                    });
+                }
+            });
+            formData.append('milestones', JSON.stringify(milestones));
+
+            const risks = [];
+            document.querySelectorAll('#risks > div').forEach(div => {
+                const input = div.querySelector('input');
+                const select = div.querySelector('select');
+                if (input.value) {
+                    risks.push({
+                        description: input.value,
+                        level: select.value
+                    });
+                }
+            });
+            formData.append('risks', JSON.stringify(risks));
+
+            const stakeholders = [];
+            document.querySelectorAll('#stakeholders > .grid').forEach(div => {
+                const inputs = div.querySelectorAll('input');
+                if (inputs[0].value) {
+                    stakeholders.push({
+                        name: inputs[0].value,
+                        role: inputs[1].value,
+                        email: inputs[2].value
+                    });
+                }
+            });
+            formData.append('stakeholders', JSON.stringify(stakeholders));
+
+            try {
+                const token = localStorage.getItem('auth_token');
+                const response = await axios.post('/api/private/projects/2', formData, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'multipart/form-data'
+                    }
+                });
+
+                if (response.data.success) {
+                    alert('Proyecto guardado exitosamente');
+                    window.location.href = '/dashboard';
+                } else {
+                    alert('Error al guardar: ' + response.data.error);
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Error al guardar el proyecto');
+            }
+        }
+
+        // Load project data
+        async function loadProject() {
+            try {
+                const token = localStorage.getItem('auth_token');
+                const response = await axios.get('/api/private/projects/2', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (response.data.success) {
+                    const project = response.data.data;
+                    document.getElementById('title').value = project.title || '';
+                    document.getElementById('description').value = project.description || '';
+                    document.getElementById('budget').value = project.budget || '';
+                    document.getElementById('start_date').value = project.start_date || '';
+                    document.getElementById('end_date').value = project.end_date || '';
+                    document.getElementById('status').value = project.status || 'PLANNING';
+                }
+            } catch (error) {
+                console.error('Error loading project:', error);
+            }
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            loadProject();
+        });
+    </script>
+</body>
+</html>
