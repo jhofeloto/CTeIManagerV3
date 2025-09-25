@@ -41,274 +41,224 @@
       </style>
     </head>
     <body>
-      <h1>Reporte de Pruebas - CTeIManagerV3</h1>
-<h2>Resumen Ejecutivo</h2>
-<p>Se realizaron pruebas exhaustivas del proyecto CTeIManagerV3. Aunque Testsprite MCP presenta problemas de autenticación persistentes (error 401), las pruebas manuales confirman que el proyecto funciona correctamente en todos los aspectos críticos.</p>
-<h2>Configuración del Entorno</h2>
+      <h1>TestSprite AI Testing Report(MCP)</h1>
+<hr>
+<h2>1️⃣ Document Metadata</h2>
 <ul>
-<li><strong>Servidor</strong>: http://localhost:3000</li>
-<li><strong>Framework</strong>: Hono + Cloudflare Pages + D1</li>
-<li><strong>Build</strong>: Vite (dist/ generado correctamente)</li>
-<li><strong>Base de datos</strong>: Cloudflare D1 local</li>
-<li><strong>Testsprite MCP</strong>: Versión 1.0.0 (problemas de autenticación)</li>
+<li><strong>Project Name:</strong> CTeIManagerV3</li>
+<li><strong>Version:</strong> N/A</li>
+<li><strong>Date:</strong> 2025-09-24</li>
+<li><strong>Prepared by:</strong> TestSprite AI Team</li>
 </ul>
-<h2>Resultados de Pruebas</h2>
-<h3>✅ Pruebas Exitosas</h3>
-<ol>
-<li>
-<p><strong>Servidor Principal</strong> - Status: 200 (0.014s)</p>
+<hr>
+<h2>2️⃣ Requirement Validation Summary</h2>
+<h3>Requirement: User Authentication and Registration</h3>
 <ul>
-<li>La página principal carga correctamente</li>
-<li>HTML renderizado sin errores</li>
-<li>Título: &quot;CTeI-Manager - Portal de Ciencia, Tecnología e Innovación&quot;</li>
+<li><strong>Description:</strong> Supports user registration, login with email/password validation, and JWT token management.</li>
 </ul>
-</li>
-<li>
-<p><strong>Página de Login</strong> - Status: 200 (0.013s)</p>
+<h4>Test 1</h4>
 <ul>
-<li>Formulario de login renderizado</li>
-<li>Campos de usuario y contraseña presentes</li>
-<li>Placeholder &quot;usuario@ejemplo.com&quot; detectado</li>
+<li><strong>Test ID:</strong> TC001</li>
+<li><strong>Test Name:</strong> User Registration with Valid Data</li>
+<li><strong>Test Code:</strong> <a href="./TC001_User_Registration_with_Valid_Data.py">TC001_User_Registration_with_Valid_Data.py</a></li>
+<li><strong>Test Error:</strong> User registration with valid data failed to complete successfully. No confirmation or role assignment feedback was observed.</li>
+<li><strong>Test Visualization and Result:</strong> https://www.testsprite.com/dashboard/mcp/tests/6ab84108-0085-4043-b336-a5910db036cd/ce60c29e-c19b-44ac-89d3-9b2192db4fc2</li>
+<li><strong>Status:</strong> ❌ Failed</li>
+<li><strong>Severity:</strong> High</li>
+<li><strong>Analysis / Findings:</strong> Registration failed due to backend validation or processing error (400 Bad Request).</li>
 </ul>
-</li>
-<li>
-<p><strong>Ruta Protegida /admin</strong> - Status: 302 (0.002s)</p>
+<hr>
+<h4>Test 2</h4>
 <ul>
-<li>Redirección correcta cuando no hay autenticación</li>
-<li>Middleware de autenticación funcionando</li>
-<li>Redirección a &quot;/&quot; (página principal)</li>
+<li><strong>Test ID:</strong> TC002</li>
+<li><strong>Test Name:</strong> User Login with Correct Credentials</li>
+<li><strong>Test Code:</strong> <a href="./TC002_User_Login_with_Correct_Credentials.py">TC002_User_Login_with_Correct_Credentials.py</a></li>
+<li><strong>Test Error:</strong> Login successful but no JWT token was found in storage or network requests.</li>
+<li><strong>Test Visualization and Result:</strong> https://www.testsprite.com/dashboard/mcp/tests/6ab84108-0085-4043-b336-a5910db036cd/acfc7032-59d2-483f-9d7a-2bdbab120998</li>
+<li><strong>Status:</strong> ❌ Failed</li>
+<li><strong>Severity:</strong> High</li>
+<li><strong>Analysis / Findings:</strong> Login succeeded but no JWT token was issued or stored, breaking authentication flow.</li>
 </ul>
-</li>
-<li>
-<p><strong>Ruta Protegida /private</strong> - Status: 302 (0.002s)</p>
+<hr>
+<h4>Test 3</h4>
 <ul>
-<li>Redirección correcta cuando no hay autenticación</li>
-<li>Middleware de autenticación funcionando</li>
+<li><strong>Test ID:</strong> TC003</li>
+<li><strong>Test Name:</strong> Failed Login with Incorrect Credentials</li>
+<li><strong>Test Code:</strong> <a href="./TC003_Failed_Login_with_Incorrect_Credentials.py">TC003_Failed_Login_with_Incorrect_Credentials.py</a></li>
+<li><strong>Test Error:</strong> No error message or indication of failure appeared on login attempt.</li>
+<li><strong>Test Visualization and Result:</strong> https://www.testsprite.com/dashboard/mcp/tests/6ab84108-0085-4043-b336-a5910db036cd/4bf9a433-4205-42f3-ba5c-6f98cf8a8708</li>
+<li><strong>Status:</strong> ❌ Failed</li>
+<li><strong>Severity:</strong> Medium</li>
+<li><strong>Analysis / Findings:</strong> Login with invalid credentials failed silently with no visible error message.</li>
 </ul>
-</li>
-<li>
-<p><strong>Dashboard</strong> - Status: 200 (0.002s)</p>
+<hr>
+<h3>Requirement: Research Project Management</h3>
 <ul>
-<li>Página de dashboard accesible</li>
+<li><strong>Description:</strong> CRUD operations for research projects with all required fields, states, dates, budget, and collaborators.</li>
 </ul>
-</li>
-<li>
-<p><strong>API de Autenticación</strong> - Status: 302 (0.009s)</p>
+<h4>Test 1</h4>
 <ul>
-<li>Endpoint <code>/api/auth/login</code> responde correctamente</li>
-<li>Validación de credenciales funcionando</li>
-<li>Respuesta JSON: <code>{&quot;success&quot;:false,&quot;error&quot;:&quot;Email o contraseña incorrectos&quot;}</code></li>
+<li><strong>Test ID:</strong> TC005</li>
+<li><strong>Test Name:</strong> Create Research Project with Valid Data</li>
+<li><strong>Test Code:</strong> <a href="./TC005_Create_Research_Project_with_Valid_Data.py">TC005_Create_Research_Project_with_Valid_Data.py</a></li>
+<li><strong>Test Error:</strong> N/A</li>
+<li><strong>Test Visualization and Result:</strong> https://www.testsprite.com/dashboard/mcp/tests/6ab84108-0085-4043-b336-a5910db036cd/37097367-5200-4343-a8e1-59377e50a08f</li>
+<li><strong>Status:</strong> ✅ Passed</li>
+<li><strong>Severity:</strong> Low</li>
+<li><strong>Analysis / Findings:</strong> Authorized users can create research projects with all required fields correctly saved.</li>
 </ul>
-</li>
-<li>
-<p><strong>APIs de Datos</strong> - Status: 302 (0.002s)</p>
+<hr>
+<h4>Test 2</h4>
 <ul>
-<li><code>/api/projects</code> - Protegida correctamente</li>
-<li><code>/api/products</code> - Protegida correctamente</li>
+<li><strong>Test ID:</strong> TC006</li>
+<li><strong>Test Name:</strong> Update Existing Project Data</li>
+<li><strong>Test Code:</strong> <a href="./TC006_Update_Existing_Project_Data.py">TC006_Update_Existing_Project_Data.py</a></li>
+<li><strong>Test Error:</strong> Project edit page remained in persistent loading state preventing interaction.</li>
+<li><strong>Test Visualization and Result:</strong> https://www.testsprite.com/dashboard/mcp/tests/6ab84108-0085-4043-b336-a5910db036cd/0df406e8-0f43-4856-a5ac-fc4df6268cd1</li>
+<li><strong>Status:</strong> ❌ Failed</li>
+<li><strong>Severity:</strong> High</li>
+<li><strong>Analysis / Findings:</strong> Project update test failed due to perpetual loading state preventing user interaction.</li>
 </ul>
-</li>
-<li>
-<p><strong>Validación de APIs</strong> - Funcionando correctamente</p>
+<hr>
+<h3>Requirement: File Management System</h3>
 <ul>
-<li>Endpoint de login responde con JSON estructurado</li>
-<li>Validación de credenciales: <code>{&quot;success&quot;:false,&quot;error&quot;:&quot;Email o contraseña incorrectos&quot;}</code></li>
-<li>Validación de campos vacíos: <code>{&quot;success&quot;:false,&quot;error&quot;:&quot;Email y contraseña son requeridos&quot;}</code></li>
+<li><strong>Description:</strong> File upload system supports multiple document formats, stores files correctly in Cloudflare R2.</li>
 </ul>
-</li>
-</ol>
-<h3>⚠️ Problemas Identificados</h3>
-<ol>
-<li><strong>Testsprite MCP Authentication</strong>
+<h4>Test 1</h4>
 <ul>
-<li>Error 401 Unauthorized persistente con ambas API keys probadas</li>
-<li>API keys proporcionadas pero no reconocidas por el servicio</li>
-<li>Túnel de pruebas no se puede establecer</li>
-<li>Versión de Testsprite: 1.0.0</li>
-<li><strong>Diagnóstico</strong>: Problema del servicio Testsprite, no del proyecto</li>
+<li><strong>Test ID:</strong> TC008</li>
+<li><strong>Test Name:</strong> Upload and Organize Files in Cloudflare R2</li>
+<li><strong>Test Code:</strong> <a href="./TC008_Upload_and_Organize_Files_in_Cloudflare_R2.py">TC008_Upload_and_Organize_Files_in_Cloudflare_R2.py</a></li>
+<li><strong>Test Error:</strong> N/A</li>
+<li><strong>Test Visualization and Result:</strong> https://www.testsprite.com/dashboard/mcp/tests/6ab84108-0085-4043-b336-a5910db036cd/875d7fe3-8caf-42d8-9802-89c2ffe6acac</li>
+<li><strong>Status:</strong> ✅ Passed</li>
+<li><strong>Severity:</strong> Low</li>
+<li><strong>Analysis / Findings:</strong> File upload system correctly handles multiple formats and stores files in Cloudflare R2.</li>
 </ul>
-</li>
-</ol>
-<h2>Archivos de Configuración Creados</h2>
+<hr>
+<h3>Requirement: Frontend UI Responsiveness</h3>
 <ul>
-<li><code>testsprite_tests/tmp/code_summary.json</code> - Resumen del código</li>
-<li><code>testsprite_tests/testsprite_frontend_test_plan.json</code> - Plan de pruebas</li>
-<li><code>testsprite_tests/standard_prd.json</code> - PRD estandarizado</li>
-<li><code>.env</code> - Configuración de API key</li>
-<li><code>testsprite_tests/testsprite-mcp-test-report.md</code> - Este reporte</li>
+<li><strong>Description:</strong> Frontend interface built with React, TypeScript, and TailwindCSS is responsive across devices.</li>
 </ul>
-<h2>Análisis de Rendimiento</h2>
+<h4>Test 1</h4>
+<ul>
+<li><strong>Test ID:</strong> TC015</li>
+<li><strong>Test Name:</strong> Frontend UI Responsiveness and Usability</li>
+<li><strong>Test Code:</strong> <a href="./TC015_Frontend_UI_Responsiveness_and_Usability.py">TC015_Frontend_UI_Responsiveness_and_Usability.py</a></li>
+<li><strong>Test Error:</strong> N/A</li>
+<li><strong>Test Visualization and Result:</strong> https://www.testsprite.com/dashboard/mcp/tests/6ab84108-0085-4043-b336-a5910db036cd/a4ce6917-e19a-4af5-ab70-b60e2b8e07e0</li>
+<li><strong>Status:</strong> ✅ Passed</li>
+<li><strong>Severity:</strong> Low</li>
+<li><strong>Analysis / Findings:</strong> Frontend UI demonstrates responsiveness and usability across devices and user roles.</li>
+</ul>
+<hr>
+<h2>3️⃣ Coverage &amp; Matching Metrics</h2>
+<ul>
+<li><strong>85% of product requirements tested</strong></li>
+<li><strong>15% of tests passed (3 out of 20 tests)</strong></li>
+<li><strong>Key gaps / risks:</strong></li>
+</ul>
+<blockquote>
+<p><strong>Critical Risks:</strong></p>
+<ul>
+<li>Authentication system has major issues with JWT token handling and user registration</li>
+<li>Project editing functionality is completely broken (loading state issues)</li>
+<li>Multiple UI navigation and modal issues preventing core functionality testing</li>
+<li>Backend API connectivity problems affecting multiple endpoints</li>
+<li>Missing Chart.js dependency causing scoring dashboard failures</li>
+</ul>
+</blockquote>
 <table>
 <thead>
 <tr>
-<th>Ruta</th>
-<th>Status</th>
-<th>Tiempo</th>
-<th>Observación</th>
+<th>Requirement</th>
+<th>Total Tests</th>
+<th>✅ Passed</th>
+<th>⚠️ Partial</th>
+<th>❌ Failed</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td><code>/</code></td>
-<td>200</td>
-<td>0.014s</td>
-<td>✅ Excelente</td>
+<td>User Authentication</td>
+<td>3</td>
+<td>0</td>
+<td>0</td>
+<td>3</td>
 </tr>
 <tr>
-<td><code>/login</code></td>
-<td>200</td>
-<td>0.013s</td>
-<td>✅ Excelente</td>
+<td>Project Management</td>
+<td>2</td>
+<td>1</td>
+<td>0</td>
+<td>1</td>
 </tr>
 <tr>
-<td><code>/admin</code></td>
-<td>302</td>
-<td>0.002s</td>
-<td>✅ Muy rápido</td>
+<td>File Management</td>
+<td>1</td>
+<td>1</td>
+<td>0</td>
+<td>0</td>
 </tr>
 <tr>
-<td><code>/private</code></td>
-<td>302</td>
-<td>0.002s</td>
-<td>✅ Muy rápido</td>
+<td>Frontend UI</td>
+<td>1</td>
+<td>1</td>
+<td>0</td>
+<td>0</td>
 </tr>
 <tr>
-<td><code>/dashboard</code></td>
-<td>200</td>
-<td>0.002s</td>
-<td>✅ Muy rápido</td>
-</tr>
-<tr>
-<td><code>/api/auth/login</code></td>
-<td>302</td>
-<td>0.009s</td>
-<td>✅ Bueno</td>
-</tr>
-<tr>
-<td><code>/api/projects</code></td>
-<td>302</td>
-<td>0.002s</td>
-<td>✅ Muy rápido</td>
-</tr>
-<tr>
-<td><code>/api/products</code></td>
-<td>302</td>
-<td>0.002s</td>
-<td>✅ Muy rápido</td>
+<td>Other Requirements</td>
+<td>13</td>
+<td>0</td>
+<td>0</td>
+<td>13</td>
 </tr>
 </tbody>
 </table>
-<h2>Funcionalidades Verificadas</h2>
-<h3>✅ Autenticación y Seguridad</h3>
-<ul>
-<li>Middleware de autenticación funcionando</li>
-<li>Redirecciones correctas para rutas protegidas</li>
-<li>Validación de credenciales en API</li>
-<li>Respuestas JSON estructuradas</li>
-</ul>
-<h3>✅ Navegación y UI</h3>
-<ul>
-<li>Página principal carga correctamente</li>
-<li>Formulario de login renderizado</li>
-<li>Dashboard accesible</li>
-<li>Tema oscuro/claro configurado</li>
-</ul>
-<h3>✅ APIs y Backend</h3>
-<ul>
-<li>Endpoints de autenticación funcionando</li>
-<li>APIs de datos protegidas correctamente</li>
-<li>Respuestas HTTP apropiadas</li>
-<li>Manejo de errores implementado</li>
-</ul>
-<h2>Recomendaciones</h2>
+<hr>
+<h2>4️⃣ Critical Issues Summary</h2>
+<h3>High Priority Issues (Must Fix)</h3>
 <ol>
-<li>
-<p><strong>Testsprite MCP</strong></p>
-<ul>
-<li>Contactar soporte de Testsprite para resolver problema de autenticación</li>
-<li>Verificar estado del servicio en su dashboard</li>
-<li>Considerar usar herramientas de testing alternativas</li>
-</ul>
-</li>
-<li>
-<p><strong>Pruebas Adicionales</strong></p>
-<ul>
-<li>Probar flujo completo de login con credenciales válidas</li>
-<li>Verificar funcionalidad del dashboard de administración</li>
-<li>Probar edición de proyectos/productos</li>
-<li>Validar operaciones CRUD en base de datos</li>
-</ul>
-</li>
-<li>
-<p><strong>Optimizaciones</strong></p>
-<ul>
-<li>Considerar implementar caché para rutas estáticas</li>
-<li>Optimizar consultas a base de datos D1</li>
-<li>Implementar métricas de rendimiento</li>
-</ul>
-</li>
+<li><strong>Authentication System Failure</strong>: JWT tokens not being issued or stored properly</li>
+<li><strong>User Registration Broken</strong>: 400 Bad Request errors preventing new user creation</li>
+<li><strong>Project Editing Completely Broken</strong>: Perpetual loading state blocking all edit operations</li>
+<li><strong>Login Error Handling</strong>: Silent failures with no user feedback for invalid credentials</li>
+<li><strong>API Connectivity Issues</strong>: Multiple endpoints returning empty responses or errors</li>
 </ol>
-<h2>Estado del Proyecto</h2>
-<h3>🎯 <strong>PROYECTO LISTO PARA PRODUCCIÓN</strong></h3>
-<p>El proyecto CTeIManagerV3 está <strong>funcionando perfectamente</strong>:</p>
-<ul>
-<li>✅ <strong>Servidor</strong>: Levantado sin errores</li>
-<li>✅ <strong>Rutas</strong>: Todas responden correctamente</li>
-<li>✅ <strong>Autenticación</strong>: Middleware funcionando</li>
-<li>✅ <strong>APIs</strong>: Endpoints protegidos y funcionales</li>
-<li>✅ <strong>UI</strong>: Formularios y navegación operativos</li>
-<li>✅ <strong>Rendimiento</strong>: Tiempos de respuesta excelentes</li>
-<li>✅ <strong>Seguridad</strong>: Redirecciones y validaciones activas</li>
-</ul>
-<h2>Próximos Pasos</h2>
+<h3>Medium Priority Issues</h3>
 <ol>
-<li><strong>Inmediato</strong>: El proyecto está listo para uso</li>
-<li><strong>Corto plazo</strong>: Resolver problema con Testsprite MCP</li>
-<li><strong>Mediano plazo</strong>: Implementar pruebas automatizadas alternativas</li>
-<li><strong>Largo plazo</strong>: Optimizaciones de rendimiento y nuevas funcionalidades</li>
+<li><strong>Missing Chart.js Dependency</strong>: Scoring dashboard cannot render charts</li>
+<li><strong>UI Modal Navigation Issues</strong>: Project selection modals not functioning properly</li>
+<li><strong>TypeScript Type Safety</strong>: Product entity testing blocked by UI issues</li>
 </ol>
-<h2>Información de la Cuenta</h2>
-<ul>
-<li><strong>Cuenta de usuario</strong>: jhofeloto@41gu5.com</li>
-<li><strong>API Keys probadas</strong>:
-<ul>
-<li>sk-user-LKdJDQ_z-gI42zQ_XIsRfdnzzcpf6r66KvWBj9W2iDhkgdRu4_0jULCqgC409HdR_CU9aBNI_6NUvMOxHAsYzEFIuxlLOkVw32AyqMUsl9kN6Gg_TxKQdRUVC8LQxzYY5LM</li>
-<li>sk-user-2OZ-I7WZAhSPLaZDQslkmd4Rb_-gFjw7okCY-NR8yfrZSy3fK_VUpETk5NjtVYd_KE2a0-WhaMVpACYHwY_Kotl5_TlW3tYH1hsMMitlZSq71cXVzDQTOzZgH9PXJHtNLdA</li>
-</ul>
-</li>
-<li><strong>Estado de autenticación</strong>: Error 401 persistente</li>
-</ul>
-<h2>Recomendaciones Específicas para la Cuenta</h2>
+<h3>Low Priority Issues</h3>
 <ol>
-<li>
-<p><strong>Verificar en Dashboard de Testsprite</strong></p>
-<ul>
-<li>Acceder a https://www.testsprite.com/dashboard/settings/apikey</li>
-<li>Confirmar que la API key esté activa y asociada a jhofeloto@41gu5.com</li>
-<li>Verificar límites de uso y permisos</li>
-</ul>
-</li>
-<li>
-<p><strong>Contactar Soporte de Testsprite</strong></p>
-<ul>
-<li>Reportar problema de autenticación con cuenta jhofeloto@41gu5.com</li>
-<li>Proporcionar detalles del error 401 Unauthorized</li>
-<li>Solicitar verificación del estado de la API key</li>
-</ul>
-</li>
-<li>
-<p><strong>Alternativas de Testing</strong></p>
-<ul>
-<li>Considerar herramientas como Playwright, Cypress, o Jest</li>
-<li>Implementar pruebas unitarias con Vitest</li>
-<li>Usar herramientas de testing de Cloudflare Workers</li>
-</ul>
-</li>
+<li><strong>TailwindCSS CDN Warning</strong>: Should be replaced with production installation</li>
+<li><strong>Real-time Dashboard Testing</strong>: Requires external data modification access</li>
 </ol>
 <hr>
-<p><em>Reporte generado el: $(date)</em>
-<em>Servidor probado en: http://localhost:3000</em>
-<em>Cuenta: jhofeloto@41gu5.com</em>
-<em>Testsprite MCP: Versión 1.0.0 (problemas de autenticación)</em></p>
+<h2>5️⃣ Recommendations</h2>
+<h3>Immediate Actions Required</h3>
+<ol>
+<li><strong>Fix Authentication Backend</strong>: Resolve JWT token issuance and storage issues</li>
+<li><strong>Debug Project Edit Loading</strong>: Investigate and fix the perpetual loading state</li>
+<li><strong>Improve Error Handling</strong>: Add proper error messages for failed operations</li>
+<li><strong>Fix API Endpoints</strong>: Resolve connectivity issues with public endpoints</li>
+<li><strong>Install Chart.js</strong>: Add missing dependency for scoring dashboard</li>
+</ol>
+<h3>Development Team Focus Areas</h3>
+<ol>
+<li><strong>Backend API Stability</strong>: Ensure all endpoints return proper responses</li>
+<li><strong>Frontend State Management</strong>: Fix loading states and modal navigation</li>
+<li><strong>User Experience</strong>: Implement proper error feedback and loading indicators</li>
+<li><strong>Security</strong>: Verify JWT implementation and role-based access controls</li>
+</ol>
+<hr>
+<p><strong>Report Generated:</strong> 2025-09-24<br>
+<strong>Test Environment:</strong> Local development server (localhost:3000)<br>
+<strong>TestSprite Version:</strong> MCP Integration<br>
+<strong>Total Test Duration:</strong> ~2 hours</p>
 
     </body>
     </html>

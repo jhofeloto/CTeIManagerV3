@@ -1,22 +1,20 @@
 {
   "tech_stack": [
     "TypeScript",
-    "React",
     "Hono",
+    "React",
     "Cloudflare Workers",
-    "Cloudflare Pages",
-    "Cloudflare D1",
-    "Cloudflare R2",
-    "Cloudflare KV",
-    "Vite",
+    "Cloudflare D1 (SQLite)",
+    "Cloudflare R2 (Storage)",
+    "JWT Authentication",
     "TailwindCSS",
-    "JWT",
-    "bcrypt"
+    "Vite",
+    "Wrangler"
   ],
   "features": [
     {
       "name": "Sistema de Autenticación",
-      "description": "Sistema completo de autenticación con JWT, registro de usuarios, login y control de roles (ADMIN, INVESTIGATOR, COMMUNITY)",
+      "description": "Sistema completo de autenticación JWT con roles (ADMIN, INVESTIGATOR, COMMUNITY) y middleware de seguridad",
       "files": [
         "src/routes/auth.ts",
         "src/middleware/auth.ts",
@@ -25,94 +23,126 @@
     },
     {
       "name": "Gestión de Proyectos",
-      "description": "CRUD completo para proyectos de investigación con estados, fechas, presupuesto, colaboradores y productos asociados",
+      "description": "CRUD completo para proyectos de investigación con estados, colaboradores, líneas de acción y metadatos",
       "files": [
         "src/routes/private.ts",
-        "src/routes/admin.ts"
+        "src/routes/admin.ts",
+        "migrations/0001_create_projects_table.sql",
+        "migrations/0002_create_project_collaborators.sql"
       ]
     },
     {
       "name": "Gestión de Productos Científicos",
-      "description": "Sistema para registrar y gestionar productos científicos (artículos, software, patentes, etc.) con metadatos y autoría",
+      "description": "Sistema de gestión de productos científicos con categorías, autoría, archivos y metadatos",
       "files": [
         "src/routes/private.ts",
-        "src/routes/admin.ts"
+        "src/routes/admin.ts",
+        "migrations/0003_create_products_table.sql",
+        "migrations/0004_create_product_categories.sql",
+        "migrations/0005_create_product_authors.sql"
       ]
     },
     {
-      "name": "Panel de Administración",
-      "description": "Dashboard administrativo con estadísticas, gestión de usuarios, proyectos, productos y configuración del sistema",
+      "name": "Panel Administrativo",
+      "description": "Panel de administración completo para gestión de usuarios, proyectos, productos y archivos",
       "files": [
-        "src/routes/admin.ts"
+        "src/routes/admin.ts",
+        "public/static/admin-dashboard-test.html",
+        "public/static/enhanced-dashboard.js"
+      ]
+    },
+    {
+      "name": "Gestión de Usuarios",
+      "description": "Sistema de gestión de usuarios con roles, perfiles y control de acceso",
+      "files": [
+        "src/routes/auth.ts",
+        "src/routes/admin.ts",
+        "migrations/0001_create_users_table.sql"
       ]
     },
     {
       "name": "Sistema de Archivos",
-      "description": "Gestión de archivos con Cloudflare R2, subida, descarga y organización por entidades (proyectos/productos)",
+      "description": "Gestión de archivos con Cloudflare R2 para logos, documentos, imágenes de proyectos y productos",
       "files": [
-        "src/routes/admin.ts"
-      ]
-    },
-    {
-      "name": "Sistema de Scoring y Evaluación",
-      "description": "Algoritmo automatizado de evaluación de proyectos basado en completitud, colaboración, productividad, impacto e innovación",
-      "files": [
-        "src/routes/admin.ts"
-      ]
-    },
-    {
-      "name": "Sistema de Alertas Inteligentes",
-      "description": "Motor de alertas automáticas para monitoreo de riesgos, productividad y oportunidades de mejora",
-      "files": [
-        "src/routes/admin.ts"
-      ]
-    },
-    {
-      "name": "Dashboard de Monitoreo",
-      "description": "Panel de monitoreo en tiempo real con métricas del sistema, estadísticas y tendencias",
-      "files": [
-        "src/routes/admin.ts"
-      ]
-    },
-    {
-      "name": "Gestión de Colaboradores",
-      "description": "Sistema para asignar colaboradores a proyectos con roles específicos y permisos diferenciados",
-      "files": [
+        "src/routes/admin.ts",
         "src/routes/private.ts"
       ]
     },
     {
-      "name": "Sistema de Autoría",
-      "description": "Gestión de autoría de productos científicos con roles de autor, co-autor, editor y revisor",
+      "name": "Líneas de Acción",
+      "description": "Sistema de líneas de acción departamentales con priorización y asociación a proyectos",
       "files": [
-        "src/routes/private.ts"
+        "migrations/0006_create_action_lines.sql",
+        "migrations/0007_create_project_action_lines.sql"
       ]
     },
     {
-      "name": "API RESTful",
-      "description": "API completa con endpoints para todas las funcionalidades del sistema, autenticación y autorización",
+      "name": "Dashboard Principal",
+      "description": "Dashboard interactivo con estadísticas, gráficos y monitoreo en tiempo real",
+      "files": [
+        "public/static/dashboard.js",
+        "public/static/dashboard-mejorado-demo.html",
+        "public/static/enhanced-dashboard.js",
+        "public/static/advanced-analytics.js"
+      ]
+    },
+    {
+      "name": "Sistema de Instituciones",
+      "description": "Gestión de instituciones académicas y de investigación con metadatos completos",
+      "files": [
+        "migrations/0008_create_institutions.sql",
+        "migrations/0009_create_project_institutions.sql"
+      ]
+    },
+    {
+      "name": "API REST",
+      "description": "API RESTful completa con endpoints seguros para todas las funcionalidades",
       "files": [
         "src/index.tsx",
-        "src/routes/auth.ts",
-        "src/routes/private.ts",
         "src/routes/public.ts",
+        "src/routes/private.ts",
         "src/routes/admin.ts"
       ]
     },
     {
-      "name": "Frontend React",
-      "description": "Interfaz de usuario moderna con React, TypeScript y TailwindCSS para dashboard y gestión de contenido",
+      "name": "Sistema de Colaboradores",
+      "description": "Gestión de colaboradores en proyectos con roles específicos y orden de autoría",
       "files": [
-        "src/index.tsx",
-        "src/renderer.tsx"
+        "migrations/0002_create_project_collaborators.sql",
+        "migrations/0005_create_product_authors.sql"
       ]
     },
     {
-      "name": "Tipos y Interfaces",
-      "description": "Definiciones de tipos TypeScript para todas las entidades del sistema (User, Project, Product, etc.)",
+      "name": "Monitoreo y Analytics",
+      "description": "Sistema de monitoreo estratégico con métricas de impacto y análisis de datos",
       "files": [
-        "src/types/index.ts",
-        "src/types.d.ts"
+        "public/static/strategic-monitoring.js",
+        "public/static/advanced-analytics.js",
+        "migrations/0010_create_impact_metrics.sql"
+      ]
+    },
+    {
+      "name": "Sistema de Búsqueda",
+      "description": "Búsqueda avanzada de proyectos, productos y usuarios con filtros",
+      "files": [
+        "src/routes/private.ts",
+        "src/routes/admin.ts"
+      ]
+    },
+    {
+      "name": "Gestión de Categorías",
+      "description": "Sistema de categorización de productos con pesos de impacto y campos requeridos",
+      "files": [
+        "migrations/0004_create_product_categories.sql",
+        "migrations/0011_insert_product_categories.sql"
+      ]
+    },
+    {
+      "name": "Sistema de Estados",
+      "description": "Gestión de estados de proyectos y productos con transiciones controladas",
+      "files": [
+        "migrations/0012_update_default_action_lines.sql",
+        "src/routes/private.ts"
       ]
     }
   ]

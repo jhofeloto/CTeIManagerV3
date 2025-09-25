@@ -5041,10 +5041,11 @@ app.get('/dashboard/productos/:id/editar', async (c) => {
                 padding: 0.75rem;
                 border: 1px solid hsl(var(--border));
                 border-radius: calc(var(--radius));
-                background: hsl(var(--background));
+                background: white;
                 color: hsl(var(--foreground));
                 font-size: 0.875rem;
                 transition: all 0.2s;
+                box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
             }
     
             /* Mejoras de accesibilidad y contraste WCAG 2.1 AA */

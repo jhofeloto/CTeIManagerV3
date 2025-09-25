@@ -1618,6 +1618,119 @@ privateRoutes.get('/products', async (c) => {
   }
 });
 
+// Crear producto independiente (no asociado a proyecto específico)
+privateRoutes.post('/products', requireRole('INVESTIGATOR', 'ADMIN'), async (c) => {
+  try {
+    const user = c.get('user')!;
+    const body: CreateProductRequest = await c.req.json();
+    const {
+      product_code, product_type, description, doi, url, publication_date,
+      journal, impact_factor, metadata, file_url, project_id
+    } = body;
+
+    if (!product_code || !product_type || !description) {
+      return c.json<APIResponse>({
+        success: false,
+        error: 'Código, tipo y descripción del producto son requeridos'
+      }, 400);
+    }
+
+    // Verificar que el tipo de producto existe
+    const categoryExists = await c.env.DB.prepare(
+      'SELECT code FROM product_categories WHERE code = ?'
+    ).bind(product_type).first();
+
+    if (!categoryExists) {
+      return c.json<APIResponse>({
+        success: false,
+        error: 'Tipo de producto no válido'
+      }, 400);
+    }
+
+    // Si se especifica project_id, verificar permisos sobre el proyecto
+    if (project_id) {
+      const projectCheck = await c.env.DB.prepare(`
+        SELECT p.owner_id, pc.can_add_products FROM projects p
+        LEFT JOIN project_collaborators pc ON p.id = pc.project_id AND pc.user_id = ?
+        WHERE p.id = ? AND (p.owner_id = ? OR (pc.user_id = ? AND pc.can_add_products = 1))
+      `).bind(user.userId, project_id, user.userId, user.userId).first();
+
+      if (!projectCheck) {
+        return c.json<APIResponse>({
+          success: false,
+          error: 'Proyecto no encontrado o sin permisos para añadir productos'
+        }, 404);
+      }
+    }
+
+    const result = await c.env.DB.prepare(`
+      INSERT INTO products (
+        project_id, product_code, product_type, description,
+        doi, url, publication_date, journal, impact_factor, metadata, file_url,
+        creator_id, last_editor_id
+      )
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `).bind(
+      project_id || null, product_code, product_type, description,
+      doi || null, url || null, publication_date || null, journal || null,
+      impact_factor || null, metadata || null, file_url || null,
+      user.userId, user.userId
+    ).run();
+
+    if (!result.success) {
+      return c.json<APIResponse>({
+        success: false,
+        error: 'Error al crear el producto'
+      }, 500);
+    }
+
+    const productId = result.meta.last_row_id as number;
+
+    // Insertar el creador como autor principal
+    await c.env.DB.prepare(`
+      INSERT INTO product_authors (
+        product_id, user_id, author_role, author_order,
+        contribution_type, added_by
+      )
+      VALUES (?, ?, ?, ?, ?, ?)
+    `).bind(
+      productId, user.userId, 'AUTHOR', 1,
+      'Autor principal del producto', user.userId
+    ).run();
+
+    // Si se especificaron autores adicionales
+    if (body.authors && Array.isArray(body.authors)) {
+      for (const author of body.authors) {
+        if (author.user_id !== user.userId) { // No duplicar al creador
+          await c.env.DB.prepare(`
+            INSERT INTO product_authors (
+              product_id, user_id, author_role, author_order,
+              contribution_type, added_by
+            )
+            VALUES (?, ?, ?, ?, ?, ?)
+          `).bind(
+            productId, author.user_id, author.author_role, author.author_order,
+            author.contribution_type || null, user.userId
+          ).run();
+        }
+      }
+    }
+
+    return c.json<APIResponse<{ id: number }>>({
+      success: true,
+      data: { id: productId },
+      message: 'Producto creado exitosamente'
+    }, 201);
+
+  } catch (error) {
+    console.error('Error creando producto:', error);
+    return c.json<APIResponse>({
+      success: false,
+      error: 'Error interno del servidor'
+    }, 500);
+  }
+});
+
 // Obtener producto específico por ID
 privateRoutes.get('/products/:productId', async (c) => {
   console.log('🚀 ENDPOINT /products/:productId EJECUTADO!');
