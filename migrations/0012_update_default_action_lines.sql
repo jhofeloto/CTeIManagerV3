@@ -1,42 +1,55 @@
--- Migración 0012: Actualizar líneas de acción por defecto y asignar a proyectos existentes
--- Corrige los nombres de las líneas de acción según especificaciones del usuario
+-- Migración 0012: Añadir líneas de acción por defecto
+-- Fecha: 2024-09-25
+-- Descripción: Crear tabla de líneas de acción e insertar valores por defecto
 
--- Actualizar las líneas de acción existentes con los nombres correctos
-UPDATE action_lines SET
-    name = 'Mentalidad y cultura innovadora',
-    description = 'Fomentar una mentalidad innovadora y cultura emprendedora en la región',
-    code = 'MENTALIDAD_CULTURA_INNOVADORA'
-WHERE name = 'Mentalidad y Cultura';
+-- Crear tabla de líneas de acción
+CREATE TABLE IF NOT EXISTS action_lines (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL UNIQUE,
+    description TEXT NOT NULL,
+    icon TEXT DEFAULT 'fas fa-road',
+    color TEXT DEFAULT '#3B82F6',
+    display_order INTEGER DEFAULT 0,
+    is_active BOOLEAN DEFAULT 1,
+    created_at TEXT DEFAULT (datetime('now')),
+    updated_at TEXT DEFAULT (datetime('now'))
+);
 
-UPDATE action_lines SET
-    name = 'Servicios de apoyo',
-    description = 'Proporcionar servicios de incubación y apoyo empresarial a emprendedores',
-    code = 'SERVICIOS_APOYO'
-WHERE name = 'Servicios de Apoyo';
+-- Crear tabla de relación proyecto-líneas de acción
+CREATE TABLE IF NOT EXISTS project_action_lines (
+    project_id INTEGER NOT NULL,
+    action_line_id INTEGER NOT NULL,
+    assigned_by INTEGER,
+    assigned_at TEXT DEFAULT (datetime('now')),
+    status TEXT DEFAULT 'PENDING' CHECK(status IN ('PENDING', 'IN_PROGRESS', 'COMPLETED')),
+    PRIMARY KEY (project_id, action_line_id),
+    FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE,
+    FOREIGN KEY (action_line_id) REFERENCES action_lines(id) ON DELETE CASCADE,
+    FOREIGN KEY (assigned_by) REFERENCES users(id)
+);
 
-UPDATE action_lines SET
-    name = 'Instrumentos de financiación',
-    description = 'Facilitar el acceso a instrumentos financieros para proyectos innovadores',
-    code = 'INSTRUMENTOS_FINANCIACION'
-WHERE name = 'Financiación';
+-- Insertar líneas de acción por defecto
+INSERT OR IGNORE INTO action_lines (name, description, icon, color, display_order) VALUES
+('Mentalidad y cultura innovadora', 'Fomentar una cultura organizacional que promueva la innovación, el emprendimiento y la creatividad en todos los niveles de la organización.', 'fas fa-brain', '#8B5CF6', 1),
+('Servicios de apoyo', 'Desarrollar servicios de apoyo técnico, financiero y administrativo para facilitar el desarrollo de proyectos de innovación.', 'fas fa-handshake', '#10B981', 2),
+('Instrumentos de financiación', 'Crear y gestionar instrumentos financieros específicos para proyectos de ciencia, tecnología e innovación.', 'fas fa-coins', '#F59E0B', 3),
+('Expansión de mercados', 'Apoyar la internacionalización y expansión de mercados para productos y servicios innovadores colombianos.', 'fas fa-globe', '#3B82F6', 4),
+('Oportunidades e inversión', 'Identificar y promover oportunidades de inversión en proyectos de alto impacto científico y tecnológico.', 'fas fa-chart-line', '#EF4444', 5);
 
-UPDATE action_lines SET
-    name = 'Expansión de mercados',
-    description = 'Apoyar la expansión de mercados nacionales e internacionales',
-    code = 'EXPANSION_MERCADOS'
-WHERE name = 'Expansión Mercados';
+-- Asignar líneas de acción a proyectos existentes (al menos una por proyecto)
+INSERT OR IGNORE INTO project_action_lines (project_id, action_line_id, assigned_by, status)
+SELECT
+    p.id as project_id,
+    al.id as action_line_id,
+    1 as assigned_by, -- Admin user
+    CASE WHEN (p.id % 5) = 0 THEN 'COMPLETED'
+         WHEN (p.id % 3) = 0 THEN 'IN_PROGRESS'
+         ELSE 'PENDING' END as status
+FROM projects p
+CROSS JOIN action_lines al
+WHERE al.id <= (p.id % 5) + 1; -- Al menos 1 línea por proyecto, hasta 5 máximo
 
-UPDATE action_lines SET
-    name = 'Oportunidades e inversión',
-    description = 'Atraer oportunidades de inversión y capital para la economía local',
-    code = 'OPORTUNIDADES_INVERSION'
-WHERE name = 'Fomento Inversión' OR name = 'Fomento de la Inversión';
-
--- Asignar líneas de acción a los proyectos existentes
--- Asignar al menos una línea de acción a cada proyecto generado
-UPDATE projects SET action_line_id = 1 WHERE id = 1; -- EcoMar 4.0 -> Mentalidad y cultura innovadora
-UPDATE projects SET action_line_id = 2 WHERE id = 2; -- InnovaAgro -> Servicios de apoyo
-UPDATE projects SET action_line_id = 3 WHERE id = 3; -- Proyecto Interno -> Instrumentos de financiación
-
--- Crear índices adicionales si no existen
-CREATE INDEX IF NOT EXISTS idx_projects_action_line_id ON projects(action_line_id);
+-- Índices para optimizar consultas
+CREATE INDEX IF NOT EXISTS idx_action_lines_active ON action_lines(is_active);
+CREATE INDEX IF NOT EXISTS idx_project_action_lines_status ON project_action_lines(status);
+CREATE INDEX IF NOT EXISTS idx_project_action_lines_project ON project_action_lines(project_id);
