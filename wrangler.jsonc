@@ -12,5 +12,12 @@
       "database_name": "ctei-manager-dev",
       "database_id": "fb92710a-b36d-4f0b-a94e-5d48ae939a89"
     }
+  ],
+  "r2_buckets": [
+    {
+      "binding": "R2",
+      "bucket_name": "ctei-manager-files",
+      "preview_bucket_name": "ctei-manager-files-preview"
+    }
   ]
 }
