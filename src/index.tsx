@@ -3351,188 +3351,215 @@ app.get('/dashboard/proyectos/:id/editar', async (c) => {
             <div class="panel">
                 <div class="panel-title">
                     <i class="fas fa-info-circle text-primary"></i>
-                    Información General
+                    Información del Proyecto
                 </div>
 
                 <form id="edit-project-form">
-                    <div class="form-field">
-                        <label for="project-title" class="form-label">
-                            <i class="fas fa-heading text-primary mr-2"></i>
-                            Título del Proyecto *
-                        </label>
-                        <input
-                            type="text"
-                            id="project-title"
-                            name="title"
-                            class="form-input"
-                            placeholder="Ingrese el título del proyecto"
-                            required
-                        >
-                    </div>
-
-                    <div class="form-field">
-                        <label for="project-abstract" class="form-label">
-                            <i class="fas fa-align-left text-primary mr-2"></i>
-                            Resumen *
-                        </label>
-                        <textarea
-                            id="project-abstract"
-                            name="abstract"
-                            class="form-textarea"
-                            placeholder="Descripción breve del proyecto..."
-                            required
-                        ></textarea>
-                    </div>
-
-                    <div class="form-field">
-                        <label for="project-description" class="form-label">
-                            <i class="fas fa-file-alt text-primary mr-2"></i>
-                            Descripción Completa (Markdown)
-                        </label>
-                        <div class="markdown-editor">
-                            <div class="markdown-toolbar">
-                                <button type="button" class="markdown-btn" onclick="formatText('bold')"><strong>B</strong></button>
-                                <button type="button" class="markdown-btn" onclick="formatText('italic')"><em>I</em></button>
-                                <button type="button" class="markdown-btn" onclick="formatText('header')">#</button>
-                                <button type="button" class="markdown-btn" onclick="formatText('list')">-</button>
-                                <button type="button" class="markdown-btn" onclick="formatText('link')">@</button>
-                                <button type="button" class="markdown-btn" onclick="formatText('code')">{</button>
-                                <button type="button" class="markdown-btn" onclick="insertText('**', '**')">**Negrita**</button>
-                                <button type="button" class="markdown-btn" onclick="insertText('*', '*')">*Cursiva*</button>
-                                <button type="button" class="markdown-btn" onclick="insertText('\`', '\`')">\`Código\`</button>
-                                <button type="button" class="markdown-btn" onclick="insertText('[', '](url)')">[Enlace](url)</button>
+                    <!-- Sección: Información General -->
+                    <div class="mb-6">
+                        <h3 class="text-lg font-semibold text-foreground mb-4 pb-2 border-b border-border">
+                            <i class="fas fa-info-circle text-primary mr-2"></i>
+                            Información General
+                        </h3>
+                        <div class="space-y-4">
+                            <div class="form-field">
+                                <label for="project-title" class="form-label">
+                                    <i class="fas fa-heading text-primary mr-2"></i>
+                                    Título del Proyecto *
+                                </label>
+                                <input
+                                    type="text"
+                                    id="project-title"
+                                    name="title"
+                                    class="form-input"
+                                    placeholder="Ingrese el título del proyecto"
+                                    required
+                                >
                             </div>
-                            <div class="markdown-content">
-                                <textarea id="project-description" name="description" class="w-full h-48 resize-none border-0 outline-none bg-transparent" placeholder="Escribe la descripción completa del proyecto en formato Markdown..."></textarea>
+
+                            <div class="form-field">
+                                <label for="project-abstract" class="form-label">
+                                    <i class="fas fa-align-left text-primary mr-2"></i>
+                                    Resumen *
+                                </label>
+                                <textarea
+                                    id="project-abstract"
+                                    name="abstract"
+                                    class="form-textarea"
+                                    placeholder="Descripción breve del proyecto..."
+                                    required
+                                ></textarea>
+                            </div>
+
+                            <div class="form-field">
+                                <label for="project-description" class="form-label">
+                                    <i class="fas fa-file-alt text-primary mr-2"></i>
+                                    Descripción Completa (Markdown)
+                                </label>
+                                <div class="markdown-editor">
+                                    <div class="markdown-toolbar">
+                                        <button type="button" class="markdown-btn" onclick="formatText('bold')"><strong>B</strong></button>
+                                        <button type="button" class="markdown-btn" onclick="formatText('italic')"><em>I</em></button>
+                                        <button type="button" class="markdown-btn" onclick="formatText('header')">#</button>
+                                        <button type="button" class="markdown-btn" onclick="formatText('list')">-</button>
+                                        <button type="button" class="markdown-btn" onclick="formatText('link')">@</button>
+                                        <button type="button" class="markdown-btn" onclick="formatText('code')">{</button>
+                                        <button type="button" class="markdown-btn" onclick="insertText('**', '**')">**Negrita**</button>
+                                        <button type="button" class="markdown-btn" onclick="insertText('*', '*')">*Cursiva*</button>
+                                        <button type="button" class="markdown-btn" onclick="insertText('\`', '\`')">\`Código\`</button>
+                                        <button type="button" class="markdown-btn" onclick="insertText('[', '](url)')">[Enlace](url)</button>
+                                    </div>
+                                    <div class="markdown-content">
+                                        <textarea id="project-description" name="description" class="w-full h-48 resize-none border-0 outline-none bg-transparent" placeholder="Escribe la descripción completa del proyecto en formato Markdown..."></textarea>
+                                    </div>
+                                </div>
+                                <div class="flex justify-between items-center mt-2">
+                                    <div class="text-xs text-muted-foreground">
+                                        <i class="fas fa-info-circle mr-1"></i>
+                                        Usa Markdown para formatear: **negrita**, *cursiva*, # encabezados, etc.
+                                    </div>
+                                    <div class="flex gap-2">
+                                        <button type="button" onclick="importMarkdown()" class="text-xs bg-blue-500 text-white px-2 py-1 rounded">
+                                            <i class="fas fa-upload mr-1"></i>Importar
+                                        </button>
+                                    </div>
+                                </div>
                             </div>
                         </div>
-                        <div class="flex justify-between items-center mt-2">
-                            <div class="text-xs text-muted-foreground">
-                                <i class="fas fa-info-circle mr-1"></i>
-                                Usa Markdown para formatear: **negrita**, *cursiva*, # encabezados, etc.
+                    </div>
+
+                    <!-- Sección: Detalles Administrativos -->
+                    <div class="mb-6">
+                        <h3 class="text-lg font-semibold text-foreground mb-4 pb-2 border-b border-border">
+                            <i class="fas fa-cogs text-primary mr-2"></i>
+                            Detalles Administrativos
+                        </h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div class="form-field">
+                                <label for="project-status" class="form-label">
+                                    <i class="fas fa-info-circle text-primary mr-2"></i>
+                                    Estado
+                                </label>
+                                <select id="project-status" name="status" class="form-select">
+                                    <option value="PLANNING">Planificación</option>
+                                    <option value="ACTIVE">Activo</option>
+                                    <option value="COMPLETED">Completado</option>
+                                    <option value="ON_HOLD">En Espera</option>
+                                </select>
                             </div>
-                            <div class="flex gap-2">
-                                <button type="button" onclick="importMarkdown()" class="text-xs bg-blue-500 text-white px-2 py-1 rounded">
-                                    <i class="fas fa-upload mr-1"></i>Importar
-                                </button>
-                                <button type="button" onclick="exportMarkdown()" class="text-xs bg-green-500 text-white px-2 py-1 rounded">
-                                    <i class="fas fa-download mr-1"></i>Exportar
-                                </button>
+
+                            <div class="form-field">
+                                <label for="project-visibility" class="form-label">
+                                    <i class="fas fa-eye text-primary mr-2"></i>
+                                    Visibilidad
+                                </label>
+                                <select id="project-visibility" name="is_public" class="form-select">
+                                    <option value="false">Privado</option>
+                                    <option value="true">Público</option>
+                                </select>
+                            </div>
+
+                            <div class="form-field">
+                                <label for="project-start-date" class="form-label">
+                                    <i class="fas fa-calendar-plus text-primary mr-2"></i>
+                                    Fecha de Inicio
+                                </label>
+                                <input
+                                    type="date"
+                                    id="project-start-date"
+                                    name="start_date"
+                                    class="form-input"
+                                >
+                            </div>
+
+                            <div class="form-field">
+                                <label for="project-end-date" class="form-label">
+                                    <i class="fas fa-calendar-check text-primary mr-2"></i>
+                                    Fecha de Fin
+                                </label>
+                                <input
+                                    type="date"
+                                    id="project-end-date"
+                                    name="end_date"
+                                    class="form-input"
+                                >
                             </div>
                         </div>
                     </div>
 
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div class="form-field">
-                            <label for="project-status" class="form-label">
-                                <i class="fas fa-info-circle text-primary mr-2"></i>
-                                Estado
-                            </label>
-                            <select id="project-status" name="status" class="form-select">
-                                <option value="PLANNING">Planificación</option>
-                                <option value="ACTIVE">Activo</option>
-                                <option value="COMPLETED">Completado</option>
-                                <option value="ON_HOLD">En Espera</option>
-                            </select>
-                        </div>
+                    <!-- Sección: Financiamiento -->
+                    <div class="mb-6">
+                        <h3 class="text-lg font-semibold text-foreground mb-4 pb-2 border-b border-border">
+                            <i class="fas fa-dollar-sign text-primary mr-2"></i>
+                            Financiamiento
+                        </h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div class="form-field">
+                                <label for="project-budget" class="form-label">
+                                    <i class="fas fa-dollar-sign text-primary mr-2"></i>
+                                    Presupuesto
+                                </label>
+                                <input
+                                    type="number"
+                                    id="project-budget"
+                                    name="budget"
+                                    step="0.01"
+                                    class="form-input"
+                                    placeholder="0.00"
+                                >
+                            </div>
 
-                        <div class="form-field">
-                            <label for="project-visibility" class="form-label">
-                                <i class="fas fa-eye text-primary mr-2"></i>
-                                Visibilidad
-                            </label>
-                            <select id="project-visibility" name="is_public" class="form-select">
-                                <option value="false">Privado</option>
-                                <option value="true">Público</option>
-                            </select>
-                        </div>
-                    </div>
-
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div class="form-field">
-                            <label for="project-start-date" class="form-label">
-                                <i class="fas fa-calendar-plus text-primary mr-2"></i>
-                                Fecha de Inicio
-                            </label>
-                            <input
-                                type="date"
-                                id="project-start-date"
-                                name="start_date"
-                                class="form-input"
-                            >
-                        </div>
-
-                        <div class="form-field">
-                            <label for="project-end-date" class="form-label">
-                                <i class="fas fa-calendar-check text-primary mr-2"></i>
-                                Fecha de Fin
-                            </label>
-                            <input
-                                type="date"
-                                id="project-end-date"
-                                name="end_date"
-                                class="form-input"
-                            >
+                            <div class="form-field">
+                                <label for="project-funding-source" class="form-label">
+                                    <i class="fas fa-university text-primary mr-2"></i>
+                                    Fuente de Financiamiento
+                                </label>
+                                <input
+                                    type="text"
+                                    id="project-funding-source"
+                                    name="funding_source"
+                                    class="form-input"
+                                    placeholder="Ej: Ministerio de Ciencia, Universidad, etc."
+                                >
+                            </div>
                         </div>
                     </div>
 
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div class="form-field">
-                            <label for="project-budget" class="form-label">
-                                <i class="fas fa-dollar-sign text-primary mr-2"></i>
-                                Presupuesto
-                            </label>
-                            <input
-                                type="number"
-                                id="project-budget"
-                                name="budget"
-                                step="0.01"
-                                class="form-input"
-                                placeholder="0.00"
-                            >
+                    <!-- Sección: Información Adicional -->
+                    <div class="mb-6">
+                        <h3 class="text-lg font-semibold text-foreground mb-4 pb-2 border-b border-border">
+                            <i class="fas fa-plus-circle text-primary mr-2"></i>
+                            Información Adicional
+                        </h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div class="form-field">
+                                <label for="project-institution" class="form-label">
+                                    <i class="fas fa-building text-primary mr-2"></i>
+                                    Institución
+                                </label>
+                                <input
+                                    type="text"
+                                    id="project-institution"
+                                    name="institution"
+                                    class="form-input"
+                                    placeholder="Nombre de la institución ejecutora"
+                                >
+                            </div>
+
+                            <div class="form-field">
+                                <label for="project-code" class="form-label">
+                                    <i class="fas fa-hashtag text-primary mr-2"></i>
+                                    Código del Proyecto
+                                </label>
+                                <input
+                                    type="text"
+                                    id="project-code"
+                                    name="project_code"
+                                    class="form-input"
+                                    placeholder="Ej: CTeI-2024-001"
+                                >
+                            </div>
                         </div>
-
-                        <div class="form-field">
-                            <label for="project-funding-source" class="form-label">
-                                <i class="fas fa-university text-primary mr-2"></i>
-                                Fuente de Financiamiento
-                            </label>
-                            <input
-                                type="text"
-                                id="project-funding-source"
-                                name="funding_source"
-                                class="form-input"
-                                placeholder="Ej: Ministerio de Ciencia, Universidad, etc."
-                            >
-                        </div>
-                    </div>
-
-                    <div class="form-field">
-                        <label for="project-institution" class="form-label">
-                            <i class="fas fa-building text-primary mr-2"></i>
-                            Institución
-                        </label>
-                        <input
-                            type="text"
-                            id="project-institution"
-                            name="institution"
-                            class="form-input"
-                            placeholder="Nombre de la institución ejecutora"
-                        >
-                    </div>
-
-                    <div class="form-field">
-                        <label for="project-code" class="form-label">
-                            <i class="fas fa-hashtag text-primary mr-2"></i>
-                            Código del Proyecto
-                        </label>
-                        <input
-                            type="text"
-                            id="project-code"
-                            name="project_code"
-                            class="form-input"
-                            placeholder="Ej: CTeI-2024-001"
-                        >
                     </div>
 
                     <div class="flex justify-between items-center pt-4 border-t border-border">
@@ -3572,9 +3599,23 @@ app.get('/dashboard/proyectos/:id/editar', async (c) => {
         <div class="sidebar-column">
             <!-- Panel de Scoring -->
             <div class="panel">
-                <div class="panel-title">
-                    <i class="fas fa-star text-primary"></i>
-                    Sistema de Scoring
+                <div class="panel-title flex items-center justify-between">
+                    <div class="flex items-center">
+                        <i class="fas fa-star text-primary"></i>
+                        <span class="ml-2">Sistema de Scoring</span>
+                    </div>
+                    <button id="scoring-info-btn" class="text-muted-foreground hover:text-primary transition-colors" title="Información sobre el scoring">
+                        <i class="fas fa-info-circle"></i>
+                    </button>
+                </div>
+
+                <!-- Tooltip de información del scoring -->
+                <div id="scoring-tooltip" class="hidden mt-2 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+                    <div class="text-sm text-blue-800 dark:text-blue-200">
+                        <strong>¿Qué es el Sistema de Scoring?</strong><br>
+                        Este sistema mide la completitud y calidad de tu proyecto de investigación en una escala del 0.0 al 10.0.
+                        Un score más alto indica un proyecto mejor documentado y más atractivo para colaboradores y financiadores.
+                    </div>
                 </div>
 
                 <div class="score-display mb-4">
@@ -3583,43 +3624,55 @@ app.get('/dashboard/proyectos/:id/editar', async (c) => {
                 </div>
 
                 <div class="space-y-3">
-                    <div class="flex justify-between items-center">
-                        <span class="text-sm">Completitud del Perfil</span>
-                        <span id="completeness-score" class="text-sm font-semibold">0%</span>
-                    </div>
-                    <div class="w-full bg-muted rounded-full h-2">
-                        <div id="completeness-bar" class="bg-primary h-2 rounded-full" style="width: 0%"></div>
-                    </div>
-
-                    <div class="flex justify-between items-center">
-                        <span class="text-sm">Productos Asociados</span>
-                        <span id="products-score" class="text-sm font-semibold">0%</span>
-                    </div>
-                    <div class="w-full bg-muted rounded-full h-2">
-                        <div id="products-bar" class="bg-green-500 h-2 rounded-full" style="width: 0%"></div>
+                    <div class="scoring-item cursor-pointer hover:bg-accent/50 p-2 rounded transition-colors" onclick="scrollToSection('info-general')">
+                        <div class="flex justify-between items-center">
+                            <span class="text-sm">Completitud del Perfil</span>
+                            <span id="completeness-score" class="text-sm font-semibold">0%</span>
+                        </div>
+                        <div class="w-full bg-muted rounded-full h-2 mt-1">
+                            <div id="completeness-bar" class="bg-primary h-2 rounded-full transition-all duration-300" style="width: 0%"></div>
+                        </div>
+                        <div class="text-xs text-muted-foreground mt-1">Información básica del proyecto</div>
                     </div>
 
-                    <div class="flex justify-between items-center">
-                        <span class="text-sm">Documentación</span>
-                        <span id="docs-score" class="text-sm font-semibold">0%</span>
-                    </div>
-                    <div class="w-full bg-muted rounded-full h-2">
-                        <div id="docs-bar" class="bg-blue-500 h-2 rounded-full" style="width: 0%"></div>
+                    <div class="scoring-item cursor-pointer hover:bg-accent/50 p-2 rounded transition-colors" onclick="scrollToSection('productos-relacionados')">
+                        <div class="flex justify-between items-center">
+                            <span class="text-sm">Productos Asociados</span>
+                            <span id="products-score" class="text-sm font-semibold">0%</span>
+                        </div>
+                        <div class="w-full bg-muted rounded-full h-2 mt-1">
+                            <div id="products-bar" class="bg-green-500 h-2 rounded-full transition-all duration-300" style="width: 0%"></div>
+                        </div>
+                        <div class="text-xs text-muted-foreground mt-1">Productos científicos relacionados</div>
                     </div>
 
-                    <div class="flex justify-between items-center">
-                        <span class="text-sm">Colaboradores</span>
-                        <span id="collab-score" class="text-sm font-semibold">0%</span>
+                    <div class="scoring-item cursor-pointer hover:bg-accent/50 p-2 rounded transition-colors" onclick="scrollToSection('archivos-adjuntos')">
+                        <div class="flex justify-between items-center">
+                            <span class="text-sm">Documentación</span>
+                            <span id="docs-score" class="text-sm font-semibold">0%</span>
+                        </div>
+                        <div class="w-full bg-muted rounded-full h-2 mt-1">
+                            <div id="docs-bar" class="bg-blue-500 h-2 rounded-full transition-all duration-300" style="width: 0%"></div>
+                        </div>
+                        <div class="text-xs text-muted-foreground mt-1">Archivos y documentos adjuntos</div>
                     </div>
-                    <div class="w-full bg-muted rounded-full h-2">
-                        <div id="collab-bar" class="bg-purple-500 h-2 rounded-full" style="width: 0%"></div>
+
+                    <div class="scoring-item cursor-pointer hover:bg-accent/50 p-2 rounded transition-colors" onclick="scrollToSection('colaboradores')">
+                        <div class="flex justify-between items-center">
+                            <span class="text-sm">Colaboradores</span>
+                            <span id="collab-score" class="text-sm font-semibold">0%</span>
+                        </div>
+                        <div class="w-full bg-muted rounded-full h-2 mt-1">
+                            <div id="collab-bar" class="bg-purple-500 h-2 rounded-full transition-all duration-300" style="width: 0%"></div>
+                        </div>
+                        <div class="text-xs text-muted-foreground mt-1">Equipo de investigación</div>
                     </div>
                 </div>
 
                 <div class="mt-4 p-3 bg-muted rounded-lg">
                     <div class="text-xs text-muted-foreground">
-                        <i class="fas fa-info-circle mr-1"></i>
-                        El scoring se calcula automáticamente basado en la completitud de la información del proyecto.
+                        <i class="fas fa-lightbulb mr-1 text-yellow-500"></i>
+                        <strong>Consejo:</strong> Haz clic en cualquier ítem del scoring para ir directamente a la sección que necesitas completar.
                     </div>
                 </div>
             </div>
@@ -3636,13 +3689,52 @@ app.get('/dashboard/proyectos/:id/editar', async (c) => {
                     <i class="fas fa-cloud-upload-alt text-4xl text-muted-foreground mb-3 block"></i>
                     <p class="text-sm font-medium text-foreground mb-1">Arrastra archivos aquí</p>
                     <p class="text-xs text-muted-foreground mb-3">o haz clic para seleccionar</p>
-                    <input type="file" id="file-input" multiple class="hidden">
+                    <input type="file" id="file-input" multiple class="hidden" accept=".pdf,.doc,.docx,.txt,.md,.jpg,.jpeg,.png,.gif,.zip,.rar">
                     <button type="button" onclick="document.getElementById('file-input').click()" class="btn btn-secondary btn-sm">
                         <i class="fas fa-plus mr-2"></i>Seleccionar Archivos
                     </button>
+                    <div class="text-xs text-muted-foreground mt-2">
+                        Formatos permitidos: PDF, DOC, DOCX, TXT, MD, imágenes, ZIP, RAR (máx. 10MB cada uno)
+                    </div>
                 </div>
 
-                <!-- Lista de archivos -->
+                <!-- Área de progreso de carga mejorada -->
+                <div id="upload-progress-area" style="display: none;" class="mt-4">
+                    <div class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+                        <div class="flex items-center mb-3">
+                            <i class="fas fa-spinner fa-spin text-blue-600 mr-2"></i>
+                            <span class="text-sm font-medium text-blue-800 dark:text-blue-200">Subiendo archivos...</span>
+                        </div>
+                        <div id="upload-progress-list" class="space-y-2"></div>
+                    </div>
+                </div>
+
+                <!-- Área de archivos subidos exitosamente -->
+                <div id="upload-success-area" style="display: none;" class="mt-4">
+                    <div class="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4">
+                        <div class="flex items-center mb-3">
+                            <i class="fas fa-check-circle text-green-600 mr-2"></i>
+                            <span class="text-sm font-medium text-green-800 dark:text-green-200">Archivos subidos exitosamente</span>
+                        </div>
+                        <div id="upload-success-list" class="space-y-2"></div>
+                    </div>
+                </div>
+
+                <!-- Área de errores de carga -->
+                <div id="upload-error-area" style="display: none;" class="mt-4">
+                    <div class="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
+                        <div class="flex items-center mb-3">
+                            <i class="fas fa-exclamation-triangle text-red-600 mr-2"></i>
+                            <span class="text-sm font-medium text-red-800 dark:text-red-200">Error al subir archivos</span>
+                        </div>
+                        <div id="upload-error-list" class="space-y-2"></div>
+                        <button type="button" onclick="retryFailedUploads()" class="mt-3 btn btn-secondary btn-sm">
+                            <i class="fas fa-redo mr-2"></i>Reintentar fallidos
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Lista de archivos existentes -->
                 <div id="project-files-list">
                     <div class="text-center text-muted-foreground py-4">
                         <i class="fas fa-folder-open text-xl mb-2 block opacity-50"></i>
@@ -3650,15 +3742,9 @@ app.get('/dashboard/proyectos/:id/editar', async (c) => {
                     </div>
                 </div>
 
-                <!-- Progreso de carga -->
-                <div id="upload-progress-area" style="display: none;" class="mt-4">
-                    <div class="text-sm font-medium text-foreground mb-2">Subiendo archivos...</div>
-                    <div id="upload-progress-list"></div>
-                </div>
-
-                <div class="text-xs text-muted-foreground mt-2">
-                    <i class="fas fa-info-circle mr-1"></i>
-                    Los archivos se almacenan de forma segura y solo son accesibles por colaboradores del proyecto.
+                <div class="text-xs text-muted-foreground mt-4 p-3 bg-gray-50 dark:bg-gray-800 rounded">
+                    <i class="fas fa-shield-alt mr-1 text-green-600"></i>
+                    <strong>Seguridad:</strong> Los archivos se almacenan de forma segura en la nube y solo son accesibles por colaboradores autorizados del proyecto.
                 </div>
             </div>
 
@@ -4142,6 +4228,12 @@ app.get('/dashboard/proyectos/:id/editar', async (c) => {
 
             // Resetear estado del botón de guardar
             resetSaveButton();
+
+            // Inicializar menú de acciones
+            initializeActionsMenu();
+
+            // Inicializar sistema de scoring mejorado
+            initializeScoringSystem();
         }
 
         // Inicializar editor de markdown
@@ -4445,6 +4537,72 @@ app.get('/dashboard/proyectos/:id/editar', async (c) => {
 
         function resetSaveButton() {
             saveBtn.disabled = true;
+        }
+
+        // Inicializar menú de acciones
+        function initializeActionsMenu() {
+            const actionsMenuBtn = document.getElementById('actions-menu-btn');
+            const actionsMenu = document.getElementById('actions-menu');
+
+            if (actionsMenuBtn && actionsMenu) {
+                // Toggle menú al hacer clic
+                actionsMenuBtn.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    actionsMenu.classList.toggle('hidden');
+                });
+
+                // Cerrar menú al hacer clic fuera
+                document.addEventListener('click', function(e) {
+                    if (!actionsMenuBtn.contains(e.target) && !actionsMenu.contains(e.target)) {
+                        actionsMenu.classList.add('hidden');
+                    }
+                });
+            }
+        }
+
+        // Inicializar sistema de scoring mejorado
+        function initializeScoringSystem() {
+            const scoringInfoBtn = document.getElementById('scoring-info-btn');
+            const scoringTooltip = document.getElementById('scoring-tooltip');
+
+            if (scoringInfoBtn && scoringTooltip) {
+                // Toggle tooltip al hacer clic
+                scoringInfoBtn.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    scoringTooltip.classList.toggle('hidden');
+                });
+
+                // Cerrar tooltip al hacer clic fuera
+                document.addEventListener('click', function(e) {
+                    if (!scoringInfoBtn.contains(e.target) && !scoringTooltip.contains(e.target)) {
+                        scoringTooltip.classList.add('hidden');
+                    }
+                });
+            }
+
+            // Función global para hacer scroll a secciones
+            window.scrollToSection = function(sectionId) {
+                const sectionMap = {
+                    'info-general': 'edit-project-form',
+                    'productos-relacionados': 'related-products-list',
+                    'archivos-adjuntos': 'file-upload-area',
+                    'colaboradores': 'related-products-list' // Temporalmente apunta a productos hasta implementar colaboradores
+                };
+
+                const targetId = sectionMap[sectionId];
+                if (targetId) {
+                    const element = document.getElementById(targetId);
+                    if (element) {
+                        element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+                        // Resaltar temporalmente la sección
+                        element.classList.add('ring-2', 'ring-primary', 'ring-opacity-50');
+                        setTimeout(() => {
+                            element.classList.remove('ring-2', 'ring-primary', 'ring-opacity-50');
+                        }, 2000);
+                    }
+                }
+            };
         }
 
         function showSuccess(message) {
@@ -4888,6 +5046,78 @@ app.get('/dashboard/productos/:id/editar', async (c) => {
                 font-size: 0.875rem;
                 transition: all 0.2s;
             }
+    
+            /* Mejoras de accesibilidad y contraste WCAG 2.1 AA */
+            .form-input:focus, .form-textarea:focus, .form-select:focus {
+                outline: none;
+                border-color: hsl(var(--ring));
+                box-shadow: 0 0 0 3px hsl(var(--ring) / 0.2);
+                background: hsl(var(--background));
+            }
+    
+            /* Mejorar contraste de texto en elementos interactivos */
+            .btn-primary {
+                background: hsl(var(--primary));
+                color: hsl(var(--primary-foreground));
+                font-weight: 600;
+            }
+    
+            .btn-primary:hover {
+                background: hsl(var(--primary) / 0.9);
+                color: hsl(var(--primary-foreground));
+            }
+    
+            .btn-primary:focus {
+                outline: 2px solid hsl(var(--ring));
+                outline-offset: 2px;
+            }
+    
+            .btn-secondary {
+                background: hsl(var(--secondary));
+                color: hsl(var(--secondary-foreground));
+                border: 1px solid hsl(var(--border));
+                font-weight: 500;
+            }
+    
+            .btn-secondary:hover {
+                background: hsl(var(--accent));
+                color: hsl(var(--accent-foreground));
+            }
+    
+            .btn-secondary:focus {
+                outline: 2px solid hsl(var(--ring));
+                outline-offset: 2px;
+            }
+    
+            /* Mejorar contraste en texto de ayuda */
+            .text-muted-foreground {
+                color: hsl(var(--muted-foreground));
+            }
+    
+            /* Asegurar contraste mínimo en etiquetas de formulario */
+            .form-label {
+                color: hsl(var(--foreground));
+                font-weight: 600;
+                margin-bottom: 0.5rem;
+            }
+    
+            /* Mejorar accesibilidad en elementos de scoring */
+            .scoring-item:hover {
+                background: hsl(var(--accent) / 0.5);
+                cursor: pointer;
+            }
+    
+            .scoring-item:focus {
+                outline: 2px solid hsl(var(--ring));
+                outline-offset: 2px;
+            }
+    
+            /* Mejorar contraste en tooltips */
+            .tooltip-text {
+                background: hsl(var(--popover));
+                color: hsl(var(--popover-foreground));
+                border: 1px solid hsl(var(--border));
+            }
             
             .form-input:focus, .form-textarea:focus, .form-select:focus {
                 outline: none;
@@ -4992,7 +5222,21 @@ app.get('/dashboard/productos/:id/editar', async (c) => {
                         <button id="theme-toggle" class="ctei-theme-toggle ml-4" title="Cambiar tema">
                             <i class="fas fa-moon" id="theme-icon"></i>
                         </button>
-                        
+    
+                        <!-- Menú de acciones adicionales -->
+                        <div class="relative">
+                            <button id="actions-menu-btn" class="ctei-btn-secondary" title="Más acciones">
+                                <i class="fas fa-ellipsis-v"></i>
+                            </button>
+                            <div id="actions-menu" class="absolute right-0 mt-2 w-48 bg-card border border-border rounded-md shadow-lg z-10 hidden">
+                                <div class="py-1">
+                                    <button onclick="exportMarkdown()" class="block w-full text-left px-4 py-2 text-sm text-foreground hover:bg-accent hover:text-accent-foreground">
+                                        <i class="fas fa-download mr-2"></i>Exportar Descripción
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+    
                         <a href="/dashboard" class="ctei-btn-secondary">
                             <i class="fas fa-arrow-left mr-2"></i>Volver al Dashboard
                         </a>
