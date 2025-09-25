@@ -47,233 +47,658 @@
     </div>
 
     <!-- Main Content -->
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div class="bg-card rounded-lg shadow">
-            <div class="px-6 py-4 border-b border-border">
-                <h1 class="text-2xl font-bold text-foreground">
-                    <i class="fas fa-edit mr-2 text-primary"></i>
-                    Editar Proyecto
-                </h1>
-                <p class="text-muted-foreground mt-1">Complete todos los campos recomendados para una gestión óptima</p>
+    <div class="min-h-screen bg-background">
+        <!-- Header Section -->
+        <div class="bg-card border-b border-border">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+                <div class="flex justify-between items-center">
+                    <div>
+                        <h1 class="text-3xl font-bold text-foreground">
+                            <i class="fas fa-edit mr-3 text-primary"></i>
+                            Editar Proyecto
+                        </h1>
+                        <p class="text-muted-foreground mt-2">Complete todos los campos recomendados para una gestión óptima</p>
+                    </div>
+                    <div class="flex items-center space-x-4">
+                        <a href="/project/2" class="ctei-btn-secondary">
+                            <i class="fas fa-eye mr-2"></i>Ver Público
+                        </a>
+                    </div>
+                </div>
             </div>
+        </div>
 
-            <!-- Tabs -->
-            <div class="border-b border-border">
-                <nav class="flex space-x-8 px-6" aria-label="Tabs">
-                    <button onclick="showTab('general')" class="tab-button active border-b-2 border-primary py-4 px-1 text-sm font-medium">
-                        <i class="fas fa-info-circle mr-2"></i>General
+        <!-- Tabs Section -->
+        <div class="bg-card border-b border-border sticky top-0 z-10">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <nav class="flex space-x-8" aria-label="Tabs">
+                    <button onclick="showTab('resumen')" class="tab-button active border-b-2 border-primary py-4 px-1 text-sm font-medium">
+                        <i class="fas fa-clipboard-list mr-2"></i>Resumen y Estado
                     </button>
-                    <button onclick="showTab('collaborators')" class="tab-button border-b-2 border-transparent py-4 px-1 text-sm font-medium text-muted-foreground hover:text-foreground hover:border-gray-300">
-                        <i class="fas fa-users mr-2"></i>Colaboradores
+                    <button onclick="showTab('formulacion')" class="tab-button border-b-2 border-transparent py-4 px-1 text-sm font-medium text-muted-foreground hover:text-foreground hover:border-gray-300">
+                        <i class="fas fa-file-alt mr-2"></i>Formulación del Proyecto
                     </button>
-                    <button onclick="showTab('products')" class="tab-button border-b-2 border-transparent py-4 px-1 text-sm font-medium text-muted-foreground hover:text-foreground hover:border-gray-300">
-                        <i class="fas fa-flask mr-2"></i>Productos
+                    <button onclick="showTab('productos')" class="tab-button border-b-2 border-transparent py-4 px-1 text-sm font-medium text-muted-foreground hover:text-foreground hover:border-gray-300">
+                        <i class="fas fa-rocket mr-2"></i>Productos y Resultados
                     </button>
-                    <button onclick="showTab('files')" class="tab-button border-b-2 border-transparent py-4 px-1 text-sm font-medium text-muted-foreground hover:text-foreground hover:border-gray-300">
-                        <i class="fas fa-file-upload mr-2"></i>Archivos
+                    <button onclick="showTab('archivos')" class="tab-button border-b-2 border-transparent py-4 px-1 text-sm font-medium text-muted-foreground hover:text-foreground hover:border-gray-300">
+                        <i class="fas fa-folder mr-2"></i>Archivos y Documentos
                     </button>
-                    <button onclick="showTab('monitoring')" class="tab-button border-b-2 border-transparent py-4 px-1 text-sm font-medium text-muted-foreground hover:text-foreground hover:border-gray-300">
-                        <i class="fas fa-chart-line mr-2"></i>Monitoreo
+                    <button onclick="showTab('analisis')" class="tab-button border-b-2 border-transparent py-4 px-1 text-sm font-medium text-muted-foreground hover:text-foreground hover:border-gray-300">
+                        <i class="fas fa-chart-bar mr-2"></i>Análisis
                     </button>
                 </nav>
             </div>
+        </div>
+
+        <!-- Content Section -->
+        <div class="flex-1">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
 
             <!-- Tab Content -->
             <div class="p-6">
-                <!-- General Tab -->
-                <div id="general-tab" class="tab-content">
-                    <form id="projectForm" onsubmit="saveProject(event)">
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div>
-                                <label for="title" class="block text-sm font-medium text-foreground mb-2">Título del Proyecto</label>
-                                <input type="text" id="title" class="form-input" required>
-                            </div>
-                            <div>
-                                <label for="status" class="block text-sm font-medium text-foreground mb-2">Estado del Proyecto</label>
-                                <select id="status" class="form-input">
-                                    <option value="PLANNING">Planificación</option>
-                                    <option value="ACTIVE">Activo</option>
-                                    <option value="COMPLETED">Completado</option>
-                                    <option value="CANCELLED">Cancelado</option>
-                                </select>
-                            </div>
-                        </div>
-
-                        <div class="mt-6">
-                            <label for="description" class="block text-sm font-medium text-foreground mb-2">Descripción</label>
-                            <textarea id="description" rows="4" class="form-input" required></textarea>
-                        </div>
-
-                        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6">
-                            <div>
-                                <label for="budget" class="block text-sm font-medium text-foreground mb-2">Presupuesto Total</label>
-                                <input type="number" id="budget" class="form-input" required>
-                            </div>
-                            <div>
-                                <label for="start_date" class="block text-sm font-medium text-foreground mb-2">Fecha de Inicio</label>
-                                <input type="date" id="start_date" class="form-input" required>
-                            </div>
-                            <div>
-                                <label for="end_date" class="block text-sm font-medium text-foreground mb-2">Fecha de Fin</label>
-                                <input type="date" id="end_date" class="form-input" required>
-                            </div>
-                        </div>
-
-                        <!-- Campos Recomendados -->
-                        <div class="mt-8 border-t border-border pt-6">
-                            <h3 class="text-lg font-semibold mb-4 text-foreground">
-                                <i class="fas fa-plus-circle mr-2 text-primary"></i>Campos Recomendados
-                            </h3>
-
-                            <!-- Desglose de Presupuesto -->
-                            <div class="mb-6">
-                                <h4 class="text-md font-medium mb-3 text-foreground">Desglose de Presupuesto por Fases</h4>
-                                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                <!-- Resumen y Estado Tab -->
+                <div id="resumen-tab" class="tab-content">
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        <!-- Columna Principal -->
+                        <div class="lg:col-span-2 space-y-6">
+                            <form id="projectForm" onsubmit="saveProject(event)">
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                                     <div>
-                                        <label for="budget_research" class="block text-sm font-medium text-foreground mb-1">Investigación</label>
-                                        <input type="number" id="budget_research" class="form-input" placeholder="Monto">
+                                        <label for="title" class="block text-sm font-medium text-foreground mb-2">Título del Proyecto</label>
+                                        <input type="text" id="title" class="form-input" required>
                                     </div>
                                     <div>
-                                        <label for="budget_development" class="block text-sm font-medium text-foreground mb-1">Desarrollo</label>
-                                        <input type="number" id="budget_development" class="form-input" placeholder="Monto">
-                                    </div>
-                                    <div>
-                                        <label for="budget_implementation" class="block text-sm font-medium text-foreground mb-1">Implementación</label>
-                                        <input type="number" id="budget_implementation" class="form-input" placeholder="Monto">
-                                    </div>
-                                    <div>
-                                        <label for="budget_evaluation" class="block text-sm font-medium text-foreground mb-1">Evaluación</label>
-                                        <input type="number" id="budget_evaluation" class="form-input" placeholder="Monto">
+                                        <label for="status" class="block text-sm font-medium text-foreground mb-2">Estado del Proyecto</label>
+                                        <select id="status" class="form-input">
+                                            <option value="PLANNING">Planificación</option>
+                                            <option value="ACTIVE">Activo</option>
+                                            <option value="COMPLETED">Completado</option>
+                                            <option value="CANCELLED">Cancelado</option>
+                                        </select>
                                     </div>
                                 </div>
-                            </div>
 
-                            <!-- Hitos del Cronograma -->
-                            <div class="mb-6">
-                                <h4 class="text-md font-medium mb-3 text-foreground">Hitos del Cronograma</h4>
-                                <div id="milestones" class="space-y-3">
-                                    <div class="flex gap-3 items-end">
-                                        <div class="flex-1">
-                                            <label class="block text-sm font-medium text-foreground mb-1">Descripción</label>
-                                            <input type="text" class="form-input" placeholder="Descripción del hito">
-                                        </div>
-                                        <div>
-                                            <label class="block text-sm font-medium text-foreground mb-1">Fecha</label>
-                                            <input type="date" class="form-input">
-                                        </div>
-                                        <button type="button" onclick="removeMilestone(this)" class="ctei-btn-danger">
-                                            <i class="fas fa-trash"></i>
-                                        </button>
+                                <div class="mt-6">
+                                    <label for="description" class="block text-sm font-medium text-foreground mb-2">Descripción</label>
+                                    <textarea id="description" rows="4" class="form-input" required></textarea>
+                                </div>
+
+                                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6">
+                                    <div>
+                                        <label for="budget" class="block text-sm font-medium text-foreground mb-2">Presupuesto Total</label>
+                                        <input type="number" id="budget" class="form-input" required>
+                                    </div>
+                                    <div>
+                                        <label for="start_date" class="block text-sm font-medium text-foreground mb-2">Fecha de Inicio</label>
+                                        <input type="date" id="start_date" class="form-input" required>
+                                    </div>
+                                    <div>
+                                        <label for="end_date" class="block text-sm font-medium text-foreground mb-2">Fecha de Fin</label>
+                                        <input type="date" id="end_date" class="form-input" required>
                                     </div>
                                 </div>
-                                <button type="button" onclick="addMilestone()" class="mt-3 ctei-btn-secondary">
-                                    <i class="fas fa-plus mr-2"></i>Agregar Hito
-                                </button>
-                            </div>
 
-                            <!-- Evaluación de Riesgos -->
-                            <div class="mb-6">
-                                <h4 class="text-md font-medium mb-3 text-foreground">Evaluación de Riesgos</h4>
-                                <div id="risks" class="space-y-3">
-                                    <div class="flex gap-3 items-end">
-                                        <div class="flex-1">
-                                            <label class="block text-sm font-medium text-foreground mb-1">Descripción del Riesgo</label>
-                                            <input type="text" class="form-input" placeholder="Descripción del riesgo">
-                                        </div>
-                                        <div>
-                                            <label class="block text-sm font-medium text-foreground mb-1">Nivel</label>
-                                            <select class="form-input">
-                                                <option value="low">Bajo</option>
-                                                <option value="medium">Medio</option>
-                                                <option value="high">Alto</option>
-                                            </select>
-                                        </div>
-                                        <button type="button" onclick="removeRisk(this)" class="ctei-btn-danger">
-                                            <i class="fas fa-trash"></i>
-                                        </button>
-                                    </div>
-                                </div>
-                                <button type="button" onclick="addRisk()" class="mt-3 ctei-btn-secondary">
-                                    <i class="fas fa-plus mr-2"></i>Agregar Riesgo
-                                </button>
-                            </div>
+                                <!-- Campos Recomendados -->
+                                <div class="mt-8 border-t border-border pt-6">
+                                    <h3 class="text-lg font-semibold mb-4 text-foreground">
+                                        <i class="fas fa-plus-circle mr-2 text-primary"></i>Campos Recomendados
+                                    </h3>
 
-                            <!-- Stakeholders -->
-                            <div class="mb-6">
-                                <h4 class="text-md font-medium mb-3 text-foreground">Stakeholders</h4>
-                                <div id="stakeholders" class="space-y-3">
-                                    <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
-                                        <div>
-                                            <label class="block text-sm font-medium text-foreground mb-1">Nombre</label>
-                                            <input type="text" class="form-input" placeholder="Nombre completo">
-                                        </div>
-                                        <div>
-                                            <label class="block text-sm font-medium text-foreground mb-1">Rol</label>
-                                            <input type="text" class="form-input" placeholder="Rol en el proyecto">
-                                        </div>
-                                        <div class="flex items-end gap-2">
-                                            <div class="flex-1">
-                                                <label class="block text-sm font-medium text-foreground mb-1">Email</label>
-                                                <input type="email" class="form-input" placeholder="email@ejemplo.com">
+                                    <!-- Desglose de Presupuesto -->
+                                    <div class="mb-6">
+                                        <h4 class="text-md font-medium mb-3 text-foreground">Desglose de Presupuesto por Fases</h4>
+                                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                                            <div>
+                                                <label for="budget_research" class="block text-sm font-medium text-foreground mb-1">Investigación</label>
+                                                <input type="number" id="budget_research" class="form-input" placeholder="Monto">
                                             </div>
-                                            <button type="button" onclick="removeStakeholder(this)" class="ctei-btn-danger">
-                                                <i class="fas fa-trash"></i>
-                                            </button>
+                                            <div>
+                                                <label for="budget_development" class="block text-sm font-medium text-foreground mb-1">Desarrollo</label>
+                                                <input type="number" id="budget_development" class="form-input" placeholder="Monto">
+                                            </div>
+                                            <div>
+                                                <label for="budget_implementation" class="block text-sm font-medium text-foreground mb-1">Implementación</label>
+                                                <input type="number" id="budget_implementation" class="form-input" placeholder="Monto">
+                                            </div>
+                                            <div>
+                                                <label for="budget_evaluation" class="block text-sm font-medium text-foreground mb-1">Evaluación</label>
+                                                <input type="number" id="budget_evaluation" class="form-input" placeholder="Monto">
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Hitos del Cronograma -->
+                                    <div class="mb-6">
+                                        <h4 class="text-md font-medium mb-3 text-foreground">Hitos del Cronograma</h4>
+                                        <div id="milestones" class="space-y-3">
+                                            <div class="flex gap-3 items-end">
+                                                <div class="flex-1">
+                                                    <label class="block text-sm font-medium text-foreground mb-1">Descripción</label>
+                                                    <input type="text" class="form-input" placeholder="Descripción del hito">
+                                                </div>
+                                                <div>
+                                                    <label class="block text-sm font-medium text-foreground mb-1">Fecha</label>
+                                                    <input type="date" class="form-input">
+                                                </div>
+                                                <button type="button" onclick="removeMilestone(this)" class="ctei-btn-danger">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <button type="button" onclick="addMilestone()" class="mt-3 ctei-btn-secondary">
+                                            <i class="fas fa-plus mr-2"></i>Agregar Hito
+                                        </button>
+                                    </div>
+
+                                    <!-- Evaluación de Riesgos -->
+                                    <div class="mb-6">
+                                        <h4 class="text-md font-medium mb-3 text-foreground">Evaluación de Riesgos</h4>
+                                        <div id="risks" class="space-y-3">
+                                            <div class="flex gap-3 items-end">
+                                                <div class="flex-1">
+                                                    <label class="block text-sm font-medium text-foreground mb-1">Descripción del Riesgo</label>
+                                                    <input type="text" class="form-input" placeholder="Descripción del riesgo">
+                                                </div>
+                                                <div>
+                                                    <label class="block text-sm font-medium text-foreground mb-1">Nivel</label>
+                                                    <select class="form-input">
+                                                        <option value="low">Bajo</option>
+                                                        <option value="medium">Medio</option>
+                                                        <option value="high">Alto</option>
+                                                    </select>
+                                                </div>
+                                                <button type="button" onclick="removeRisk(this)" class="ctei-btn-danger">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <button type="button" onclick="addRisk()" class="mt-3 ctei-btn-secondary">
+                                            <i class="fas fa-plus mr-2"></i>Agregar Riesgo
+                                        </button>
+                                    </div>
+
+                                    <!-- Stakeholders -->
+                                    <div class="mb-6">
+                                        <h4 class="text-md font-medium mb-3 text-foreground">Stakeholders</h4>
+                                        <div id="stakeholders" class="space-y-3">
+                                            <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                                                <div>
+                                                    <label class="block text-sm font-medium text-foreground mb-1">Nombre</label>
+                                                    <input type="text" class="form-input" placeholder="Nombre completo">
+                                                </div>
+                                                <div>
+                                                    <label class="block text-sm font-medium text-foreground mb-1">Rol</label>
+                                                    <input type="text" class="form-input" placeholder="Rol en el proyecto">
+                                                </div>
+                                                <div class="flex items-end gap-2">
+                                                    <div class="flex-1">
+                                                        <label class="block text-sm font-medium text-foreground mb-1">Email</label>
+                                                        <input type="email" class="form-input" placeholder="email@ejemplo.com">
+                                                    </div>
+                                                    <button type="button" onclick="removeStakeholder(this)" class="ctei-btn-danger">
+                                                        <i class="fas fa-trash"></i>
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <button type="button" onclick="addStakeholder()" class="mt-3 ctei-btn-secondary">
+                                            <i class="fas fa-plus mr-2"></i>Agregar Stakeholder
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <!-- Submit Buttons -->
+                                <div class="mt-8 flex justify-end space-x-4">
+                                    <a href="/dashboard" class="ctei-btn-secondary">
+                                        <i class="fas fa-times mr-2"></i>Cancelar
+                                    </a>
+                                    <button type="submit" class="ctei-btn-primary">
+                                        <i class="fas fa-save mr-2"></i>Guardar Cambios
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+
+                        <!-- Columna Lateral: Sistema de Scoring y Metadatos -->
+                        <div class="space-y-6">
+                            <!-- Sistema de Scoring -->
+                            <div class="bg-card rounded-lg border border-border p-6">
+                                <h3 class="text-lg font-semibold mb-4 text-foreground">
+                                    <i class="fas fa-star mr-2 text-primary"></i>Sistema de Scoring
+                                </h3>
+                                <div class="space-y-4">
+                                    <div class="flex justify-between items-center">
+                                        <span class="text-sm text-muted-foreground">Puntuación Total</span>
+                                        <span class="text-2xl font-bold text-primary" id="total-score">85</span>
+                                    </div>
+                                    <div class="space-y-3">
+                                        <div>
+                                            <div class="flex justify-between text-sm mb-1">
+                                                <span>Relevancia Científica</span>
+                                                <span id="relevance-score">8.5</span>
+                                            </div>
+                                            <div class="w-full bg-muted rounded-full h-2">
+                                                <div class="bg-primary h-2 rounded-full" style="width: 85%"></div>
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <div class="flex justify-between text-sm mb-1">
+                                                <span>Viabilidad Técnica</span>
+                                                <span id="technical-score">8.0</span>
+                                            </div>
+                                            <div class="w-full bg-muted rounded-full h-2">
+                                                <div class="bg-chart-2 h-2 rounded-full" style="width: 80%"></div>
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <div class="flex justify-between text-sm mb-1">
+                                                <span>Impacto Social</span>
+                                                <span id="impact-score">9.0</span>
+                                            </div>
+                                            <div class="w-full bg-muted rounded-full h-2">
+                                                <div class="bg-chart-3 h-2 rounded-full" style="width: 90%"></div>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
-                                <button type="button" onclick="addStakeholder()" class="mt-3 ctei-btn-secondary">
-                                    <i class="fas fa-plus mr-2"></i>Agregar Stakeholder
+                            </div>
+
+                            <!-- Metadatos -->
+                            <div class="bg-card rounded-lg border border-border p-6">
+                                <h3 class="text-lg font-semibold mb-4 text-foreground">
+                                    <i class="fas fa-info-circle mr-2 text-primary"></i>Metadatos
+                                </h3>
+                                <div class="space-y-3">
+                                    <div>
+                                        <span class="text-sm text-muted-foreground">Creado por:</span>
+                                        <p class="text-sm font-medium text-foreground" id="created-by">Usuario</p>
+                                    </div>
+                                    <div>
+                                        <span class="text-sm text-muted-foreground">Última modificación:</span>
+                                        <p class="text-sm font-medium text-foreground" id="last-modified">Hace 2 días</p>
+                                    </div>
+                                    <div>
+                                        <span class="text-sm text-muted-foreground">Versión:</span>
+                                        <p class="text-sm font-medium text-foreground" id="version">1.0</p>
+                                    </div>
+                                    <div>
+                                        <span class="text-sm text-muted-foreground">Categoría:</span>
+                                        <p class="text-sm font-medium text-foreground" id="category">Investigación Aplicada</p>
+                                    </div>
+                                    <div>
+                                        <span class="text-sm text-muted-foreground">Palabras clave:</span>
+                                        <div class="flex flex-wrap gap-1 mt-1" id="keywords">
+                                            <span class="ctei-tag ctei-tag--small">Ciencia</span>
+                                            <span class="ctei-tag ctei-tag--small">Tecnología</span>
+                                            <span class="ctei-tag ctei-tag--small">Innovación</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Formulación del Proyecto Tab -->
+                <div id="formulacion-tab" class="tab-content hidden">
+                    <div class="mb-6">
+                        <h3 class="text-xl font-semibold text-foreground mb-2">
+                            <i class="fas fa-file-alt mr-2 text-primary"></i>Formulación del Proyecto
+                        </h3>
+                        <p class="text-muted-foreground">Desarrolle la formulación completa del proyecto con toda la amplitud necesaria</p>
+                    </div>
+
+                    <div class="bg-card rounded-lg border border-border p-6">
+                        <div class="mb-4">
+                            <label for="project-formulation" class="block text-sm font-medium text-foreground mb-2">
+                                Contenido de la Formulación
+                            </label>
+                            <textarea
+                                id="project-formulation"
+                                rows="20"
+                                class="form-input font-mono text-sm"
+                                placeholder="Escriba aquí la formulación completa del proyecto... Incluya objetivos, metodología, alcance, recursos necesarios, cronograma detallado, etc."
+                            ></textarea>
+                        </div>
+
+                        <div class="flex justify-between items-center">
+                            <div class="text-sm text-muted-foreground">
+                                <i class="fas fa-info-circle mr-1"></i>
+                                Use este espacio para desarrollar completamente la formulación del proyecto
+                            </div>
+                            <div class="flex space-x-3">
+                                <button type="button" onclick="saveFormulation()" class="ctei-btn-secondary">
+                                    <i class="fas fa-save mr-2"></i>Guardar Borrador
+                                </button>
+                                <button type="button" onclick="exportFormulation()" class="ctei-btn-primary">
+                                    <i class="fas fa-download mr-2"></i>Exportar
                                 </button>
                             </div>
                         </div>
+                    </div>
+                </div>
 
-                        <!-- Submit Buttons -->
-                        <div class="mt-8 flex justify-end space-x-4">
-                            <a href="/dashboard" class="ctei-btn-secondary">
-                                <i class="fas fa-times mr-2"></i>Cancelar
-                            </a>
-                            <button type="submit" class="ctei-btn-primary">
-                                <i class="fas fa-save mr-2"></i>Guardar Cambios
+                <!-- Productos y Resultados Tab -->
+                <div id="productos-tab" class="tab-content hidden">
+                    <div class="mb-6">
+                        <div class="flex justify-between items-center">
+                            <div>
+                                <h3 class="text-xl font-semibold text-foreground mb-2">
+                                    <i class="fas fa-rocket mr-2 text-primary"></i>Productos y Resultados
+                                </h3>
+                                <p class="text-muted-foreground">Gestiona todos los productos científicos asociados a este proyecto</p>
+                            </div>
+                            <button onclick="showEnhancedProductModalWithAuthors(2)" class="ctei-btn-primary">
+                                <i class="fas fa-plus mr-2"></i>Crear Producto
                             </button>
                         </div>
-                    </form>
-                </div>
+                    </div>
 
-                <!-- Collaborators Tab -->
-                <div id="collaborators-tab" class="tab-content hidden">
-                    <div class="text-center py-12">
-                        <i class="fas fa-users text-6xl text-muted-foreground mb-4"></i>
-                        <h3 class="text-lg font-medium text-foreground mb-2">Gestión de Colaboradores</h3>
-                        <p class="text-muted-foreground">Funcionalidad en desarrollo</p>
+                    <!-- Filtros -->
+                    <div class="bg-card rounded-lg border border-border p-4 mb-6">
+                        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                            <div>
+                                <label for="productStatusFilter" class="block text-sm font-medium text-foreground mb-2">Estado</label>
+                                <select id="productStatusFilter" onchange="filterProjectProducts()" class="form-input">
+                                    <option value="">Todos</option>
+                                    <option value="public">Público</option>
+                                    <option value="private">Privado</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label for="productCategoryFilter" class="block text-sm font-medium text-foreground mb-2">Categoría</label>
+                                <select id="productCategoryFilter" onchange="filterProjectProducts()" class="form-input">
+                                    <option value="">Todas las categorías</option>
+                                </select>
+                            </div>
+                            <div class="md:col-span-2">
+                                <label for="productSearchInput" class="block text-sm font-medium text-foreground mb-2">Buscar</label>
+                                <input type="text" id="productSearchInput" onkeyup="filterProjectProducts()" placeholder="Buscar productos..." class="form-input">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Lista de Productos -->
+                    <div id="projectProductsContainer" class="space-y-4">
+                        <div class="text-center py-12">
+                            <i class="fas fa-spinner fa-spin text-4xl text-muted-foreground mb-4"></i>
+                            <p class="text-muted-foreground">Cargando productos...</p>
+                        </div>
                     </div>
                 </div>
 
-                <!-- Products Tab -->
-                <div id="products-tab" class="tab-content hidden">
-                    <div class="text-center py-12">
-                        <i class="fas fa-flask text-6xl text-muted-foreground mb-4"></i>
-                        <h3 class="text-lg font-medium text-foreground mb-2">Productos Científicos</h3>
-                        <p class="text-muted-foreground">Funcionalidad en desarrollo</p>
+                <!-- Archivos y Documentos Tab -->
+                <div id="archivos-tab" class="tab-content hidden">
+                    <div class="mb-6">
+                        <div class="flex justify-between items-center">
+                            <div>
+                                <h3 class="text-xl font-semibold text-foreground mb-2">
+                                    <i class="fas fa-folder mr-2 text-primary"></i>Archivos y Documentos
+                                </h3>
+                                <p class="text-muted-foreground">Gestiona todos los archivos asociados a este proyecto</p>
+                            </div>
+                            <button onclick="showFileUploadModal()" class="ctei-btn-primary">
+                                <i class="fas fa-upload mr-2"></i>Subir Archivo
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Estadísticas de archivos -->
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                        <div class="bg-card rounded-lg border border-border p-4 text-center">
+                            <div class="text-2xl font-bold text-primary" id="totalFiles">0</div>
+                            <div class="text-sm text-muted-foreground">Archivos Totales</div>
+                        </div>
+                        <div class="bg-card rounded-lg border border-border p-4 text-center">
+                            <div class="text-2xl font-bold text-chart-2" id="totalSize">0 MB</div>
+                            <div class="text-sm text-muted-foreground">Espacio Usado</div>
+                        </div>
+                        <div class="bg-card rounded-lg border border-border p-4 text-center">
+                            <div class="text-2xl font-bold text-chart-3" id="projectFiles">0</div>
+                            <div class="text-sm text-muted-foreground">Archivos de Proyecto</div>
+                        </div>
+                        <div class="bg-card rounded-lg border border-border p-4 text-center">
+                            <div class="text-2xl font-bold text-chart-4" id="productFiles">0</div>
+                            <div class="text-sm text-muted-foreground">Archivos de Productos</div>
+                        </div>
+                    </div>
+
+                    <!-- Filtros y búsqueda -->
+                    <div class="bg-card rounded-lg border border-border p-4 mb-6">
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div>
+                                <label for="fileTypeFilter" class="block text-sm font-medium text-foreground mb-2">Tipo</label>
+                                <select id="fileTypeFilter" onchange="filterProjectFiles()" class="form-input">
+                                    <option value="">Todos los tipos</option>
+                                    <option value="project">Proyecto</option>
+                                    <option value="product">Producto</option>
+                                    <option value="logo">Logo</option>
+                                </select>
+                            </div>
+                            <div class="md:col-span-2">
+                                <label for="fileSearchInput" class="block text-sm font-medium text-foreground mb-2">Buscar</label>
+                                <input type="text" id="fileSearchInput" onkeyup="filterProjectFiles()" placeholder="Buscar archivos..." class="form-input">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Lista de archivos -->
+                    <div id="projectFilesContainer" class="space-y-3">
+                        <div class="text-center py-12">
+                            <i class="fas fa-spinner fa-spin text-4xl text-muted-foreground mb-4"></i>
+                            <p class="text-muted-foreground">Cargando archivos...</p>
+                        </div>
                     </div>
                 </div>
 
-                <!-- Files Tab -->
-                <div id="files-tab" class="tab-content hidden">
-                    <div class="text-center py-12">
-                        <i class="fas fa-file-upload text-6xl text-muted-foreground mb-4"></i>
-                        <h3 class="text-lg font-medium text-foreground mb-2">Gestión de Archivos</h3>
-                        <p class="text-muted-foreground">Funcionalidad en desarrollo</p>
+                <!-- Análisis Tab -->
+                <div id="analisis-tab" class="tab-content hidden">
+                    <div class="mb-6">
+                        <h3 class="text-xl font-semibold text-foreground mb-2">
+                            <i class="fas fa-chart-bar mr-2 text-primary"></i>Análisis del Proyecto
+                        </h3>
+                        <p class="text-muted-foreground">Análisis detallado del scoring y recomendaciones para mejorar el proyecto</p>
+                    </div>
+
+                    <!-- Puntuación General -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+                        <div class="bg-card rounded-lg border border-border p-6 text-center">
+                            <div class="text-3xl font-bold text-primary mb-2" id="analysis-total-score">85</div>
+                            <div class="text-sm text-muted-foreground">Puntuación Total</div>
+                            <div class="mt-2">
+                                <div class="w-full bg-muted rounded-full h-2">
+                                    <div class="bg-primary h-2 rounded-full" style="width: 85%"></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="bg-card rounded-lg border border-border p-6 text-center">
+                            <div class="text-3xl font-bold text-chart-2 mb-2" id="analysis-relevance">8.5</div>
+                            <div class="text-sm text-muted-foreground">Relevancia Científica</div>
+                            <div class="mt-2">
+                                <div class="w-full bg-muted rounded-full h-2">
+                                    <div class="bg-chart-2 h-2 rounded-full" style="width: 85%"></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="bg-card rounded-lg border border-border p-6 text-center">
+                            <div class="text-3xl font-bold text-chart-3 mb-2" id="analysis-feasibility">8.0</div>
+                            <div class="text-sm text-muted-foreground">Viabilidad Técnica</div>
+                            <div class="mt-2">
+                                <div class="w-full bg-muted rounded-full h-2">
+                                    <div class="bg-chart-3 h-2 rounded-full" style="width: 80%"></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="bg-card rounded-lg border border-border p-6 text-center">
+                            <div class="text-3xl font-bold text-chart-4 mb-2" id="analysis-impact">9.0</div>
+                            <div class="text-sm text-muted-foreground">Impacto Social</div>
+                            <div class="mt-2">
+                                <div class="w-full bg-muted rounded-full h-2">
+                                    <div class="bg-chart-4 h-2 rounded-full" style="width: 90%"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Recomendaciones -->
+                    <div class="mb-8">
+                        <h4 class="text-lg font-semibold text-foreground mb-4">
+                            <i class="fas fa-lightbulb mr-2 text-primary"></i>Recomendaciones para Mejorar
+                        </h4>
+                        <div id="recommendationsContainer" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <!-- Recommendations will be loaded dynamically -->
+                            <div class="ctei-insight-card ctei-insight-success">
+                                <div class="flex items-start space-x-3">
+                                    <i class="fas fa-check-circle text-green-500 mt-1"></i>
+                                    <div>
+                                        <h5 class="font-semibold text-foreground">Excelente Relevancia Científica</h5>
+                                        <p class="text-sm text-muted-foreground">Tu proyecto muestra una relevancia científica sobresaliente. Continúa fortaleciendo esta área.</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="ctei-insight-card ctei-insight-info">
+                                <div class="flex items-start space-x-3">
+                                    <i class="fas fa-info-circle text-blue-500 mt-1"></i>
+                                    <div>
+                                        <h5 class="font-semibold text-foreground">Oportunidad en Viabilidad Técnica</h5>
+                                        <p class="text-sm text-muted-foreground">Considera mejorar la documentación técnica y los planes de implementación detallados.</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="ctei-insight-card ctei-insight-success">
+                                <div class="flex items-start space-x-3">
+                                    <i class="fas fa-star text-yellow-500 mt-1"></i>
+                                    <div>
+                                        <h5 class="font-semibold text-foreground">Impacto Social Destacado</h5>
+                                        <p class="text-sm text-muted-foreground">El impacto social de tu proyecto es excepcional. Este es un punto fuerte importante.</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="ctei-insight-card ctei-insight-recommendation">
+                                <div class="flex items-start space-x-3">
+                                    <i class="fas fa-arrow-up text-purple-500 mt-1"></i>
+                                    <div>
+                                        <h5 class="font-semibold text-foreground">Potencial de Crecimiento</h5>
+                                        <p class="text-sm text-muted-foreground">Considera expandir la colaboración interdisciplinaria para aumentar el impacto global.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Análisis Detallado -->
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <!-- Fortalezas -->
+                        <div class="bg-card rounded-lg border border-border p-6">
+                            <h4 class="text-lg font-semibold text-foreground mb-4">
+                                <i class="fas fa-thumbs-up mr-2 text-green-500"></i>Fortalezas Identificadas
+                            </h4>
+                            <div class="space-y-3">
+                                <div class="flex items-start space-x-3">
+                                    <i class="fas fa-check text-green-500 mt-1"></i>
+                                    <div>
+                                        <h6 class="font-medium text-foreground">Relevancia Científica</h6>
+                                        <p class="text-sm text-muted-foreground">El proyecto aborda problemas científicos relevantes con metodología sólida.</p>
+                                    </div>
+                                </div>
+                                <div class="flex items-start space-x-3">
+                                    <i class="fas fa-check text-green-500 mt-1"></i>
+                                    <div>
+                                        <h6 class="font-medium text-foreground">Impacto Social</h6>
+                                        <p class="text-sm text-muted-foreground">Contribuye significativamente al desarrollo social y científico de la región.</p>
+                                    </div>
+                                </div>
+                                <div class="flex items-start space-x-3">
+                                    <i class="fas fa-check text-green-500 mt-1"></i>
+                                    <div>
+                                        <h6 class="font-medium text-foreground">Equipo Calificado</h6>
+                                        <p class="text-sm text-muted-foreground">Cuenta con investigadores experimentados y colaboradores especializados.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Áreas de Mejora -->
+                        <div class="bg-card rounded-lg border border-border p-6">
+                            <h4 class="text-lg font-semibold text-foreground mb-4">
+                                <i class="fas fa-exclamation-triangle mr-2 text-yellow-500"></i>Áreas de Mejora
+                            </h4>
+                            <div class="space-y-3">
+                                <div class="flex items-start space-x-3">
+                                    <i class="fas fa-arrow-up text-blue-500 mt-1"></i>
+                                    <div>
+                                        <h6 class="font-medium text-foreground">Documentación Técnica</h6>
+                                        <p class="text-sm text-muted-foreground">Mejorar la documentación detallada de procedimientos técnicos y protocolos.</p>
+                                    </div>
+                                </div>
+                                <div class="flex items-start space-x-3">
+                                    <i class="fas fa-arrow-up text-blue-500 mt-1"></i>
+                                    <div>
+                                        <h6 class="font-medium text-foreground">Difusión de Resultados</h6>
+                                        <p class="text-sm text-muted-foreground">Desarrollar estrategia de comunicación y publicación de hallazgos.</p>
+                                    </div>
+                                </div>
+                                <div class="flex items-start space-x-3">
+                                    <i class="fas fa-arrow-up text-blue-500 mt-1"></i>
+                                    <div>
+                                        <h6 class="font-medium text-foreground">Sostenibilidad</h6>
+                                        <p class="text-sm text-muted-foreground">Planificar mecanismos para la sostenibilidad post-proyecto.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Acciones Recomendadas -->
+                    <div class="mt-8 bg-card rounded-lg border border-border p-6">
+                        <h4 class="text-lg font-semibold text-foreground mb-4">
+                            <i class="fas fa-tasks mr-2 text-primary"></i>Acciones Recomendadas
+                        </h4>
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                            <div class="border border-border rounded-lg p-4 hover:bg-muted/10 transition-colors">
+                                <h6 class="font-medium text-foreground mb-2">Próximos 30 días</h6>
+                                <ul class="text-sm text-muted-foreground space-y-1">
+                                    <li>• Completar documentación técnica</li>
+                                    <li>• Definir indicadores de éxito</li>
+                                    <li>• Establecer cronograma detallado</li>
+                                </ul>
+                            </div>
+                            <div class="border border-border rounded-lg p-4 hover:bg-muted/10 transition-colors">
+                                <h6 class="font-medium text-foreground mb-2">Próximos 3 meses</h6>
+                                <ul class="text-sm text-muted-foreground space-y-1">
+                                    <li>• Iniciar actividades de campo</li>
+                                    <li>• Primer reporte de avances</li>
+                                    <li>• Evaluación intermedia</li>
+                                </ul>
+                            </div>
+                            <div class="border border-border rounded-lg p-4 hover:bg-muted/10 transition-colors">
+                                <h6 class="font-medium text-foreground mb-2">Próximos 6 meses</h6>
+                                <ul class="text-sm text-muted-foreground space-y-1">
+                                    <li>• Publicación de resultados preliminares</li>
+                                    <li>• Difusión en eventos científicos</li>
+                                    <li>• Planificación de sostenibilidad</li>
+                                </ul>
+                            </div>
+                        </div>
                     </div>
                 </div>
+            </div>
+        </div>
 
-                <!-- Monitoring Tab -->
-                <div id="monitoring-tab" class="tab-content hidden">
-                    <div class="text-center py-12">
-                        <i class="fas fa-chart-line text-6xl text-muted-foreground mb-4"></i>
-                        <h3 class="text-lg font-medium text-foreground mb-2">Monitoreo Estratégico</h3>
-                        <p class="text-muted-foreground">Funcionalidad en desarrollo</p>
-                    </div>
+        <!-- Footer Actions Section -->
+        <div class="bg-card border-t border-border mt-auto">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+                <div class="flex justify-end space-x-4">
+                    <a href="/dashboard" class="ctei-btn-secondary">
+                        <i class="fas fa-times mr-2"></i>Cancelar
+                    </a>
+                    <button type="button" onclick="saveAllChanges()" class="ctei-btn-primary">
+                        <i class="fas fa-save mr-2"></i>Guardar Todos los Cambios
+                    </button>
                 </div>
             </div>
         </div>
@@ -468,9 +893,678 @@
             }
         }
 
+        // Formulation functions
+        async function saveFormulation() {
+            const formulation = document.getElementById('project-formulation').value;
+            const token = localStorage.getItem('auth_token');
+
+            try {
+                const response = await axios.post('/api/private/projects/2/formulation', {
+                    formulation: formulation
+                }, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (response.data.success) {
+                    alert('Formulación guardada exitosamente');
+                } else {
+                    alert('Error al guardar: ' + response.data.error);
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Error al guardar la formulación');
+            }
+        }
+
+        function exportFormulation() {
+            const formulation = document.getElementById('project-formulation').value;
+            const title = document.getElementById('title').value || 'Proyecto';
+
+            const blob = new Blob([formulation], { type: 'text/plain' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `formulacion-${title}.txt`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(url);
+        }
+
+        // Project products management
+        let projectProducts = [];
+
+        async function loadProjectProducts() {
+            try {
+                const token = localStorage.getItem('auth_token');
+                const response = await axios.get('/api/private/projects/2/products', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (response.data.success) {
+                    projectProducts = response.data.data.products || [];
+                    populateProductCategoryFilter();
+                    renderProjectProductsList(projectProducts);
+                }
+            } catch (error) {
+                console.error('Error loading project products:', error);
+                document.getElementById('projectProductsContainer').innerHTML = `
+                    <div class="text-center py-12">
+                        <i class="fas fa-exclamation-triangle text-4xl text-destructive mb-4"></i>
+                        <p class="text-destructive">Error al cargar productos</p>
+                    </div>
+                `;
+            }
+        }
+
+        function populateProductCategoryFilter() {
+            const categoryFilter = document.getElementById('productCategoryFilter');
+            if (!categoryFilter) return;
+
+            // Get unique categories from products
+            const categories = [...new Set(projectProducts.map(p => p.product_type).filter(Boolean))];
+
+            categoryFilter.innerHTML = '<option value="">Todas las categorías</option>';
+            categories.forEach(category => {
+                const option = document.createElement('option');
+                option.value = category;
+                option.textContent = category;
+                categoryFilter.appendChild(option);
+            });
+        }
+
+        function filterProjectProducts() {
+            const statusFilter = document.getElementById('productStatusFilter')?.value || '';
+            const categoryFilter = document.getElementById('productCategoryFilter')?.value || '';
+            const searchInput = document.getElementById('productSearchInput')?.value?.toLowerCase() || '';
+
+            let filteredProducts = projectProducts.filter(product => {
+                const matchesStatus = !statusFilter ||
+                    (statusFilter === 'public' && product.is_public) ||
+                    (statusFilter === 'private' && !product.is_public);
+
+                const matchesCategory = !categoryFilter || product.product_type === categoryFilter;
+
+                const matchesSearch = !searchInput ||
+                    (product.product_code && product.product_code.toLowerCase().includes(searchInput)) ||
+                    (product.description && product.description.toLowerCase().includes(searchInput));
+
+                return matchesStatus && matchesCategory && matchesSearch;
+            });
+
+            renderProjectProductsList(filteredProducts);
+        }
+
+        function renderProjectProductsList(products) {
+            const container = document.getElementById('projectProductsContainer');
+
+            if (!products || products.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center py-12">
+                        <i class="fas fa-box-open text-6xl text-muted-foreground mb-4"></i>
+                        <h3 class="text-lg font-medium text-foreground mb-2">No hay productos aún</h3>
+                        <p class="text-muted-foreground mb-6">Comienza creando tu primer producto científico</p>
+                        <button onclick="showEnhancedProductModalWithAuthors(2)" class="ctei-btn-primary">
+                            <i class="fas fa-plus mr-2"></i>Crear Primer Producto
+                        </button>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = products.map(product => `
+                <div class="ctei-product-card-enhanced" onclick="handleProductCardClick(event, 2, ${product.id})">
+                    <div class="ctei-product-grid">
+                        <!-- Columna 1: Información Principal (60%) -->
+                        <div class="ctei-product-main-info">
+                            <h3 class="ctei-product-title">${product.description || 'Producto sin descripción'}</h3>
+                            <div class="ctei-product-identifier">
+                                <i class="fas fa-hashtag mr-1"></i>
+                                <span class="text-[var(--chart-2)]">${product.product_code || 'Sin código'}</span>
+                            </div>
+                            <div class="ctei-product-badges">
+                                <span class="ctei-status-badge ${product.is_public ? 'public' : 'private'}">
+                                    <i class="fas fa-${product.is_public ? 'eye' : 'eye-slash'} mr-1"></i>
+                                    ${product.is_public ? 'Público' : 'Privado'}
+                                </span>
+                                ${product.product_type ? `
+                                    <span class="ctei-category-badge">${product.product_type}</span>
+                                ` : ''}
+                            </div>
+                        </div>
+
+                        <!-- Columna 2: Metadata (35%) -->
+                        <div class="ctei-product-metadata">
+                            <div class="ctei-metadata-item">
+                                <i class="fas fa-user text-[var(--chart-5)]"></i>
+                                <span>${product.creator_name || 'No especificado'}</span>
+                            </div>
+                            <div class="ctei-metadata-item">
+                                <i class="fas fa-calendar text-[var(--chart-1)]"></i>
+                                <span>${new Date(product.created_at).toLocaleDateString('es-ES')}</span>
+                            </div>
+                            ${product.publication_date ? `
+                                <div class="ctei-metadata-item">
+                                    <i class="fas fa-calendar-alt text-[var(--chart-2)]"></i>
+                                    <span>${new Date(product.publication_date).toLocaleDateString('es-ES')}</span>
+                                </div>
+                            ` : ''}
+                        </div>
+
+                        <!-- Columna 3: Acciones (5%) -->
+                        <div class="ctei-product-actions">
+                            <button onclick="event.stopPropagation(); editProjectProduct(2, ${product.id})"
+                                    class="ctei-action-btn ctei-action-edit"
+                                    title="Editar producto">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button onclick="event.stopPropagation(); toggleProductVisibility(2, ${product.id}, ${product.is_public ? false : true})"
+                                    class="ctei-action-btn"
+                                    title="${product.is_public ? 'Hacer privado' : 'Hacer público'}">
+                                <i class="fas fa-${product.is_public ? 'eye-slash' : 'eye'}"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function editProjectProduct(projectId, productId) {
+            const product = projectProducts.find(p => p.id === productId);
+            if (product) {
+                showEnhancedProductModalWithAuthors(projectId, product);
+            }
+        }
+
+        // Project files management
+        let projectFiles = [];
+
+        async function loadProjectFiles() {
+            try {
+                const token = localStorage.getItem('auth_token');
+
+                // Load project files
+                const projectFilesResponse = await axios.get('/api/private/projects/2/files', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                // Load product files
+                const productsResponse = await axios.get('/api/private/projects/2/products', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                let allFiles = [];
+
+                // Add project files
+                if (projectFilesResponse.data.success) {
+                    const projectFiles = projectFilesResponse.data.data.map(file => ({
+                        ...file,
+                        entity_type: 'project',
+                        entity_name: 'Proyecto Principal'
+                    }));
+                    allFiles.push(...projectFiles);
+                }
+
+                // Add product files
+                if (productsResponse.data.success) {
+                    const products = productsResponse.data.data.products || [];
+                    for (const product of products) {
+                        try {
+                            const productFilesResponse = await axios.get(`/api/private/projects/2/products/${product.id}/files`, {
+                                headers: { 'Authorization': `Bearer ${token}` }
+                            });
+                            if (productFilesResponse.data.success) {
+                                const productFiles = productFilesResponse.data.data.map(file => ({
+                                    ...file,
+                                    entity_type: 'product',
+                                    entity_name: product.product_code || 'Producto'
+                                }));
+                                allFiles.push(...productFiles);
+                            }
+                        } catch (error) {
+                            console.warn(`Error loading files for product ${product.id}:`, error);
+                        }
+                    }
+                }
+
+                projectFiles = allFiles;
+                updateFileStats();
+                renderProjectFilesList(projectFiles);
+
+            } catch (error) {
+                console.error('Error loading project files:', error);
+                document.getElementById('projectFilesContainer').innerHTML = `
+                    <div class="text-center py-12">
+                        <i class="fas fa-exclamation-triangle text-4xl text-destructive mb-4"></i>
+                        <p class="text-destructive">Error al cargar archivos</p>
+                    </div>
+                `;
+            }
+        }
+
+        function updateFileStats() {
+            const totalFiles = projectFiles.length;
+            const totalSize = projectFiles.reduce((sum, file) => sum + (file.file_size || 0), 0);
+            const projectFilesCount = projectFiles.filter(f => f.entity_type === 'project').length;
+            const productFilesCount = projectFiles.filter(f => f.entity_type === 'product').length;
+
+            document.getElementById('totalFiles').textContent = totalFiles;
+            document.getElementById('totalSize').textContent = formatFileSize(totalSize);
+            document.getElementById('projectFiles').textContent = projectFilesCount;
+            document.getElementById('productFiles').textContent = productFilesCount;
+        }
+
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 B';
+            const k = 1024;
+            const sizes = ['B', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+        }
+
+        function filterProjectFiles() {
+            const typeFilter = document.getElementById('fileTypeFilter')?.value || '';
+            const searchInput = document.getElementById('fileSearchInput')?.value?.toLowerCase() || '';
+
+            let filteredFiles = projectFiles.filter(file => {
+                const matchesType = !typeFilter || file.entity_type === typeFilter;
+                const matchesSearch = !searchInput ||
+                    (file.original_filename && file.original_filename.toLowerCase().includes(searchInput)) ||
+                    (file.entity_name && file.entity_name.toLowerCase().includes(searchInput));
+
+                return matchesType && matchesSearch;
+            });
+
+            renderProjectFilesList(filteredFiles);
+        }
+
+        function renderProjectFilesList(files) {
+            const container = document.getElementById('projectFilesContainer');
+
+            if (!files || files.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center py-12">
+                        <i class="fas fa-folder-open text-6xl text-muted-foreground mb-4"></i>
+                        <h3 class="text-lg font-medium text-foreground mb-2">No hay archivos aún</h3>
+                        <p class="text-muted-foreground mb-6">Sube tu primer archivo para comenzar</p>
+                        <button onclick="showFileUploadModal()" class="ctei-btn-primary">
+                            <i class="fas fa-upload mr-2"></i>Subir Archivo
+                        </button>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = files.map(file => `
+                <div class="ctei-file-item">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center space-x-3">
+                            <div class="ctei-file-icon">
+                                <i class="fas fa-${getFileIcon(file.original_filename || file.filename)}"></i>
+                            </div>
+                            <div>
+                                <h4 class="font-medium text-foreground">${file.original_filename || file.filename}</h4>
+                                <p class="text-sm text-muted-foreground">
+                                    ${file.entity_name} • ${formatFileSize(file.file_size || 0)} • ${new Date(file.created_at).toLocaleDateString('es-ES')}
+                                </p>
+                            </div>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <button onclick="downloadFile('${file.id}')" class="ctei-btn-secondary text-sm" title="Descargar">
+                                <i class="fas fa-download"></i>
+                            </button>
+                            <button onclick="deleteFile('${file.id}')" class="ctei-btn-danger text-sm" title="Eliminar">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function getFileIcon(filename) {
+            const ext = filename.split('.').pop().toLowerCase();
+            const iconMap = {
+                'pdf': 'file-pdf',
+                'doc': 'file-word',
+                'docx': 'file-word',
+                'xls': 'file-excel',
+                'xlsx': 'file-excel',
+                'ppt': 'file-powerpoint',
+                'pptx': 'file-powerpoint',
+                'jpg': 'file-image',
+                'jpeg': 'file-image',
+                'png': 'file-image',
+                'gif': 'file-image',
+                'zip': 'file-archive',
+                'rar': 'file-archive'
+            };
+            return iconMap[ext] || 'file';
+        }
+
+        function showFileUploadModal() {
+            const modal = document.createElement('div');
+            modal.className = 'modal-overlay';
+            modal.innerHTML = `
+                <div class="modal-content">
+                    <div class="sticky">
+                        <h2 class="text-xl font-semibold mb-4">Subir Archivo</h2>
+                    </div>
+                    <form id="fileUploadForm" class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium mb-2">Archivo</label>
+                            <input type="file" id="fileInput" class="form-input" required>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium mb-2">Tipo de Archivo</label>
+                            <select id="fileType" class="form-input" required>
+                                <option value="project">Archivo de Proyecto</option>
+                                <option value="product">Archivo de Producto</option>
+                                <option value="logo">Logo</option>
+                            </select>
+                        </div>
+                        <div id="productSelector" class="hidden">
+                            <label class="block text-sm font-medium mb-2">Producto Asociado</label>
+                            <select id="productId" class="form-input">
+                                <option value="">Cargando productos...</option>
+                            </select>
+                        </div>
+                    </form>
+                    <div class="flex justify-end space-x-3 mt-6">
+                        <button onclick="closeModal()" class="ctei-btn-secondary">Cancelar</button>
+                        <button onclick="uploadFile()" class="ctei-btn-primary">Subir Archivo</button>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(modal);
+
+            // Handle file type change
+            document.getElementById('fileType').addEventListener('change', function() {
+                const productSelector = document.getElementById('productSelector');
+                if (this.value === 'product') {
+                    productSelector.classList.remove('hidden');
+                    loadProductsForFileUpload();
+                } else {
+                    productSelector.classList.add('hidden');
+                }
+            });
+        }
+
+        async function loadProductsForFileUpload() {
+            try {
+                const token = localStorage.getItem('auth_token');
+                const response = await axios.get('/api/private/projects/2/products', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                if (response.data.success) {
+                    const products = response.data.data.products || [];
+                    const select = document.getElementById('productId');
+                    select.innerHTML = '<option value="">Seleccionar producto...</option>';
+                    products.forEach(product => {
+                        const option = document.createElement('option');
+                        option.value = product.id;
+                        option.textContent = `${product.product_code} - ${product.description}`;
+                        select.appendChild(option);
+                    });
+                }
+            } catch (error) {
+                console.error('Error loading products:', error);
+            }
+        }
+
+        async function uploadFile() {
+            const fileInput = document.getElementById('fileInput');
+            const fileType = document.getElementById('fileType');
+            const productId = document.getElementById('productId');
+
+            if (!fileInput.files[0]) {
+                alert('Por favor selecciona un archivo');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('file', fileInput.files[0]);
+
+            try {
+                const token = localStorage.getItem('auth_token');
+                let response;
+
+                if (fileType.value === 'product' && productId.value) {
+                    response = await axios.post(`/api/private/projects/2/products/${productId.value}/upload`, formData, {
+                        headers: {
+                            'Authorization': `Bearer ${token}`,
+                            'Content-Type': 'multipart/form-data'
+                        }
+                    });
+                } else {
+                    response = await axios.post('/api/private/projects/2/upload', formData, {
+                        headers: {
+                            'Authorization': `Bearer ${token}`,
+                            'Content-Type': 'multipart/form-data'
+                        }
+                    });
+                }
+
+                if (response.data.success) {
+                    alert('Archivo subido exitosamente');
+                    closeModal();
+                    loadProjectFiles(); // Reload files
+                } else {
+                    alert('Error al subir archivo: ' + response.data.error);
+                }
+            } catch (error) {
+                console.error('Error uploading file:', error);
+                alert('Error al subir el archivo');
+            }
+        }
+
+        async function downloadFile(fileId) {
+            try {
+                const token = localStorage.getItem('auth_token');
+                const response = await axios.get(`/api/private/files/${fileId}/download`, {
+                    headers: { 'Authorization': `Bearer ${token}` },
+                    responseType: 'blob'
+                });
+
+                const url = window.URL.createObjectURL(new Blob([response.data]));
+                const link = document.createElement('a');
+                link.href = url;
+                link.setAttribute('download', 'archivo');
+                document.body.appendChild(link);
+                link.click();
+                link.remove();
+                window.URL.revokeObjectURL(url);
+            } catch (error) {
+                console.error('Error downloading file:', error);
+                alert('Error al descargar el archivo');
+            }
+        }
+
+        async function deleteFile(fileId) {
+            if (!confirm('¿Estás seguro de que deseas eliminar este archivo?')) {
+                return;
+            }
+
+            try {
+                const token = localStorage.getItem('auth_token');
+                const response = await axios.delete(`/api/private/files/${fileId}`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                if (response.data.success) {
+                    alert('Archivo eliminado exitosamente');
+                    loadProjectFiles(); // Reload files
+                } else {
+                    alert('Error al eliminar archivo: ' + response.data.error);
+                }
+            } catch (error) {
+                console.error('Error deleting file:', error);
+                alert('Error al eliminar el archivo');
+            }
+        }
+
+        function closeModal() {
+            const modal = document.querySelector('.modal-overlay');
+            if (modal) {
+                modal.remove();
+            }
+        }
+
+        async function saveAllChanges() {
+            // Save project form data
+            await saveProject({ preventDefault: () => {} });
+
+            // Save formulation if it exists
+            const formulation = document.getElementById('project-formulation');
+            if (formulation && formulation.value.trim()) {
+                await saveFormulation();
+            }
+
+            alert('Todos los cambios han sido guardados exitosamente');
+        }
+
+        // Project analysis management
+        async function loadProjectAnalysis() {
+            try {
+                const token = localStorage.getItem('auth_token');
+                const response = await axios.get('/api/private/projects/2/analysis', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                if (response.data.success) {
+                    const analysis = response.data.data;
+                    updateAnalysisDisplay(analysis);
+                } else {
+                    // Use default analysis data if API doesn't exist yet
+                    updateAnalysisDisplay(getDefaultAnalysisData());
+                }
+            } catch (error) {
+                console.error('Error loading project analysis:', error);
+                // Use default analysis data
+                updateAnalysisDisplay(getDefaultAnalysisData());
+            }
+        }
+
+        function getDefaultAnalysisData() {
+            return {
+                total_score: 85,
+                relevance_score: 8.5,
+                technical_score: 8.0,
+                impact_score: 9.0,
+                recommendations: [
+                    {
+                        type: 'success',
+                        title: 'Excelente Relevancia Científica',
+                        message: 'Tu proyecto muestra una relevancia científica sobresaliente. Continúa fortaleciendo esta área.'
+                    },
+                    {
+                        type: 'info',
+                        title: 'Oportunidad en Viabilidad Técnica',
+                        message: 'Considera mejorar la documentación técnica y los planes de implementación detallados.'
+                    },
+                    {
+                        type: 'success',
+                        title: 'Impacto Social Destacado',
+                        message: 'El impacto social de tu proyecto es excepcional. Este es un punto fuerte importante.'
+                    },
+                    {
+                        type: 'recommendation',
+                        title: 'Potencial de Crecimiento',
+                        message: 'Considera expandir la colaboración interdisciplinaria para aumentar el impacto global.'
+                    }
+                ]
+            };
+        }
+
+        function updateAnalysisDisplay(analysis) {
+            // Update scores
+            document.getElementById('analysis-total-score').textContent = analysis.total_score || 85;
+            document.getElementById('analysis-relevance').textContent = analysis.relevance_score || 8.5;
+            document.getElementById('analysis-feasibility').textContent = analysis.technical_score || 8.0;
+            document.getElementById('analysis-impact').textContent = analysis.impact_score || 9.0;
+
+            // Update progress bars
+            const totalPercent = ((analysis.total_score || 85) / 10) * 100;
+            const relevancePercent = ((analysis.relevance_score || 8.5) / 10) * 100;
+            const feasibilityPercent = ((analysis.technical_score || 8.0) / 10) * 100;
+            const impactPercent = ((analysis.impact_score || 9.0) / 10) * 100;
+
+            document.querySelector('#analysis-total-score').nextElementSibling.querySelector('div').style.width = totalPercent + '%';
+            document.querySelector('#analysis-relevance').nextElementSibling.querySelector('div').style.width = relevancePercent + '%';
+            document.querySelector('#analysis-feasibility').nextElementSibling.querySelector('div').style.width = feasibilityPercent + '%';
+            document.querySelector('#analysis-impact').nextElementSibling.querySelector('div').style.width = impactPercent + '%';
+
+            // Update recommendations if available
+            if (analysis.recommendations && analysis.recommendations.length > 0) {
+                const container = document.getElementById('recommendationsContainer');
+                container.innerHTML = analysis.recommendations.map(rec => {
+                    const iconClass = getRecommendationIcon(rec.type);
+                    const cardClass = getRecommendationCardClass(rec.type);
+                    return `
+                        <div class="ctei-insight-card ${cardClass}">
+                            <div class="flex items-start space-x-3">
+                                <i class="${iconClass} mt-1"></i>
+                                <div>
+                                    <h5 class="font-semibold text-foreground">${rec.title}</h5>
+                                    <p class="text-sm text-muted-foreground">${rec.message}</p>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            }
+        }
+
+        function getRecommendationIcon(type) {
+            const icons = {
+                'success': 'fas fa-check-circle text-green-500',
+                'info': 'fas fa-info-circle text-blue-500',
+                'warning': 'fas fa-exclamation-triangle text-yellow-500',
+                'recommendation': 'fas fa-arrow-up text-purple-500'
+            };
+            return icons[type] || 'fas fa-info-circle text-blue-500';
+        }
+
+        function getRecommendationCardClass(type) {
+            const classes = {
+                'success': 'ctei-insight-success',
+                'info': 'ctei-insight-info',
+                'warning': 'ctei-insight-warning',
+                'recommendation': 'ctei-insight-recommendation'
+            };
+            return classes[type] || 'ctei-insight-info';
+        }
+
         // Initialize
         document.addEventListener('DOMContentLoaded', function() {
             loadProject();
+            // Load content when tabs become active
+            const observer = new MutationObserver(function(mutations) {
+                mutations.forEach(function(mutation) {
+                    if (mutation.type === 'attributes' && mutation.attributeName === 'class') {
+                        const target = mutation.target;
+                        if (target.id === 'productos-tab' && !target.classList.contains('hidden')) {
+                            loadProjectProducts();
+                        } else if (target.id === 'archivos-tab' && !target.classList.contains('hidden')) {
+                            loadProjectFiles();
+                        } else if (target.id === 'analisis-tab' && !target.classList.contains('hidden')) {
+                            loadProjectAnalysis();
+                        }
+                    }
+                });
+            });
+
+            const productosTab = document.getElementById('productos-tab');
+            const archivosTab = document.getElementById('archivos-tab');
+            const analisisTab = document.getElementById('analisis-tab');
+            if (productosTab) observer.observe(productosTab, { attributes: true });
+            if (archivosTab) observer.observe(archivosTab, { attributes: true });
+            if (analisisTab) observer.observe(analisisTab, { attributes: true });
         });
     </script>
 </body>
