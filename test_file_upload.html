@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test File Upload - R2</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios@1.6.0/dist/axios.min.js"></script>
+</head>
+<body class="bg-gray-100 p-8">
+    <div class="max-w-2xl mx-auto bg-white p-6 rounded-lg shadow">
+        <h1 class="text-2xl font-bold mb-6">[TEST] Subida de Archivos a R2</h1>
+
+        <div class="space-y-4">
+            <div>
+                <label class="block text-sm font-medium mb-2">Archivo:</label>
+                <input type="file" id="fileInput" class="w-full p-2 border border-gray-300 rounded">
+            </div>
+
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-medium mb-2">Tipo de Entidad:</label>
+                    <select id="entityType" class="w-full p-2 border border-gray-300 rounded">
+                        <option value="project">Proyecto</option>
+                        <option value="product">Producto</option>
+                        <option value="user">Usuario</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium mb-2">ID de Entidad:</label>
+                    <input type="text" id="entityId" value="1" class="w-full p-2 border border-gray-300 rounded">
+                </div>
+            </div>
+
+            <button onclick="uploadFile()" class="w-full bg-blue-600 text-white py-2 px-4 rounded hover:bg-blue-700">
+                [UPLOAD] Subir Archivo a R2
+            </button>
+        </div>
+
+        <div id="result" class="mt-6 p-4 border rounded-lg hidden"></div>
+
+        <div class="mt-6">
+            <h3 class="font-semibold mb-2">Archivos de Prueba:</h3>
+            <div class="space-y-2">
+                <button onclick="createTestFile('test.txt', 'Contenido de prueba')" class="bg-gray-500 text-white px-4 py-2 rounded text-sm">
+                    Crear test.txt
+                </button>
+                <button onclick="createTestJSON()" class="bg-gray-500 text-white px-4 py-2 rounded text-sm ml-2">
+                    Crear test.json
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function showResult(message, isSuccess = true) {
+            const result = document.getElementById('result');
+            result.className = `mt-6 p-4 border rounded-lg ${isSuccess ? 'bg-green-50 border-green-200 text-green-800' : 'bg-red-50 border-red-200 text-red-800'}`;
+            result.innerHTML = `<pre class="whitespace-pre-wrap">${message}</pre>`;
+            result.classList.remove('hidden');
+        }
+
+        function createTestFile(filename, content) {
+            const blob = new Blob([content], { type: 'text/plain' });
+            const file = new File([blob], filename, { type: 'text/plain' });
+
+            // Crear un input file temporal y asignar el archivo
+            const input = document.getElementById('fileInput');
+            const dt = new DataTransfer();
+            dt.items.add(file);
+            input.files = dt.files;
+
+            showResult(`Archivo de prueba "${filename}" creado y seleccionado.`, true);
+        function createTestJSON() {
+            const content = '{"test": "data", "timestamp": "' + new Date().toISOString() + '"}';
+            createTestFile('test.json', content);
+        }
+        }
+
+        async function uploadFile() {
+            const fileInput = document.getElementById('fileInput');
+            const entityType = document.getElementById('entityType').value;
+            const entityId = document.getElementById('entityId').value;
+
+            if (!fileInput.files[0]) {
+                showResult('Por favor selecciona un archivo primero.', false);
+                return;
+            }
+
+            const file = fileInput.files[0];
+            const formData = new FormData();
+            formData.append('file', file);
+            formData.append('entityType', entityType);
+            formData.append('entityId', entityId);
+
+            showResult('Subiendo archivo...', true);
+
+            try {
+                const response = await axios.post('/test-upload-file', formData, {
+                    headers: {
+                        'Content-Type': 'multipart/form-data'
+                    }
+                });
+
+                if (response.data.success) {
+                    showResult(`[SUCCESS] Archivo subido exitosamente!\n\nDetalles:\n- Nombre: ${response.data.fileName}\n- Tamaño: ${response.data.size} bytes\n- Tipo: ${response.data.type}`, true);
+                } else {
+                    showResult(`[ERROR] Error: ${response.data.error}\n\nDetalles: ${JSON.stringify(response.data.details, null, 2)}`, false);
+                }
+            } catch (error) {
+                const errorMsg = error.response?.data?.error || error.message;
+                const details = error.response?.data?.details || '';
+                showResult(`[ERROR] Error de conexión: ${errorMsg}\n\nDetalles: ${details}`, false);
+            }
+        }
+    </script>
+</body>
+</html>

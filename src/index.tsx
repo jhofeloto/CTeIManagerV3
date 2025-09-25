@@ -8604,6 +8604,76 @@ app.get('/debug-dashboard', (c) => {
   `)
 })
 
+// Ruta temporal de testing para subida de archivos sin autenticación
+app.post('/test-upload-file', async (c) => {
+  try {
+    const formData = await c.req.formData();
+    const file = formData.get('file') as File;
+    const entityType = formData.get('entityType') as string;
+    const entityId = formData.get('entityId') as string;
+
+    if (!file) {
+      return c.json({ success: false, error: 'No se encontró archivo' }, 400);
+    }
+
+    console.log('[TEST] Intentando subir archivo:', file.name, 'Tipo:', entityType, 'ID:', entityId);
+
+    // Intentar subir a R2
+    try {
+      const fileName = `${Date.now()}-${file.name}`;
+      const fileBuffer = await file.arrayBuffer();
+
+      console.log('[TEST] Subiendo a R2 con nombre:', fileName);
+
+      // Intentar el put en R2
+      await c.env.R2.put(fileName, fileBuffer, {
+        httpMetadata: {
+          contentType: file.type,
+        },
+        customMetadata: {
+          entityType: entityType || 'unknown',
+          entityId: entityId || 'unknown',
+          uploadedAt: new Date().toISOString(),
+          originalName: file.name,
+          size: file.size.toString()
+        }
+      });
+
+      console.log('[TEST] Archivo subido exitosamente a R2');
+
+      return c.json({
+        success: true,
+        message: 'Archivo subido exitosamente',
+        fileName: fileName,
+        size: file.size,
+        type: file.type
+      });
+
+    } catch (r2Error) {
+      console.error('[TEST] Error en R2:', r2Error);
+      return c.json({
+        success: false,
+        error: 'Error subiendo a R2',
+        details: r2Error.message,
+        stack: r2Error.stack
+      }, 500);
+    }
+
+  } catch (error) {
+    console.error('[TEST] Error general:', error);
+    return c.json({
+      success: false,
+      error: 'Error procesando archivo',
+      details: error.message
+    }, 500);
+  }
+});
+
+// Ruta de fallback para SPA routing (DEBE IR AL FINAL)
+app.get('*', (c) => {
+  // Redireccionar a la página principal
+  return c.redirect('/')
+})
 // Ruta de fallback para SPA routing (DEBE IR AL FINAL)
 app.get('*', (c) => {
   // Redireccionar a la página principal
