@@ -3036,7 +3036,7 @@ app.get('/dashboard', (c) => {
   `)
 })
 
-// Página de edición de proyecto mejorada con todas las funcionalidades
+// Página de edición de proyecto mejorada con interfaz de pestañas
 app.get('/dashboard/proyectos/:id/editar', async (c) => {
   const projectId = c.req.param('id');
 
@@ -3263,6 +3263,50 @@ app.get('/dashboard/proyectos/:id/editar', async (c) => {
             min-height: 200px;
             padding: 1rem;
         }
+
+        /* Sistema de pestañas */
+        .tab-button {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            background: transparent;
+            color: hsl(var(--muted-foreground));
+            font-weight: 500;
+            font-size: 0.875rem;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            transition: all 0.2s;
+            white-space: nowrap;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .tab-button:hover {
+            color: hsl(var(--foreground));
+            background: hsl(var(--accent));
+        }
+
+        .tab-button.active {
+            color: hsl(var(--primary));
+            border-bottom-color: hsl(var(--primary));
+            background: hsl(var(--primary) / 0.1);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* Análisis de scoring */
+        .scoring-analysis-item {
+            background: hsl(var(--card));
+            border: 1px solid hsl(var(--border));
+            border-radius: calc(var(--radius));
+            padding: 1.5rem;
+        }
     </style>
 </head>
 <body class="level-0 bg-background text-foreground">
@@ -3343,257 +3387,565 @@ app.get('/dashboard/proyectos/:id/editar', async (c) => {
         </div>
     </div>
 
-    <!-- Contenido Principal -->
+    <!-- Sistema de Pestañas -->
+    <div class="bg-card border-b border-border">
+        <div class="max-w-6xl mx-auto px-4">
+            <div class="flex space-x-1 overflow-x-auto">
+                <button id="tab-resumen" class="tab-button active" onclick="switchTab('resumen')">
+                    <i class="fas fa-clipboard-list mr-2"></i>
+                    Resumen y Estado
+                </button>
+                <button id="tab-formulacion" class="tab-button" onclick="switchTab('formulacion')">
+                    <i class="fas fa-file-alt mr-2"></i>
+                    Formulación del Proyecto
+                </button>
+                <button id="tab-productos" class="tab-button" onclick="switchTab('productos')">
+                    <i class="fas fa-rocket mr-2"></i>
+                    Productos y Resultados
+                </button>
+                <button id="tab-archivos" class="tab-button" onclick="switchTab('archivos')">
+                    <i class="fas fa-folder mr-2"></i>
+                    Archivos y Documentos
+                </button>
+                <button id="tab-scoring" class="tab-button" onclick="switchTab('scoring')">
+                    <i class="fas fa-chart-bar mr-2"></i>
+                    Análisis de Scoring
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Contenido Principal con Pestañas -->
     <div class="edit-layout">
-        <!-- Columna Principal -->
-        <div class="main-column">
-            <!-- Panel de Información Básica -->
-            <div class="panel">
-                <div class="panel-title">
-                    <i class="fas fa-info-circle text-primary"></i>
-                    Información del Proyecto
-                </div>
-
+        <!-- Pestaña 1: 📝 Resumen y Estado -->
+        <div id="tab-content-resumen" class="tab-content active">
+            <div class="main-column">
                 <form id="edit-project-form">
-                    <!-- Sección: Información General -->
-                    <div class="mb-6">
-                        <h3 class="text-lg font-semibold text-foreground mb-4 pb-2 border-b border-border">
-                            <i class="fas fa-info-circle text-primary mr-2"></i>
-                            Información General
-                        </h3>
-                        <div class="space-y-4">
-                            <div class="form-field">
-                                <label for="project-title" class="form-label">
-                                    <i class="fas fa-heading text-primary mr-2"></i>
-                                    Título del Proyecto *
-                                </label>
-                                <input
-                                    type="text"
-                                    id="project-title"
-                                    name="title"
-                                    class="form-input"
-                                    placeholder="Ingrese el título del proyecto"
-                                    required
-                                >
-                            </div>
+                    <!-- Panel de Información Básica -->
+                    <div class="panel">
+                        <div class="panel-title">
+                            <i class="fas fa-info-circle text-primary"></i>
+                            Información del Proyecto
+                        </div>
 
-                            <div class="form-field">
-                                <label for="project-abstract" class="form-label">
-                                    <i class="fas fa-align-left text-primary mr-2"></i>
-                                    Resumen *
-                                </label>
-                                <textarea
-                                    id="project-abstract"
-                                    name="abstract"
-                                    class="form-textarea"
-                                    placeholder="Descripción breve del proyecto..."
-                                    required
-                                ></textarea>
-                            </div>
-
-                            <div class="form-field">
-                                <label for="project-description" class="form-label">
-                                    <i class="fas fa-file-alt text-primary mr-2"></i>
-                                    Descripción Completa (Markdown)
-                                </label>
-                                <div class="markdown-editor">
-                                    <div class="markdown-toolbar">
-                                        <button type="button" class="markdown-btn" onclick="formatText('bold')"><strong>B</strong></button>
-                                        <button type="button" class="markdown-btn" onclick="formatText('italic')"><em>I</em></button>
-                                        <button type="button" class="markdown-btn" onclick="formatText('header')">#</button>
-                                        <button type="button" class="markdown-btn" onclick="formatText('list')">-</button>
-                                        <button type="button" class="markdown-btn" onclick="formatText('link')">@</button>
-                                        <button type="button" class="markdown-btn" onclick="formatText('code')">{</button>
-                                        <button type="button" class="markdown-btn" onclick="insertText('**', '**')">**Negrita**</button>
-                                        <button type="button" class="markdown-btn" onclick="insertText('*', '*')">*Cursiva*</button>
-                                        <button type="button" class="markdown-btn" onclick="insertText('\`', '\`')">\`Código\`</button>
-                                        <button type="button" class="markdown-btn" onclick="insertText('[', '](url)')">[Enlace](url)</button>
-                                    </div>
-                                    <div class="markdown-content">
-                                        <textarea id="project-description" name="description" class="w-full h-48 resize-none border-0 outline-none bg-transparent" placeholder="Escribe la descripción completa del proyecto en formato Markdown..."></textarea>
-                                    </div>
+                        <!-- Sección: Información General -->
+                        <div class="mb-6">
+                            <h3 class="text-lg font-semibold text-foreground mb-4 pb-2 border-b border-border">
+                                <i class="fas fa-info-circle text-primary mr-2"></i>
+                                Información General
+                            </h3>
+                            <div class="space-y-4">
+                                <div class="form-field">
+                                    <label for="project-title" class="form-label">
+                                        <i class="fas fa-heading text-primary mr-2"></i>
+                                        Título del Proyecto *
+                                    </label>
+                                    <input
+                                        type="text"
+                                        id="project-title"
+                                        name="title"
+                                        class="form-input"
+                                        placeholder="Ingrese el título del proyecto"
+                                        required
+                                    >
                                 </div>
-                                <div class="flex justify-between items-center mt-2">
-                                    <div class="text-xs text-muted-foreground">
-                                        <i class="fas fa-info-circle mr-1"></i>
-                                        Usa Markdown para formatear: **negrita**, *cursiva*, # encabezados, etc.
-                                    </div>
-                                    <div class="flex gap-2">
-                                        <button type="button" onclick="importMarkdown()" class="text-xs bg-blue-500 text-white px-2 py-1 rounded">
-                                            <i class="fas fa-upload mr-1"></i>Importar
-                                        </button>
-                                    </div>
+
+                                <div class="form-field">
+                                    <label for="project-abstract" class="form-label">
+                                        <i class="fas fa-align-left text-primary mr-2"></i>
+                                        Resumen *
+                                    </label>
+                                    <textarea
+                                        id="project-abstract"
+                                        name="abstract"
+                                        class="form-textarea"
+                                        placeholder="Descripción breve del proyecto..."
+                                        required
+                                    ></textarea>
                                 </div>
                             </div>
                         </div>
-                    </div>
 
-                    <!-- Sección: Detalles Administrativos -->
-                    <div class="mb-6">
-                        <h3 class="text-lg font-semibold text-foreground mb-4 pb-2 border-b border-border">
-                            <i class="fas fa-cogs text-primary mr-2"></i>
-                            Detalles Administrativos
-                        </h3>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div class="form-field">
-                                <label for="project-status" class="form-label">
-                                    <i class="fas fa-info-circle text-primary mr-2"></i>
-                                    Estado
-                                </label>
-                                <select id="project-status" name="status" class="form-select">
-                                    <option value="PLANNING">Planificación</option>
-                                    <option value="ACTIVE">Activo</option>
-                                    <option value="COMPLETED">Completado</option>
-                                    <option value="ON_HOLD">En Espera</option>
-                                </select>
-                            </div>
+                        <!-- Sección: Detalles Administrativos -->
+                        <div class="mb-6">
+                            <h3 class="text-lg font-semibold text-foreground mb-4 pb-2 border-b border-border">
+                                <i class="fas fa-cogs text-primary mr-2"></i>
+                                Detalles Administrativos
+                            </h3>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div class="form-field">
+                                    <label for="project-status" class="form-label">
+                                        <i class="fas fa-info-circle text-primary mr-2"></i>
+                                        Estado
+                                    </label>
+                                    <select id="project-status" name="status" class="form-select">
+                                        <option value="PLANNING">Planificación</option>
+                                        <option value="ACTIVE">Activo</option>
+                                        <option value="COMPLETED">Completado</option>
+                                        <option value="ON_HOLD">En Espera</option>
+                                    </select>
+                                </div>
 
-                            <div class="form-field">
-                                <label for="project-visibility" class="form-label">
-                                    <i class="fas fa-eye text-primary mr-2"></i>
-                                    Visibilidad
-                                </label>
-                                <select id="project-visibility" name="is_public" class="form-select">
-                                    <option value="false">Privado</option>
-                                    <option value="true">Público</option>
-                                </select>
-                            </div>
+                                <div class="form-field">
+                                    <label for="project-visibility" class="form-label">
+                                        <i class="fas fa-eye text-primary mr-2"></i>
+                                        Visibilidad
+                                    </label>
+                                    <select id="project-visibility" name="is_public" class="form-select">
+                                        <option value="false">Privado</option>
+                                        <option value="true">Público</option>
+                                    </select>
+                                </div>
 
-                            <div class="form-field">
-                                <label for="project-start-date" class="form-label">
-                                    <i class="fas fa-calendar-plus text-primary mr-2"></i>
-                                    Fecha de Inicio
-                                </label>
-                                <input
-                                    type="date"
-                                    id="project-start-date"
-                                    name="start_date"
-                                    class="form-input"
-                                >
-                            </div>
+                                <div class="form-field">
+                                    <label for="project-start-date" class="form-label">
+                                        <i class="fas fa-calendar-plus text-primary mr-2"></i>
+                                        Fecha de Inicio
+                                    </label>
+                                    <input
+                                        type="date"
+                                        id="project-start-date"
+                                        name="start_date"
+                                        class="form-input"
+                                    >
+                                </div>
 
-                            <div class="form-field">
-                                <label for="project-end-date" class="form-label">
-                                    <i class="fas fa-calendar-check text-primary mr-2"></i>
-                                    Fecha de Fin
-                                </label>
-                                <input
-                                    type="date"
-                                    id="project-end-date"
-                                    name="end_date"
-                                    class="form-input"
-                                >
-                            </div>
-                        </div>
-                    </div>
+                                <div class="form-field">
+                                    <label for="project-end-date" class="form-label">
+                                        <i class="fas fa-calendar-check text-primary mr-2"></i>
+                                        Fecha de Fin
+                                    </label>
+                                    <input
+                                        type="date"
+                                        id="project-end-date"
+                                        name="end_date"
+                                        class="form-input"
+                                    >
+                                </div>
 
-                    <!-- Sección: Financiamiento -->
-                    <div class="mb-6">
-                        <h3 class="text-lg font-semibold text-foreground mb-4 pb-2 border-b border-border">
-                            <i class="fas fa-dollar-sign text-primary mr-2"></i>
-                            Financiamiento
-                        </h3>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div class="form-field">
-                                <label for="project-budget" class="form-label">
-                                    <i class="fas fa-dollar-sign text-primary mr-2"></i>
-                                    Presupuesto
-                                </label>
-                                <input
-                                    type="number"
-                                    id="project-budget"
-                                    name="budget"
-                                    step="0.01"
-                                    class="form-input"
-                                    placeholder="0.00"
-                                >
-                            </div>
+                                <div class="form-field">
+                                    <label for="project-budget" class="form-label">
+                                        <i class="fas fa-dollar-sign text-primary mr-2"></i>
+                                        Presupuesto
+                                    </label>
+                                    <input
+                                        type="number"
+                                        id="project-budget"
+                                        name="budget"
+                                        step="0.01"
+                                        class="form-input"
+                                        placeholder="0.00"
+                                    >
+                                </div>
 
-                            <div class="form-field">
-                                <label for="project-funding-source" class="form-label">
-                                    <i class="fas fa-university text-primary mr-2"></i>
-                                    Fuente de Financiamiento
-                                </label>
-                                <input
-                                    type="text"
-                                    id="project-funding-source"
-                                    name="funding_source"
-                                    class="form-input"
-                                    placeholder="Ej: Ministerio de Ciencia, Universidad, etc."
-                                >
-                            </div>
-                        </div>
-                    </div>
+                                <div class="form-field">
+                                    <label for="project-funding-source" class="form-label">
+                                        <i class="fas fa-university text-primary mr-2"></i>
+                                        Fuente de Financiamiento
+                                    </label>
+                                    <input
+                                        type="text"
+                                        id="project-funding-source"
+                                        name="funding_source"
+                                        class="form-input"
+                                        placeholder="Ej: Ministerio de Ciencia, Universidad, etc."
+                                    >
+                                </div>
 
-                    <!-- Sección: Información Adicional -->
-                    <div class="mb-6">
-                        <h3 class="text-lg font-semibold text-foreground mb-4 pb-2 border-b border-border">
-                            <i class="fas fa-plus-circle text-primary mr-2"></i>
-                            Información Adicional
-                        </h3>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div class="form-field">
-                                <label for="project-institution" class="form-label">
-                                    <i class="fas fa-building text-primary mr-2"></i>
-                                    Institución
-                                </label>
-                                <input
-                                    type="text"
-                                    id="project-institution"
-                                    name="institution"
-                                    class="form-input"
-                                    placeholder="Nombre de la institución ejecutora"
-                                >
-                            </div>
+                                <div class="form-field">
+                                    <label for="project-institution" class="form-label">
+                                        <i class="fas fa-building text-primary mr-2"></i>
+                                        Institución
+                                    </label>
+                                    <input
+                                        type="text"
+                                        id="project-institution"
+                                        name="institution"
+                                        class="form-input"
+                                        placeholder="Nombre de la institución ejecutora"
+                                    >
+                                </div>
 
-                            <div class="form-field">
-                                <label for="project-code" class="form-label">
-                                    <i class="fas fa-hashtag text-primary mr-2"></i>
-                                    Código del Proyecto
-                                </label>
-                                <input
-                                    type="text"
-                                    id="project-code"
-                                    name="project_code"
-                                    class="form-input"
-                                    placeholder="Ej: CTeI-2024-001"
-                                >
+                                <div class="form-field">
+                                    <label for="project-code" class="form-label">
+                                        <i class="fas fa-hashtag text-primary mr-2"></i>
+                                        Código del Proyecto
+                                    </label>
+                                    <input
+                                        type="text"
+                                        id="project-code"
+                                        name="project_code"
+                                        class="form-input"
+                                        placeholder="Ej: CTeI-2024-001"
+                                    >
+                                </div>
                             </div>
                         </div>
-                    </div>
 
-                    <div class="flex justify-between items-center pt-4 border-t border-border">
-                        <button type="button" id="cancel-btn" class="btn btn-secondary">
-                            <i class="fas fa-times mr-2"></i>Cancelar
-                        </button>
-                        <button type="submit" id="save-btn" class="btn btn-primary" disabled>
-                            <i class="fas fa-save mr-2"></i>Guardar Cambios
-                        </button>
+                        <div class="flex justify-between items-center pt-4 border-t border-border">
+                            <button type="button" id="cancel-btn" class="btn btn-secondary">
+                                <i class="fas fa-times mr-2"></i>Cancelar
+                            </button>
+                            <button type="submit" id="save-btn" class="btn btn-primary" disabled>
+                                <i class="fas fa-save mr-2"></i>Guardar Cambios
+                            </button>
+                        </div>
                     </div>
                 </form>
             </div>
 
-            <!-- Panel de Productos Relacionados -->
-            <div class="panel">
-                <div class="panel-title">
-                    <i class="fas fa-cubes text-primary"></i>
-                    Productos Relacionados
-                </div>
+            <!-- Columna Lateral con Panel de Scoring -->
+            <div class="sidebar-column">
+                <!-- Panel de Sistema de Scoring -->
+                <div class="panel">
+                    <div class="panel-title flex items-center justify-between">
+                        <div class="flex items-center">
+                            <i class="fas fa-star text-primary"></i>
+                            <span class="ml-2">Sistema de Scoring</span>
+                        </div>
+                        <button id="scoring-info-btn" class="text-muted-foreground hover:text-primary transition-colors" title="Información sobre el scoring">
+                            <i class="fas fa-info-circle"></i>
+                        </button>
+                    </div>
 
-                <div id="related-products-list">
-                    <div class="text-center text-muted-foreground py-8">
-                        <i class="fas fa-cubes text-4xl mb-4 opacity-50"></i>
-                        <p>Cargando productos relacionados...</p>
+                    <!-- Tooltip de información del scoring -->
+                    <div id="scoring-tooltip" class="hidden mt-2 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+                        <div class="text-sm text-blue-800 dark:text-blue-200">
+                            <strong>¿Qué es el Sistema de Scoring?</strong><br>
+                            Este sistema mide la completitud y calidad de tu proyecto de investigación en una escala del 0.0 al 10.0.
+                            Un score más alto indica un proyecto mejor documentado y más atractivo para colaboradores y financiadores.
+                        </div>
+                    </div>
+
+                    <div class="score-display mb-4">
+                        <div id="project-score" class="score-value">0.0</div>
+                        <div class="score-label">Score Actual</div>
+                    </div>
+
+                    <div class="space-y-3">
+                        <div class="scoring-item cursor-pointer hover:bg-accent/50 p-2 rounded transition-colors" onclick="switchTab('formulacion')">
+                            <div class="flex justify-between items-center">
+                                <span class="text-sm">Completitud del Perfil</span>
+                                <span id="completeness-score" class="text-sm font-semibold">0%</span>
+                            </div>
+                            <div class="w-full bg-muted rounded-full h-2 mt-1">
+                                <div id="completeness-bar" class="bg-primary h-2 rounded-full transition-all duration-300" style="width: 0%"></div>
+                            </div>
+                            <div class="text-xs text-muted-foreground mt-1">Información básica del proyecto</div>
+                        </div>
+
+                        <div class="scoring-item cursor-pointer hover:bg-accent/50 p-2 rounded transition-colors" onclick="switchTab('productos')">
+                            <div class="flex justify-between items-center">
+                                <span class="text-sm">Productos Asociados</span>
+                                <span id="products-score" class="text-sm font-semibold">0%</span>
+                            </div>
+                            <div class="w-full bg-muted rounded-full h-2 mt-1">
+                                <div id="products-bar" class="bg-green-500 h-2 rounded-full transition-all duration-300" style="width: 0%"></div>
+                            </div>
+                            <div class="text-xs text-muted-foreground mt-1">Productos científicos relacionados</div>
+                        </div>
+
+                        <div class="scoring-item cursor-pointer hover:bg-accent/50 p-2 rounded transition-colors" onclick="switchTab('archivos')">
+                            <div class="flex justify-between items-center">
+                                <span class="text-sm">Documentación</span>
+                                <span id="docs-score" class="text-sm font-semibold">0%</span>
+                            </div>
+                            <div class="w-full bg-muted rounded-full h-2 mt-1">
+                                <div id="docs-bar" class="bg-blue-500 h-2 rounded-full transition-all duration-300" style="width: 0%"></div>
+                            </div>
+                            <div class="text-xs text-muted-foreground mt-1">Archivos y documentos adjuntos</div>
+                        </div>
+
+                        <div class="scoring-item cursor-pointer hover:bg-accent/50 p-2 rounded transition-colors" onclick="switchTab('scoring')">
+                            <div class="flex justify-between items-center">
+                                <span class="text-sm">Colaboradores</span>
+                                <span id="collab-score" class="text-sm font-semibold">0%</span>
+                            </div>
+                            <div class="w-full bg-muted rounded-full h-2 mt-1">
+                                <div id="collab-bar" class="bg-purple-500 h-2 rounded-full transition-all duration-300" style="width: 0%"></div>
+                            </div>
+                            <div class="text-xs text-muted-foreground mt-1">Equipo de investigación</div>
+                        </div>
+                    </div>
+
+                    <div class="mt-4 p-3 bg-muted rounded-lg">
+                        <div class="text-xs text-muted-foreground">
+                            <i class="fas fa-lightbulb mr-1 text-yellow-500"></i>
+                            <strong>Consejo:</strong> Haz clic en cualquier ítem del scoring para ir directamente a la pestaña correspondiente.
+                        </div>
                     </div>
                 </div>
 
-                <div class="mt-4 pt-4 border-t border-border">
-                    <button type="button" onclick="showCreateProductModal()" class="btn btn-primary w-full">
-                        <i class="fas fa-plus mr-2"></i>Crear Nuevo Producto
-                    </button>
+                <!-- Panel de Metadatos -->
+                <div class="panel">
+                    <div class="panel-title">
+                        <i class="fas fa-tags text-primary"></i>
+                        Metadatos
+                    </div>
+
+                    <div class="space-y-3 text-sm">
+                        <div>
+                            <span class="text-muted-foreground">ID del Proyecto:</span>
+                            <div id="project-id-display" class="font-mono text-xs bg-accent px-2 py-1 rounded mt-1">Cargando...</div>
+                        </div>
+
+                        <div>
+                            <span class="text-muted-foreground">Creado:</span>
+                            <div id="project-created" class="text-xs mt-1">-</div>
+                        </div>
+
+                        <div>
+                            <span class="text-muted-foreground">Última Modificación:</span>
+                            <div id="project-updated" class="text-xs mt-1">-</div>
+                        </div>
+
+                        <div>
+                            <span class="text-muted-foreground">Propietario:</span>
+                            <div id="project-owner" class="text-xs mt-1">-</div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
+
+        <!-- Pestaña 2: 📄 Formulación del Proyecto -->
+        <div id="tab-content-formulacion" class="tab-content">
+            <div class="main-column">
+                <div class="panel">
+                    <div class="panel-title">
+                        <i class="fas fa-file-alt text-primary"></i>
+                        Formulación del Proyecto
+                    </div>
+
+                    <div class="mb-4">
+                        <p class="text-muted-foreground text-sm">
+                            Describe la descripción completa del proyecto en formato Markdown. Aquí puedes detallar la justificación, objetivos, metodología y plan de trabajo del proyecto.
+                        </p>
+                    </div>
+
+                    <div class="markdown-editor">
+                        <div class="markdown-toolbar">
+                            <button type="button" class="markdown-btn" onclick="formatText('bold')"><strong>B</strong></button>
+                            <button type="button" class="markdown-btn" onclick="formatText('italic')"><em>I</em></button>
+                            <button type="button" class="markdown-btn" onclick="formatText('header')">#</button>
+                            <button type="button" class="markdown-btn" onclick="formatText('list')">-</button>
+                            <button type="button" class="markdown-btn" onclick="formatText('link')">@</button>
+                            <button type="button" class="markdown-btn" onclick="formatText('code')">{</button>
+                            <button type="button" class="markdown-btn" onclick="insertText('**', '**')">**Negrita**</button>
+                            <button type="button" class="markdown-btn" onclick="insertText('*', '*')">*Cursiva*</button>
+                            <button type="button" class="markdown-btn" onclick="insertText('\`', '\`')">\`Código\`</button>
+                            <button type="button" class="markdown-btn" onclick="insertText('[', '](url)')">[Enlace](url)</button>
+                        </div>
+                        <div class="markdown-content">
+                            <textarea id="project-description" name="description" class="w-full h-96 resize-none border-0 outline-none bg-transparent" placeholder="Escribe la descripción completa del proyecto en formato Markdown..."></textarea>
+                        </div>
+                    </div>
+
+                    <div class="flex justify-between items-center mt-4 pt-4 border-t border-border">
+                        <div class="text-xs text-muted-foreground">
+                            <i class="fas fa-info-circle mr-1"></i>
+                            Usa Markdown para formatear: **negrita**, *cursiva*, # encabezados, etc.
+                        </div>
+                        <div class="flex gap-2">
+                            <button type="button" onclick="importMarkdown()" class="btn btn-secondary btn-sm">
+                                <i class="fas fa-upload mr-2"></i>Importar
+                            </button>
+                            <button type="button" onclick="exportMarkdown()" class="btn btn-secondary btn-sm">
+                                <i class="fas fa-download mr-2"></i>Exportar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Pestaña 3: 🚀 Productos y Resultados -->
+        <div id="tab-content-productos" class="tab-content">
+            <div class="main-column">
+                <div class="panel">
+                    <div class="panel-title flex items-center justify-between">
+                        <div class="flex items-center">
+                            <i class="fas fa-cubes text-primary"></i>
+                            <span class="ml-2">Productos y Resultados</span>
+                        </div>
+                        <button type="button" onclick="showCreateProductModal()" class="btn btn-primary btn-sm">
+                            <i class="fas fa-plus mr-2"></i>Crear Nuevo Producto
+                        </button>
+                    </div>
+
+                    <div id="related-products-list">
+                        <div class="text-center text-muted-foreground py-8">
+                            <i class="fas fa-cubes text-4xl mb-4 opacity-50"></i>
+                            <p>Cargando productos relacionados...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Pestaña 4: 📂 Archivos y Documentos -->
+        <div id="tab-content-archivos" class="tab-content">
+            <div class="main-column">
+                <div class="panel">
+                    <div class="panel-title">
+                        <i class="fas fa-paperclip text-primary"></i>
+                        Archivos y Documentos
+                    </div>
+
+                    <!-- Área de carga de archivos -->
+                    <div id="file-upload-area" class="upload-area mb-4">
+                        <i class="fas fa-cloud-upload-alt text-4xl text-muted-foreground mb-3 block"></i>
+                        <p class="text-sm font-medium text-foreground mb-1">Arrastra archivos aquí</p>
+                        <p class="text-xs text-muted-foreground mb-3">o haz clic para seleccionar</p>
+                        <input type="file" id="file-input" multiple class="hidden" accept=".pdf,.doc,.docx,.txt,.md,.jpg,.jpeg,.png,.gif,.zip,.rar">
+                        <button type="button" onclick="document.getElementById('file-input').click()" class="btn btn-secondary btn-sm">
+                            <i class="fas fa-plus mr-2"></i>Seleccionar Archivos
+                        </button>
+                        <div class="text-xs text-muted-foreground mt-2">
+                            Formatos permitidos: PDF, DOC, DOCX, TXT, MD, imágenes, ZIP, RAR (máx. 10MB cada uno)
+                        </div>
+                    </div>
+
+                    <!-- Área de progreso de carga mejorada -->
+                    <div id="upload-progress-area" style="display: none;" class="mt-4">
+                        <div class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+                            <div class="flex items-center mb-3">
+                                <i class="fas fa-spinner fa-spin text-blue-600 mr-2"></i>
+                                <span class="text-sm font-medium text-blue-800 dark:text-blue-200">Subiendo archivos...</span>
+                            </div>
+                            <div id="upload-progress-list" class="space-y-2"></div>
+                        </div>
+                    </div>
+
+                    <!-- Área de archivos subidos exitosamente -->
+                    <div id="upload-success-area" style="display: none;" class="mt-4">
+                        <div class="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4">
+                            <div class="flex items-center mb-3">
+                                <i class="fas fa-check-circle text-green-600 mr-2"></i>
+                                <span class="text-sm font-medium text-green-800 dark:text-green-200">Archivos subidos exitosamente</span>
+                            </div>
+                            <div id="upload-success-list" class="space-y-2"></div>
+                        </div>
+                    </div>
+
+                    <!-- Área de errores de carga -->
+                    <div id="upload-error-area" style="display: none;" class="mt-4">
+                        <div class="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
+                            <div class="flex items-center mb-3">
+                                <i class="fas fa-exclamation-triangle text-red-600 mr-2"></i>
+                                <span class="text-sm font-medium text-red-800 dark:text-red-200">Error al subir archivos</span>
+                            </div>
+                            <div id="upload-error-list" class="space-y-2"></div>
+                            <button type="button" onclick="retryFailedUploads()" class="mt-3 btn btn-secondary btn-sm">
+                                <i class="fas fa-redo mr-2"></i>Reintentar fallidos
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Lista de archivos existentes -->
+                    <div id="project-files-list">
+                        <div class="text-center text-muted-foreground py-4">
+                            <i class="fas fa-folder-open text-xl mb-2 block opacity-50"></i>
+                            <p class="text-xs">No hay archivos cargados</p>
+                        </div>
+                    </div>
+
+                    <div class="text-xs text-muted-foreground mt-4 p-3 bg-gray-50 dark:bg-gray-800 rounded">
+                        <i class="fas fa-shield-alt mr-1 text-green-600"></i>
+                        <strong>Seguridad:</strong> Los archivos se almacenan de forma segura en la nube y solo son accesibles por colaboradores autorizados del proyecto.
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Pestaña 5: 📊 Análisis de Scoring -->
+        <div id="tab-content-scoring" class="tab-content">
+            <div class="main-column">
+                <div class="panel">
+                    <div class="panel-title">
+                        <i class="fas fa-chart-bar text-primary"></i>
+                        Análisis de Scoring
+                    </div>
+
+                    <div class="text-center mb-6">
+                        <div class="score-display mb-4">
+                            <div id="scoring-main-score" class="score-value">0.0</div>
+                            <div class="score-label">Score General del Proyecto</div>
+                        </div>
+                        <p class="text-muted-foreground text-sm">
+                            Este puntaje representa la completitud y calidad de la información registrada para el proyecto.
+                        </p>
+                    </div>
+
+                    <div class="space-y-6">
+                        <div class="scoring-analysis-item">
+                            <div class="flex justify-between items-center mb-3">
+                                <h4 class="font-semibold text-foreground">Completitud del Perfil</h4>
+                                <span id="scoring-completeness-score" class="text-lg font-bold text-primary">0%</span>
+                            </div>
+                            <div class="w-full bg-muted rounded-full h-3 mb-2">
+                                <div id="scoring-completeness-bar" class="bg-primary h-3 rounded-full transition-all duration-300" style="width: 0%"></div>
+                            </div>
+                            <p class="text-sm text-muted-foreground">
+                                Información básica del proyecto completada. Para mejorar: completa todos los campos requeridos en la pestaña de Resumen y Estado.
+                            </p>
+                        </div>
+
+                        <div class="scoring-analysis-item">
+                            <div class="flex justify-between items-center mb-3">
+                                <h4 class="font-semibold text-foreground">Productos Asociados</h4>
+                                <span id="scoring-products-score" class="text-lg font-bold text-green-600">0%</span>
+                            </div>
+                            <div class="w-full bg-muted rounded-full h-3 mb-2">
+                                <div id="scoring-products-bar" class="bg-green-500 h-3 rounded-full transition-all duration-300" style="width: 0%"></div>
+                            </div>
+                            <p class="text-sm text-muted-foreground">
+                                Productos científicos relacionados. Para mejorar: añade artículos, software u otros entregables en la pestaña de Productos y Resultados.
+                            </p>
+                        </div>
+
+                        <div class="scoring-analysis-item">
+                            <div class="flex justify-between items-center mb-3">
+                                <h4 class="font-semibold text-foreground">Documentación</h4>
+                                <span id="scoring-docs-score" class="text-lg font-bold text-blue-600">0%</span>
+                            </div>
+                            <div class="w-full bg-muted rounded-full h-3 mb-2">
+                                <div id="scoring-docs-bar" class="bg-blue-500 h-3 rounded-full transition-all duration-300" style="width: 0%"></div>
+                            </div>
+                            <p class="text-sm text-muted-foreground">
+                                Archivos y documentos adjuntos. Para mejorar: sube el acta de constitución, cronograma o informes de avance en la pestaña de Archivos y Documentos.
+                            </p>
+                        </div>
+
+                        <div class="scoring-analysis-item">
+                            <div class="flex justify-between items-center mb-3">
+                                <h4 class="font-semibold text-foreground">Colaboradores</h4>
+                                <span id="scoring-collab-score" class="text-lg font-bold text-purple-600">0%</span>
+                            </div>
+                            <div class="w-full bg-muted rounded-full h-3 mb-2">
+                                <div id="scoring-collab-bar" class="bg-purple-500 h-3 rounded-full transition-all duration-300" style="width: 0%"></div>
+                            </div>
+                            <p class="text-sm text-muted-foreground">
+                                Equipo de investigación. Para mejorar: define los roles y añade miembros del equipo (funcionalidad próximamente disponible).
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="mt-6 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+                        <h4 class="font-semibold text-blue-800 dark:text-blue-200 mb-2">
+                            <i class="fas fa-lightbulb mr-2"></i>Recomendaciones para Mejorar tu Score
+                        </h4>
+                        <ul class="text-sm text-blue-700 dark:text-blue-300 space-y-1">
+                            <li>• Completa toda la información básica en la pestaña "Resumen y Estado"</li>
+                            <li>• Añade productos científicos relacionados en "Productos y Resultados"</li>
+                            <li>• Sube documentación importante en "Archivos y Documentos"</li>
+                            <li>• Invita colaboradores para aumentar la visibilidad del proyecto</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 
         <!-- Columna Lateral -->
         <div class="sidebar-column">
@@ -4191,7 +4543,7 @@ app.get('/dashboard/proyectos/:id/editar', async (c) => {
             const finalScore = Math.round(score * 10) / 10;
             document.getElementById('project-score').textContent = finalScore;
 
-            // Actualizar barras de progreso
+            // Actualizar elementos de scoring en la pestaña de resumen
             document.getElementById('completeness-score').textContent = \`\${Math.round((completeness / 40) * 100)}%\`;
             document.getElementById('completeness-bar').style.width = \`\${(completeness / 40) * 100}%\`;
 
@@ -4203,7 +4555,55 @@ app.get('/dashboard/proyectos/:id/editar', async (c) => {
 
             document.getElementById('collab-score').textContent = \`\${Math.round((collabScore / 10) * 100)}%\`;
             document.getElementById('collab-bar').style.width = \`\${(collabScore / 10) * 100}%\`;
+
+            // Actualizar elementos de scoring en la pestaña de análisis
+            const scoringMainScore = document.getElementById('scoring-main-score');
+            if (scoringMainScore) scoringMainScore.textContent = finalScore;
+
+            const scoringCompletenessScore = document.getElementById('scoring-completeness-score');
+            if (scoringCompletenessScore) scoringCompletenessScore.textContent = \`\${Math.round((completeness / 40) * 100)}%\`;
+
+            const scoringCompletenessBar = document.getElementById('scoring-completeness-bar');
+            if (scoringCompletenessBar) scoringCompletenessBar.style.width = \`\${(completeness / 40) * 100}%\`;
+
+            const scoringProductsScore = document.getElementById('scoring-products-score');
+            if (scoringProductsScore) scoringProductsScore.textContent = \`\${Math.round((productsScore / 30) * 100)}%\`;
+
+            const scoringProductsBar = document.getElementById('scoring-products-bar');
+            if (scoringProductsBar) scoringProductsBar.style.width = \`\${(productsScore / 30) * 100}%\`;
+
+            const scoringDocsScore = document.getElementById('scoring-docs-score');
+            if (scoringDocsScore) scoringDocsScore.textContent = \`\${Math.round((docsScore / 20) * 100)}%\`;
+
+            const scoringDocsBar = document.getElementById('scoring-docs-bar');
+            if (scoringDocsBar) scoringDocsBar.style.width = \`\${(docsScore / 20) * 100}%\`;
+
+            const scoringCollabScore = document.getElementById('scoring-collab-score');
+            if (scoringCollabScore) scoringCollabScore.textContent = \`\${Math.round((collabScore / 10) * 100)}%\`;
+
+            const scoringCollabBar = document.getElementById('scoring-collab-bar');
+            if (scoringCollabBar) scoringCollabBar.style.width = \`\${(collabScore / 10) * 100}%\`;
         }
+
+        // Función para hacer scroll a una sección específica
+        function scrollToSection(sectionId) {
+            const sectionMap = {
+                'info-general': 'tab-resumen',
+                'productos-relacionados': 'tab-productos',
+                'archivos-adjuntos': 'tab-archivos',
+                'colaboradores': 'tab-scoring'
+            };
+
+            const tabId = sectionMap[sectionId];
+            if (tabId) {
+                switchTab(tabId.replace('tab-', ''));
+                // Scroll suave al inicio del contenido
+                document.querySelector('.edit-layout')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+        }
+
+        // Hacer scrollToSection global
+        window.scrollToSection = scrollToSection;
 
         // Inicializar formulario
         function initializeForm() {
@@ -4226,6 +4626,9 @@ app.get('/dashboard/proyectos/:id/editar', async (c) => {
             // Inicializar editor de markdown
             initializeMarkdownEditor();
 
+            // Inicializar sistema de pestañas
+            initializeTabs();
+
             // Resetear estado del botón de guardar
             resetSaveButton();
 
@@ -4234,6 +4637,50 @@ app.get('/dashboard/proyectos/:id/editar', async (c) => {
 
             // Inicializar sistema de scoring mejorado
             initializeScoringSystem();
+        }
+
+        // Inicializar sistema de pestañas
+        function initializeTabs() {
+            // Función para cambiar entre pestañas
+            window.switchTab = function(tabName) {
+                // Ocultar todas las pestañas
+                const tabContents = document.querySelectorAll('.tab-content');
+                tabContents.forEach(content => content.classList.remove('active'));
+
+                // Desactivar todos los botones de pestañas
+                const tabButtons = document.querySelectorAll('.tab-button');
+                tabButtons.forEach(button => button.classList.remove('active'));
+
+                // Mostrar la pestaña seleccionada
+                const selectedTab = document.getElementById('tab-content-' + tabName);
+                const selectedButton = document.getElementById('tab-' + tabName);
+
+                if (selectedTab && selectedButton) {
+                    selectedTab.classList.add('active');
+                    selectedButton.classList.add('active');
+                }
+
+                // Actualizar URL hash para navegación directa
+                if (window.history && window.history.replaceState) {
+                    window.history.replaceState(null, null, '#' + tabName);
+                }
+            };
+
+            // Manejar navegación por hash en URL
+            function handleHashChange() {
+                const hash = window.location.hash.substring(1);
+                if (hash && ['resumen', 'formulacion', 'productos', 'archivos', 'scoring'].includes(hash)) {
+                    switchTab(hash);
+                }
+            }
+
+            // Escuchar cambios en el hash
+            window.addEventListener('hashchange', handleHashChange);
+
+            // Verificar hash inicial
+            if (window.location.hash) {
+                handleHashChange();
+            }
         }
 
         // Inicializar editor de markdown
