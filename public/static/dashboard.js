@@ -1869,8 +1869,17 @@ function editProduct(projectId, productId) {
     window.location.href = `/dashboard/productos/${productId}/editar`;
 }
 
+// Función para editar proyectos
+function editProject(projectId) {
+    console.log('🔗 Redirigiendo a editar proyecto:', projectId);
+    window.location.href = `/dashboard/proyectos/${projectId}/editar`;
+}
+
 // Asegurar que editProduct esté disponible globalmente
 window.editProduct = editProduct;
+
+// Asegurar que editProject esté disponible globalmente
+window.editProject = editProject;
 
 // Función de fallback adicional por si hay problemas
 window.editProductFallback = function(projectId, productId) {
@@ -2269,9 +2278,269 @@ function viewProject(projectId) {
     console.log('Ver proyecto:', projectId);
 }
 
-function editProject(projectId) {
-    // Redirigir a la nueva página de edición dedicada
-    window.location.href = `/dashboard/proyectos/${projectId}/editar`;
+function editProjectInline(projectId) {
+    const project = DashboardState.projects.find(p => p.id === projectId);
+    if (!project) {
+        showToast('Proyecto no encontrado', 'error');
+        return;
+    }
+
+    // Crear modal mejorado con mejor UX
+    const modal = document.createElement('div');
+    modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4';
+    modal.setAttribute('role', 'dialog');
+    modal.setAttribute('aria-modal', 'true');
+    modal.setAttribute('aria-labelledby', 'edit-project-title');
+
+    modal.innerHTML = `
+        <div class="bg-card rounded-lg shadow-xl max-w-4xl w-full mx-4 max-h-[90vh] overflow-hidden">
+            <!-- Header con progreso -->
+            <div class="px-6 py-4 border-b border-border bg-gradient-to-r from-primary/5 to-primary/10">
+                <div class="flex justify-between items-center">
+                    <div>
+                        <h2 id="edit-project-title" class="text-xl font-semibold text-foreground flex items-center gap-2">
+                            <i class="fas fa-edit text-primary"></i>
+                            Editar Proyecto
+                        </h2>
+                        <p class="text-sm text-muted-foreground mt-1">Modifica los detalles de tu proyecto de investigación</p>
+                    </div>
+                    <button onclick="this.closest('.fixed').remove()"
+                            class="text-muted-foreground hover:text-foreground p-2 rounded-lg hover:bg-accent transition-colors"
+                            aria-label="Cerrar modal">
+                        <i class="fas fa-times text-lg"></i>
+                    </button>
+                </div>
+
+                <!-- Barra de progreso -->
+                <div class="mt-4 bg-muted rounded-full h-2">
+                    <div class="bg-primary h-2 rounded-full transition-all duration-300" style="width: 0%"></div>
+                </div>
+            </div>
+
+            <!-- Formulario con mejor organización -->
+            <form onsubmit="handleProjectUpdate(event, ${project.id})" class="flex flex-col max-h-[calc(90vh-140px)]">
+                <!-- Contenido scrollable -->
+                <div class="flex-1 overflow-y-auto p-6">
+                    <!-- Información Básica -->
+                    <div class="mb-8">
+                        <h3 class="text-lg font-medium text-foreground mb-4 flex items-center gap-2">
+                            <i class="fas fa-info-circle text-primary"></i>
+                            Información Básica
+                        </h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <!-- Título -->
+                            <div class="md:col-span-2">
+                                <label for="editProjectTitle" class="block text-sm font-medium text-foreground mb-2">
+                                    Título del Proyecto *
+                                </label>
+                                <input
+                                    type="text"
+                                    id="editProjectTitle"
+                                    value="${escapeHtml(project.title || '')}"
+                                    class="w-full px-4 py-3 border border-border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
+                                    placeholder="Ingresa el título del proyecto"
+                                    required
+                                    maxlength="200"
+                                    aria-describedby="title-help"
+                                >
+                                <p id="title-help" class="text-xs text-muted-foreground mt-1">
+                                    Máximo 200 caracteres. Debe ser descriptivo y específico.
+                                </p>
+                            </div>
+
+                            <!-- Estado -->
+                            <div>
+                                <label for="editProjectStatus" class="block text-sm font-medium text-foreground mb-2">
+                                    Estado del Proyecto *
+                                </label>
+                                <select
+                                    id="editProjectStatus"
+                                    class="w-full px-4 py-3 border border-border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
+                                    required
+                                    aria-describedby="status-help"
+                                >
+                                    <option value="PLANNING" ${project.status === 'PLANNING' ? 'selected' : ''}>Planificación</option>
+                                    <option value="ACTIVE" ${project.status === 'ACTIVE' ? 'selected' : ''}>Activo</option>
+                                    <option value="ON_HOLD" ${project.status === 'ON_HOLD' ? 'selected' : ''}>En Espera</option>
+                                    <option value="COMPLETED" ${project.status === 'COMPLETED' ? 'selected' : ''}>Completado</option>
+                                    <option value="CANCELLED" ${project.status === 'CANCELLED' ? 'selected' : ''}>Cancelado</option>
+                                </select>
+                                <p id="status-help" class="text-xs text-muted-foreground mt-1">
+                                    Estado actual del proyecto
+                                </p>
+                            </div>
+
+                            <!-- Palabras clave -->
+                            <div>
+                                <label for="editProjectKeywords" class="block text-sm font-medium text-foreground mb-2">
+                                    Palabras Clave
+                                </label>
+                                <input
+                                    type="text"
+                                    id="editProjectKeywords"
+                                    value="${escapeHtml(project.keywords || '')}"
+                                    class="w-full px-4 py-3 border border-border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
+                                    placeholder="separadas por comas"
+                                    maxlength="150"
+                                    aria-describedby="keywords-help"
+                                >
+                                <p id="keywords-help" class="text-xs text-muted-foreground mt-1">
+                                    Separadas por comas, máximo 150 caracteres
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Contenido del Proyecto -->
+                    <div class="mb-8">
+                        <h3 class="text-lg font-medium text-foreground mb-4 flex items-center gap-2">
+                            <i class="fas fa-file-alt text-primary"></i>
+                            Contenido del Proyecto
+                        </h3>
+                        <div class="space-y-6">
+                            <!-- Resumen -->
+                            <div>
+                                <label for="editProjectAbstract" class="block text-sm font-medium text-foreground mb-2">
+                                    Resumen Ejecutivo *
+                                </label>
+                                <textarea
+                                    id="editProjectAbstract"
+                                    rows="4"
+                                    class="w-full px-4 py-3 border border-border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent transition-all resize-vertical"
+                                    placeholder="Describe brevemente los objetivos y alcance del proyecto"
+                                    required
+                                    maxlength="500"
+                                    aria-describedby="abstract-help"
+                                >${escapeHtml(project.abstract || '')}</textarea>
+                                <div class="flex justify-between mt-1">
+                                    <p id="abstract-help" class="text-xs text-muted-foreground">
+                                        Máximo 500 caracteres. Resume los objetivos principales.
+                                    </p>
+                                    <span id="abstract-count" class="text-xs text-muted-foreground">
+                                        ${(project.abstract || '').length}/500
+                                    </span>
+                                </div>
+                            </div>
+
+                            <!-- Introducción -->
+                            <div>
+                                <label for="editProjectIntroduction" class="block text-sm font-medium text-foreground mb-2">
+                                    Introducción
+                                </label>
+                                <textarea
+                                    id="editProjectIntroduction"
+                                    rows="3"
+                                    class="w-full px-4 py-3 border border-border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent transition-all resize-vertical"
+                                    placeholder="Contexto y antecedentes del proyecto"
+                                    maxlength="300"
+                                    aria-describedby="introduction-help"
+                                >${escapeHtml(project.introduction || '')}</textarea>
+                                <div class="flex justify-between mt-1">
+                                    <p id="introduction-help" class="text-xs text-muted-foreground">
+                                        Contexto y antecedentes (opcional)
+                                    </p>
+                                    <span id="introduction-count" class="text-xs text-muted-foreground">
+                                        ${(project.introduction || '').length}/300
+                                    </span>
+                                </div>
+                            </div>
+
+                            <!-- Metodología -->
+                            <div>
+                                <label for="editProjectMethodology" class="block text-sm font-medium text-foreground mb-2">
+                                    Metodología
+                                </label>
+                                <textarea
+                                    id="editProjectMethodology"
+                                    rows="3"
+                                    class="w-full px-4 py-3 border border-border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent transition-all resize-vertical"
+                                    placeholder="Enfoque metodológico y técnicas a utilizar"
+                                    maxlength="300"
+                                    aria-describedby="methodology-help"
+                                >${escapeHtml(project.methodology || '')}</textarea>
+                                <div class="flex justify-between mt-1">
+                                    <p id="methodology-help" class="text-xs text-muted-foreground">
+                                        Enfoque metodológico (opcional)
+                                    </p>
+                                    <span id="methodology-count" class="text-xs text-muted-foreground">
+                                        ${(project.methodology || '').length}/300
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Información del Sistema -->
+                    <div class="bg-muted/30 rounded-lg p-4">
+                        <h4 class="text-sm font-medium text-foreground mb-2 flex items-center gap-2">
+                            <i class="fas fa-info-circle text-muted-foreground"></i>
+                            Información del Sistema
+                        </h4>
+                        <div class="grid grid-cols-2 gap-4 text-sm">
+                            <div>
+                                <span class="text-muted-foreground">ID del Proyecto:</span>
+                                <span class="ml-2 font-mono text-foreground">${project.id}</span>
+                            </div>
+                            <div>
+                                <span class="text-muted-foreground">Creado:</span>
+                                <span class="ml-2 text-foreground">${formatDate(project.created_at)}</span>
+                            </div>
+                            <div>
+                                <span class="text-muted-foreground">Última modificación:</span>
+                                <span class="ml-2 text-foreground">${formatDate(project.updated_at || project.created_at)}</span>
+                            </div>
+                            <div>
+                                <span class="text-muted-foreground">Visibilidad:</span>
+                                <span class="ml-2 ${project.is_public ? 'text-green-600' : 'text-orange-600'}">
+                                    ${project.is_public ? 'Público' : 'Privado'}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Footer con acciones -->
+                <div class="px-6 py-4 border-t border-border bg-muted/20">
+                    <div class="flex justify-between items-center">
+                        <div class="text-sm text-muted-foreground">
+                            <i class="fas fa-save mr-1"></i>
+                            Los cambios se guardarán automáticamente
+                        </div>
+                        <div class="flex gap-3">
+                            <button
+                                type="button"
+                                onclick="this.closest('.fixed').remove()"
+                                class="px-4 py-2 text-muted-foreground border border-border rounded-lg hover:bg-accent transition-colors"
+                            >
+                                <i class="fas fa-times mr-2"></i>
+                                Cancelar
+                            </button>
+                            <button
+                                type="submit"
+                                class="px-6 py-2 bg-primary text-primary-foreground rounded-lg hover:opacity-90 transition-all flex items-center gap-2 font-medium"
+                            >
+                                <i class="fas fa-save"></i>
+                                <span id="submit-text">Guardar Cambios</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+    `;
+
+    document.body.appendChild(modal);
+
+    // Configurar validación en tiempo real
+    setupProjectFormValidation();
+
+    // Configurar contadores de caracteres
+    setupCharacterCounters();
+
+    // Enfocar el primer campo
+    setTimeout(() => {
+        document.getElementById('editProjectTitle').focus();
+    }, 100);
 }
 
 // Modal de edición de proyecto
