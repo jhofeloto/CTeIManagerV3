@@ -3047,20 +3047,275 @@ app.get('/dashboard/proyectos/:id/editar', async (c) => {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Editar Proyecto - CTeI-Manager</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/axios@1.6.0/dist/axios.min.js"></script>
 </head>
 <body class="bg-gray-100 p-8">
-    <div class="max-w-4xl mx-auto bg-white p-6 rounded shadow">
-        <h1 class="text-2xl font-bold mb-4">Editar Proyecto</h1>
-        <p class="text-gray-600 mb-4">ID del proyecto: ${projectId}</p>
-        <p class="text-yellow-600 mb-4">Esta funcionalidad está en desarrollo.</p>
-        <a href="/dashboard" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
-            Volver al Dashboard
-        </a>
-    </div>
-</body>
-</html>`);
-})
+    <div class="max-w-4xl mx-auto">
+        <!-- Header -->
+        <div class="mb-6">
+            <div class="flex justify-between items-center">
+                <div>
+                    <h1 class="text-3xl font-bold text-gray-900">Editar Proyecto</h1>
+                    <p class="text-gray-600 mt-1">ID del proyecto: <span id="project-id-display">Cargando...</span></p>
+                </div>
+                <a href="/dashboard" class="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600">
+                    <i class="fas fa-arrow-left mr-2"></i>
+                    Volver al Dashboard
+                </a>
+            </div>
+        </div>
 
+        <!-- Formulario -->
+        <form id="edit-project-form" class="space-y-6">
+            <!-- Título -->
+            <div class="bg-white p-6 rounded-lg shadow">
+                <label for="project-title" class="block text-sm font-medium text-gray-700 mb-2">
+                    <i class="fas fa-heading text-blue-500 mr-2"></i>
+                    Título del Proyecto *
+                </label>
+                <input 
+                    type="text" 
+                    id="project-title"
+                    name="title"
+                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="Ingrese el título del proyecto"
+                    required
+                >
+            </div>
+
+            <!-- Resumen -->
+            <div class="bg-white p-6 rounded-lg shadow">
+                <label for="project-abstract" class="block text-sm font-medium text-gray-700 mb-2">
+                    <i class="fas fa-align-left text-blue-500 mr-2"></i>
+                    Resumen *
+                </label>
+                <textarea 
+                    id="project-abstract"
+                    name="abstract"
+                    rows="4"
+                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="Descripción breve del proyecto..."
+                    required
+                ></textarea>
+            </div>
+
+            <!-- Información adicional -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="bg-white p-6 rounded-lg shadow">
+                    <label for="project-status" class="block text-sm font-medium text-gray-700 mb-2">
+                        <i class="fas fa-info-circle text-blue-500 mr-2"></i>
+                        Estado
+                    </label>
+                    <select id="project-status" name="status" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <option value="PLANNING">Planificación</option>
+                        <option value="ACTIVE">Activo</option>
+                        <option value="COMPLETED">Completado</option>
+                        <option value="ON_HOLD">En Espera</option>
+                    </select>
+                </div>
+
+                <div class="bg-white p-6 rounded-lg shadow">
+                    <label for="project-visibility" class="block text-sm font-medium text-gray-700 mb-2">
+                        <i class="fas fa-eye text-blue-500 mr-2"></i>
+                        Visibilidad
+                    </label>
+                    <select id="project-visibility" name="is_public" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <option value="false">Privado</option>
+                        <option value="true">Público</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Fechas -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="bg-white p-6 rounded-lg shadow">
+                    <label for="project-start-date" class="block text-sm font-medium text-gray-700 mb-2">
+                        <i class="fas fa-calendar-plus text-blue-500 mr-2"></i>
+                        Fecha de Inicio
+                    </label>
+                    <input 
+                        type="date" 
+                        id="project-start-date"
+                        name="start_date"
+                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                </div>
+
+                <div class="bg-white p-6 rounded-lg shadow">
+                    <label for="project-end-date" class="block text-sm font-medium text-gray-700 mb-2">
+                        <i class="fas fa-calendar-check text-blue-500 mr-2"></i>
+                        Fecha de Fin
+                    </label>
+                    <input 
+                        type="date" 
+                        id="project-end-date"
+                        name="end_date"
+                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                </div>
+            </div>
+
+            <!-- Información financiera -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="bg-white p-6 rounded-lg shadow">
+                    <label for="project-budget" class="block text-sm font-medium text-gray-700 mb-2">
+                        <i class="fas fa-dollar-sign text-blue-500 mr-2"></i>
+                        Presupuesto
+                    </label>
+                    <input 
+                        type="number" 
+                        id="project-budget"
+                        name="budget"
+                        step="0.01"
+                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        placeholder="0.00"
+                    >
+                </div>
+
+                <div class="bg-white p-6 rounded-lg shadow">
+                    <label for="project-funding-source" class="block text-sm font-medium text-gray-700 mb-2">
+                        <i class="fas fa-university text-blue-500 mr-2"></i>
+                        Fuente de Financiamiento
+                    </label>
+                    <input 
+                        type="text" 
+                        id="project-funding-source"
+                        name="funding_source"
+                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        placeholder="Ej: Ministerio de Ciencia, Universidad, etc."
+                    >
+                </div>
+            </div>
+
+            <!-- Información institucional -->
+            <div class="bg-white p-6 rounded-lg shadow">
+                <label for="project-institution" class="block text-sm font-medium text-gray-700 mb-2">
+                    <i class="fas fa-building text-blue-500 mr-2"></i>
+                    Institución
+                </label>
+                <input 
+                    type="text" 
+                    id="project-institution"
+                    name="institution"
+                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="Nombre de la institución ejecutora"
+                >
+            </div>
+
+            <!-- Código del proyecto -->
+            <div class="bg-white p-6 rounded-lg shadow">
+                <label for="project-code" class="block text-sm font-medium text-gray-700 mb-2">
+                    <i class="fas fa-hashtag text-blue-500 mr-2"></i>
+                    Código del Proyecto
+                </label>
+                <input 
+                    type="text" 
+                    id="project-code"
+                    name="project_code"
+                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="Ej: CTeI-2024-001"
+                >
+            </div>
+
+            <!-- Botones de acción -->
+            <div class="flex justify-end space-x-4">
+                <a href="/dashboard" class="bg-gray-500 text-white px-6 py-2 rounded hover:bg-gray-600">
+                    <i class="fas fa-times mr-2"></i>
+                    Cancelar
+                </a>
+                <button type="submit" class="bg-blue-500 text-white px-6 py-2 rounded hover:bg-blue-600">
+                    <i class="fas fa-save mr-2"></i>
+                    Guardar Cambios
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <script>
+        // Obtener el ID del proyecto de la URL
+        const projectId = window.location.pathname.split('/')[3];
+        document.getElementById('project-id-display').textContent = projectId;
+
+        // Cargar datos del proyecto
+        async function loadProject() {
+            try {
+                const token = localStorage.getItem('auth_token');
+                if (!token) {
+                    alert('Sesión expirada. Redirigiendo al login...');
+                    window.location.href = '/';
+                    return;
+                }
+
+                const response = await axios.get(\`/api/private/projects/\${projectId}\`, {
+                    headers: { 'Authorization': \`Bearer \${token}\` }
+                });
+
+                if (response.data.success) {
+                    const project = response.data.data;
+                    
+                    // Poblar formulario
+                    document.getElementById('project-title').value = project.title || '';
+                    document.getElementById('project-abstract').value = project.abstract || '';
+                    document.getElementById('project-status').value = project.status || 'PLANNING';
+                    document.getElementById('project-visibility').value = project.is_public ? 'true' : 'false';
+                    document.getElementById('project-start-date').value = project.start_date ? project.start_date.split('T')[0] : '';
+                    document.getElementById('project-end-date').value = project.end_date ? project.end_date.split('T')[0] : '';
+                    document.getElementById('project-budget').value = project.budget || '';
+                    document.getElementById('project-funding-source').value = project.funding_source || '';
+                    document.getElementById('project-institution').value = project.institution || '';
+                    document.getElementById('project-code').value = project.project_code || '';
+                } else {
+                    alert('Error al cargar el proyecto: ' + (response.data.error || 'Error desconocido'));
+                }
+            } catch (error) {
+                console.error('Error cargando proyecto:', error);
+                alert('Error al cargar el proyecto. Verifica tu conexión.');
+            }
+        }
+
+        // Manejar envío del formulario
+        document.getElementById('edit-project-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            try {
+                const token = localStorage.getItem('auth_token');
+                if (!token) {
+                    alert('Sesión expirada. Redirigiendo al login...');
+                    window.location.href = '/';
+                    return;
+                }
+
+                const formData = new FormData(e.target);
+                const data = Object.fromEntries(formData);
+                
+                // Convertir valores booleanos
+                data.is_public = data.is_public === 'true';
+                data.budget = data.budget ? parseFloat(data.budget) : null;
+
+                const response = await axios.put(\`/api/private/projects/\${projectId}\`, data, {
+                    headers: { 'Authorization': \`Bearer \${token}\` }
+                });
+
+                if (response.data.success) {
+                    alert('Proyecto actualizado exitosamente');
+                    window.location.href = '/dashboard';
+                } else {
+                    alert('Error al actualizar el proyecto: ' + (response.data.error || 'Error desconocido'));
+                }
+            } catch (error) {
+                console.error('Error actualizando proyecto:', error);
+                alert('Error al actualizar el proyecto. Verifica tu conexión.');
+            }
+        });
+
+        // Cargar proyecto al iniciar
+        loadProject();
+    </script>
+</body>
+</html>
+`);
+})
 app.get('/dashboard/productos/:id/editar', async (c) => {
   const productId = c.req.param('id');
   
